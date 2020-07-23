@@ -19,15 +19,15 @@ class Help(commands.Cog):
 
         return prefixes[str(ctx.guild.id)]
 
-    async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleMessage=None, exampleOutput=None, aliases=None,
+    async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None, aliases=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL=None):
         embed = discord.Embed(title=f"{commandName} Help",
                               color=discord.Color.blue())
         embed.add_field(name="Command Syntax",
                         value=f'{syntaxMessage}')
-        if exampleMessage is not None:
+        if exampleUsage is not None:
             embed.add_field(name="Example Usage",
-                            value=exampleMessage,
+                            value=exampleUsage,
                             inline=False)
         if exampleOutput is not None:
             embed.add_field(name="Output",
@@ -107,6 +107,20 @@ class Help(commands.Cog):
             await ctx.send(embed=helpEmbed)
 
     # =================================================
+    # Help
+    # =================================================
+
+    @help.command(aliases=['h'])
+    async def help(self, ctx):
+        commandName = 'Help'
+        syntaxMessage = f"`{self.prefix(self, ctx)}help [commandName]`"
+        exampleUsage = f"`{self.prefix(self, ctx)}help ping`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage)
+
+    # =================================================
     # Debug
     # =================================================
 
@@ -114,7 +128,9 @@ class Help(commands.Cog):
     async def ping(self, ctx):
         commandName = 'Ping'
         syntaxMessage = f"`{self.prefix(self, ctx)}ping`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     # =================================================
     # Fun
@@ -126,32 +142,43 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}8ball`"
         aliases = "`8b`"
         thumbnailURL = 'https://www.horoscope.com/images-US/games/game-magic-8-ball-no-text.png'
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
                                thumbnailURL=thumbnailURL)
 
     @help.command()
     async def choose(self, ctx):
         commandName = 'Choose'
         syntaxMessage = f"`{self.prefix(self, ctx)}choose [strings separated by " + "\"or\"" + " ]`"
-        exampleMessage = f"`{self.prefix(self, ctx)}choose Chocolate or Vanilla or Strawberry or Sherbet or No ice " \
-                         f"cream bc I hate it?` "
+        exampleUsage = f"`{self.prefix(self, ctx)}choose Chocolate or Vanilla or Strawberry or Sherbet or No ice " \
+                       f"cream bc I hate it?` "
         choices = ['Chocolate', 'Vanilla', 'Strawberry', 'Sherbet', 'No ice cream because I hate it']
         exampleOutput = random.choice(choices)
         specialCases = "The word \"or\" cannot be a valid choice for the bot to pick from due to it being the splitter."
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, exampleMessage=exampleMessage,
-                               exampleOutput=exampleOutput, specialCases=specialCases)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
+                               exampleOutput=exampleOutput,
+                               specialCases=specialCases)
 
     @help.command()
     async def say(self, ctx):
         commandName = 'Say'
         syntaxMessage = f"`{self.prefix(self, ctx)}say`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     @help.command()
     async def toad(self, ctx):
         commandName = 'Toad'
         syntaxMessage = f"`{self.prefix(self, ctx)}toad`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     # =================================================
     # Games
@@ -171,8 +198,13 @@ class Help(commands.Cog):
         specialCases = "When clearing chat indiscriminately, you can eliminate the `[amount]` argument and only 1 " \
                        "message will be cleared.\n\nWhen an `[optional user @mention]` is specified, the `[amount]` " \
                        "must also be specified."
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
-                               userPerms=userPerms, botPerms=botPerms, specialCases=specialCases)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               botPerms=botPerms,
+                               specialCases=specialCases)
 
     @help.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
     async def mute(self, ctx):
@@ -181,8 +213,12 @@ class Help(commands.Cog):
         aliases = "`silence` `stfu` `shut` `shush` `shh` `shhh` `shhhh` `quiet`"
         userPerms = "`Manage Roles`"
         botPerms = "Administrator"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
-                               userPerms=userPerms, botPerms=botPerms)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               botPerms=botPerms)
 
     @help.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
     async def unmute(self, ctx):
@@ -191,8 +227,12 @@ class Help(commands.Cog):
         aliases = "`unsilence` `unstfu` `unshut` `unshush` `unshh` `unshhh` `unshhhh` `unquiet`"
         userPerms = "`Manage Roles`"
         botPerms = "Administrator"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
-                               userPerms=userPerms, botPerms=botPerms)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               botPerms=botPerms)
 
     @help.command()
     async def kick(self, ctx):
@@ -200,7 +240,10 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}kick [user @mention] [optional reason]`"
         userPerms = "`Kick Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms,
                                botPerms=botPerms)
 
     @help.command()
@@ -209,7 +252,10 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention] [optional reason]`"
         userPerms = "`Ban Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms,
                                botPerms=botPerms)
 
     @help.command()
@@ -218,7 +264,10 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention or user + discriminator] [optional reason]`"
         userPerms = "`Unban Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms,
                                botPerms=botPerms)
 
     # =================================================
@@ -228,41 +277,55 @@ class Help(commands.Cog):
     @help.command()
     async def join(self, ctx):
         commandName = "Join"
-        syntaxMessage = f"`{self.prefix(self,ctx)}join`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}join`"
         userPerms = "`Connect to Voice Channel`"
         botPerms = userPerms
         specialCases = "You must currently be connected to a voice channel in order to use this command"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
-                               botPerms=botPerms, specialCases=specialCases)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms,
+                               botPerms=botPerms,
+                               specialCases=specialCases)
 
     @help.command()
     async def leave(self, ctx):
         commandName = "Leave"
         syntaxMessage = f"`{self.prefix(self, ctx)}leave`"
         specialCases = "You must currently be connected to a voice channel in order to use this command"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, specialCases=specialCases)
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
 
     # =================================================
     # Utility
     # =================================================
 
-    @help.command(aliases=['p','checkprefix', 'prefix'])
+    @help.command(aliases=['p', 'checkprefix', 'prefix'])
     async def _prefix(self, ctx):
         commandName = "Prefix"
         syntaxMessage = f"`{self.prefix(self, ctx)}prefix`"
-        exampleMessage = f"`{self.prefix(self, ctx)}prefix`"
+        exampleUsage = f"`{self.prefix(self, ctx)}prefix`"
         exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, exampleMessage=exampleMessage,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput)
 
     @help.command(aliases=['sp', 'setprefix'])
     async def setPrefix(self, ctx):
         commandName = "Set Prefix"
         syntaxMessage = f"`{self.prefix(self, ctx)}setprefix [serverprefix]`"
-        exampleMessage = f"`{self.prefix(self, ctx)}setprefix !m`"
+        exampleUsage = f"`{self.prefix(self, ctx)}setprefix !m`"
         exampleOutput = "`Server prefix set to: !m`"
-        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, exampleMessage=exampleMessage,
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput)
+
 
 def setup(client):
     client.add_cog(Help(client))
