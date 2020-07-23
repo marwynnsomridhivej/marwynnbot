@@ -1,6 +1,7 @@
 import discord
 import os
 import random
+import json
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
 
@@ -14,10 +15,18 @@ class Moderation(commands.Cog):
     async def on_ready(self):
         print('Cog "moderation" has been loaded')
 
+    def incrCounter(self, cmdName):
+        with open('counters.json', 'r') as f:
+            values = json.load(f)
+            values[str(cmdName)] += 1
+        with open('counters.json', 'w') as f:
+            json.dump(values, f, indent=4)
+
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
         await ctx.message.delete()
+        self.incrCounter('chatclean')
 
         def from_user(message):
             return member is None or message.author == member
@@ -49,6 +58,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, *, reason="Unspecified"):
         await ctx.message.delete()
+        self.incrCounter('mute')
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             role = await ctx.guild.create_role(name="Muted",
@@ -94,6 +104,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, member: discord.Member, *, reason="Unspecified"):
         await ctx.message.delete()
+        self.incrCounter('unmute')
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             unmuteEmbed = discord.Embed(title="No Muted Role",
@@ -132,6 +143,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason='Unspecified'):
         await ctx.message.delete()
+        self.incrCounter('kick')
         perms = ctx.author.permissions_in(ctx.channel)
         if perms.kick_members:
             with ctx.channel.typing():
@@ -169,6 +181,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, *, reason='Unspecified'):
         await ctx.message.delete()
+        self.incrCounter('ban')
         with ctx.channel.typing():
             await member.ban(reason=reason)
             banEmbed = discord.Embed(title="Banned User",
@@ -197,6 +210,8 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, *, user=None):
+        await ctx.message.delete()
+        self.incrCounter('unban')
 
         try:
             user = await commands.converter.UserConverter().convert(ctx, user)

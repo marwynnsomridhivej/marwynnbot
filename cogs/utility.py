@@ -14,9 +14,33 @@ class Utility(commands.Cog):
     async def on_ready(self):
         print('Cog "utility" has been loaded')
 
+    def incrCounter(self, cmdName):
+        with open('counters.json', 'r') as f:
+            values = json.load(f)
+            values[str(cmdName)] += 1
+        with open('counters.json', 'w') as f:
+            json.dump(values, f, indent=4)
+
+    @commands.command(aliases=['used', 'usedcount'])
+    async def counter(self, ctx, commandName):
+        await ctx.message.delete()
+        self.incrCounter('counter')
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
+            serverPrefix = prefixes[str(ctx.guild.id)]
+        with open('counters.json', 'r') as f:
+            value = json.load(f)
+            execCount = value[str(commandName)]
+        counterEmbed = discord.Embed(title=f"Command \"{commandName}\" Counter",
+                                     description=f"`{serverPrefix}{commandName}` was executed **{execCount}** "
+                                                 "times",
+                                     color=discord.Color.blue())
+        await ctx.channel.send(embed=counterEmbed)
+
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
         await ctx.message.delete()
+        self.incrCounter('prefix')
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
@@ -35,6 +59,7 @@ class Utility(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
         await ctx.message.delete()
+        self.incrCounter('setPrefix')
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             if prefix != 'reset':

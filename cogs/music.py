@@ -1,5 +1,6 @@
 import json
 import discord
+import json
 from discord.ext import commands
 from discord.ext.commands import has_permissions, BotMissingPermissions
 
@@ -13,9 +14,17 @@ class Music(commands.Cog):
     async def on_ready(self):
         print('Cog "music" has been loaded')
 
+    def incrCounter(self, cmdName):
+        with open('counters.json', 'r') as f:
+            values = json.load(f)
+            values[str(cmdName)] += 1
+        with open('counters.json', 'w') as f:
+            json.dump(values, f, indent=4)
+
     @commands.command()
     async def join(self, ctx):
         await ctx.message.delete()
+        self.incrCounter('join')
         channel = ctx.author.voice.channel
         await channel.connect()
         joinEmbed = discord.Embed(title='Join Success!',
@@ -43,6 +52,7 @@ class Music(commands.Cog):
     @commands.command()
     async def leave(self, ctx):
         await ctx.message.delete()
+        self.incrCounter('leave')
         channel = ctx.voice_client.channel
         await ctx.voice_client.disconnect()
         leaveEmbed = discord.Embed(title='Leave Success!',

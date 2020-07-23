@@ -2,6 +2,7 @@ import random
 import os
 import re
 import discord
+import json
 from discord.ext import commands
 
 
@@ -14,9 +15,17 @@ class Fun(commands.Cog):
     async def on_ready(self):
         print('Cog "fun" has been loaded')
 
+    def incrCounter(self, cmdName):
+        with open('counters.json', 'r') as f:
+            values = json.load(f)
+            values[str(cmdName)] += 1
+        with open('counters.json', 'w') as f:
+            json.dump(values, f, indent=4)
+
     @commands.command(aliases=['8ball', '8b'])
     async def _8ball(self, ctx, *, question):
         await ctx.message.delete()
+        self.incrCounter('8ball')
         file = open('responses', 'r')
         responses = file.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
@@ -28,6 +37,7 @@ class Fun(commands.Cog):
     @commands.command()
     async def choose(self, ctx, *, choices):
         await ctx.message.delete()
+        self.incrCounter('choose')
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)
@@ -39,14 +49,16 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *, args):
+        await ctx.message.delete()
+        self.incrCounter('say')
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
-        await ctx.message.delete()
         await ctx.channel.send(embed=sayEmbed)
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx):
         await ctx.message.delete()
+        self.incrCounter('toad')
         path = './toad'
         files = os.listdir('./toad')
         name = random.choice(files)
