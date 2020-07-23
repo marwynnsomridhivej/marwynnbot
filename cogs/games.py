@@ -11,6 +11,10 @@ class Games(commands.Cog):
         print('Cog "games" has been loaded')
 
 
+    @commands.command()
+    async def uno(self, ctx):
+        return
+
 
 
 def setup(client):

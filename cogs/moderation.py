@@ -1,4 +1,6 @@
 import discord
+import os
+import random
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
 
@@ -41,6 +43,39 @@ class Moderation(commands.Cog):
                                                    f'permission to clear messages from chat.',
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=clearError)
+
+    @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
+    @commands.bot_has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
+    async def mute(self, ctx, member: discord.Member, *, reason="Unspecified"):
+        mutedRole = discord.utils.get(member.guild.roles, name='Muted')
+        await member.add_roles(member, mutedRole)
+        path = './muted'
+        files = os.listdir(path)
+        name = random.choice(files)
+        d = f'{path}//{name}'
+        with open(d, 'rb') as f:
+            picture = discord.File(f, d)
+            mutedEmbed = discord.Embed(title='Muted️',
+                                       description=reason,
+                                       color=discord.Color.blue())
+            mutedEmbed.set_image(url=f"attachment://muted_{name}")
+            mutedEmbed.set_footer(text=f'{name}, emote name: {name[:-4]}')
+        await ctx.channel.send(file=picture, embed=mutedEmbed)
+
+    @mute.error
+    async def mute_error(self, ctx, error):
+        if isinstance(error, MissingPermissions):
+            muteError = discord.Embed(title="Insufficient User Permissions",
+                                      description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
+                                                  "this command",
+                                      color=discord.Color.dark_red())
+            await ctx.channel.send(embed=muteError)
+        if isinstance(error, BotMissingPermissions):
+            muteError = discord.Embed(title="Insufficient Bot Permissions",
+                                      description="I need the Administrator permission to mute users",
+                                      color=discord.Color.dark_red())
+            await ctx.channel.send(embed=muteError)
 
     @commands.command()
     @commands.bot_has_permissions(administrator=True)
