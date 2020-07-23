@@ -9,6 +9,7 @@ import sqlite3
 # =================================================
 # Removes Default Help Command (replaced with m!help below)
 # =================================================
+
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
@@ -20,16 +21,17 @@ client = commands.Bot(command_prefix=get_prefix, help_command=None)
 # =================================================
 # Logger
 # =================================================
+
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-
 # =================================================
 # Bot Startup (Logs ready message to console, sets status, removes default help message)
 # =================================================
+
 @client.event
 async def on_ready():
     print('Successfully logged in as {0.user}'.format(client))
@@ -57,10 +59,10 @@ async def on_guild_remove(guild):
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
-
 # =================================================
 # Loading Cogs
 # =================================================
+
 @client.command()
 async def load(ctx, extension):
     await ctx.message.delete()
@@ -105,7 +107,9 @@ async def reload(ctx, *, extension=None):
                                     description='You need to be the bot owner to use this command',
                                     color=discord.Color.dark_red())
         await ctx.channel.send(embed=reloadError, delete_after=5)
+
 # =================================================
 # Client Initialisation and Logon
 # =================================================
+
 client.run('NjIzMzE3NDUxODExMDYxNzYz.XxT6OQ.uBal2OIHS9dWa7gP9rTGeGl_52U')
