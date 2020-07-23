@@ -1,0 +1,19 @@
+{
+    "help": 5,
+    "ping": 0,
+    "8ball": 0,
+    "choose": 0,
+    "say": 0,
+    "toad": 1,
+    "chatclean": 1,
+    "mute": 0,
+    "unmute": 0,
+    "kick": 0,
+    "ban": 0,
+    "unban": 0,
+    "join": 0,
+    "leave": 0,
+    "prefix": 0,
+    "setPrefix": 0,
+    "counter": 6
+}

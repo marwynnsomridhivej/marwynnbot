@@ -19,6 +19,13 @@ class Help(commands.Cog):
 
         return prefixes[str(ctx.guild.id)]
 
+    def incrCounter(self, cmdName):
+        with open('counters.json', 'r') as f:
+            values = json.load(f)
+            values[str(cmdName)] += 1
+        with open('counters.json', 'w') as f:
+            json.dump(values, f, indent=4)
+
     async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None, aliases=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL=None):
         embed = discord.Embed(title=f"{commandName} Help",
@@ -56,6 +63,7 @@ class Help(commands.Cog):
     @commands.group(aliases=['h'])
     async def help(self, ctx):
         await ctx.message.delete()
+        self.incrCounter('help')
         if ctx.invoked_subcommand is None:
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
                                       colour=discord.Colour(0x3498db),
@@ -139,12 +147,14 @@ class Help(commands.Cog):
     @help.command(aliases=['8b', '8ball'])
     async def _8ball(self, ctx):
         commandName = 'Magic 8 Ball'
-        syntaxMessage = f"`{self.prefix(self, ctx)}8ball`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}8ball [question]`"
+        exampleUsage = f"`{self.prefix(self, ctx)}8ball Is this a good bot?`"
         aliases = "`8b`"
         thumbnailURL = 'https://www.horoscope.com/images-US/games/game-magic-8-ball-no-text.png'
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
                                aliases=aliases,
                                thumbnailURL=thumbnailURL)
 
@@ -301,6 +311,18 @@ class Help(commands.Cog):
     # =================================================
     # Utility
     # =================================================
+
+    @help.command(aliases=['used', 'usedcount'])
+    async def counter(self, ctx):
+        commandName = "Counter"
+        syntaxMessage = f"`{self.prefix(self, ctx)}counter [commandName]`"
+        exampleUsage = f"{self.prefix(self, ctx)}counter help"
+        aliases = "`used` `usedcount`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
+                               aliases=aliases)
 
     @help.command(aliases=['p', 'checkprefix', 'prefix', 'prefixes'])
     async def _prefix(self, ctx):
