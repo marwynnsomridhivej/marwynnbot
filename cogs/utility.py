@@ -37,12 +37,23 @@ class Utility(commands.Cog):
         await ctx.message.delete()
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
-            prefixes[str(ctx.guild.id)] = prefix
-            with open('prefixes.json', 'w') as f:
-                json.dump(prefixes, f, indent=4)
-        with ctx.channel.typing():
-            await ctx.message.delete()
-            await ctx.send('Server prefix set to: ' + prefix)
+            if prefix != 'reset':
+                prefixes[str(ctx.guild.id)] = prefix
+            else:
+                prefixes[str(ctx.guild.id)] = 'm!'
+        with open('prefixes.json', 'w') as f:
+            json.dump(prefixes, f, indent=4)
+        if prefix != 'reset':
+            prefixEmbed = discord.Embed(title='Server Prefix Set',
+                                        description=f"Server prefix is now set to `{prefix}` \n\n"
+                                                    f"You will still be able to use {self.client.user.mention} "
+                                                    f"and `mb ` as prefixes",
+                                        color=discord.Color.blue())
+        else:
+            prefixEmbed = discord.Embed(title='Server Prefix Set',
+                                        description=f"Server prefix has been reset to `m!`",
+                                        color=discord.Color.blue())
+        await ctx.channel.send(embed=prefixEmbed)
 
     @setPrefix.error
     async def setPrefix_error(self, ctx, error):

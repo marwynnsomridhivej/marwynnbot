@@ -11,10 +11,13 @@ class Games(commands.Cog):
     async def on_ready(self):
         print('Cog "games" has been loaded')
 
-    @commands.command()
-    async def uno(self, ctx):
+    @commands.group()
+    async def uno(self, ctx, *, member: discord.Member = None):
         await ctx.message.delete()
-        return
+        if member is not None:
+            return
+        else:
+            return
 
 
 def setup(client):

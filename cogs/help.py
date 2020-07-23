@@ -309,11 +309,13 @@ class Help(commands.Cog):
         exampleUsage = f"`{self.prefix(self, ctx)}prefix`"
         exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`\n\n`The global prefixes are:" \
                         f"`{self.client.user.mention} or `mb `"
+        aliases = "`p` `checkprefix` `prefixes`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               exampleOutput=exampleOutput)
+                               exampleOutput=exampleOutput,
+                               aliases=aliases)
 
     @help.command(aliases=['sp', 'setprefix'])
     async def setPrefix(self, ctx):
@@ -321,11 +323,15 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}setprefix [serverprefix]`"
         exampleUsage = f"`{self.prefix(self, ctx)}setprefix !m`"
         exampleOutput = "`Server prefix set to: !m`"
+        aliases = "`sp`"
+        specialCases = f"To reset the server prefix to bot default, enter `reset` as the `[serverprefix]` argument"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               exampleOutput=exampleOutput)
+                               exampleOutput=exampleOutput,
+                               aliases=aliases,
+                               specialCases=specialCases)
 
 
 def setup(client):
