@@ -80,6 +80,7 @@ for filename in os.listdir('./cogs'):
 
 @client.command()
 async def reload(ctx, *, extension=None):
+    await ctx.message.delete()
     if await client.is_owner(ctx.author):
         if extension is None:
             for filenameReload in os.listdir('./cogs'):

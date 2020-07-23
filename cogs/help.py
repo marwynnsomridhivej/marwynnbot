@@ -192,14 +192,57 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
                                botPerms=botPerms)
 
+    @help.command()
+    async def unban(self, ctx):
+        commandName = "Unban"
+        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention or user + discriminator] [optional reason]`"
+        userPerms = "`Unban Members`"
+        botPerms = f"`{userPerms}` or `Administrator`"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+                               botPerms=botPerms)
+
     # =================================================
     # Music
     # =================================================
+
+    @help.command()
+    async def join(self, ctx):
+        commandName = "Join"
+        syntaxMessage = f"`{self.prefix(self,ctx)}join`"
+        userPerms = "`Connect to Voice Channel`"
+        botPerms = userPerms
+        specialCases = "You must currently be connected to a voice channel in order to use this command"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+                               botPerms=botPerms, specialCases=specialCases)
+
+    @help.command()
+    async def leave(self, ctx):
+        commandName = "Leave"
+        syntaxMessage = f"`{self.prefix(self, ctx)}leave`"
+        specialCases = "You must currently be connected to a voice channel in order to use this command"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, specialCases=specialCases)
 
     # =================================================
     # Utility
     # =================================================
 
+    @help.command(aliases=['p','checkprefix', 'prefix'])
+    async def _prefix(self, ctx):
+        commandName = "Prefix"
+        syntaxMessage = f"`{self.prefix(self, ctx)}prefix`"
+        exampleMessage = f"`{self.prefix(self, ctx)}prefix`"
+        exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, exampleMessage=exampleMessage,
+                               exampleOutput=exampleOutput)
+
+    @help.command(aliases=['sp', 'setprefix'])
+    async def setPrefix(self, ctx):
+        commandName = "Set Prefix"
+        syntaxMessage = f"`{self.prefix(self, ctx)}setprefix [serverprefix]`"
+        exampleMessage = f"`{self.prefix(self, ctx)}setprefix !m`"
+        exampleOutput = "`Server prefix set to: !m`"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, exampleMessage=exampleMessage,
+                               exampleOutput=exampleOutput)
 
 def setup(client):
     client.add_cog(Help(client))

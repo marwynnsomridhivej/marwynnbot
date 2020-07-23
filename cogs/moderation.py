@@ -37,7 +37,8 @@ class Moderation(commands.Cog):
     async def chatclean_error(self, ctx, error):
         if isinstance(error, MissingPermissions):
             clearError = discord.Embed(title="Insufficient User Permissions",
-                                       description=f'{ctx.author.mention}, you need the \"Manage Messages\" permission to clear messages from chat.',
+                                       description=f'{ctx.author.mention}, you need the \"Manage Messages\" '
+                                                   f'permission to clear messages from chat.',
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=clearError)
 
@@ -58,7 +59,8 @@ class Moderation(commands.Cog):
                 await ctx.channel.send(embed=kickEmbed)
         else:
             kickError = discord.Embed(title='Error',
-                                      description=f'{ctx.author.mention}, you are missing the required perms to kick users! Make sure you have the kick members permission!',
+                                      description=f'{ctx.author.mention}, you are missing the required perms to kick '
+                                                  f'users! Make sure you have the kick members permission!',
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=kickError)
 
@@ -66,12 +68,14 @@ class Moderation(commands.Cog):
     async def kick_error(self, ctx, error):
         if isinstance(error, MissingPermissions):
             kickError = discord.Embed(title='Insufficient User Permissions',
-                                      description=f'{ctx.author.mention}, you are missing the required perms to kick users! Make sure you have the kick members permission!',
+                                      description=f'{ctx.author.mention}, you are missing the required perms to kick '
+                                                  f'users! Make sure you have the kick members permission!',
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=kickError)
         if isinstance(error, BotMissingPermissions):
             kickError = discord.Embed(title='Insufficient Bot Permissions',
-                                      description="I require the \"Administrator\" permission to kick users! Please check my permissions.",
+                                      description="I require the \"Administrator\" permission to kick users! Please "
+                                                  "check my permissions.",
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=kickError)
 
@@ -93,12 +97,14 @@ class Moderation(commands.Cog):
     async def ban_error(self, ctx, error):
         if isinstance(error, MissingPermissions):
             banError = discord.Embed(title='Insufficient User Permissions',
-                                     description=f'{ctx.author.mention}, you are missing the required perms to ban users! Make sure you have the ban members permission!',
+                                     description=f'{ctx.author.mention}, you are missing the required perms to ban '
+                                                 f'users! Make sure you have the ban members permission!',
                                      color=discord.Color.dark_red())
             await ctx.channel.send(embed=banError)
         if isinstance(error, BotMissingPermissions):
             banError = discord.Embed(title='Insufficient Bot Permissions',
-                                     description="I require the \"Administrator\" permission to ban users! Please check my permissions.",
+                                     description="I require the \"Administrator\" permission to ban users! Please "
+                                                 "check my permissions.",
                                      color=discord.Color.dark_red())
             await ctx.channel.send(embed=banError)
 
@@ -141,12 +147,14 @@ class Moderation(commands.Cog):
     async def unban_error(self, ctx, error):
         if isinstance(error, MissingPermissions):
             unbanError = discord.Embed(title='Insufficient User Permissions',
-                                       description=f'{ctx.author.mention}, you are missing the required perms to unban users! Make sure you have the ban members permission!',
+                                       description=f'{ctx.author.mention}, you are missing the required perms to '
+                                                   f'unban users! Make sure you have the ban members permission!',
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=unbanError)
         if isinstance(error, BotMissingPermissions):
             unbanError = discord.Embed(title='Insufficient Bot Permissions',
-                                       description="I require the \"Administrator\" permission to unban users! Please check my permissions.",
+                                       description="I require the \"Administrator\" permission to unban users! Please "
+                                                   "check my permissions.",
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=unbanError)
 
