@@ -1,0 +1,51 @@
+import discord
+import json
+import os
+from discord.ext import commands
+from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
+
+
+class Utility(commands.Cog):
+
+    def __init__(self, client):
+        self.client = client
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print('Cog "utility" has been loaded')
+
+    @commands.command(aliases=['p', 'checkprefix'])
+    async def prefix(self, ctx):
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
+
+        serverPrefix = prefixes[str(ctx.guild.id)]
+        prefixEmbed = discord.Embed(title='Current Server Prefix',
+                                    description=f"The current server prefix is: {serverPrefix}",
+                                    color=discord.Color.blue())
+        await ctx.channel.send(embed=prefixEmbed)
+
+    @commands.command(aliases=['sp', 'setprefix'])
+    @commands.has_permissions(manage_guild=True)
+    async def setPrefix(self, ctx, prefix):
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
+            prefixes[str(ctx.guild.id)] = prefix
+            with open('prefixes.json', 'w') as f:
+                json.dump(prefixes, f, indent=4)
+        with ctx.channel.typing():
+            await ctx.message.delete()
+            await ctx.send('Server prefix set to: ' + prefix)
+
+    @setPrefix.error
+    async def setPrefix_error(self, ctx, error):
+        if isinstance(error, MissingPermissions):
+            setPrefixError = discord.Embed(title="Error - Insufficient User Permissions",
+                                           description=f"{ctx.author.mention}, you need the `Manage Server` "
+                                                       f"permission to change the server prefix!",
+                                           color=discord.Color.dark_red())
+            await ctx.channel.send(embed=setPrefixError)
+
+
+def setup(client):
+    client.add_cog(Utility(client))
