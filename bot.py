@@ -3,6 +3,7 @@ import os
 import discord
 import logging
 from discord.ext import commands
+import yaml
 
 
 # =================================================
@@ -113,5 +114,7 @@ async def reload(ctx, *, extension=None):
 # =================================================
 # Client Initialisation and Logon
 # =================================================
-
-client.run('NjIzMzE3NDUxODExMDYxNzYz.XxT6OQ.uBal2OIHS9dWa7gP9rTGeGl_52U')
+with open('./token.yaml', 'r') as f:
+    stream = yaml.full_load(f)
+    token = stream[str('token')]
+client.run(token)
