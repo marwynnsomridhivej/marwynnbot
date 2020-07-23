@@ -82,7 +82,7 @@ class Help(commands.Cog):
             debugCmds = "`ping`"
             funCmds = "`8ball` `choose` `say` `toad`"
             gamesCmds = "`Under Development`"
-            moderationCmds = "`chatclean` `kick` `ban` `unban`"
+            moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban`"
             musicCmds = "`join` `leave`"
             utilityCmds = "`prefix` `setprefix`"
 
@@ -173,6 +173,26 @@ class Help(commands.Cog):
                        "must also be specified."
         await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
                                userPerms=userPerms, botPerms=botPerms, specialCases=specialCases)
+
+    @help.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
+    async def mute(self, ctx):
+        commandName = "Mute"
+        syntaxMessage = f"`{self.prefix(self, ctx)}mute [user @mention] [optional reason]`"
+        aliases = "`silence` `stfu` `shut` `shush` `shh` `shhh` `shhhh` `quiet`"
+        userPerms = "`Manage Roles`"
+        botPerms = "Administrator"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
+                               userPerms=userPerms, botPerms=botPerms)
+
+    @help.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
+    async def unmute(self, ctx):
+        commandName = "Unmute"
+        syntaxMessage = f"`{self.prefix(self, ctx)}unmute [user @mention] [optional reason]`"
+        aliases = "`unsilence` `unstfu` `unshut` `unshush` `unshh` `unshhh` `unshhhh` `unquiet`"
+        userPerms = "`Manage Roles`"
+        botPerms = "Administrator"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
+                               userPerms=userPerms, botPerms=botPerms)
 
     @help.command()
     async def kick(self, ctx):
