@@ -183,6 +183,15 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
                                botPerms=botPerms)
 
+    @help.command()
+    async def ban(self, ctx):
+        commandName = "Ban"
+        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention] [optional reason]`"
+        userPerms = "`Ban Members`"
+        botPerms = f"`{userPerms}` or `Administrator`"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+                               botPerms=botPerms)
+
     # =================================================
     # Music
     # =================================================
