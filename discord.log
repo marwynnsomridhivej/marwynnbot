@@ -242,3 +242,8 @@
 2020-07-23 10:42:25,818:DEBUG:discord.gateway: For Shard ID None: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 40, 'op': 0, 'd': {'user': {'id': '408785106942164992'}, 'status': 'online', 'roles': ['723305924953112618', '732951309417709638', '734472956029173760'], 'premium_since': None, 'nick': 'OwOCringyAF', 'guild_id': '707981159748993084', 'game': {'type': 3, 'name': '589,360 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595515346983}, 'client_status': {'web': 'online'}, 'activities': [{'type': 3, 'name': '589,360 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595515346983}]}}
 2020-07-23 10:42:25,818:DEBUG:discord.client: Dispatching event socket_response
 2020-07-23 10:42:25,818:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 10:43:02,034:DEBUG:discord.gateway: Keeping websocket alive with sequence 40.
+2020-07-23 10:43:02,035:DEBUG:discord.client: Dispatching event socket_raw_send
+2020-07-23 10:43:02,215:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 10:43:02,215:DEBUG:discord.gateway: For Shard ID None: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
+2020-07-23 10:43:02,215:DEBUG:discord.client: Dispatching event socket_response
