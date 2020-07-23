@@ -48,19 +48,31 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, *, reason="Unspecified"):
-        mutedRole = discord.utils.get(member.guild.roles, name='Muted')
-        await member.add_roles(member, mutedRole)
+        await ctx.message.delete()
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+        if not role:
+            role = await ctx.guild.create_role(name="Muted",
+                                               reason="Use for mutes")
+            for channel in ctx.guild.channels:
+                await channel.set_permissions(role, send_messages=False)
+        if role in member.roles:
+            muteEmbed = discord.Embed(title=f"{member} Already Muted",
+                                      description=f"{member} has already been muted",
+                                      color=discord.Color.dark_red())
+            await ctx.channel.send(embed=muteEmbed)
+            return
+        await member.add_roles(role)
         path = './muted'
         files = os.listdir(path)
         name = random.choice(files)
         d = f'{path}//{name}'
         with open(d, 'rb') as f:
             picture = discord.File(f, d)
-            mutedEmbed = discord.Embed(title='Muted️',
-                                       description=reason,
+            mutedEmbed = discord.Embed(title=f'Muted {member}️',
+                                       description=f"**Reason:** {reason}",
                                        color=discord.Color.blue())
-            mutedEmbed.set_image(url=f"attachment://muted_{name}")
-            mutedEmbed.set_footer(text=f'{name}, emote name: {name[:-4]}')
+            mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
+            mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
         await ctx.channel.send(file=picture, embed=mutedEmbed)
 
     @mute.error
@@ -68,12 +80,50 @@ class Moderation(commands.Cog):
         if isinstance(error, MissingPermissions):
             muteError = discord.Embed(title="Insufficient User Permissions",
                                       description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
-                                                  "this command",
+                                                  " this command",
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=muteError)
         if isinstance(error, BotMissingPermissions):
             muteError = discord.Embed(title="Insufficient Bot Permissions",
                                       description="I need the Administrator permission to mute users",
+                                      color=discord.Color.dark_red())
+            await ctx.channel.send(embed=muteError)
+
+    @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
+    @commands.bot_has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
+    async def unmute(self, ctx, member: discord.Member, *, reason="Unspecified"):
+        await ctx.message.delete()
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+        if not role:
+            unmuteEmbed = discord.Embed(title="No Muted Role",
+                                        description="There is no muted role on this server.",
+                                        color=discord.Color.dark_red())
+            await ctx.channel.send(embed=unmuteEmbed)
+        if not (role in member.roles):
+            unmuteEmbed = discord.Embed(title="User Not Muted",
+                                        description="You cannot unmute an already unmuted user.",
+                                        color=discord.Color.dark_red())
+            await ctx.channel.send(embed=unmuteEmbed)
+        else:
+            await member.remove_roles(role)
+            unmuteEmbed = discord.Embed(title=f"Unmuted {member}",
+                                        description=f"**Reason:** {reason}",
+                                        color=discord.Color.blue())
+            unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
+            await ctx.channel.send(embed=unmuteEmbed)
+
+    @unmute.error
+    async def unmute_error(self, ctx, error):
+        if isinstance(error, MissingPermissions):
+            muteError = discord.Embed(title="Insufficient User Permissions",
+                                      description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
+                                                  " this command",
+                                      color=discord.Color.dark_red())
+            await ctx.channel.send(embed=muteError)
+        if isinstance(error, BotMissingPermissions):
+            muteError = discord.Embed(title="Insufficient Bot Permissions",
+                                      description="I need the Administrator permission to unmute users",
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=muteError)
 
