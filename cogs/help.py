@@ -308,7 +308,7 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}prefix`"
         exampleUsage = f"`{self.prefix(self, ctx)}prefix`"
         exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`\n\n`The global prefixes are:" \
-                        f"{self.client.user.mention} or mb `"
+                        f"`{self.client.user.mention} or `mb `"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
