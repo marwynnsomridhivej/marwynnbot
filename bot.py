@@ -27,6 +27,7 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
+
 # =================================================
 # Bot Startup (Logs ready message to console, sets status, removes default help message)
 # =================================================
@@ -57,6 +58,7 @@ async def on_guild_remove(guild):
 
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+
 
 # =================================================
 # Loading Cogs
@@ -106,6 +108,7 @@ async def reload(ctx, *, extension=None):
                                     description='You need to be the bot owner to use this command',
                                     color=discord.Color.dark_red())
         await ctx.channel.send(embed=reloadError, delete_after=5)
+
 
 # =================================================
 # Client Initialisation and Logon
