@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 
+
 class Games(commands.Cog):
 
     def __init__(self, client):
@@ -10,12 +11,10 @@ class Games(commands.Cog):
     async def on_ready(self):
         print('Cog "games" has been loaded')
 
-
     @commands.command()
     async def uno(self, ctx):
         await ctx.message.delete()
         return
-
 
 
 def setup(client):
