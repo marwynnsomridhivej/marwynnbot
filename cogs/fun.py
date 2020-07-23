@@ -16,6 +16,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['8ball', '8b'])
     async def _8ball(self, ctx, *, question):
+        await ctx.message.delete()
         file = open('responses', 'r')
         responses = file.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
@@ -23,10 +24,10 @@ class Fun(commands.Cog):
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
-        await ctx.message.delete()
 
     @commands.command()
     async def choose(self, ctx, *, choices):
+        await ctx.message.delete()
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)

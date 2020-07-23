@@ -14,20 +14,27 @@ class Utility(commands.Cog):
     async def on_ready(self):
         print('Cog "utility" has been loaded')
 
-    @commands.command(aliases=['p', 'checkprefix'])
+    @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
+        await ctx.message.delete()
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
         serverPrefix = prefixes[str(ctx.guild.id)]
         prefixEmbed = discord.Embed(title='Current Server Prefix',
-                                    description=f"The current server prefix is: {serverPrefix}",
                                     color=discord.Color.blue())
+        prefixEmbed.add_field(name="Server Prefix",
+                              value=f"The current server prefix is: `{serverPrefix}`",
+                              inline=False)
+        prefixEmbed.add_field(name="Global Prefixes",
+                              value=f"{self.client.user.mention} or `mb `",
+                              inline=False)
         await ctx.channel.send(embed=prefixEmbed)
 
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
+        await ctx.message.delete()
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             prefixes[str(ctx.guild.id)] = prefix

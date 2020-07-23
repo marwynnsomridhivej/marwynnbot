@@ -13,11 +13,11 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
+        await ctx.message.delete()
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
         await ctx.send(embed=ping)
-        await ctx.message.delete()
 
 
 def setup(client):

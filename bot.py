@@ -12,7 +12,7 @@ import sqlite3
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
-        return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}')(client, message)
+        return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}', 'mb ')(client, message)
 
 
 client = commands.Bot(command_prefix=get_prefix, help_command=None)
@@ -63,12 +63,14 @@ async def on_guild_remove(guild):
 # =================================================
 @client.command()
 async def load(ctx, extension):
+    await ctx.message.delete()
     client.load_extension(f'cogs.{extension}')
     print(f'Cog "{extension}" has been loaded')
 
 
 @client.command()
 async def unload(ctx, extension):
+    await ctx.message.delete()
     client.unload_extension(f'cogs.{extension}')
     print(f'Cog "{extension}" has been unloaded')
 
@@ -90,19 +92,19 @@ async def reload(ctx, *, extension=None):
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description="Successfully reloaded all cogs",
                                         color=discord.Color.blue())
-            await ctx.channel.send(embed=reloadEmbed)
+            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
         else:
             client.reload_extension(f'cogs.{extension}')
             print(f'Cog "{extension}" has been reloaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description=f"Successfully reloaded cog `{extension}`",
                                         color=discord.Color.blue())
-            await ctx.channel.send(embed=reloadEmbed)
+            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
     else:
         reloadError = discord.Embed(title='Insufficient User Permissions',
                                     description='You need to be the bot owner to use this command',
                                     color=discord.Color.dark_red())
-        await ctx.channel.send(embed=reloadError)
+        await ctx.channel.send(embed=reloadError, delete_after=5)
 # =================================================
 # Client Initialisation and Logon
 # =================================================
