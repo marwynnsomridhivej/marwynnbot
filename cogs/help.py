@@ -174,6 +174,15 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, aliases=aliases,
                                userPerms=userPerms, botPerms=botPerms, specialCases=specialCases)
 
+    @help.command()
+    async def kick(self, ctx):
+        commandName = "Kick"
+        syntaxMessage = f"`{self.prefix(self, ctx)}kick [user @mention] [optional reason]`"
+        userPerms = "`Kick Members`"
+        botPerms = f"`{userPerms}` or `Administrator`"
+        await self.syntaxEmbed(ctx, commandName=commandName, syntaxMessage=syntaxMessage, userPerms=userPerms,
+                               botPerms=botPerms)
+
     # =================================================
     # Music
     # =================================================
