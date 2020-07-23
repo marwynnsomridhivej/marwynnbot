@@ -110,9 +110,9 @@ class Help(commands.Cog):
     # Help
     # =================================================
 
-    @help.command(aliases=['h'])
-    async def help(self, ctx):
-        commandName = 'Help'
+    @help.command(aliases=['h', 'help'])
+    async def _help(self, ctx):
+        commandName = 'Command Specific'
         syntaxMessage = f"`{self.prefix(self, ctx)}help [commandName]`"
         exampleUsage = f"`{self.prefix(self, ctx)}help ping`"
         await self.syntaxEmbed(ctx,
@@ -302,12 +302,13 @@ class Help(commands.Cog):
     # Utility
     # =================================================
 
-    @help.command(aliases=['p', 'checkprefix', 'prefix'])
+    @help.command(aliases=['p', 'checkprefix', 'prefix', 'prefixes'])
     async def _prefix(self, ctx):
         commandName = "Prefix"
         syntaxMessage = f"`{self.prefix(self, ctx)}prefix`"
         exampleUsage = f"`{self.prefix(self, ctx)}prefix`"
-        exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`"
+        exampleOutput = f"`This server's prefix is: {self.prefix(self, ctx)}`\n\nThe global prefixes are:" \
+                        f"{self.client.user.mention} or mb `"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,

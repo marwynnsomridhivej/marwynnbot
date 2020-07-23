@@ -15,6 +15,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def join(self, ctx):
+        await ctx.message.delete()
         channel = ctx.author.voice.channel
         await channel.connect()
         joinEmbed = discord.Embed(title='Join Success!',
@@ -41,6 +42,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def leave(self, ctx):
+        await ctx.message.delete()
         channel = ctx.voice_client.channel
         await ctx.voice_client.disconnect()
         leaveEmbed = discord.Embed(title='Leave Success!',

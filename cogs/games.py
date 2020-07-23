@@ -13,6 +13,7 @@ class Games(commands.Cog):
 
     @commands.command()
     async def uno(self, ctx):
+        await ctx.message.delete()
         return
 
 

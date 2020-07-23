@@ -12,7 +12,7 @@ import sqlite3
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
-        return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}')(client, message)
+        return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}', 'mb ')(client, message)
 
 
 client = commands.Bot(command_prefix=get_prefix, help_command=None)
@@ -63,12 +63,14 @@ async def on_guild_remove(guild):
 # =================================================
 @client.command()
 async def load(ctx, extension):
+    await ctx.message.delete()
     client.load_extension(f'cogs.{extension}')
     print(f'Cog "{extension}" has been loaded')
 
 
 @client.command()
 async def unload(ctx, extension):
+    await ctx.message.delete()
     client.unload_extension(f'cogs.{extension}')
     print(f'Cog "{extension}" has been unloaded')
 
