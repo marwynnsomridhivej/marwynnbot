@@ -21,9 +21,9 @@ class Utility(commands.Cog):
             prefixes = json.load(f)
 
         serverPrefix = prefixes[str(ctx.guild.id)]
-        prefixEmbed = discord.Embed(title='Current Server Prefix',
+        prefixEmbed = discord.Embed(title='Prefixes',
                                     color=discord.Color.blue())
-        prefixEmbed.add_field(name="Server Prefix",
+        prefixEmbed.add_field(name="Current Server Prefix",
                               value=f"The current server prefix is: `{serverPrefix}`",
                               inline=False)
         prefixEmbed.add_field(name="Global Prefixes",
