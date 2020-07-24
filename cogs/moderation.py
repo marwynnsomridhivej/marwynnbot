@@ -2,6 +2,7 @@ import discord
 import os
 import random
 import json
+import typing
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
 
@@ -56,7 +57,7 @@ class Moderation(commands.Cog):
     @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(manage_roles=True)
-    async def mute(self, ctx, member: discord.Member, *, reason="Unspecified"):
+    async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         await ctx.message.delete()
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
@@ -64,26 +65,26 @@ class Moderation(commands.Cog):
                                                reason="Use for mutes")
             for channel in ctx.guild.channels:
                 await channel.set_permissions(role, send_messages=False)
-        if role in member.roles:
-            muteEmbed = discord.Embed(title=f"{member} Already Muted",
-                                      description=f"{member} has already been muted",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=muteEmbed)
-            self.incrCounter('mute')
-            return
-        await member.add_roles(role)
-        path = './muted'
-        files = os.listdir(path)
-        name = random.choice(files)
-        d = f'{path}//{name}'
-        with open(d, 'rb') as f:
-            picture = discord.File(f, d)
-            mutedEmbed = discord.Embed(title=f'Muted {member}️',
-                                       description=f"**Reason:** {reason}",
-                                       color=discord.Color.blue())
-            mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
-            mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
-        await ctx.channel.send(file=picture, embed=mutedEmbed)
+        for member in members:
+            if role in member.roles:
+                mutedEmbed = discord.Embed(title=f"{member} Already Muted",
+                                           description=f"{member} has already been muted",
+                                           color=discord.Color.dark_red())
+                await ctx.channel.send(embed=mutedEmbed)
+            else:
+                await member.add_roles(role)
+                path = './muted'
+                files = os.listdir(path)
+                name = random.choice(files)
+                d = f'{path}//{name}'
+                with open(d, 'rb') as f:
+                    picture = discord.File(f, d)
+                    mutedEmbed = discord.Embed(title=f'Muted {member}️',
+                                               description=f"**Reason:** {reason}",
+                                               color=discord.Color.blue())
+                    mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
+                    mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
+                await ctx.channel.send(file=picture, embed=mutedEmbed)
         self.incrCounter('mute')
 
     @mute.error
@@ -103,27 +104,28 @@ class Moderation(commands.Cog):
     @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(manage_roles=True)
-    async def unmute(self, ctx, member: discord.Member, *, reason="Unspecified"):
+    async def unmute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         await ctx.message.delete()
         role = discord.utils.get(ctx.guild.roles, name="Muted")
-        if not role:
-            unmuteEmbed = discord.Embed(title="No Muted Role",
-                                        description="There is no muted role on this server.",
-                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=unmuteEmbed)
-        if not (role in member.roles):
-            unmuteEmbed = discord.Embed(title="User Not Muted",
-                                        description="You cannot unmute an already unmuted user.",
-                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=unmuteEmbed)
-        else:
-            await member.remove_roles(role)
-            unmuteEmbed = discord.Embed(title=f"Unmuted {member}",
-                                        description=f"**Reason:** {reason}",
-                                        color=discord.Color.blue())
-            unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
-            await ctx.channel.send(embed=unmuteEmbed)
-            self.incrCounter('unmute')
+        for member in members:
+            if not role:
+                unmuteEmbed = discord.Embed(title="No Muted Role",
+                                            description="There is no muted role on this server.",
+                                            color=discord.Color.dark_red())
+                await ctx.channel.send(embed=unmuteEmbed, delete_after=5)
+            if not (role in member.roles):
+                unmuteEmbed = discord.Embed(title=f"User {member} Not Muted",
+                                            description="You cannot unmute an already unmuted user.",
+                                            color=discord.Color.dark_red())
+                await ctx.channel.send(embed=unmuteEmbed, delete_after=5)
+            else:
+                await member.remove_roles(role)
+                unmuteEmbed = discord.Embed(title=f"Unmuted {member}",
+                                            description=f"**Reason:** {reason}",
+                                            color=discord.Color.blue())
+                unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
+                await ctx.channel.send(embed=unmuteEmbed)
+                self.incrCounter('unmute')
 
     @unmute.error
     async def unmute_error(self, ctx, error):
@@ -142,18 +144,19 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx, member: discord.Member, *, reason='Unspecified'):
+    async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason='Unspecified'):
         await ctx.message.delete()
-        await member.kick(reason=reason)
-        kickEmbed = discord.Embed(title="Kicked User",
-                                  description=f'{member.mention} has been kicked from the server!',
-                                  color=discord.Color.blue())
-        kickEmbed.set_thumbnail(url=member.avatar_url)
-        kickEmbed.add_field(name='Reason:',
-                            value=reason,
-                            inline=False)
-        await ctx.channel.send(embed=kickEmbed)
-        self.incrCounter('kick')
+        for member in members:
+            await member.kick(reason=reason)
+            kickEmbed = discord.Embed(title="Kicked User",
+                                      description=f'{member.mention} has been kicked from the server!',
+                                      color=discord.Color.blue())
+            kickEmbed.set_thumbnail(url=member.avatar_url)
+            kickEmbed.add_field(name='Reason:',
+                                value=reason,
+                                inline=False)
+            await ctx.channel.send(embed=kickEmbed)
+            self.incrCounter('kick')
 
     @kick.error
     async def kick_error(self, ctx, error):
@@ -173,19 +176,25 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason='Unspecified'):
+    async def ban(self, ctx, members: commands.Greedy[discord.Member], days: typing.Optional[int] = 0, *,
+                  reason='Unspecified'):
         await ctx.message.delete()
-        self.incrCounter('ban')
-        await member.ban(reason=reason)
-        banEmbed = discord.Embed(title="Banned User",
-                                 description=f'{member.mention} has been banned from the server!',
-                                 color=discord.Color.blue())
-        banEmbed.set_thumbnail(url=member.avatar_url)
-        banEmbed.add_field(name='Reason:',
-                           value=reason,
-                           inline=False)
-        await ctx.channel.send(embed=banEmbed)
-        self.incrCounter('kick')
+        for member in members:
+            await member.ban(delete_message_days=days, reason=reason)
+            if days != 0:
+                dMessage = f"{member.mention} has been banned from the server! \n\nDeleted {member.mention}'s " \
+                           f"messages from the past {days} days "
+            else:
+                dMessage = f'{member.mention} has been banned from the server!'
+            banEmbed = discord.Embed(title="Banned User",
+                                     description=dMessage,
+                                     color=discord.Color.blue())
+            banEmbed.set_thumbnail(url=member.avatar_url)
+            banEmbed.add_field(name='Reason:',
+                               value=reason,
+                               inline=False)
+            await ctx.channel.send(embed=banEmbed)
+            self.incrCounter('ban')
 
     @ban.error
     async def ban_error(self, ctx, error):
@@ -205,40 +214,41 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(ban_members=True)
-    async def unban(self, ctx, *, user=None):
+    async def unban(self, ctx, users: commands.Greedy[discord.User]):
         await ctx.message.delete()
 
-        try:
-            user = await commands.converter.UserConverter().convert(ctx, user)
-        except:
-            error = discord.Embed(title='Error',
-                                  description='User could not be found!',
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=error)
-            return
+        for user in users:
+            try:
+                user = await commands.converter.UserConverter().convert(ctx, user)
 
-        bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
-        if user in bans:
-            unban = discord.Embed(title='Unbanned',
-                                  color=discord.Color.blue())
-            unban.set_thumbnail(url=user.avatar_url)
-            unban.add_field(name='User:',
-                            value=user.mention)
-            unban.add_field(name='Moderator:',
-                            value=ctx.author.mention)
-            await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
-            await ctx.channel.send(embed=unban)
-            self.incrCounter('unban')
-        else:
-            notBanned = discord.Embed(title="User Not Banned!",
-                                      description='For now :)',
+            except:
+                error = discord.Embed(title='Error',
+                                      description='User could not be found!',
+                                      color=discord.Color.dark_red())
+                await ctx.channel.send(embed=error, delete_after=5)
+
+            bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
+            if user in bans:
+                unban = discord.Embed(title='Unbanned',
                                       color=discord.Color.blue())
-            notBanned.set_thumbnail(url=user.avatar_url)
-            notBanned.add_field(name='Moderator',
-                                value=ctx.author.mention,
-                                inline=False)
-            await ctx.channel.send(embed=notBanned)
-            self.incrCounter('unban')
+                unban.set_thumbnail(url=user.avatar_url)
+                unban.add_field(name='User:',
+                                value=user.mention)
+                unban.add_field(name='Moderator:',
+                                value=ctx.author.mention)
+                await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
+                await ctx.channel.send(embed=unban)
+                self.incrCounter('unban')
+            else:
+                notBanned = discord.Embed(title="User Not Banned!",
+                                          description='For now :)',
+                                          color=discord.Color.blue())
+                notBanned.set_thumbnail(url=user.avatar_url)
+                notBanned.add_field(name='Moderator',
+                                    value=ctx.author.mention,
+                                    inline=False)
+                await ctx.channel.send(embed=notBanned, delete_after=5)
+                self.incrCounter('unban')
 
     @unban.error
     async def unban_error(self, ctx, error):

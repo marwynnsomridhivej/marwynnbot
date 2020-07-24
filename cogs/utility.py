@@ -89,6 +89,21 @@ class Utility(commands.Cog):
                                            color=discord.Color.dark_red())
             await ctx.channel.send(embed=setPrefixError)
 
+    @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
+    @commands.bot_has_permissions(administrator=True)
+    @commands.has_permissions(manage_channels=True)
+    async def serverStats(self, ctx):
+        await ctx.message.delete()
+        client = self.client
+        guild = client.get_guild(ctx.guild.id)
+        category = await guild.create_category(name="Server Stats")
+        await category.edit(position=0)
+
+    @commands.command(aliases=['tz'])
+    @commands.bot_has_permissions(administrator=True)
+    async def timezone(self, ctx):
+        return
+
 
 def setup(client):
     client.add_cog(Utility(client))

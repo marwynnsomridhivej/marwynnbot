@@ -65,18 +65,30 @@ async def on_guild_remove(guild):
 # Loading Cogs
 # =================================================
 
-@client.command()
+@client.command(aliases=['l', 'ld'])
 async def load(ctx, extension):
     await ctx.message.delete()
-    client.load_extension(f'cogs.{extension}')
-    print(f'Cog "{extension}" has been loaded')
+    if await client.is_owner(ctx.author):
+        client.load_extension(f'cogs.{extension}')
+        print(f'Cog "{extension}" has been loaded')
+    else:
+        loadError = discord.Embed(title='Insufficient User Permissions',
+                                  description='You need to be the bot owner to use this command',
+                                  color=discord.Color.dark_red())
+        await ctx.channel.send(embed=loadError, delete_after=5)
 
 
-@client.command()
+@client.command(aliases=['ul', 'uld'])
 async def unload(ctx, extension):
     await ctx.message.delete()
-    client.unload_extension(f'cogs.{extension}')
-    print(f'Cog "{extension}" has been unloaded')
+    if await client.is_owner(ctx.author):
+        client.unload_extension(f'cogs.{extension}')
+        print(f'Cog "{extension}" has been unloaded')
+    else:
+        unloadError = discord.Embed(title='Insufficient User Permissions',
+                                    description='You need to be the bot owner to use this command',
+                                    color=discord.Color.dark_red())
+        await ctx.channel.send(embed=unloadError, delete_after=5)
 
 
 for filename in os.listdir('./cogs'):
@@ -84,7 +96,7 @@ for filename in os.listdir('./cogs'):
         client.load_extension(f'cogs.{filename[:-3]}')
 
 
-@client.command()
+@client.command(aliases=['r', 'rl'])
 async def reload(ctx, *, extension=None):
     await ctx.message.delete()
     if await client.is_owner(ctx.author):
@@ -109,6 +121,10 @@ async def reload(ctx, *, extension=None):
                                     description='You need to be the bot owner to use this command',
                                     color=discord.Color.dark_red())
         await ctx.channel.send(embed=reloadError, delete_after=5)
+
+# =================================================
+# Client Initialisation and Logon
+# =================================================
 
 
 # =================================================

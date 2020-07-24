@@ -229,7 +229,7 @@ class Help(commands.Cog):
     @help.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
     async def mute(self, ctx):
         commandName = "Mute"
-        syntaxMessage = f"`{self.prefix(self, ctx)}mute [user @mention] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}mute [user @mentions] [optional reason]`"
         aliases = "`silence` `stfu` `shut` `shush` `shh` `shhh` `shhhh` `quiet`"
         userPerms = "`Manage Roles`"
         botPerms = "Administrator"
@@ -243,7 +243,7 @@ class Help(commands.Cog):
     @help.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
     async def unmute(self, ctx):
         commandName = "Unmute"
-        syntaxMessage = f"`{self.prefix(self, ctx)}unmute [user @mention] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}unmute [user @mentions] [optional reason]`"
         aliases = "`unsilence` `unstfu` `unshut` `unshush` `unshh` `unshhh` `unshhhh` `unquiet`"
         userPerms = "`Manage Roles`"
         botPerms = "Administrator"
@@ -257,7 +257,7 @@ class Help(commands.Cog):
     @help.command()
     async def kick(self, ctx):
         commandName = "Kick"
-        syntaxMessage = f"`{self.prefix(self, ctx)}kick [user @mention] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}kick [user @mentions] [optional reason]`"
         userPerms = "`Kick Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
         await self.syntaxEmbed(ctx,
@@ -269,7 +269,7 @@ class Help(commands.Cog):
     @help.command()
     async def ban(self, ctx):
         commandName = "Ban"
-        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mentions] [optional reason]`"
         userPerms = "`Ban Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
         await self.syntaxEmbed(ctx,
@@ -281,7 +281,7 @@ class Help(commands.Cog):
     @help.command()
     async def unban(self, ctx):
         commandName = "Unban"
-        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mention or user + discriminator] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mentions or users + discriminators] [optional reason]`"
         userPerms = "`Unban Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
         await self.syntaxEmbed(ctx,
