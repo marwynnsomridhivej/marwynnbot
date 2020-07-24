@@ -26,7 +26,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
         await ctx.message.delete()
-        self.incrCounter('chatclean')
 
         def from_user(message):
             return member is None or message.author == member
@@ -43,6 +42,7 @@ class Moderation(commands.Cog):
         clearEmbed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/734962101432615006/734962158290468944/eraser.png")
         await ctx.channel.send(embed=clearEmbed, delete_after=5)
+        self.incrCounter('chatclean')
 
     @chatclean.error
     async def chatclean_error(self, ctx, error):
@@ -58,7 +58,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, *, reason="Unspecified"):
         await ctx.message.delete()
-        self.incrCounter('mute')
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             role = await ctx.guild.create_role(name="Muted",
@@ -70,6 +69,7 @@ class Moderation(commands.Cog):
                                       description=f"{member} has already been muted",
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=muteEmbed)
+            self.incrCounter('mute')
             return
         await member.add_roles(role)
         path = './muted'
@@ -84,6 +84,7 @@ class Moderation(commands.Cog):
             mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
             mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
         await ctx.channel.send(file=picture, embed=mutedEmbed)
+        self.incrCounter('mute')
 
     @mute.error
     async def mute_error(self, ctx, error):
@@ -104,7 +105,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, member: discord.Member, *, reason="Unspecified"):
         await ctx.message.delete()
-        self.incrCounter('unmute')
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             unmuteEmbed = discord.Embed(title="No Muted Role",
@@ -123,6 +123,7 @@ class Moderation(commands.Cog):
                                         color=discord.Color.blue())
             unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
             await ctx.channel.send(embed=unmuteEmbed)
+            self.incrCounter('unmute')
 
     @unmute.error
     async def unmute_error(self, ctx, error):
@@ -143,23 +144,16 @@ class Moderation(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason='Unspecified'):
         await ctx.message.delete()
+        await member.kick(reason=reason)
+        kickEmbed = discord.Embed(title="Kicked User",
+                                  description=f'{member.mention} has been kicked from the server!',
+                                  color=discord.Color.blue())
+        kickEmbed.set_thumbnail(url=member.avatar_url)
+        kickEmbed.add_field(name='Reason:',
+                            value=reason,
+                            inline=False)
+        await ctx.channel.send(embed=kickEmbed)
         self.incrCounter('kick')
-        perms = ctx.author.permissions_in(ctx.channel)
-        if perms.kick_members:
-            with ctx.channel.typing():
-                await member.kick(reason=reason)
-                kickEmbed = discord.Embed(title="Kicked User",
-                                          description=f'{member.mention} has been kicked from the server!',
-                                          color=discord.Color.blue())
-                kickEmbed.set_thumbnail(url=member.avatar_url)
-                kickEmbed.add_field(name='Reason:', value=reason, inline=False)
-                await ctx.channel.send(embed=kickEmbed)
-        else:
-            kickError = discord.Embed(title='Error',
-                                      description=f'{ctx.author.mention}, you are missing the required perms to kick '
-                                                  f'users! Make sure you have the kick members permission!',
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=kickError)
 
     @kick.error
     async def kick_error(self, ctx, error):
@@ -182,14 +176,16 @@ class Moderation(commands.Cog):
     async def ban(self, ctx, member: discord.Member, *, reason='Unspecified'):
         await ctx.message.delete()
         self.incrCounter('ban')
-        with ctx.channel.typing():
-            await member.ban(reason=reason)
-            banEmbed = discord.Embed(title="Banned User",
-                                     description=f'{member.mention} has been banned from the server!',
-                                     color=discord.Color.blue())
-            banEmbed.set_thumbnail(url=member.avatar_url)
-            banEmbed.add_field(name='Reason:', value=reason, inline=False)
-            await ctx.channel.send(embed=banEmbed)
+        await member.ban(reason=reason)
+        banEmbed = discord.Embed(title="Banned User",
+                                 description=f'{member.mention} has been banned from the server!',
+                                 color=discord.Color.blue())
+        banEmbed.set_thumbnail(url=member.avatar_url)
+        banEmbed.add_field(name='Reason:',
+                           value=reason,
+                           inline=False)
+        await ctx.channel.send(embed=banEmbed)
+        self.incrCounter('kick')
 
     @ban.error
     async def ban_error(self, ctx, error):
@@ -211,7 +207,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, *, user=None):
         await ctx.message.delete()
-        self.incrCounter('unban')
 
         try:
             user = await commands.converter.UserConverter().convert(ctx, user)
@@ -233,6 +228,7 @@ class Moderation(commands.Cog):
                             value=ctx.author.mention)
             await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
             await ctx.channel.send(embed=unban)
+            self.incrCounter('unban')
         else:
             notBanned = discord.Embed(title="User Not Banned!",
                                       description='For now :)',
@@ -242,6 +238,7 @@ class Moderation(commands.Cog):
                                 value=ctx.author.mention,
                                 inline=False)
             await ctx.channel.send(embed=notBanned)
+            self.incrCounter('unban')
 
     @unban.error
     async def unban_error(self, ctx, error):

@@ -16,7 +16,7 @@ async def get_prefix(client, message):
         return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}', 'mb ')(client, message)
 
 
-client = commands.Bot(command_prefix=get_prefix, help_command=None)
+client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1)
 
 # =================================================
 # Logger

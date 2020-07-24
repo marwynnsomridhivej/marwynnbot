@@ -24,7 +24,6 @@ class Utility(commands.Cog):
     @commands.command(aliases=['used', 'usedcount'])
     async def counter(self, ctx, commandName):
         await ctx.message.delete()
-        self.incrCounter('counter')
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             serverPrefix = prefixes[str(ctx.guild.id)]
@@ -36,11 +35,11 @@ class Utility(commands.Cog):
                                                  "times",
                                      color=discord.Color.blue())
         await ctx.channel.send(embed=counterEmbed)
+        self.incrCounter('counter')
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('prefix')
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
@@ -54,12 +53,12 @@ class Utility(commands.Cog):
                               value=f"{self.client.user.mention} or `mb `",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
+        self.incrCounter('prefix')
 
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
         await ctx.message.delete()
-        self.incrCounter('setPrefix')
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             if prefix != 'reset':
@@ -79,6 +78,7 @@ class Utility(commands.Cog):
                                         description=f"Server prefix has been reset to `m!`",
                                         color=discord.Color.blue())
         await ctx.channel.send(embed=prefixEmbed)
+        self.incrCounter('setPrefix')
 
     @setPrefix.error
     async def setPrefix_error(self, ctx, error):

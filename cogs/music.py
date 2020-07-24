@@ -24,13 +24,13 @@ class Music(commands.Cog):
     @commands.command()
     async def join(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('join')
         channel = ctx.author.voice.channel
         await channel.connect()
         joinEmbed = discord.Embed(title='Join Success!',
                                   description=f'Successfully joined the voice channel `{channel}`',
                                   color=discord.Color.blue())
         await ctx.channel.send(embed=joinEmbed)
+        self.incrCounter('join')
 
     @join.error
     async def join_error(self, ctx, error):
@@ -52,13 +52,13 @@ class Music(commands.Cog):
     @commands.command()
     async def leave(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('leave')
         channel = ctx.voice_client.channel
         await ctx.voice_client.disconnect()
         leaveEmbed = discord.Embed(title='Leave Success!',
                                    description=f'Successfully left the voice channel `{channel}`',
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=leaveEmbed)
+        self.incrCounter('leave')
 
     @leave.error
     async def leave_error(self, ctx, error):

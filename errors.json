@@ -1,13 +1,12 @@
 {
-    "help": 7,
+    "help": 0,
     "ping": 0,
-    "shard": 15,
-    "8ball": 1,
+    "shard": 0,
+    "8ball": 0,
     "choose": 0,
     "say": 0,
-    "toad": 1,
-    "uno": 19,
-    "chatclean": 5,
+    "toad": 0,
+    "chatclean": 0,
     "mute": 0,
     "unmute": 0,
     "kick": 0,
@@ -17,5 +16,5 @@
     "leave": 0,
     "prefix": 0,
     "setPrefix": 0,
-    "counter": 7
+    "counter": 0
 }

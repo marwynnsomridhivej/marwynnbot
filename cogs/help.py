@@ -87,7 +87,7 @@ class Help(commands.Cog):
             helpEmbed.add_field(name="Help",
                                 value="`help`")
 
-            debugCmds = "`ping`"
+            debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `say` `toad`"
             gamesCmds = "`Under Development`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban`"
@@ -139,6 +139,16 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage)
+
+    @help.command()
+    async def shard(self, ctx):
+        commandName = "Shard"
+        syntaxMessage = f"`{self.prefix(self, ctx)}shard [optional \"count\"]`"
+        specialCases = "If the optional argument is \"count\", it will display the total number of shards"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
 
     # =================================================
     # Fun
