@@ -5146,3 +5146,47 @@
 2020-07-23 22:45:33,699:DEBUG:discord.client: Dispatching event socket_raw_receive
 2020-07-23 22:45:33,699:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
 2020-07-23 22:45:33,699:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:45:38,118:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:45:38,118:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 984, 'op': 0, 'd': {'user': {'id': '169678500893163520'}, 'status': 'online', 'roles': ['730835871137529896'], 'premium_since': None, 'nick': None, 'guild_id': '674802504583872530', 'game': {'type': 0, 'name': 'Fleentstones?!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558738388}, 'client_status': {'web': 'online'}, 'activities': [{'type': 0, 'name': 'Fleentstones?!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558738388}]}}
+2020-07-23 22:45:38,119:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:45:38,119:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:46:14,916:DEBUG:discord.gateway: Keeping websocket alive with sequence 984.
+2020-07-23 22:46:14,916:DEBUG:discord.client: Dispatching event socket_raw_send
+2020-07-23 22:46:14,957:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:14,957:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
+2020-07-23 22:46:14,957:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:46:18,814:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:18,814:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 985, 'op': 0, 'd': {'user': {'id': '249913860692246532'}, 'status': 'offline', 'roles': ['733409532402860072', '732949785505562645', '732951309417709638'], 'premium_since': None, 'nick': None, 'guild_id': '707981159748993084', 'game': None, 'client_status': {}, 'activities': []}}
+2020-07-23 22:46:18,815:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:46:18,815:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:46:37,570:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:37,571:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 986, 'op': 0, 'd': {'user': {'id': '712768736523976764'}, 'status': 'offline', 'roles': ['732951309417709638', '733409532402860072', '733413175927767051', '732949785505562645'], 'premium_since': None, 'nick': None, 'guild_id': '707981159748993084', 'game': None, 'client_status': {}, 'activities': []}}
+2020-07-23 22:46:37,571:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:46:37,571:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:46:41,438:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:41,438:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 987, 'op': 0, 'd': {'user': {'id': '408785106942164992'}, 'status': 'online', 'roles': ['733565057358889030'], 'premium_since': None, 'nick': None, 'guild_id': '674802504583872530', 'game': {'type': 3, 'name': '591,024 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558801486}, 'client_status': {'web': 'online'}, 'activities': [{'type': 3, 'name': '591,024 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558801486}]}}
+2020-07-23 22:46:41,438:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:46:41,438:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:46:50,126:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:50,126:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 988, 'op': 0, 'd': {'user': {'id': '302465643595169794'}, 'status': 'online', 'roles': ['727629721499598918', '731347067510980678'], 'premium_since': None, 'nick': 'Edward', 'guild_id': '674802504583872530', 'game': None, 'client_status': {'desktop': 'online'}, 'activities': []}}
+2020-07-23 22:46:50,126:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:46:50,126:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:46:56,172:DEBUG:discord.gateway: Keeping websocket alive with sequence 988.
+2020-07-23 22:46:56,172:DEBUG:discord.client: Dispatching event socket_raw_send
+2020-07-23 22:46:56,228:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:46:56,229:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
+2020-07-23 22:46:56,229:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:47:27,629:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:47:27,629:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': 'PRESENCE_UPDATE', 's': 989, 'op': 0, 'd': {'user': {'id': '408785106942164992'}, 'status': 'online', 'roles': ['723305924953112618', '732951309417709638', '734472956029173760'], 'premium_since': None, 'nick': 'OwOCringyAF', 'guild_id': '707981159748993084', 'game': {'type': 3, 'name': '591,026 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558848014}, 'client_status': {'web': 'online'}, 'activities': [{'type': 3, 'name': '591,026 servers!', 'id': 'ec0b28a579ecb4bd', 'created_at': 1595558848014}]}}
+2020-07-23 22:47:27,629:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:47:27,629:DEBUG:discord.client: Dispatching event member_update
+2020-07-23 22:47:37,435:DEBUG:discord.gateway: Keeping websocket alive with sequence 989.
+2020-07-23 22:47:37,435:DEBUG:discord.client: Dispatching event socket_raw_send
+2020-07-23 22:47:37,478:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:47:37,478:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
+2020-07-23 22:47:37,478:DEBUG:discord.client: Dispatching event socket_response
+2020-07-23 22:48:18,698:DEBUG:discord.gateway: Keeping websocket alive with sequence 989.
+2020-07-23 22:48:18,698:DEBUG:discord.client: Dispatching event socket_raw_send
+2020-07-23 22:48:18,753:DEBUG:discord.client: Dispatching event socket_raw_receive
+2020-07-23 22:48:18,753:DEBUG:discord.gateway: For Shard ID 0: WebSocket Event: {'t': None, 's': None, 'op': 11, 'd': None}
+2020-07-23 22:48:18,753:DEBUG:discord.client: Dispatching event socket_response
