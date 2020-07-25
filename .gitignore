@@ -1,1 +1,5 @@
 .idea
+token.yaml
+prefixes.json
+counters.json
+errors.json
