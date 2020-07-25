@@ -1,5 +1,5 @@
 {
-    "help": 9,
+    "help": 14,
     "ping": 2,
     "shard": 15,
     "8ball": 6,
@@ -7,15 +7,17 @@
     "say": 0,
     "toad": 169,
     "uno": 19,
-    "chatclean": 21,
+    "chatclean": 22,
     "mute": 3,
     "unmute": 6,
     "kick": 0,
-    "ban": 1,
-    "unban": 6,
+    "ban": 2,
+    "unban": 7,
     "join": 0,
     "leave": 0,
     "prefix": 0,
     "setPrefix": 0,
+    "serverStats": 0,
+    "timezone": 0,
     "counter": 23
 }

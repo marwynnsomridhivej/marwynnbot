@@ -105,46 +105,110 @@ class Utility(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def serverStats(self, ctx):
         await ctx.message.delete()
+
+        async def serverstatsupdate(channel: discord.VoiceChannel, name):
+            await channel.edit(name=name)
+
         client = self.client
         guild = client.get_guild(ctx.guild.id)
+
         totalMembers = guild.member_count
+        totalMembersName = f"👥Members: {totalMembers}"
+
         totalChannels = int(len(guild.channels))
+        totalChannelsName = f"📖Total Channels: {totalChannels}"
+
         totalText = int(len(guild.text_channels))
+        totalTextName = f"📑Text Channels: {totalText}"
+
         totalVoice = int(len(guild.voice_channels))
+        totalVoiceName = f"🎧Voice Channels: {totalVoice}"
+
         totalRole = int(len(guild.roles))
+        totalRoleName = f"📜Roles: {totalRole}"
+
         totalEmoji = int(len(guild.emojis))
+        totalEmojiName = f"😄Custom Emotes: {totalEmoji}"
+
+        names = [totalMembersName, totalChannelsName, totalTextName, totalVoiceName, totalRoleName, totalEmojiName]
+
         overwrite = discord.PermissionOverwrite()
         overwrite.connect = False
+
         category = await guild.create_category(name="📊Server Stats📊")
+
         await category.set_permissions(guild.default_role, overwrite=overwrite)
         await category.edit(position=0)
-        totalMembersVC = await category.create_voice_channel(name=f"👥Members: {totalMembers}",
-                                                             position=1,
-                                                             sync_permission=True)
-        totalChannelsVC = await category.create_voice_channel(name=f"📖Total Channels: {totalChannels}",
-                                                              position=2,
-                                                              sync_permission=True)
-        totalTextVC = await category.create_voice_channel(name=f"📑Text Channels: {totalText}",
-                                                          position=3,
-                                                          sync_permission=True)
-        totalVoiceVC = await category.create_voice_channel(name=f"🎧Voice Channels: {totalVoice}",
-                                                           position=4,
-                                                           sync_permission=True)
-        totalRoleVC = await category.create_voice_channel(name=f"📜Roles: {totalRole}",
-                                                          position=5,
-                                                          sync_permission=True)
-        totalEmojiVC = await category.create_voice_channel(name=f"😄Custom Emotes: {totalEmoji}",
-                                                           position=6,
-                                                           sync_permission=True)
+        posIncr = 0
+        for name in names:
+            posIncr += 1
+            await category.create_voice_channel(name=name,
+                                                position=posIncr,
+                                                sync_permission=True)
+        self.incrCounter('serverStats')
 
-    @tasks.loop(minutes=10)
-    async def timer(self, ctx):
-
+    @serverStats.error
+    async def serverStats_error(self, ctx, error):
+        if isinstance(error, MissingPermissions):
+            name = "Insufficient User Permissions"
+            description = f"{ctx.author.mention}, you need the Administrator permission to use this command"
+        if isinstance(error, BotMissingPermissions):
+            name = "Insufficient Bot Permissions"
+            description = "I need the Administrator permission to use this command"
+        errorEmbed = discord.Embed(title=name,
+                                   description=description,
+                                   color=discord.Color.dark_red())
+        await ctx.channel.send(embed=errorEmbed, delete_after=5)
 
     @commands.command(aliases=['tz'])
     @commands.bot_has_permissions(administrator=True)
-    async def timezone(self, ctx):
-        return
+    @commands.has_permissions(change_nickname=True)
+    async def timezone(self, ctx, name=None):
+        if name is not None:
+            if "GMT" in name:
+                nick = f"{ctx.author.display_name} [{name}]"
+                await ctx.author.edit(nick=nick)
+                title = "Timezone Update Success"
+                description = f"{ctx.author.mention}'s timezone has been added to their nickname"
+                color = discord.Color.blue()
+                self.incrCounter('timezone')
+            else:
+                title = "Invalid Timezone Format"
+                description = "Please put your timezone in `GMT+` or `GMT-` format"
+                color = discord.Color.dark_red()
+        else:
+            title = "Invalid Timezone Format"
+            description = "Please put your timezone in `GMT+` or `GMT-` format"
+            color = discord.Color.dark_red()
+        gmt = discord.Embed(title=title,
+                            description=description,
+                            color=color)
+        await ctx.channel.send(embed=gmt, delete_after=10)
+
+    @timezone.error
+    async def timezone_error(self, ctx, error):
+        async def sendEmbed(ctx, title, description):
+            errorEmbed = discord.Embed(title=title,
+                                       description=description,
+                                       color=discord.Color.dark_red())
+            await ctx.channel.send(embed=errorEmbed, delete_after=5)
+
+        if isinstance(error, MissingPermissions):
+            title = "Insufficient User Permissions"
+            description = "I need the Change Nickname permission to use this command"
+            await sendEmbed(ctx, title, description)
+        if isinstance(error, BotMissingPermissions):
+            title = "Insufficient Bot Permissions"
+            description = "I need the Administrator permission to use this command"
+            await sendEmbed(ctx, title, description)
+        if isinstance(error, discord.Permissions):
+            title = "403 Permissions Error"
+            description = "I can only change the timezone of a user that is a lower role than I am. "\
+                          "Please place my role higher than the highest user role assigned (or just put mine at the " \
+                          "top) "
+            await sendEmbed(ctx, title, description)
+
+
 
 
 def setup(client):

@@ -92,7 +92,7 @@ class Help(commands.Cog):
             gamesCmds = "`Under Development`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban`"
             musicCmds = "`join` `leave`"
-            utilityCmds = "`prefix` `setprefix`"
+            utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
 
             helpEmbed.add_field(name="Debug",
                                 value=debugCmds,
@@ -269,7 +269,7 @@ class Help(commands.Cog):
     @help.command()
     async def ban(self, ctx):
         commandName = "Ban"
-        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mentions] [optional reason]`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}ban [user @mentions] [optional deleteMessageDays] [optional reason]`"
         userPerms = "`Ban Members`"
         botPerms = f"`{userPerms}` or `Administrator`"
         await self.syntaxEmbed(ctx,
@@ -364,6 +364,38 @@ class Help(commands.Cog):
                                exampleOutput=exampleOutput,
                                aliases=aliases,
                                specialCases=specialCases)
+
+    @help.command(aliases=['ss', 'serverstats', 'serverstatistics'])
+    async def serverStats(self, ctx):
+        commandName = "Server Stats"
+        syntaxMessage = f"`{self.prefix(self, ctx)}serverstats`"
+        aliases = "`ss` `serverstatistics`"
+        userPerms = '`Administrator`'
+        botPerms = userPerms
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               botPerms=botPerms)
+
+    @help.command(aliases=['tz'])
+    async def timezone(self, ctx):
+        commandName = "Timezone"
+        syntaxMessage = f"`{self.prefix(self, ctx)}timezone [GMT time]`"
+        exampleUsage = f"`{self.prefix(self, ctx)}timezone GMT+4`"
+        exampleOutput = f"{ctx.author.mention}'s nickname will be changed to: {ctx.author.display_name} [GMT+4]"
+        aliases = "`tz`"
+        userPerms = '`Change Nickname`'
+        botPerms = "`Administrator"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
+                               exampleOutput=exampleOutput,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               botPerms=botPerms)
 
 
 def setup(client):
