@@ -1,6 +1,8 @@
 .idea
+cogs/__pycache__
 token.yaml
 prefixes.json
 counters.json
 errors.json
 discord.log
+venv

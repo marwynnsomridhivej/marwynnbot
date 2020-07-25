@@ -27,7 +27,10 @@ class Help(commands.Cog):
             json.dump(values, f, indent=4)
 
     async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None, aliases=None,
-                          userPerms=None, botPerms=None, specialCases=None, thumbnailURL=None):
+                          userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
+                                                                                         "/full/71-716621_transparent"
+                                                                                         "-clip-art-open-book-frame"
+                                                                                         "-line-art.png"):
         embed = discord.Embed(title=f"{commandName} Help",
                               color=discord.Color.blue())
         embed.add_field(name="Command Syntax",
@@ -73,10 +76,9 @@ class Help(commands.Cog):
                                                   "specific command")
             helpEmbed.set_image(
                 url="https://cdn.discordapp.com/avatars/623317451811061763/9bb63c734178694e8779aa102cb81062.png"
-                    "?size=256")
-            helpEmbed.set_thumbnail(
-                url="https://cdn.discordapp.com/avatars/623317451811061763/9bb63c734178694e8779aa102cb81062.png"
                     "?size=128")
+            helpEmbed.set_thumbnail(
+                url="https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png")
             helpEmbed.set_author(name="MarwynnBot",
                                  url="https://discord.gg/fYBTdUp",
                                  icon_url="https://cdn.discordapp.com/avatars/623317451811061763"
