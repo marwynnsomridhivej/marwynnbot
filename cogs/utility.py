@@ -161,14 +161,14 @@ class Utility(commands.Cog):
         totalMembers = guild.member_count
         totalMembersName = f"👥Members: {totalMembers}"
 
-        totalChannels = int(len(guild.channels))
-        totalChannelsName = f"📖Total Channels: {totalChannels}"
-
         totalText = int(len(guild.text_channels))
         totalTextName = f"📑Text Channels: {totalText}"
 
         totalVoice = int(len(guild.voice_channels))
         totalVoiceName = f"🎧Voice Channels: {totalVoice}"
+
+        totalChannels = totalText + totalVoice
+        totalChannelsName = f"📖Total Channels: {totalChannels}"
 
         totalRole = int(len(guild.roles))
         totalRoleName = f"📜Roles: {totalRole}"
@@ -198,7 +198,7 @@ class Utility(commands.Cog):
         await category.set_permissions(guild.default_role, overwrite=overwrite)
         await category.edit(position=0)
 
-        statsEmbed = discord.Embed(title="Successfully Create Server Stats Channels",
+        statsEmbed = discord.Embed(title="Successfully Created Server Stats Channels",
                                    description="They will be at the top of your discord server",
                                    color=discord.Color.blue())
 
