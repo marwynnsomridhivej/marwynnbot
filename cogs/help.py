@@ -368,16 +368,20 @@ class Help(commands.Cog):
     @help.command(aliases=['ss', 'serverstats', 'serverstatistics'])
     async def serverStats(self, ctx):
         commandName = "Server Stats"
-        syntaxMessage = f"`{self.prefix(self, ctx)}serverstats`"
+        syntaxMessage = f"`{self.prefix(self, ctx)}serverstats [optional \"reset\"]`"
         aliases = "`ss` `serverstatistics`"
         userPerms = '`Administrator`'
         botPerms = userPerms
+        specialCases = "If the `reset` argument is present, it will delete the currently active server stats channels" \
+                       " and category\n\nYou will not be able to create another server stats panel if one"\
+                       " already exists"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                aliases=aliases,
                                userPerms=userPerms,
-                               botPerms=botPerms)
+                               botPerms=botPerms,
+                               specialCases=specialCases)
 
     @help.command(aliases=['tz'])
     async def timezone(self, ctx):
