@@ -1,5 +1,5 @@
 .idea
-./token.yaml
-./prefixes.json
-./counters.json
-./errors.json
+token.yaml
+prefixes.json
+counters.json
+errors.json
