@@ -384,10 +384,10 @@ class Help(commands.Cog):
         commandName = "Timezone"
         syntaxMessage = f"`{self.prefix(self, ctx)}timezone [GMT time]`"
         exampleUsage = f"`{self.prefix(self, ctx)}timezone GMT+4`"
-        exampleOutput = f"{ctx.author.mention}'s nickname will be changed to: {ctx.author.display_name} [GMT+4]"
+        exampleOutput = f"{ctx.author.mention}'s nickname will be changed to: `{ctx.author.display_name} [GMT+4]`"
         aliases = "`tz`"
         userPerms = '`Change Nickname`'
-        botPerms = "`Administrator"
+        botPerms = "`Administrator`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
