@@ -4,6 +4,10 @@ import re
 import discord
 import json
 from discord.ext import commands
+import globalcommands
+from globalcommands import GlobalCMDS
+
+gcmds = globalcommands.GlobalCMDS
 
 
 class Fun(commands.Cog):
@@ -14,13 +18,6 @@ class Fun(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Cog "fun" has been loaded')
-
-    def incrCounter(self, cmdName):
-        with open('counters.json', 'r') as f:
-            values = json.load(f)
-            values[str(cmdName)] += 1
-        with open('counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
 
     async def imageSend(self, ctx, path):
         await ctx.message.delete()
@@ -33,12 +30,17 @@ class Fun(commands.Cog):
             title = "Toad ❤️❤️❤️❤️❤️❤️"
             color = discord.Color.red()
             url = f"attachment://toad_{name}"
-            self.incrCounter('toad')
+            gcmds.incrCounter(gcmds, 'toad')
         if "isabelle" in path:
             title = "Isabelle"
             color = discord.Color.blue()
             url = f"attachment://isabelle_{name}"
-            self.incrCounter('isabelle')
+            gcmds.incrCounter(gcmds, 'isabelle')
+        if "peppa" in path:
+            title = "Peppa Pig"
+            color = discord.Color.blue()
+            url = f"attachment://peppa_{name}"
+            gcmds.incrCounter(gcmds, 'peppa')
 
         with open(d, 'rb') as f:
             picture = discord.File(f, d)
@@ -59,7 +61,7 @@ class Fun(commands.Cog):
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
-        self.incrCounter('8ball')
+        gcmds.incrCounter(gcmds, '8ball')
 
     @commands.command()
     async def choose(self, ctx, *, choices):
@@ -72,11 +74,16 @@ class Fun(commands.Cog):
         chooseEmbed.add_field(name=f'{ctx.author} asked: {choices}',
                               value=answer)
         await ctx.channel.send(embed=chooseEmbed)
-        self.incrCounter('choose')
+        gcmds.incrCounter(gcmds, 'choose')
 
     @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
     async def isabelle(self, ctx):
         path = "./isabelle"
+        await self.imageSend(ctx, path)
+
+    @commands.command(aliases=['peppapic', 'ppic'])
+    async def peppa(self, ctx):
+        path = "./peppa"
         await self.imageSend(ctx, path)
 
     @commands.command()
@@ -85,7 +92,7 @@ class Fun(commands.Cog):
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
-        self.incrCounter('say')
+        gcmds.incrCounter(gcmds, 'say')
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx):

@@ -291,6 +291,7 @@ class Moderation(commands.Cog):
                                   description=description,
                                   color=color)
         await ctx.channel.send(embed=modsEmbed, delete_after=60)
+        self.incrCounter('modsonline')
 
 
 def setup(client):

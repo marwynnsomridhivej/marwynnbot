@@ -9,7 +9,6 @@ import yaml
 # =================================================
 # Removes Default Help Command (replaced with m!help below)
 # =================================================
-
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
@@ -43,6 +42,9 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild):
+    if not os.path.exists('prefixes.json'):
+        with open('prefixes.json', 'w') as f:
+            f.write('{\n\n}')
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
     prefixes[str(guild.id)] = 'm!'

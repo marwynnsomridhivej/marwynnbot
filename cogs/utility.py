@@ -6,6 +6,10 @@ from discord.ext import commands, tasks
 from asyncio import sleep
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
 
+import globalcommands
+from globalcommands import GlobalCMDS
+gcmds = globalcommands.GlobalCMDS
+
 
 class Utility(commands.Cog):
 
@@ -17,16 +21,13 @@ class Utility(commands.Cog):
     async def on_ready(self):
         print('Cog "utility" has been loaded')
 
-    def incrCounter(self, cmdName):
-        with open('counters.json', 'r') as f:
-            values = json.load(f)
-            values[str(cmdName)] += 1
-        with open('counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
-
     @commands.command(aliases=['used', 'usedcount'])
     async def counter(self, ctx, commandName=None):
         await ctx.message.delete()
+
+        if not os.path.exists('counters.json'):
+            with open('counters.json', 'w') as f:
+                f.write('{\n}')
 
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
@@ -55,7 +56,7 @@ class Utility(commands.Cog):
                                            value=value)
 
         await ctx.channel.send(embed=counterEmbed)
-        self.incrCounter('counter')
+        gcmds.incrCounter(gcmds, 'counter')
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
@@ -73,7 +74,7 @@ class Utility(commands.Cog):
                               value=f"{self.client.user.mention} or `mb `",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
-        self.incrCounter('prefix')
+        gcmds.incrCounter(gcmds, 'prefix')
 
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
@@ -98,7 +99,7 @@ class Utility(commands.Cog):
                                         description=f"Server prefix has been reset to `m!`",
                                         color=discord.Color.blue())
         await ctx.channel.send(embed=prefixEmbed)
-        self.incrCounter('setPrefix')
+        gcmds.incrCounter(gcmds, 'setPrefix')
 
     @setPrefix.error
     async def setPrefix_error(self, ctx, error):
@@ -143,7 +144,7 @@ class Utility(commands.Cog):
                                                            "to create the category and stats channels",
                                                color=discord.Color.dark_red())
                     await ctx.channel.send(embed=resetEmbed, delete_after=10)
-                    self.incrCounter('serverStats')
+                    gcmds.incrCounter(gcmds, 'serverStats')
 
                 for category in guild.categories:
                     if category.name == "📊Server Stats📊":
@@ -161,7 +162,7 @@ class Utility(commands.Cog):
                                              inline=False)
                         await category.delete()
                 await ctx.channel.send(embed=resetEmbed, delete_after=10)
-                self.incrCounter('serverStats')
+                gcmds.incrCounter(gcmds, 'serverStats')
 
             return
 
@@ -193,7 +194,7 @@ class Utility(commands.Cog):
                                                            f"channels",
                                                color=discord.Color.dark_red())
                     await ctx.channel.send(embed=statsEmbed, delete_after=10)
-                    self.incrCounter('serverStats')
+                    gcmds.incrCounter(gcmds, 'serverStats')
                     serverstatsupdate.restart(ctx, names)
                     return
 
@@ -216,7 +217,7 @@ class Utility(commands.Cog):
                                  value="Successfully created channel",
                                  inline=False)
         await ctx.channel.send(embed=statsEmbed, delete_after=10)
-        self.incrCounter('serverStats')
+        gcmds.incrCounter(gcmds, 'serverStats')
         serverstatsupdate.restart(ctx, names)
 
     @serverStats.error
@@ -243,7 +244,7 @@ class Utility(commands.Cog):
                 title = "Timezone Update Success"
                 description = f"{ctx.author.mention}'s timezone has been added to their nickname"
                 color = discord.Color.blue()
-                self.incrCounter('timezone')
+                gcmds.incrCounter(gcmds, 'timezone')
             else:
                 title = "Invalid Timezone Format"
                 description = "Please put your timezone in `GMT+` or `GMT-` format"
