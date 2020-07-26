@@ -1,6 +1,10 @@
 import discord
 import json
 from discord.ext import commands
+import globalcommands
+from globalcommands import GlobalCMDS
+
+gcmds = globalcommands.GlobalCMDS
 
 
 class Debug(commands.Cog):
@@ -12,22 +16,14 @@ class Debug(commands.Cog):
     async def on_ready(self):
         print('Cog "debug" has been loaded')
 
-    def incrCounter(self, cmdName):
-        with open('counters.json', 'r') as f:
-            values = json.load(f)
-            values[str(cmdName)] += 1
-        with open('counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
-
     @commands.command()
     async def ping(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('ping')
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
-        await ctx.send(embed=ping)
-        self.incrCounter('ping')
+        await ctx.send(embed=ping, delete_after=10)
+        gcmds.incrCounter(gcmds, 'ping')
 
     @commands.command()
     async def shard(self, ctx, option=None):
@@ -39,8 +35,8 @@ class Debug(commands.Cog):
         shardEmbed = discord.Embed(title="Shard Info",
                                    description=shardDesc,
                                    color=discord.Color.blue())
-        await ctx.channel.send(embed=shardEmbed)
-        self.incrCounter('shard')
+        await ctx.channel.send(embed=shardEmbed, delete_after=30)
+        gcmds.incrCounter(gcmds, 'shard')
 
 
 def setup(client):

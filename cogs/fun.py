@@ -81,7 +81,7 @@ class Fun(commands.Cog):
         path = "./isabelle"
         await self.imageSend(ctx, path)
 
-    @commands.command(aliases=['peppapic', 'ppic'])
+    @commands.command(aliases=['peppapic', 'ppic', 'ppig'])
     async def peppa(self, ctx):
         path = "./peppa"
         await self.imageSend(ctx, path)
