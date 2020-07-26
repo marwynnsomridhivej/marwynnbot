@@ -5,6 +5,10 @@ import json
 import typing
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
+import globalcommands
+from globalcommands import GlobalCMDS
+
+gcmds = globalcommands.GlobalCMDS
 
 
 class Moderation(commands.Cog):
@@ -15,13 +19,6 @@ class Moderation(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Cog "moderation" has been loaded')
-
-    def incrCounter(self, cmdName):
-        with open('counters.json', 'r') as f:
-            values = json.load(f)
-            values[str(cmdName)] += 1
-        with open('counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
 
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)
@@ -43,7 +40,7 @@ class Moderation(commands.Cog):
         clearEmbed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/734962101432615006/734962158290468944/eraser.png")
         await ctx.channel.send(embed=clearEmbed, delete_after=5)
-        self.incrCounter('chatclean')
+        gcmds.incrCounter(gcmds, 'chatclean')
 
     @chatclean.error
     async def chatclean_error(self, ctx, error):
@@ -85,7 +82,7 @@ class Moderation(commands.Cog):
                     mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
                     mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
-        self.incrCounter('mute')
+        gcmds.incrCounter(gcmds, 'mute')
 
     @mute.error
     async def mute_error(self, ctx, error):
@@ -125,7 +122,7 @@ class Moderation(commands.Cog):
                                             color=discord.Color.blue())
                 unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
                 await ctx.channel.send(embed=unmuteEmbed)
-                self.incrCounter('unmute')
+                gcmds.incrCounter(gcmds, 'unmute')
 
     @unmute.error
     async def unmute_error(self, ctx, error):
@@ -156,7 +153,7 @@ class Moderation(commands.Cog):
                                 value=reason,
                                 inline=False)
             await ctx.channel.send(embed=kickEmbed)
-            self.incrCounter('kick')
+            gcmds.incrCounter(gcmds, 'kick')
 
     @kick.error
     async def kick_error(self, ctx, error):
@@ -194,7 +191,7 @@ class Moderation(commands.Cog):
                                value=reason,
                                inline=False)
             await ctx.channel.send(embed=banEmbed)
-            self.incrCounter('ban')
+            gcmds.incrCounter(gcmds, 'ban')
 
     @ban.error
     async def ban_error(self, ctx, error):
@@ -238,7 +235,7 @@ class Moderation(commands.Cog):
                                 value=ctx.author.mention)
                 await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
                 await ctx.channel.send(embed=unban)
-                self.incrCounter('unban')
+                gcmds.incrCounter(gcmds, 'unban')
             else:
                 notBanned = discord.Embed(title="User Not Banned!",
                                           description='For now :)',
@@ -248,7 +245,7 @@ class Moderation(commands.Cog):
                                     value=ctx.author.mention,
                                     inline=False)
                 await ctx.channel.send(embed=notBanned, delete_after=5)
-                self.incrCounter('unban')
+                gcmds.incrCounter(gcmds, 'unban')
 
     @unban.error
     async def unban_error(self, ctx, error):
@@ -290,8 +287,9 @@ class Moderation(commands.Cog):
         modsEmbed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
+        modsEmbed.set_thumbnail(url="https://www.pinclipart.com/picdir/big/529-5290012_gavel-clipart.png")
         await ctx.channel.send(embed=modsEmbed, delete_after=60)
-        self.incrCounter('modsonline')
+        gcmds.incrCounter(gcmds, 'modsonline')
 
 
 def setup(client):

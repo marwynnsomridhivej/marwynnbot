@@ -5,6 +5,7 @@ from discord.ext import commands
 
 import globalcommands
 from globalcommands import GlobalCMDS
+
 gcmds = globalcommands.GlobalCMDS
 
 
@@ -184,6 +185,16 @@ class Help(commands.Cog):
         commandName = "Isabelle"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}isabelle`"
         aliases = "`isabellepic` `isabelleemote` `belle` `bellepic` `belleemote`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases)
+
+    @help.command(aliases=['peppapic', 'ppic', 'ppig'])
+    async def peppa(self, ctx):
+        commandName = "Peppa"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}peppa`"
+        aliases = "`peppapic` `ppic` `ppig`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -416,6 +427,8 @@ class Help(commands.Cog):
         aliases = "`tz`"
         userPerms = '`Change Nickname`'
         botPerms = "`Administrator`"
+        specialCases = "If the `[GMT time]` argument is `reset` or `r`, the tag will be removed and your nickname " \
+                       "will be reset to default"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -423,7 +436,8 @@ class Help(commands.Cog):
                                exampleOutput=exampleOutput,
                                aliases=aliases,
                                userPerms=userPerms,
-                               botPerms=botPerms)
+                               botPerms=botPerms,
+                               specialCases=specialCases)
 
 
 def setup(client):

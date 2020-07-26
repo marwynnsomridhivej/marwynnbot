@@ -236,8 +236,16 @@ class Utility(commands.Cog):
     @commands.command(aliases=['tz'])
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(change_nickname=True)
-    async def timezone(self, ctx, name=None):
-        if name is not None:
+    async def timezone(self, ctx, *, timezoneInput):
+        await ctx.message.delete()
+        nameSpace = str(timezoneInput)
+        name = nameSpace.replace(" ", "")
+        if name == 'reset' or name == 'r':
+            await ctx.author.edit(nick=f"{ctx.author.name}")
+            title = "Timezone Reset Success"
+            description = f"{ctx.author.mention}'s timezone has been removed from their name"
+            color = discord.Color.blue()
+        elif name is not None:
             if "GMT" in name:
                 nick = f"{ctx.author.display_name} [{name}]"
                 await ctx.author.edit(nick=nick)
