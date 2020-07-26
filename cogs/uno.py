@@ -244,3 +244,6 @@ class UNO(commands.Cog):
         for player in players:
             embed.add_field(name=player.name,
                             value=None)
+
+def setup(client):
+    client.add_cog(UNO(client))
