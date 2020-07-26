@@ -27,6 +27,7 @@ frequently as the bot's functionality grows.
 - `8ball`
 - `choose`
 - `isabelle`
+- `peppa`
 - `say`
 - `toad`
 
