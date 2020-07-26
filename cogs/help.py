@@ -292,13 +292,15 @@ class Help(commands.Cog):
                                userPerms=userPerms,
                                botPerms=botPerms)
 
-    @help.command(aliases=['mods', 'modsonline', 'mo'])
+    @help.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
     async def modsOnline(self, ctx):
         commandName = "ModsOnline"
         syntaxMessage = f"`{self.prefix(self, ctx)}modsonline`"
-        aliases = "`mods` `mo`"
+        aliases = "`mod` `mods` `mo`"
         specialCases = "If the server does not have a moderator role with the substring `moderator` (case " \
-                       "insensitive), it will not detect that the server has a moderator role"
+                       "insensitive), it will not detect that the server has a moderator role" \
+                       "\n\nIf the mods have their status set to `invisible`, this command will not register them as " \
+                       "being online"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,

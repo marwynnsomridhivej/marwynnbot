@@ -265,15 +265,16 @@ class Moderation(commands.Cog):
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=unbanError)
 
-    @commands.command(aliases=['mods', 'modsonline', 'mo'])
+    @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
     async def modsOnline(self, ctx):
         await ctx.message.delete()
         modsList = []
         for member in ctx.guild.members:
-            if not member.bot:
-                for role in member.roles:
-                    if "moderator" in role.name.casefold():
-                        modsList += [member.mention]
+            if member.status is not discord.Status.offline:
+                if not member.bot:
+                    for role in member.roles:
+                        if "moderator" in role.name.casefold():
+                            modsList += [member.mention]
         if modsList:
             title = "Moderators Online"
             description = ""
@@ -289,7 +290,7 @@ class Moderation(commands.Cog):
         modsEmbed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-        await ctx.channel.send(embed=modsEmbed, delete_after=30)
+        await ctx.channel.send(embed=modsEmbed, delete_after=60)
 
 
 def setup(client):
