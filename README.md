@@ -11,6 +11,8 @@ You can add the public MarwynnBot to your own Discord server by clicking [here](
 ## Commands
 WIP, for an updated list, add the bot and do `m!help`.
 
+For a guide on all commands and their usages, I will be updating [MarwynnBot's GitBook page](https://marwynn.gitbook.io/marwynnbot/)
+
 Commands are separated into categories that determine a command's function. Below is a list that will be updated
 frequently as the bot's functionality grows.
 
@@ -24,6 +26,7 @@ frequently as the bot's functionality grows.
 **Fun**
 - `8ball`
 - `choose`
+- `isabelle`
 - `say`
 - `toad`
 

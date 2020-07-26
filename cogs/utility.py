@@ -36,16 +36,23 @@ class Utility(commands.Cog):
             keyList = values.items()
             if commandName is not None:
                 execCount = values[str(commandName)]
+                if execCount != 1:
+                    description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times"
+                else:
+                    description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time"
                 counterEmbed = discord.Embed(title=f"Command \"{str.capitalize(commandName)}\" Counter",
-                                             description=f"`{serverPrefix}{commandName}` was executed **{execCount}** "
-                                                         "times",
+                                             description=description,
                                              color=discord.Color.blue())
             else:
                 counterEmbed = discord.Embed(title="Command Counter",
                                              color=discord.Color.blue())
                 for key, execCount in keyList:
+                    if execCount != 1:
+                        value = f"Executed: **{execCount}** times"
+                    else:
+                        value = f"Executed: **{execCount}** time"
                     counterEmbed.add_field(name=f"Command: {str.capitalize(key)}",
-                                           value=f"Executed: **{execCount}** times")
+                                           value=value)
 
         await ctx.channel.send(embed=counterEmbed)
         self.incrCounter('counter')

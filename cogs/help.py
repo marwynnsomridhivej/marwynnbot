@@ -72,7 +72,7 @@ class Help(commands.Cog):
                                       colour=discord.Colour(0x3498db),
                                       url="https://discord.gg/fYBTdUp",
                                       description="These are all the commands I currently support! Type"
-                                                  f"`{self.prefix(self, ctx)}help [command]` to get help on that "
+                                                  f"\n`{self.prefix(self, ctx)}help [command]`\nto get help on that "
                                                   "specific command")
             helpEmbed.set_image(
                 url="https://cdn.discordapp.com/avatars/623317451811061763/9bb63c734178694e8779aa102cb81062.png"
@@ -90,10 +90,10 @@ class Help(commands.Cog):
                                 value="`help`")
 
             debugCmds = "`ping` `shard`"
-            funCmds = "`8ball` `choose` `say` `toad`"
-            gamesCmds = "`Under Development`"
+            funCmds = "`8ball` `choose` `isabelle` `say` `toad`"
+            gamesCmds = "*Under Development*"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
-            musicCmds = "`join` `leave`"
+            musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
 
             helpEmbed.add_field(name="Debug",
@@ -125,10 +125,12 @@ class Help(commands.Cog):
         commandName = 'Command Specific'
         syntaxMessage = f"`{self.prefix(self, ctx)}help [commandName]`"
         exampleUsage = f"`{self.prefix(self, ctx)}help ping`"
+        aliases = "`h`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               exampleUsage=exampleUsage)
+                               exampleUsage=exampleUsage,
+                               aliases=aliases)
 
     # =================================================
     # Debug
@@ -186,6 +188,16 @@ class Help(commands.Cog):
                                exampleOutput=exampleOutput,
                                specialCases=specialCases)
 
+    @help.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
+    async def isabelle(self, ctx):
+        commandName = "Isabelle"
+        syntaxMessage = f"`{self.prefix(self, ctx)}isabelle`"
+        aliases = "`isabellepic` `isabelleemote` `belle` `bellepic` `belleemote`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases)
+
     @help.command()
     async def say(self, ctx):
         commandName = 'Say'
@@ -194,13 +206,15 @@ class Help(commands.Cog):
                                commandName=commandName,
                                syntaxMessage=syntaxMessage)
 
-    @help.command()
+    @help.command(alises=['toadpic', 'toademote'])
     async def toad(self, ctx):
         commandName = 'Toad'
         syntaxMessage = f"`{self.prefix(self, ctx)}toad`"
+        aliases = "`toadpic` `toademote`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
-                               syntaxMessage=syntaxMessage)
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases)
 
     # =================================================
     # Games

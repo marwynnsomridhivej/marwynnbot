@@ -22,6 +22,33 @@ class Fun(commands.Cog):
         with open('counters.json', 'w') as f:
             json.dump(values, f, indent=4)
 
+    async def imageSend(self, ctx, path):
+        await ctx.message.delete()
+        path = path
+        files = os.listdir(path)
+        name = random.choice(files)
+        d = f'{path}//{name}'
+
+        if "toad" in path:
+            title = "Toad ❤️❤️❤️❤️❤️❤️"
+            color = discord.Color.red()
+            url = f"attachment://toad_{name}"
+            self.incrCounter('toad')
+        if "isabelle" in path:
+            title = "Isabelle"
+            color = discord.Color.blue()
+            url = f"attachment://isabelle_{name}"
+            self.incrCounter('isabelle')
+
+        with open(d, 'rb') as f:
+            picture = discord.File(f, d)
+            pictureEmbed = discord.Embed(title=title,
+                                         color=color)
+            pictureEmbed.set_image(url=url)
+            pictureEmbed.set_footer(text=f'Filename: {name}')
+        await ctx.channel.send(file=picture,
+                               embed=pictureEmbed)
+
     @commands.command(aliases=['8ball', '8b'])
     async def _8ball(self, ctx, *, question):
         await ctx.message.delete()
@@ -47,6 +74,11 @@ class Fun(commands.Cog):
         await ctx.channel.send(embed=chooseEmbed)
         self.incrCounter('choose')
 
+    @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
+    async def isabelle(self, ctx):
+        path = "./isabelle"
+        await self.imageSend(ctx, path)
+
     @commands.command()
     async def say(self, ctx, *, args):
         await ctx.message.delete()
@@ -57,19 +89,8 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx):
-        await ctx.message.delete()
-        path = './toad'
-        files = os.listdir('./toad')
-        name = random.choice(files)
-        d = f'{path}//{name}'
-        with open(d, 'rb') as f:
-            picture = discord.File(f, d)
-            toadEmbed = discord.Embed(title='Toad ❤️❤️❤️❤️❤️❤️',
-                                      color=discord.Color.red())
-            toadEmbed.set_image(url=f"attachment://toad_{name}")
-            toadEmbed.set_footer(text=f'{name}, emote name: {name[:-4]}')
-        await ctx.channel.send(file=picture, embed=toadEmbed)
-        self.incrCounter('toad')
+        path = "./toad"
+        await self.imageSend(ctx, path)
 
 
 def setup(client):
