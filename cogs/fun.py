@@ -24,7 +24,7 @@ class Fun(commands.Cog):
         path = path
         files = os.listdir(path)
         name = random.choice(files)
-        d = f'{path}//{name}'
+        d = f'{path}/{name}'
 
         if "toad" in path:
             title = "Toad ❤️❤️❤️❤️❤️❤️"
@@ -37,7 +37,7 @@ class Fun(commands.Cog):
             url = f"attachment://isabelle_{name}"
             gcmds.incrCounter(gcmds, 'isabelle')
         if "peppa" in path:
-            title = "Peppa Pig"
+            title = "Peppa"
             color = discord.Color.blue()
             url = f"attachment://peppa_{name}"
             gcmds.incrCounter(gcmds, 'peppa')
