@@ -4,11 +4,12 @@
 
 ## Commands
 
-* [Help](commands/help.md)
-* [Debug](commands/debug.md)
-* [Fun](commands/fun.md)
-* [Games](commands/games.md)
-* [Moderation](commands/moderation.md)
-* [Music](commands/music.md)
-* [Utility](commands/utility.md)
+* [Categories](commands/categories/README.md)
+  * [Help](commands/categories/help.md)
+  * [Debug](commands/categories/debug.md)
+  * [Fun](commands/categories/fun.md)
+  * [Games](commands/categories/games.md)
+  * [Moderation](commands/categories/moderation.md)
+  * [Music](commands/categories/music.md)
+  * [Utility](commands/categories/utility.md)
 
