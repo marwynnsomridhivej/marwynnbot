@@ -49,7 +49,7 @@ frequently as the bot's functionality grows.
 - `serverstats`
 - `timezone`
 
-##Self Hosting
+## Self Hosting
 For self hosting, you'll need:
 - A bot application
 - A bot token
