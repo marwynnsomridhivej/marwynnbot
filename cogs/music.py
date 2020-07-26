@@ -2,6 +2,8 @@ import discord
 import json
 from discord.ext import commands
 from discord.ext.commands import has_permissions, BotMissingPermissions
+import globalcommands
+from globalcommands import GlobalCMDS as gcmds
 
 
 class Music(commands.Cog):
@@ -13,24 +15,16 @@ class Music(commands.Cog):
     async def on_ready(self):
         print('Cog "music" has been loaded')
 
-    def incrCounter(self, cmdName):
-        with open('counters.json', 'r') as f:
-            values = json.load(f)
-            values[str(cmdName)] += 1
-        with open('counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
-
     @commands.command()
     async def join(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('join')
         channel = ctx.author.voice.channel
         await channel.connect()
         joinEmbed = discord.Embed(title='Join Success!',
                                   description=f'Successfully joined the voice channel `{channel}`',
                                   color=discord.Color.blue())
         await ctx.channel.send(embed=joinEmbed)
-        self.incrCounter('join')
+        gcmds.incrCounter(gcmds, 'join')
 
     @join.error
     async def join_error(self, ctx, error):
@@ -52,14 +46,13 @@ class Music(commands.Cog):
     @commands.command()
     async def leave(self, ctx):
         await ctx.message.delete()
-        self.incrCounter('leave')
         channel = ctx.voice_client.channel
         await ctx.voice_client.disconnect()
         leaveEmbed = discord.Embed(title='Leave Success!',
                                    description=f'Successfully left the voice channel `{channel}`',
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=leaveEmbed)
-        self.incrCounter('leave')
+        gcmds.incrCounter(gcmds, 'leave')
 
     @leave.error
     async def leave_error(self, ctx, error):
