@@ -65,6 +65,7 @@ You will need to create the token.yaml file in the root directory. File contents
 ```yaml
 token: botTokenHere
 ```
+The bot will pull the token value from the `token.yaml` file and use that as the token value in `client.run(token)`
 ## Contact Info
 **Discord:** MS Arranges#3060
 
