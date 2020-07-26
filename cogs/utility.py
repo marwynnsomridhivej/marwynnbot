@@ -7,8 +7,7 @@ from asyncio import sleep
 from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
 
 import globalcommands
-from globalcommands import GlobalCMDS
-gcmds = globalcommands.GlobalCMDS
+from globalcommands import GlobalCMDS as gcmds
 
 
 class Utility(commands.Cog):

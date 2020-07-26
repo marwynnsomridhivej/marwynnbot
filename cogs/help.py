@@ -4,9 +4,7 @@ import json
 from discord.ext import commands
 
 import globalcommands
-from globalcommands import GlobalCMDS
-
-gcmds = globalcommands.GlobalCMDS
+from globalcommands import GlobalCMDS as gcmds
 
 
 class Help(commands.Cog):
