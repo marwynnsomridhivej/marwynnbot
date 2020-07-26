@@ -265,6 +265,32 @@ class Moderation(commands.Cog):
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=unbanError)
 
+    @commands.command(aliases=['mods', 'modsonline', 'mo'])
+    async def modsOnline(self, ctx):
+        await ctx.message.delete()
+        modsList = []
+        for member in ctx.guild.members:
+            if not member.bot:
+                for role in member.roles:
+                    if "moderator" in role.name.casefold():
+                        modsList += [member.mention]
+        if modsList:
+            title = "Moderators Online"
+            description = ""
+            color = discord.Color.blue()
+            for mods in modsList:
+                description = f"{description} {mods}"
+        else:
+            title = "No Moderators Online"
+            description = "There are currently no users that are moderators on this server\n\n*No users have a role " \
+                          "with the substring* `moderator` *(case insensitive) in it*"
+            color = discord.Color.dark_red()
+
+        modsEmbed = discord.Embed(title=title,
+                                  description=description,
+                                  color=color)
+        await ctx.channel.send(embed=modsEmbed, delete_after=30)
+
 
 def setup(client):
     client.add_cog(Moderation(client))

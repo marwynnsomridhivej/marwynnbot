@@ -37,6 +37,7 @@ frequently as the bot's functionality grows.
 - `kick`
 - `ban`
 - `unban`
+- `modsonline`
 
 **Music**
 - Currently under development

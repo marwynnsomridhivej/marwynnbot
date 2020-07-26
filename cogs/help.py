@@ -92,7 +92,7 @@ class Help(commands.Cog):
             debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `say` `toad`"
             gamesCmds = "`Under Development`"
-            moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban`"
+            moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "`join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
 
@@ -291,6 +291,19 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                userPerms=userPerms,
                                botPerms=botPerms)
+
+    @help.command(aliases=['mods', 'modsonline', 'mo'])
+    async def modsOnline(self, ctx):
+        commandName = "ModsOnline"
+        syntaxMessage = f"`{self.prefix(self, ctx)}modsonline`"
+        aliases = "`mods` `mo`"
+        specialCases = "If the server does not have a moderator role with the substring `moderator` (case " \
+                       "insensitive), it will not detect that the server has a moderator role"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     # =================================================
     # Music
