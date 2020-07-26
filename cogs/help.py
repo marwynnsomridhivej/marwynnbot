@@ -330,11 +330,13 @@ class Help(commands.Cog):
         syntaxMessage = f"`{self.prefix(self, ctx)}counter [commandName]`"
         exampleUsage = f"{self.prefix(self, ctx)}counter help"
         aliases = "`used` `usedcount`"
+        specialCases = 'If the `[commandName]` is not specified, it will display the count for all supported commands'
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               aliases=aliases)
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     @help.command(aliases=['p', 'checkprefix', 'prefix', 'prefixes'])
     async def _prefix(self, ctx):

@@ -13,7 +13,8 @@ import yaml
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
-        return commands.when_mentioned_or(f'{prefixes[str(message.guild.id)]}', 'mb ')(client, message)
+        extras = [f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ']
+        return commands.when_mentioned_or(*extras)(client, message)
 
 
 client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1)
@@ -121,6 +122,7 @@ async def reload(ctx, *, extension=None):
                                     description='You need to be the bot owner to use this command',
                                     color=discord.Color.dark_red())
         await ctx.channel.send(embed=reloadError, delete_after=5)
+
 
 # =================================================
 # Client Initialisation and Logon

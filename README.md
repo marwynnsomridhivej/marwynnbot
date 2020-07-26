@@ -49,6 +49,22 @@ frequently as the bot's functionality grows.
 - `serverstats`
 - `timezone`
 
+##Self Hosting
+For self hosting, you'll need:
+- A bot application
+- A bot token
+
+bot.py has this line of code:
+```
+with open('./token.yaml', 'r') as f:
+    stream = yaml.full_load(f)
+    token = stream[str('token')]
+client.run(token)
+```
+You will need to create the token.yaml file in the root directory. File contents should be as follows:
+```yaml
+token: botTokenHere
+```
 ## Contact Info
 **Discord:** MS Arranges#3060
 
