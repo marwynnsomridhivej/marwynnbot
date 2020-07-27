@@ -20,7 +20,7 @@ class Utility(commands.Cog):
     async def on_ready(self):
         print('Cog "utility" has been loaded')
 
-    @commands.command(aliases=['used', 'usedcount'])
+    @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None):
         await ctx.message.delete()
 
