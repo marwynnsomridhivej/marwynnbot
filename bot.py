@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import discord
 import logging
 from discord.ext import commands
@@ -7,9 +8,6 @@ from discord.ext.commands import CommandInvokeError
 import yaml
 
 
-# =================================================
-# Removes Default Help Command (replaced with m!help below)
-# =================================================
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
@@ -20,20 +18,12 @@ async def get_prefix(client, message):
 
 client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1)
 
-# =================================================
-# Logger
-# =================================================
-
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-
-# =================================================
-# Bot Startup (Logs ready message to console, sets status, removes default help message)
-# =================================================
 
 @client.event
 async def on_ready():
@@ -65,10 +55,6 @@ async def on_guild_remove(guild):
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
-
-# =================================================
-# Loading Cogs
-# =================================================
 
 @client.command(aliases=['l', 'ld'])
 async def load(ctx, extension):
@@ -154,14 +140,24 @@ async def reload(ctx, *, extension=None):
         await ctx.channel.send(embed=reloadError, delete_after=5)
 
 
-# =================================================
-# Client Initialisation and Logon
-# =================================================
+@client.command(aliases=['taskkill'])
+async def shutdown(ctx):
+    await ctx.message.delete()
+    if await client.is_owner(ctx.author):
+        title = "Bot Shutdown Successful"
+        description = "Bot is logging out"
+        color = discord.Color.blue()
+    else:
+        title = "Insufficient User Permissions"
+        description = "You need to be the bot owner to use this command"
+        color = discord.Color.dark_red()
+    shutdownEmbed = discord.Embed(title=title,
+                                  description=description,
+                                  color=color)
+    await ctx.channel.send(embed=shutdownEmbed)
+    await client.logout()
 
 
-# =================================================
-# Client Initialisation and Logon
-# =================================================
 with open('./token.yaml', 'r') as f:
     stream = yaml.full_load(f)
     token = stream[str('token')]
