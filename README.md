@@ -26,6 +26,7 @@ frequently as the bot's functionality grows.
 **Fun**
 - `8ball`
 - `choose`
+- `gifsearch`
 - `isabelle`
 - `peppa`
 - `say`
