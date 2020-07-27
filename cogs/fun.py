@@ -1,9 +1,15 @@
+import pprint
 import random
+import requests
+import typing
+import yaml
 import os
 import re
 import discord
 import json
 from discord.ext import commands
+from discord.ext.commands import CommandInvokeError
+
 import globalcommands
 from globalcommands import GlobalCMDS as gcmds
 
@@ -73,6 +79,61 @@ class Fun(commands.Cog):
                               value=answer)
         await ctx.channel.send(embed=chooseEmbed)
         gcmds.incrCounter(gcmds, 'choose')
+
+    @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
+    async def gifSearch(self, ctx, limit: typing.Optional[int] = 10, *, query):
+        await ctx.message.delete()
+        try:
+            with open('./tenor_api.yaml', 'r') as f:
+                stream = yaml.full_load(f)
+                api_key = stream[str('api_key')]
+        except FileNotFoundError:
+            with open('tenor_api.yaml', 'w') as f:
+                f.write('api_key: API_KEY_FROM_TENOR')
+            title = "Created File"
+            description = "The file `tenor_api.yaml` was created. Insert your Tenor API Key in the placeholder"
+            color = discord.Color.red()
+
+        lmt = limit
+
+        if query is None:
+            title = "No Search Term Specified"
+            description = f"{ctx.author.mention}, you must specify at least one search term. "\
+                          f"`Do {gcmds.prefix(gcmds, ctx)}help gifsearch` for command info"
+            color = discord.Color.dark_red()
+        elif query:
+            query = str(query)
+            r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (query, api_key, lmt))
+            if r.status_code == 200:
+                results = json.loads(r.content)
+                title = f"{query.capitalize()} GIF"
+                description = "From *Tenor*"
+                color = discord.Color.blue()
+                getURL = []
+                for i in range(len(results['results'])):
+                    getURL.append(results['results'][i]['media'][0]['gif']['url'])
+                url = random.choice(getURL)
+                gcmds.incrCounter(gcmds, 'gifSearch')
+
+        embed = discord.Embed(title=title,
+                              description=description,
+                              color=color)
+        if url:
+            embed.set_image(url=url)
+
+        await ctx.channel.send(embed=embed)
+        gcmds.incrCounter(gcmds, 'gifSearch')
+
+    @gifSearch.error
+    async def gifSearch_error(self, ctx, error):
+        if isinstance(error, CommandInvokeError):
+            title = "No Tenor API Key"
+            description = "Please paste your Tenor API Key in the file `tenor_api.yaml` in the placeholder"
+            color = discord.Color.red()
+            errorEmbed = discord.Embed(title=title,
+                                       description=description,
+                                       color=color)
+            await ctx.channel.send(embed=errorEmbed)
 
     @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
     async def isabelle(self, ctx):
