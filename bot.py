@@ -12,7 +12,7 @@ import yaml
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
-        extras = [f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ']
+        extras = (f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ')
         return commands.when_mentioned_or(*extras)(client, message)
 
 
