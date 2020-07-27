@@ -81,7 +81,7 @@ class Fun(commands.Cog):
         gcmds.incrCounter(gcmds, 'choose')
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
-    async def gifSearch(self, ctx, limit: typing.Optional[int] = 10, *, query):
+    async def gifSearch(self, ctx, limit: typing.Optional[int] = None, *, query=None):
         await ctx.message.delete()
         try:
             with open('./tenor_api.yaml', 'r') as f:
@@ -94,17 +94,26 @@ class Fun(commands.Cog):
             description = "The file `tenor_api.yaml` was created. Insert your Tenor API Key in the placeholder"
             color = discord.Color.red()
 
-        lmt = limit
-
         if query is None:
-            title = "No Search Term Specified"
-            description = f"{ctx.author.mention}, you must specify at least one search term. "\
-                          f"`Do {gcmds.prefix(gcmds, ctx)}help gifsearch` for command info"
-            color = discord.Color.dark_red()
-        elif query:
+            if limit:
+                query = str(limit)
+                lmt = 50
+                bool = True
+            else:
+                title = "No Search Term Specified"
+                description = f"{ctx.author.mention}, you must specify at least one search term. "\
+                              f"`Do {gcmds.prefix(gcmds, ctx)}help gifsearch` for command info"
+                color = discord.Color.dark_red()
+                bool = False
+
+        if bool:
             query = str(query)
-            r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (query, api_key, lmt))
-            if r.status_code == 200:
+            if limit and limit < 50:
+                lmt = limit
+            else:
+                lmt = 50
+            r = requests.get("https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, lmt))
+            if r.status_code == 200 or r.status_code == 202:
                 results = json.loads(r.content)
                 title = f"{query.capitalize()} GIF"
                 description = "From *Tenor*"
@@ -114,12 +123,29 @@ class Fun(commands.Cog):
                     getURL.append(results['results'][i]['media'][0]['gif']['url'])
                 url = random.choice(getURL)
                 gcmds.incrCounter(gcmds, 'gifSearch')
+            elif r.status_code == 429:
+                title = "Error Code 429"
+                description = f"**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
+                color = discord.Color.dark_red()
+            elif 300 <= r.status_code < 400:
+                title = f"Error Code {r.status_code}"
+                description = "**HTTP ERROR:** Redirect"
+                color = discord.Color.dark_red()
+            elif r.status_code == 404:
+                title = "Error Code 404"
+                description = "**HTTP ERROR:** Not found - bad resource"
+                color = discord.Color.dark_red()
+            elif 500 <= r.status_code < 600:
+                title = f"Error Code {r.status_code}"
+                description = "**HTTP ERROR:** Unexpected server error"
+                color = discord.Color.dark_red()
 
         embed = discord.Embed(title=title,
                               description=description,
                               color=color)
-        if url:
-            embed.set_image(url=url)
+        if bool:
+            if url:
+                embed.set_image(url=url)
 
         await ctx.channel.send(embed=embed)
         gcmds.incrCounter(gcmds, 'gifSearch')
@@ -133,7 +159,7 @@ class Fun(commands.Cog):
             errorEmbed = discord.Embed(title=title,
                                        description=description,
                                        color=color)
-            await ctx.channel.send(embed=errorEmbed)
+            await ctx.channel.send(embed=errorEmbed, delete_after=20)
 
     @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
     async def isabelle(self, ctx):
