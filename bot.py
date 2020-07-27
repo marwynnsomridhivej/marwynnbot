@@ -3,6 +3,7 @@ import os
 import discord
 import logging
 from discord.ext import commands
+from discord.ext.commands import CommandInvokeError
 import yaml
 
 
@@ -12,7 +13,8 @@ import yaml
 async def get_prefix(client, message):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
-        extras = (f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ')
+        extras = (
+            f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ')
         return commands.when_mentioned_or(*extras)(client, message)
 
 
@@ -72,26 +74,52 @@ async def on_guild_remove(guild):
 async def load(ctx, extension):
     await ctx.message.delete()
     if await client.is_owner(ctx.author):
-        client.load_extension(f'cogs.{extension}')
-        print(f'Cog "{extension}" has been loaded')
+        try:
+            client.load_extension(f'cogs.{extension}')
+        except CommandInvokeError:
+            title = "Cog Load Fail"
+            description = f"Failed to load cog {extension}, it is already loaded"
+            color = discord.Color.blue()
+        else:
+            print(f'Cog "{extension}" has been loaded')
+            title = "Cog Load Success"
+            description = f"Successfully loaded cog {extension}"
+            color = discord.Color.blue()
     else:
-        loadError = discord.Embed(title='Insufficient User Permissions',
-                                  description='You need to be the bot owner to use this command',
-                                  color=discord.Color.dark_red())
-        await ctx.channel.send(embed=loadError, delete_after=5)
+        title = 'Insufficient User Permissions'
+        description = 'You need to be the bot owner to use this command'
+        color = discord.Color.dark_red()
+
+    loadEmbed = discord.Embed(title=title,
+                              description=description,
+                              color=color)
+    await ctx.channel.send(embed=loadEmbed, delete_after=5)
 
 
 @client.command(aliases=['ul', 'uld'])
 async def unload(ctx, extension):
     await ctx.message.delete()
     if await client.is_owner(ctx.author):
-        client.unload_extension(f'cogs.{extension}')
-        print(f'Cog "{extension}" has been unloaded')
+        try:
+            client.unload_extension(f'cogs.{extension}')
+        except CommandInvokeError:
+            title = "Cog Unoad Fail"
+            description = f"Failed to unload cog {extension}, it is already unloaded"
+            color = discord.Color.blue()
+        else:
+            print(f'Cog "{extension}" has been unloaded')
+            title = "Cog Unload Success"
+            description = f"Successfully unloaded cog {extension}"
+            color = discord.Color.blue()
     else:
-        unloadError = discord.Embed(title='Insufficient User Permissions',
-                                    description='You need to be the bot owner to use this command',
-                                    color=discord.Color.dark_red())
-        await ctx.channel.send(embed=unloadError, delete_after=5)
+        title = 'Insufficient User Permissions'
+        description = 'You need to be the bot owner to use this command'
+        color = discord.Color.dark_red()
+
+    unloadEmbed = discord.Embed(title=title,
+                                description=description,
+                                color=color)
+    await ctx.channel.send(embed=unloadEmbed, delete_after=5)
 
 
 for filename in os.listdir('./cogs'):
