@@ -24,9 +24,7 @@ class Utility(commands.Cog):
     async def counter(self, ctx, commandName=None):
         await ctx.message.delete()
 
-        if not os.path.exists('counters.json'):
-            with open('counters.json', 'w') as f:
-                f.write('{\n}')
+        gcmds.file_check(gcmds, "counters.json", '{\n\n}')
 
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
