@@ -20,7 +20,7 @@ class Help(commands.Cog):
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
                                                                                          "/full/71-716621_transparent"
                                                                                          "-clip-art-open-book-frame"
-                                                                                         "-line-art.png"):
+                                                                                         "-line-art.png", delete_after=None):
         embed = discord.Embed(title=f"{commandName} Help",
                               color=discord.Color.blue())
         embed.add_field(name="Command Syntax",
@@ -51,7 +51,10 @@ class Help(commands.Cog):
                             inline=False)
         if thumbnailURL is not None:
             embed.set_thumbnail(url=thumbnailURL)
-        await ctx.channel.send(embed=embed)
+        if delete_after is not None:
+            await ctx.channel.send(embed=embed, delete_after=delete_after)
+        else:
+            await ctx.channel.send(embed=embed, delete_after=delete_after)
 
     @commands.group(aliases=['h'])
     async def help(self, ctx):
@@ -80,7 +83,7 @@ class Help(commands.Cog):
                                 value="`help`")
 
             debugCmds = "`ping` `shard`"
-            funCmds = "`8ball` `choose` `isabelle` `say` `toad`"
+            funCmds = "`8ball` `choose` `gifsearch` `isabelle` `say` `toad`"
             gamesCmds = "*Under Development*"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
@@ -176,6 +179,23 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
+    async def gifSearch(self, ctx):
+        commandName = 'GifSearch'
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch [optional limit] [searchTerm]`"
+        exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch excited`"
+        aliases = "`gif` `gifs` `searchgif` `searchgifs`"
+        specialCases = "If the `[optional limit]` argument is specified, Tenor will search that amount of gifs"\
+                       "\n\nIf the `tenor_api.yaml` file is not present, it will be created and contents initialised " \
+                       "as:\n```yaml\napi_key: API_KEY_FROM_TENOR\n```\nGet an API Key from Tenor and replace " \
+                       "`API_KEY_FROM_TENOR` with it"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               exampleUsage=exampleUsage,
+                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
@@ -353,12 +373,12 @@ class Help(commands.Cog):
     # Utility
     # =================================================
 
-    @help.command(aliases=['used', 'usedcount'])
+    @help.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx):
         commandName = "Counter"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}counter [commandName]`"
         exampleUsage = f"{gcmds.prefix(gcmds, ctx)}counter help"
-        aliases = "`used` `usedcount`"
+        aliases = "`counters` `used` `usedcount`"
         specialCases = 'If the `[commandName]` is not specified, it will display the count for all supported commands'
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
