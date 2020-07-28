@@ -6,7 +6,6 @@ __pycache__
 token.yaml
 prefixes.json
 counters.json
-errors.json
 discord.log
 tenor_api.yaml
 imgur_api.yaml
