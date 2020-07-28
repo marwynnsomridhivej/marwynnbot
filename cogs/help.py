@@ -403,7 +403,7 @@ class Help(commands.Cog):
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}counter [commandName] [optional \"global\"]`"
         exampleUsage = f"{gcmds.prefix(gcmds, ctx)}counter help"
         aliases = "`counters` `used` `usedcount`"
-        specialCases = 'If the `[commandName]` is not specified, it will display the count for all supported commands' \
+        specialCases = 'If the `[commandName]` is not specified, it will display the count for all executed commands' \
                        "\n\nIf the `[optional \"global\"]` argument is not specified, it defaults to per server count"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
