@@ -84,7 +84,7 @@ class Help(commands.Cog):
                                 value="`help`")
 
             debugCmds = "`ping` `shard`"
-            funCmds = "`8ball` `choose` `gifsearch` `isabelle` `say` `toad`"
+            funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
             gamesCmds = "*Under Development*"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
