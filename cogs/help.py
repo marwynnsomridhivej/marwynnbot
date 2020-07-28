@@ -199,7 +199,7 @@ class Help(commands.Cog):
                                aliases=aliases,
                                specialCases=specialCases)
 
-    @help.command(aliases=['imgur'])
+    @help.command(aliases=['imgur', 'imgursearch'])
     async def imgurSearch(self, ctx):
         commandName = "ImgurSearch"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}imgursearch [optional amount] [searchTerm]`"

@@ -231,7 +231,7 @@ class Fun(commands.Cog):
                                        color=color)
             await ctx.channel.send(embed=errorEmbed, delete_after=20)
 
-    @commands.command(aliases=['imgur'])
+    @commands.command(aliases=['imgur', 'imgursearch'])
     async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query):
         try:
             with open('./imgur_api.yaml', 'r') as f:
