@@ -1,12 +1,9 @@
-import discord
 import json
-import os
-import asyncio
-from discord.ext import commands, tasks
 from asyncio import sleep
-from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
+import discord
+from discord.ext import commands, tasks
+from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 
-import globalcommands
 from globalcommands import GlobalCMDS as gcmds
 
 
@@ -14,7 +11,6 @@ class Utility(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.tasks = discord.ext.tasks
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -26,12 +22,21 @@ class Utility(commands.Cog):
 
         gcmds.file_check(gcmds, "counters.json", '{\n\n}')
 
+        if commandName == 'global':
+            mode = commandName
+            commandName = None
+
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             serverPrefix = prefixes[str(ctx.guild.id)]
+
         with open('counters.json', 'r') as f:
             values = json.load(f)
-            keyList = values.items()
+            if commandName is None:
+                if mode == 'server':
+                    keyList = values['Server'][str(ctx.guild.id)].items()
+                else:
+                    keyList = values['Global'].items()
             if commandName is not None:
                 if mode != 'global':
                     execCount = values['Server'][str(ctx.guild.id)][str(commandName)]
@@ -39,19 +44,25 @@ class Utility(commands.Cog):
                     execCount = values['Global'][str(commandName)]
                 if execCount != 1:
                     if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times on this server"
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** "\
+                                      f"times in *{ctx.guild.name}*"
                     else:
                         description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times globally"
                 else:
                     if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time on this server"
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** "\
+                                      f"time in *{ctx.guild.name}*"
                     else:
                         description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time globally"
                 counterEmbed = discord.Embed(title=f"Command \"{str.capitalize(commandName)}\" Counter",
                                              description=description,
                                              color=discord.Color.blue())
             else:
-                counterEmbed = discord.Embed(title="Command Counter",
+                if mode == 'server':
+                    title = f"{str(ctx.guild.name).capitalize()} Command Counter"
+                else:
+                    title = "Global Command Counter"
+                counterEmbed = discord.Embed(title=title,
                                              color=discord.Color.blue())
                 for key, execCount in keyList:
                     if execCount != 1:
@@ -63,6 +74,19 @@ class Utility(commands.Cog):
 
         await ctx.channel.send(embed=counterEmbed)
         gcmds.incrCounter(gcmds, ctx, 'counter')
+
+    @counter.error
+    async def counter_error(self, ctx, error):
+        if isinstance(error, CommandInvokeError):
+            title = "No Command Found"
+            description = "There are no counters for that command"
+        else:
+            title = "An Error Occured"
+            description = f"**Error Thrown:** {error}"
+        errorEmbed = discord.Embed(title=title,
+                                   description=description,
+                                   color=discord.Color.dark_red())
+        await ctx.channel.send(embed=errorEmbed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
