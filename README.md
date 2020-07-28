@@ -27,6 +27,7 @@ frequently as the bot's functionality grows.
 - `8ball`
 - `choose`
 - `gifsearch`
+- `imgursearch`
 - `isabelle`
 - `peppa`
 - `say`
