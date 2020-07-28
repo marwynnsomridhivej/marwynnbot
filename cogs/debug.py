@@ -21,7 +21,7 @@ class Debug(commands.Cog):
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
         await ctx.send(embed=ping, delete_after=10)
-        gcmds.incrCounter(gcmds, 'ping')
+        gcmds.incrCounter(gcmds, ctx, 'ping')
 
     @commands.command()
     async def shard(self, ctx, option=None):
@@ -34,7 +34,7 @@ class Debug(commands.Cog):
                                    description=shardDesc,
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=shardEmbed, delete_after=30)
-        gcmds.incrCounter(gcmds, 'shard')
+        gcmds.incrCounter(gcmds, ctx, 'shard')
 
 
 def setup(client):

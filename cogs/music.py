@@ -24,7 +24,7 @@ class Music(commands.Cog):
                                   description=f'Successfully joined the voice channel `{channel}`',
                                   color=discord.Color.blue())
         await ctx.channel.send(embed=joinEmbed)
-        gcmds.incrCounter(gcmds, 'join')
+        gcmds.incrCounter(gcmds, ctx, 'join')
 
     @join.error
     async def join_error(self, ctx, error):
@@ -52,7 +52,7 @@ class Music(commands.Cog):
                                    description=f'Successfully left the voice channel `{channel}`',
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=leaveEmbed)
-        gcmds.incrCounter(gcmds, 'leave')
+        gcmds.incrCounter(gcmds, ctx, 'leave')
 
     @leave.error
     async def leave_error(self, ctx, error):

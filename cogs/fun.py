@@ -35,13 +35,13 @@ class Fun(commands.Cog):
             title = f"{path[5:].capitalize()} from Imgur"
             url = url
             color = discord.Color.blue()
-            gcmds.incrCounter(gcmds, 'imgurSearch')
+            gcmds.incrCounter(gcmds, ctx, 'imgurSearch')
         elif "tenor" in path:
             local = False
             title = f"{path[5:].capitalize()} from Tenor"
             url = url
             color = discord.Color.blue()
-            gcmds.incrCounter(gcmds, 'gifSearch')
+            gcmds.incrCounter(gcmds, ctx, 'gifSearch')
         else:
             local = True
             files = os.listdir(path)
@@ -65,7 +65,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://toad_{fn}")
                 else:
                     url = f"attachment://toad_{name}"
-                gcmds.incrCounter(gcmds, 'toad')
+                gcmds.incrCounter(gcmds, ctx, 'toad')
             if path == "./isabelle":
                 title = "Isabelle"
                 color = discord.Color.blue()
@@ -75,7 +75,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://isabelle_{fn}")
                 else:
                     url = f"attachment://isabelle_{name}"
-                gcmds.incrCounter(gcmds, 'isabelle')
+                gcmds.incrCounter(gcmds, ctx, 'isabelle')
             if path == "./peppa":
                 title = "Peppa"
                 color = discord.Color.blue()
@@ -85,7 +85,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://peppa_{fn}")
                 else:
                     url = f"attachment://peppa_{name}"
-                gcmds.incrCounter(gcmds, 'peppa')
+                gcmds.incrCounter(gcmds, ctx, 'peppa')
 
             if (toSend is not None) and local:
                 count = 0
@@ -136,7 +136,7 @@ class Fun(commands.Cog):
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
-        gcmds.incrCounter(gcmds, '8ball')
+        gcmds.incrCounter(gcmds, ctx, '8ball')
 
     @commands.command()
     async def choose(self, ctx, *, choices):
@@ -149,7 +149,7 @@ class Fun(commands.Cog):
         chooseEmbed.add_field(name=f'{ctx.author} asked: {choices}',
                               value=answer)
         await ctx.channel.send(embed=chooseEmbed)
-        gcmds.incrCounter(gcmds, 'choose')
+        gcmds.incrCounter(gcmds, ctx, 'choose')
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
@@ -312,7 +312,7 @@ class Fun(commands.Cog):
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
-        gcmds.incrCounter(gcmds, 'say')
+        gcmds.incrCounter(gcmds, ctx, 'say')
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx, toSend: typing.Optional[int] = None):

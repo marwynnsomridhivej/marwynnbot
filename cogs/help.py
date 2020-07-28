@@ -60,7 +60,7 @@ class Help(commands.Cog):
     @commands.group(aliases=['h'])
     async def help(self, ctx):
         await ctx.message.delete()
-        gcmds.incrCounter(gcmds, 'help')
+        gcmds.incrCounter(gcmds, ctx, 'help')
         if ctx.invoked_subcommand is None:
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
                                       colour=discord.Colour(0x3498db),

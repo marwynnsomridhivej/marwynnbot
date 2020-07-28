@@ -38,7 +38,7 @@ class Moderation(commands.Cog):
         clearEmbed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/734962101432615006/734962158290468944/eraser.png")
         await ctx.channel.send(embed=clearEmbed, delete_after=5)
-        gcmds.incrCounter(gcmds, 'chatclean')
+        gcmds.incrCounter(gcmds, ctx, 'chatclean')
 
     @chatclean.error
     async def chatclean_error(self, ctx, error):
@@ -80,7 +80,7 @@ class Moderation(commands.Cog):
                     mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
                     mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
-        gcmds.incrCounter(gcmds, 'mute')
+        gcmds.incrCounter(gcmds, ctx, 'mute')
 
     @mute.error
     async def mute_error(self, ctx, error):
@@ -120,7 +120,7 @@ class Moderation(commands.Cog):
                                             color=discord.Color.blue())
                 unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
                 await ctx.channel.send(embed=unmuteEmbed)
-                gcmds.incrCounter(gcmds, 'unmute')
+                gcmds.incrCounter(gcmds, ctx, 'unmute')
 
     @unmute.error
     async def unmute_error(self, ctx, error):
@@ -151,7 +151,7 @@ class Moderation(commands.Cog):
                                 value=reason,
                                 inline=False)
             await ctx.channel.send(embed=kickEmbed)
-            gcmds.incrCounter(gcmds, 'kick')
+            gcmds.incrCounter(gcmds, ctx, 'kick')
 
     @kick.error
     async def kick_error(self, ctx, error):
@@ -189,7 +189,7 @@ class Moderation(commands.Cog):
                                value=reason,
                                inline=False)
             await ctx.channel.send(embed=banEmbed)
-            gcmds.incrCounter(gcmds, 'ban')
+            gcmds.incrCounter(gcmds, ctx, 'ban')
 
     @ban.error
     async def ban_error(self, ctx, error):
@@ -233,7 +233,7 @@ class Moderation(commands.Cog):
                                 value=ctx.author.mention)
                 await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
                 await ctx.channel.send(embed=unban)
-                gcmds.incrCounter(gcmds, 'unban')
+                gcmds.incrCounter(gcmds, ctx, 'unban')
             else:
                 notBanned = discord.Embed(title="User Not Banned!",
                                           description='For now :)',
@@ -243,7 +243,7 @@ class Moderation(commands.Cog):
                                     value=ctx.author.mention,
                                     inline=False)
                 await ctx.channel.send(embed=notBanned, delete_after=5)
-                gcmds.incrCounter(gcmds, 'unban')
+                gcmds.incrCounter(gcmds, ctx, 'unban')
 
     @unban.error
     async def unban_error(self, ctx, error):
@@ -287,7 +287,7 @@ class Moderation(commands.Cog):
                                   color=color)
         modsEmbed.set_thumbnail(url="https://www.pinclipart.com/picdir/big/529-5290012_gavel-clipart.png")
         await ctx.channel.send(embed=modsEmbed, delete_after=60)
-        gcmds.incrCounter(gcmds, 'modsonline')
+        gcmds.incrCounter(gcmds, ctx, 'modsonline')
 
 
 def setup(client):
