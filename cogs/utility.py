@@ -59,7 +59,7 @@ class Utility(commands.Cog):
                                              color=discord.Color.blue())
             else:
                 if mode == 'server':
-                    title = f"{str(ctx.guild.name).title()} Command Counter"
+                    title = f"{str(ctx.guild.name).capitalize()} Command Counter"
                 else:
                     title = "Global Command Counter"
                 counterEmbed = discord.Embed(title=title,
