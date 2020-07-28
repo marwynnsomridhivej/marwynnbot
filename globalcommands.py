@@ -20,7 +20,7 @@ class GlobalCMDS:
     def incrCounter(self, ctx, cmdName):
         init = {'Server': {}, 'Global': {}}
 
-        self.json_load(self, "counters.json", init)
+        self.json_load(self, "./counters.json", init)
         with open('counters.json', 'r') as f:
             values = json.load(f)
 
