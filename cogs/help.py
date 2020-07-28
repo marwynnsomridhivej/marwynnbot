@@ -20,7 +20,8 @@ class Help(commands.Cog):
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
                                                                                          "/full/71-716621_transparent"
                                                                                          "-clip-art-open-book-frame"
-                                                                                         "-line-art.png", delete_after=None):
+                                                                                         "-line-art.png",
+                          delete_after=None):
         embed = discord.Embed(title=f"{commandName} Help",
                               color=discord.Color.blue())
         embed.add_field(name="Command Syntax",
@@ -184,10 +185,10 @@ class Help(commands.Cog):
     @help.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx):
         commandName = 'GifSearch'
-        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch [optional limit] [searchTerm]`"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch [optional amount] [searchTerm]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch excited`"
         aliases = "`gif` `gifs` `searchgif` `searchgifs`"
-        specialCases = "If the `[optional limit]` argument is specified, Tenor will search that amount of gifs"\
+        specialCases = "If the `[optional amount]` argument is specified, Tenor will return that amount of gifs" \
                        "\n\nIf the `tenor_api.yaml` file is not present, it will be created and contents initialised " \
                        "as:\n```yaml\napi_key: API_KEY_FROM_TENOR\n```\nGet an API Key from Tenor and replace " \
                        "`API_KEY_FROM_TENOR` with it"
@@ -198,25 +199,46 @@ class Help(commands.Cog):
                                aliases=aliases,
                                specialCases=specialCases)
 
-    @help.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
-    async def isabelle(self, ctx):
-        commandName = "Isabelle"
-        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}isabelle`"
-        aliases = "`isabellepic` `isabelleemote` `belle` `bellepic` `belleemote`"
+    @help.command(aliases=['imgur'])
+    async def imgurSearch(self, ctx):
+        commandName = "ImgurSearch"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}imgursearch [optional amount] [searchTerm]`"
+        exampleUsage = f"{gcmds.prefix(gcmds, ctx)}imgursearch Toad"
+        aliases = "`imgur`"
+        specialCases = "If the `[optional amount]` argument is specified, Imgur will return that amount of images" \
+                       "\n\nIf the `imgur_api.yaml` file is not present, it will be created and contents initialised " \
+                       "as:\n```yaml\nClient-ID: CLIENT_ID_FROM_IMGUR\n```\nGet a client ID from Imgur and replace " \
+                       "`CLIENT_ID_FROM_IMGUR` with it"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases)
+                               exampleUsage=exampleUsage,
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
+    async def isabelle(self, ctx):
+        commandName = "Isabelle"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}isabelle [optional amount]`"
+        aliases = "`isabellepic` `isabelleemote` `belle` `bellepic` `belleemote`"
+        specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     @help.command(aliases=['peppapic', 'ppic', 'ppig'])
     async def peppa(self, ctx):
         commandName = "Peppa"
-        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}peppa`"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}peppa [optional amount]`"
         aliases = "`peppapic` `ppic` `ppig`"
+        specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases)
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     @help.command()
     async def say(self, ctx):
@@ -229,12 +251,14 @@ class Help(commands.Cog):
     @help.command(alises=['toadpic', 'toademote'])
     async def toad(self, ctx):
         commandName = 'Toad'
-        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}toad`"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}toad [optional amount]`"
         aliases = "`toadpic` `toademote`"
+        specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases)
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     # =================================================
     # Games
