@@ -1,6 +1,8 @@
 .idea
 cogs/__pycache__
 venv
+__pycache__
+*.pyc
 token.yaml
 prefixes.json
 counters.json
