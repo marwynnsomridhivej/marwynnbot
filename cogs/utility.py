@@ -68,7 +68,7 @@ class Utility(commands.Cog):
                               value=f"The current server prefix is: `{serverPrefix}`",
                               inline=False)
         prefixEmbed.add_field(name="Global Prefixes",
-                              value=f"{self.client.user.mention} or `mb `",
+                              value=f"{self.client.user.mention} or `mb ` - *ignorecase*",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
         gcmds.incrCounter(gcmds, 'prefix')
