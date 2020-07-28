@@ -1,25 +1,47 @@
 import os
 import json
 
+from discord.ext.commands import CommandInvokeError
+
 
 class GlobalCMDS:
 
-    def file_check(self, filenamepath: str, *init):
+    def file_check(self, filenamepath, init):
         if not os.path.exists(filenamepath):
             with open(filenamepath, 'w') as f:
                 for str in init:
                     f.write(str)
 
-    def incrCounter(self, cmdName):
-        self.file_check(self, "counters.json", '{\n\n}')
+    def json_load(self, filenamepath, init):
+        if not os.path.exists(filenamepath):
+            with open(filenamepath, 'w') as f:
+                json.dump(init, f, indent=4)
+
+    def incrCounter(self, ctx, cmdName):
+        init = {'Server': {}, 'Global': {}}
+
+        self.json_load(self, "counters.json", init)
         with open('counters.json', 'r') as f:
             values = json.load(f)
+
             try:
-                values[str(cmdName)]
+                values['Server'][str(ctx.guild.id)]
             except KeyError:
-                values[str(cmdName)] = 1
+                values['Server'][str(ctx.guild.id)] = {}
+            try:
+                values['Server'][str(ctx.guild.id)][str(cmdName)]
+            except KeyError:
+                values['Server'][str(ctx.guild.id)][str(cmdName)] = 1
             else:
-                values[str(cmdName)] += 1
+                values['Server'][str(ctx.guild.id)][str(cmdName)] += 1
+
+            try:
+                values['Global'][str(cmdName)]
+            except KeyError:
+                values['Global'][str(cmdName)] = 1
+            else:
+                values['Global'][str(cmdName)] += 1
+
         with open('counters.json', 'w') as f:
             json.dump(values, f, indent=4)
 
