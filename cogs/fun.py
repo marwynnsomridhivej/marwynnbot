@@ -28,7 +28,7 @@ class Fun(commands.Cog):
     async def imageSend(self, ctx, path, url=None, toSend=None):
         await ctx.message.delete()
         path = path
-        sleepTime = 1.2
+        sleepTime = 1.0
 
         if "imgur" in path:
             local = False
