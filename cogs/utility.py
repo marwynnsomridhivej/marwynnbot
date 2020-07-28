@@ -21,7 +21,7 @@ class Utility(commands.Cog):
         print('Cog "utility" has been loaded')
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
-    async def counter(self, ctx, commandName=None):
+    async def counter(self, ctx, commandName=None, mode='server'):
         await ctx.message.delete()
 
         gcmds.file_check(gcmds, "counters.json", '{\n\n}')
@@ -33,11 +33,20 @@ class Utility(commands.Cog):
             values = json.load(f)
             keyList = values.items()
             if commandName is not None:
-                execCount = values[str(commandName)]
-                if execCount != 1:
-                    description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times"
+                if mode != 'global':
+                    execCount = values['Server'][str(ctx.guild.id)][str(commandName)]
                 else:
-                    description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time"
+                    execCount = values['Global'][str(commandName)]
+                if execCount != 1:
+                    if mode != 'global':
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times on this server"
+                    else:
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times globally"
+                else:
+                    if mode != 'global':
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time on this server"
+                    else:
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time globally"
                 counterEmbed = discord.Embed(title=f"Command \"{str.capitalize(commandName)}\" Counter",
                                              description=description,
                                              color=discord.Color.blue())
