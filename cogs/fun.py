@@ -30,18 +30,21 @@ class Fun(commands.Cog):
         path = path
         sleepTime = 1.0
 
+        def incr(cmdName):
+            gcmds.incrCounter(gcmds, ctx, cmdName)
+
         if "imgur" in path:
             local = False
             title = f"{path[5:].capitalize()} from Imgur"
             url = url
             color = discord.Color.blue()
-            gcmds.incrCounter(gcmds, ctx, 'imgurSearch')
+            cmdName = "imgurSearch"
         elif "tenor" in path:
             local = False
             title = f"{path[5:].capitalize()} from Tenor"
             url = url
             color = discord.Color.blue()
-            gcmds.incrCounter(gcmds, ctx, 'gifSearch')
+            cmdName = "gifSearch"
         else:
             local = True
             files = os.listdir(path)
@@ -57,7 +60,7 @@ class Fun(commands.Cog):
                 d = f'{path}/{name}'
 
             if path == "./toad":
-                title = "Toad ❤️❤️❤️❤️❤️❤️"
+                title = "Toad️ ️❤️❤️❤️❤️❤️❤️"
                 color = discord.Color.red()
                 if toSend is not None:
                     url = []
@@ -65,7 +68,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://toad_{fn}")
                 else:
                     url = f"attachment://toad_{name}"
-                gcmds.incrCounter(gcmds, ctx, 'toad')
+                cmdName = "toad"
             if path == "./isabelle":
                 title = "Isabelle"
                 color = discord.Color.blue()
@@ -75,7 +78,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://isabelle_{fn}")
                 else:
                     url = f"attachment://isabelle_{name}"
-                gcmds.incrCounter(gcmds, ctx, 'isabelle')
+                cmdName = "isabelle"
             if path == "./peppa":
                 title = "Peppa"
                 color = discord.Color.blue()
@@ -85,7 +88,7 @@ class Fun(commands.Cog):
                         url.append(f"attachment://peppa_{fn}")
                 else:
                     url = f"attachment://peppa_{name}"
-                gcmds.incrCounter(gcmds, ctx, 'peppa')
+                cmdName = "peppa"
 
             if (toSend is not None) and local:
                 count = 0
@@ -100,6 +103,7 @@ class Fun(commands.Cog):
                         await ctx.channel.send(file=picture, embed=multipleEmbed)
                         await asyncio.sleep(sleepTime)
                         count += 1
+                        incr(cmdName)
                 return
             else:
                 with open(d, 'rb') as f:
@@ -113,6 +117,7 @@ class Fun(commands.Cog):
                 multipleEmbed.set_image(url=i)
                 await ctx.channel.send(embed=multipleEmbed)
                 await asyncio.sleep(sleepTime)
+                incr(cmdName)
             return
         else:
             pictureEmbed = discord.Embed(title=title,
@@ -123,8 +128,10 @@ class Fun(commands.Cog):
             pictureEmbed.set_footer(text=f'Filename: {name}')
             await ctx.channel.send(file=picture,
                                    embed=pictureEmbed)
+            incr(cmdName)
         else:
             await ctx.channel.send(embed=pictureEmbed)
+            incr(cmdName)
 
     @commands.command(aliases=['8ball', '8b'])
     async def _8ball(self, ctx, *, question):
