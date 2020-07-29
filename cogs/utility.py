@@ -1,6 +1,7 @@
 import json
 from asyncio import sleep
 import discord
+import typing
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 
@@ -44,13 +45,13 @@ class Utility(commands.Cog):
                     execCount = values['Global'][str(commandName)]
                 if execCount != 1:
                     if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** "\
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** " \
                                       f"times in *{ctx.guild.name}*"
                     else:
                         description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times globally"
                 else:
                     if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** "\
+                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** " \
                                       f"time in *{ctx.guild.name}*"
                     else:
                         description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time globally"
@@ -87,6 +88,26 @@ class Utility(commands.Cog):
                                    description=description,
                                    color=discord.Color.dark_red())
         await ctx.channel.send(embed=errorEmbed)
+
+    @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
+    async def serverEmotes(self, ctx, *, search=None):
+        await ctx.message.delete()
+        description = []
+        for emoji in ctx.guild.emojis:
+            if search is not None:
+                if search in emoji.name:
+                    description.append(f"\n**{emoji.name}:** <{emoji.name}:{emoji.id}>")
+            else:
+                description.append(f"\n**{emoji.name}:** <{emoji.name}:{emoji.id}>")
+        sort = sorted(description)
+        description = ""
+        for string in sort:
+            description += string
+
+        emojiEmbed = discord.Embed(title="Server Custom Emotes:",
+                                   description=description,
+                                   color=discord.Color.blue())
+        await ctx.channel.send(embed=emojiEmbed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
