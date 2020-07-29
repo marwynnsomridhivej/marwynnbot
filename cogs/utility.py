@@ -96,9 +96,9 @@ class Utility(commands.Cog):
         for emoji in ctx.guild.emojis:
             if search is not None:
                 if search in emoji.name:
-                    description.append(f"\n**{emoji.name}:** <{emoji.name}:{emoji.id}>")
+                    description.append(f"\n**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
             else:
-                description.append(f"\n**{emoji.name}:** <{emoji.name}:{emoji.id}>")
+                description.append(f"\n**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
         sort = sorted(description)
         description = ""
         for string in sort:
