@@ -51,6 +51,7 @@ class Hand:
         self.value = 0
         self.aces = 0
         self.acecount = 0
+        self.iter = 0
 
     def add_card(self, card):
         self.cards.append(card)
@@ -105,6 +106,7 @@ class Hand:
                         string += "1+"
                     else:
                         string += f"{values[card]}+"
+        self.iter += 1
         return string
 
     def added(self):
@@ -290,6 +292,35 @@ def push(player, dealer, ctx):
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
+def _blackjack(player, dealer, chips, ctx):
+    chips.win_bet()
+    chips.win_bet()
+    load = False
+    success = False
+    init = {'Blackjack': {}}
+    gcmds.json_load(gcmds, 'gamestats.json', init)
+    with open('gamestats.json', 'r') as f:
+        file = json.load(f)
+        while not load:
+            try:
+                win = file['Blackjack'][str(ctx.author.id)]['win']
+                blackjack = file['Blackjack'][str(ctx.author.id)]['blackjack']
+            except KeyError:
+                if not success:
+                    try:
+                        file['Blackjack'][str(ctx.author.id)]
+                    except KeyError:
+                        file['Blackjack'][str(ctx.author.id)] = {}
+                        success = True
+                file['Blackjack'][str(ctx.author.id)]['win'] = 0
+                file['Blackjack'][str(ctx.author.id)]['blackjack'] = 0
+            else:
+                file['Blackjack'][str(ctx.author.id)]['win'] += 1
+                file['Blackjack'][str(ctx.author.id)]['blackjack'] += 1
+                load = True
+        with open('gamestats.json', 'w') as f:
+            json.dump(file, f, indent=4)
+
 
 def show_dealer(dealer, won):
     if won:
@@ -446,7 +477,7 @@ class Blackjack(commands.Cog):
     async def on_ready(self):
         print("Cog \"Blackjack\" has been loaded")
 
-    @commands.command(aliases=['bj'])
+    @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
         await ctx.message.delete()
 
@@ -583,37 +614,43 @@ class Blackjack(commands.Cog):
 
                 await message.clear_reactions()
                 bjEmbedEdit = discord.Embed(title="Blackjack",
-                                            description=f"{ctx.author.mention}, you busted!",
+                                            description=f"{ctx.author.mention}, you busted! Lost **{bet}** {spell}",
                                             color=discord.Color.blue())
-                bjEmbedEdit.set_author(name=f"{ctx.author.name} lost {bet} {spell}",
+                bjEmbedEdit.set_author(name="Results",
                                        icon_url=ctx.author.avatar_url)
                 bjEmbedEdit.add_field(name=f"Dealer `[{dealer_value[:-1]}={dr_int}]`",
                                       value=show_dealer(dealer_hand, won))
                 bjEmbedEdit.add_field(name=f"{ctx.author.name} `[{player_value[:-1]}={pv_int}]`",
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
-                gcmds.json_load(gcmds, 'balance.json', init)
+                gcmds.incrCounter(gcmds, ctx, 'blackjack')
                 return
 
             if player_hand.value <= 21 and not stopiter:
                 while dealer_hand.value < 17:
                     hit(deck, dealer_hand)
-
-                won = True
+                    dealer_value = dealer_hand.list_hand(gameEnd=won)
+                    dr_int = dealer_hand.added()
 
                 player_value = player_hand.list_hand(gameEnd=won)
                 pv_int = player_hand.added()
                 dealer_value = dealer_hand.list_hand(gameEnd=won)
                 dr_int = dealer_hand.added()
-                if dealer_hand.value > 21:
+
+                won = True
+
+                if (player_hand.iter - 3) == 0 and player_hand.value == 21:
+                    _blackjack(player_hand, dealer_hand, player_chips, ctx)
+                    description = f"Blackjack! {ctx.author.mention} wins **{bet*2}** {spell}"
+                elif dealer_hand.value > 21:
                     dealer_busts(player_hand, dealer_hand, player_chips, ctx)
-                    description = f"Dealer busts! {ctx.author.mention} wins {bet} {spell}"
+                    description = f"Dealer busts! {ctx.author.mention} wins **{bet}** {spell}"
                 elif dealer_hand.value > player_hand.value:
                     dealer_wins(player_hand, dealer_hand, player_chips, ctx)
-                    description = f"Dealer wins! {ctx.author.mention} lost {bet} {spell}"
+                    description = f"Dealer wins! {ctx.author.mention} lost **{bet}** {spell}"
                 elif player_hand.value > dealer_hand.value:
                     player_wins(player_hand, dealer_hand, player_chips, ctx)
-                    description = f"{ctx.author.mention} wins {bet} {spell}"
+                    description = f"{ctx.author.mention} wins **{bet}** {spell}"
                 else:
                     push(player_hand, dealer_hand, ctx)
                     description = "Its a tie! No credits lost or gained"
@@ -629,7 +666,7 @@ class Blackjack(commands.Cog):
                 bjEmbedEdit.add_field(name=f"{ctx.author.name} `[{player_value[:-1]}={pv_int}]`",
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
-                gcmds.json_load(gcmds, 'balance.json', init)
+                gcmds.incrCounter(gcmds, ctx, 'blackjack')
                 return
 
 
