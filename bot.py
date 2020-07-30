@@ -118,6 +118,7 @@ async def reload(ctx, *, extension=None):
     await ctx.message.delete()
     if await client.is_owner(ctx.author):
         if extension is None:
+            print("==========================")
             for filenameReload in os.listdir('./cogs'):
                 if filenameReload.endswith('.py'):
                     client.reload_extension(f'cogs.{filenameReload[:-3]}')
@@ -126,13 +127,16 @@ async def reload(ctx, *, extension=None):
                                         description="Successfully reloaded all cogs",
                                         color=discord.Color.blue())
             await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            print("==========================")
         else:
+            print("==========================")
             client.reload_extension(f'cogs.{extension}')
             print(f'Cog "{extension}" has been reloaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description=f"Successfully reloaded cog `{extension}`",
                                         color=discord.Color.blue())
             await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            print("==========================")
     else:
         reloadError = discord.Embed(title='Insufficient User Permissions',
                                     description='You need to be the bot owner to use this command',
