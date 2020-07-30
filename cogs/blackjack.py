@@ -65,7 +65,6 @@ class Hand:
 
     def list_hand(self, isDealer=False, gameEnd=False):
         string = ""
-        print(self.acecount)
         if isDealer is False:
             for card in self.cards:
                 if self.value > 21:
@@ -449,7 +448,6 @@ class Blackjack(commands.Cog):
 
     @commands.command(aliases=['bj'])
     async def blackjack(self, ctx, bet=1):
-        gcmds.incrCounter(gcmds, ctx, 'blackjack')
         await ctx.message.delete()
 
         won = False
@@ -473,6 +471,7 @@ class Blackjack(commands.Cog):
         dealer_value = dealer_hand.list_hand(True)
 
         init = {'Balance': {}}
+        gcmds.json_load(gcmds, 'balance.json', init)
         with open('balance.json', 'r') as f:
             file = json.load(f)
             try:
@@ -480,6 +479,14 @@ class Blackjack(commands.Cog):
             except KeyError:
                 file['Balance'][str(ctx.author.id)] = 1000
                 balance = 1000
+                initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                          description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                                      f"to start!\n\nCheck your current"
+                                                      f" balance using `{gcmds.prefix(gcmds, ctx)}balance`",
+                                          color=discord.Color.blue())
+                initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                            "/738390147514499163/chips.png")
+                await ctx.channel.send(embed=initEmbed, delete_after=10)
                 f.close()
             else:
                 balance = file['Balance'][str(ctx.author.id)]
