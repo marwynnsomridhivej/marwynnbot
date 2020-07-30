@@ -85,7 +85,7 @@ class Help(commands.Cog):
 
             debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
-            gamesCmds = "*Under Development*"
+            gamesCmds = "*Under Development* `balance` `blackjack`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
@@ -263,6 +263,29 @@ class Help(commands.Cog):
     # =================================================
     # Games
     # =================================================
+
+    @help.command(aliases=['bal'])
+    async def balance(self, ctx):
+        commandName = "Balance"
+        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}balance"
+        aliases = "`bal"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases)
+
+    @help.command(aliases=['bj', 'Blackjack'])
+    async def blackjack(self, ctx):
+        commandName = "Blackjack"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}blackjack [betAmount]`"
+        aliases = "`bj` `Blackjack`"
+        specialCases = "If `[betAmount]` is not specified, it will automatically bet 1 credit" \
+                       "\n\nIf you do not have enough credits for the `[betAmount]` you will be unable to play"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     # =================================================
     # Moderation
