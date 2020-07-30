@@ -7,6 +7,7 @@ token.yaml
 prefixes.json
 counters.json
 balance.json
+gamestats.json
 discord.log
 tenor_api.yaml
 imgur_api.yaml
