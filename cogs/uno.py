@@ -106,7 +106,7 @@ class UnoGame:
     def __next__(self):
         self._current_player = next(self._player_cycle)
 
-    def _create_deck(self, random):
+    def _create_deck(self, random=True):
         color_cards = product(COLORS, COLOR_CARD_TYPES)
         black_cards = product(repeat('black', 4), BLACK_CARD_TYPES)
         all_cards = chain(color_cards, black_cards)
@@ -228,6 +228,12 @@ class ReversibleCycle:
     def reverse(self):
         self._reverse = not self._reverse
 
+def emoji(player: UnoPlayer):
+    for card in player.hand:
+        if card.color == "red":
+            return
+
+
 
 class UNO(commands.Cog):
 
@@ -238,12 +244,11 @@ class UNO(commands.Cog):
     async def on_ready(self):
         print('Cog "UNO" has been loaded')
 
-    async def embedBuilder(self, ctx, players=commands.Greedy[discord.Member]):
-        embed = discord.Embed(title='UNO',
-                              color=discord.Color.blue())
-        for player in players:
-            embed.add_field(name=player.name,
-                            value=None)
+    @commands.command()
+    async def uno(self, ctx, members = commands.Greedy[discord.Member]):
+        while True:
+            False
+
 
 
 def setup(client):
