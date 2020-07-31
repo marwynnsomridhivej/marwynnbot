@@ -35,6 +35,11 @@ frequently as the bot's functionality grows.
 
 **Games**
 - Currently under development
+- `blackjack`
+
+**Games Commands**
+- `balance`
+- `gamestats`
 
 **Moderation**
 - `chatclean`
