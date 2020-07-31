@@ -301,6 +301,16 @@ class Help(commands.Cog):
                                aliases=aliases,
                                specialCases=specialCases)
 
+    @help.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
+    async def connectFour(self, ctx):
+        commandName = "ConnectFour"
+        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}connectfour [opponent @mention]"
+        aliases = "`c4` `conn` `connect`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases)
+
     # =================================================
     # Moderation
     # =================================================
