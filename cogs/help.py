@@ -274,6 +274,20 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                aliases=aliases)
 
+    @help.command(aliases=['gamestats', 'stats'])
+    async def gameStats(self, ctx):
+        commandName = "GameStats"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gamestats [optional gameName]`"
+        aliases = "`stats`"
+        specialCases = "If the `[optional gameName]` argument is not specified, it will show your stats for all the "\
+                       "games you have played at least once before"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+
     @help.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx):
         commandName = "Blackjack"
