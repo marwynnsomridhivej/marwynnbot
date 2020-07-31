@@ -36,10 +36,12 @@ frequently as the bot's functionality grows.
 **Games**
 - Currently under development
 - `blackjack`
+- `connectfour`
 
 **Games Commands**
 - `balance`
 - `gamestats`
+- `transfer`
 
 **Moderation**
 - `chatclean`
