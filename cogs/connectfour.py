@@ -141,9 +141,9 @@ async def win(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['win'] += 1
                 load = True
-        gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
+    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
 
     initBal = {'Balance': {}}
     gcmds.json_load(gcmds, 'balance.json', initBal)
@@ -222,9 +222,9 @@ def lose(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['lose'] += 1
                 load = True
-        gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
+    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
 
 
 def draw(ctx, member: discord.Member):
