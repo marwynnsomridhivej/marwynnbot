@@ -49,7 +49,7 @@ class Games(commands.Cog):
                                      color=color)
         balanceEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                                        "/chips.png")
-        await ctx.channel.send(embed=balanceEmbed, delete_after=60)
+        await ctx.channel.send(embed=balanceEmbed, delete_after=30)
         gcmds.incrCounter(gcmds, ctx, 'balance')
 
     @commands.command(aliases=['gamestats', 'stats'])
