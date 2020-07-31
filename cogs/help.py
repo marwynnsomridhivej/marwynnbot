@@ -267,19 +267,23 @@ class Help(commands.Cog):
     @help.command(aliases=['bal'])
     async def balance(self, ctx):
         commandName = "Balance"
-        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}balance"
-        aliases = "`bal"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}balance [optional users @mentions]`"
+        aliases = "`bal`"
+        specialCases = "The `[optional users @mentions]` argument supports multiple user mentions and " \
+                       "will only display the balances for the users mentioned\n\n If the `[optional users " \
+                       "@mentions]` argument is left blank, it will display your current balance"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases)
+                               aliases=aliases,
+                               specialCases=specialCases)
 
     @help.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx):
         commandName = "GameStats"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gamestats [optional gameName]`"
         aliases = "`stats`"
-        specialCases = "If the `[optional gameName]` argument is not specified, it will show your stats for all the "\
+        specialCases = "If the `[optional gameName]` argument is not specified, it will show your stats for all the " \
                        "games you have played at least once before"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
@@ -287,6 +291,16 @@ class Help(commands.Cog):
                                aliases=aliases,
                                specialCases=specialCases)
 
+    @help.command()
+    async def transfer(self, ctx):
+        commandName = "Transfer"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}transfer [amount] [user @mention or multiple @mentions]`"
+        specialCases = "If the `[user @mention or multiple @mentions]` arg is more than one user, it will give `[" \
+                       "amount]` to each user. You must have sufficient funds for sending to all users"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
 
     @help.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx):
@@ -304,7 +318,7 @@ class Help(commands.Cog):
     @help.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx):
         commandName = "ConnectFour"
-        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}connectfour [opponent @mention]"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}connectfour [opponent @mention]`"
         aliases = "`c4` `conn` `connect`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
