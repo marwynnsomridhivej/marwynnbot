@@ -141,6 +141,7 @@ async def win(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['win'] += 1
                 load = True
+        gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
@@ -196,7 +197,7 @@ async def win(ctx, member: discord.Member):
         await rewardMessage.pin(reason=f"{member.name} hit the jackpot for winning a game of Connect Four!")
 
 
-def lose(member: discord.Member):
+def lose(ctx, member: discord.Member):
     load = False
     success = False
     init = {'ConnectFour': {}}
@@ -221,6 +222,7 @@ def lose(member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['lose'] += 1
                 load = True
+        gcmds.ratio(gcmds, ctx, 'gamestats.json', 'ConnectFour')
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
@@ -413,7 +415,7 @@ class ConnectFour(commands.Cog):
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
                                 await win(ctx, ctx.author)
-                                lose(opponent)
+                                lose(ctx, opponent)
                                 gcmds.incrCounter(gcmds, ctx, 'connectFour')
                                 return
 
@@ -445,7 +447,7 @@ class ConnectFour(commands.Cog):
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
                                 await win(ctx, opponent)
-                                lose(ctx.author)
+                                lose(ctx, ctx.author)
                                 gcmds.incrCounter(gcmds, ctx, 'connectFour')
                                 return
 
