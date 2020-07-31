@@ -1,3 +1,4 @@
+import math
 import os
 import json
 
@@ -50,3 +51,20 @@ class GlobalCMDS:
             prefixes = json.load(f)
 
         return prefixes[str(ctx.guild.id)]
+
+    def ratio(self, ctx, filenamepath, gameName):
+        with open(filenamepath, 'r') as f:
+            file = json.load(f)
+            try:
+                wins = file[str(gameName)][str(ctx.author.id)]['win']
+            except KeyError:
+                file[str(gameName)][str(ctx.author.id)]['ratio'] = 0
+            else:
+                try:
+                    losses = file[str(gameName)][str(ctx.author.id)]['lose']
+                except KeyError:
+                    file[str(gameName)][str(ctx.author.id)]['ratio'] = 1
+                else:
+                    file[str(gameName)][str(ctx.author.id)]['ratio'] = round((wins / losses), 3)
+        with open(filenamepath, 'w') as f:
+            json.dump(file, f, indent=4)
