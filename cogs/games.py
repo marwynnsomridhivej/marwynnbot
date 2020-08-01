@@ -117,7 +117,7 @@ class Games(commands.Cog):
                 file = json.load(f)
                 if gameName is not None:
                     try:
-                        stats = file[str(gameName)][str(user)]
+                        stats = file[str(gameName)][str(user.id)]
                         statsEmbed = discord.Embed(title=f"{person_name.display_name}'s Stats for {str(gameName).capitalize()}",
                                                    color=discord.Color.blue())
                     except KeyError:
@@ -147,7 +147,7 @@ class Games(commands.Cog):
                         try:
                             user_data = file[str(game)][str(user.id)]
                         except KeyError:
-                            statsEmbed.add_field(name=game,
+                            statsEmbed.add_field(name=f"{game}",
                                                  value="No Data Available")
                         else:
                             value = ""
