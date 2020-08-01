@@ -481,7 +481,7 @@ class Blackjack(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Cog \"Blackjack\" has been loaded")
+        print("Cog \"blackjack\" has been loaded")
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
