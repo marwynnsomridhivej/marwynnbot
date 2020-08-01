@@ -106,7 +106,7 @@ class Games(commands.Cog):
                 gameName = None
         userlist = []
         if member is None:
-            userlist.append(ctx.author.id)
+            userlist.append(ctx.author)
         else:
             for user in member:
                 userlist.append(user)
