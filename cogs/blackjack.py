@@ -296,6 +296,7 @@ def push(player, dealer, ctx):
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
+
 def _blackjack(player, dealer, chips, ctx):
     chips.win_bet()
     chips.win_bet()
@@ -542,9 +543,11 @@ class Blackjack(commands.Cog):
 
         hitEmoji = '✅'
         standEmoji = '❌'
+        cancelEmoji = '🛑'
 
         bjEmbed = discord.Embed(title="Blackjack",
-                                description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}",
+                                description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}, to cancel "
+                                            f"the game, react to {cancelEmoji}",
                                 color=discord.Color.blue())
         bjEmbed.set_author(name=f"{ctx.author.name} bet {bet} {spell} to play Blackjack",
                            icon_url=ctx.author.avatar_url)
@@ -555,11 +558,14 @@ class Blackjack(commands.Cog):
         message = await ctx.channel.send(embed=bjEmbed)
         await message.add_reaction(hitEmoji)
         await message.add_reaction(standEmoji)
+        await message.add_reaction(cancelEmoji)
 
         def check(reaction, user):
             if ctx.author == user and str(reaction.emoji) == '✅':
                 return True
             elif ctx.author == user and str(reaction.emoji) == '❌':
+                return True
+            elif ctx.author == user and str(reaction.emoji) == '🛑':
                 return True
             else:
                 return False
@@ -576,6 +582,13 @@ class Blackjack(commands.Cog):
                     if str(item) == '❌':
                         choice = 'stand'
                         break
+                    if str(item) == '🛑':
+                        await message.clear_reactions()
+                        bjEmbed = discord.Embed(title="Blackjack Game Canceled",
+                                                description=f"{ctx.author.mention}, your game was cancelled",
+                                                color=discord.Color.dark_red())
+                        await message.edit(embed=bjEmbed, delete_after=10)
+                        return
                 stopiter = hit_or_stand(deck, player_hand, choice)
 
                 player_value = player_hand.list_hand()
@@ -584,7 +597,8 @@ class Blackjack(commands.Cog):
 
                 await message.clear_reactions()
                 bjEmbed = discord.Embed(title="Blackjack",
-                                        description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}",
+                                        description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}, "
+                                                    f"to cancel the game, react to {cancelEmoji}",
                                         color=discord.Color.blue())
                 bjEmbed.set_author(name=f"{ctx.author.name} bet {bet} {spell} to play Blackjack",
                                    icon_url=ctx.author.avatar_url)
@@ -648,7 +662,7 @@ class Blackjack(commands.Cog):
 
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
                     _blackjack(player_hand, dealer_hand, player_chips, ctx)
-                    description = f"Blackjack! {ctx.author.mention} wins **{bet*2}** {spell}"
+                    description = f"Blackjack! {ctx.author.mention} wins **{bet * 2}** {spell}"
                     if bet >= 1000:
                         large_bet_win = True
                 elif dealer_hand.value > 21:
@@ -680,7 +694,7 @@ class Blackjack(commands.Cog):
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
-                    await message.pin(reason="Blackjack!")
+                    await message.pin()
                 if large_bet_win:
                     await message.pin(reason="Thats a large reward!")
                 gcmds.incrCounter(gcmds, ctx, 'blackjack')

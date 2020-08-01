@@ -32,19 +32,19 @@ def get_next_open_row(board, col):
 
 def print_board(board):
     board = np.flip(board, 0)
-    string = ":one::two::three::four::five::six::seven:\n"
+    string = ":one:  :two:  :three:  :four:  :five:  :six:  :seven:\n"
     for row in range(ROW_COUNT):
         for column in range(COLUMN_COUNT):
             if board[row][column] == 0:
-                string += "⚫"
+                string += "⚫  "
             elif board[row][column] == 1:
-                string += "🔴"
+                string += "🔴  "
             elif board[row][column] == 2:
-                string += "🔵"
+                string += "🔵  "
             elif board[row][column] == 3:
-                string += "❤"
+                string += "❤  "
             elif board[row][column] == 4:
-                string += "💙"
+                string += "💙  "
             column += 1
         string += "\n"
     return string
