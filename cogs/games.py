@@ -90,10 +90,17 @@ class Games(commands.Cog):
                         member: commands.Greedy[discord.Member] = None):
         await ctx.message.delete()
         if gameName is not None:
-            if "@" in gameName:
+            if "<@!" in gameName:
                 userid = gameName[3:-1]
                 if member is None:
-                    member = [await commands.AutoShardedBot.fetch_user(self.client, user_id=userid)]
+                    member = [await commands.AutoShardedBot.fetch_user(self.client, user_id=int(userid))]
+                else:
+                    member.append(userid)
+                gameName = None
+            elif "<@" in gameName:
+                userid = gameName[2:-1]
+                if member is None:
+                    member = [await commands.AutoShardedBot.fetch_user(self.client, user_id=int(userid))]
                 else:
                     member.append(userid)
                 gameName = None
@@ -102,10 +109,10 @@ class Games(commands.Cog):
             userlist.append(ctx.author.id)
         else:
             for user in member:
-                userlist.append(user.id)
+                userlist.append(user)
 
         for user in userlist:
-            person_name = await commands.AutoShardedBot.fetch_user(self.client, user_id=user)
+            person_name = await commands.AutoShardedBot.fetch_user(self.client, user_id=user.id)
             with open('gamestats.json', 'r') as f:
                 file = json.load(f)
                 if gameName is not None:
@@ -120,7 +127,7 @@ class Games(commands.Cog):
                         await ctx.channel.send(embed=errorEmbed, delete_after=5)
                     else:
                         for item in stats:
-                            value = file[str(gameName)][str(user)][item]
+                            value = file[str(gameName)][str(user.id)][item]
                             if item == "ratio":
                                 spell = ""
                             else:
@@ -138,7 +145,7 @@ class Games(commands.Cog):
                                                color=discord.Color.blue())
                     for game in file:
                         try:
-                            user_data = file[str(game)][str(user)]
+                            user_data = file[str(game)][str(user.id)]
                         except KeyError:
                             statsEmbed.add_field(name=game,
                                                  value="No Data Available")
@@ -148,11 +155,11 @@ class Games(commands.Cog):
                                 if item == "ratio":
                                     spell = ""
                                 else:
-                                    if file[str(game)][str(user)][str(item)] == 1:
+                                    if file[str(game)][str(user.id)][str(item)] == 1:
                                         spell = "time"
                                     else:
                                         spell = "times"
-                                value += f"**{str(item).capitalize()}:** `{str(file[str(game)][str(user)][str(item)])}` {spell}\n"
+                                value += f"**{str(item).capitalize()}:** `{str(file[str(game)][str(user.id)][str(item)])}` {spell}\n"
                             statsEmbed.add_field(name=game,
                                                  value=value)
                     await ctx.channel.send(embed=statsEmbed)
