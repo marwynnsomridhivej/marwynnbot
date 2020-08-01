@@ -28,7 +28,7 @@ logger.addHandler(handler)
 @client.event
 async def on_ready():
     print('Successfully logged in as {0.user}'.format(client))
-    activity = discord.Game(name="Under Development", type=1)
+    activity = discord.Game(name="m!h for help!", type=1)
     await client.change_presence(status=discord.Status.do_not_disturb, activity=activity)
 
 
