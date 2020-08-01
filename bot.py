@@ -29,7 +29,7 @@ logger.addHandler(handler)
 async def on_ready():
     print('Successfully logged in as {0.user}'.format(client))
     activity = discord.Game(name="m!h for help!", type=1)
-    await client.change_presence(status=discord.Status.do_not_disturb, activity=activity)
+    await client.change_presence(status=discord.Status.online, activity=activity)
 
 
 @client.event
