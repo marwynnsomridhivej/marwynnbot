@@ -547,7 +547,7 @@ class Blackjack(commands.Cog):
 
         bjEmbed = discord.Embed(title="Blackjack",
                                 description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}, to cancel "
-                                            f"the game, react to {cancelEmoji}",
+                                            f"the game, react to {cancelEmoji} (only before first turn)",
                                 color=discord.Color.blue())
         bjEmbed.set_author(name=f"{ctx.author.name} bet {bet} {spell} to play Blackjack",
                            icon_url=ctx.author.avatar_url)
