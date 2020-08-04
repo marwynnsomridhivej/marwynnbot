@@ -52,19 +52,19 @@ class GlobalCMDS:
 
         return prefixes[str(ctx.guild.id)]
 
-    def ratio(self, ctx, filenamepath, gameName):
+    def ratio(self, user, filenamepath, gameName):
         with open(filenamepath, 'r') as f:
             file = json.load(f)
             try:
-                wins = file[str(gameName)][str(ctx.author.id)]['win']
+                wins = file[str(gameName)][str(user.id)]['win']
             except KeyError:
-                file[str(gameName)][str(ctx.author.id)]['ratio'] = 0
+                file[str(gameName)][str(user.id)]['ratio'] = 0
             else:
                 try:
-                    losses = file[str(gameName)][str(ctx.author.id)]['lose']
+                    losses = file[str(gameName)][str(user.id)]['lose']
                 except KeyError:
-                    file[str(gameName)][str(ctx.author.id)]['ratio'] = 1
+                    file[str(gameName)][str(user.id)]['ratio'] = 1
                 else:
-                    file[str(gameName)][str(ctx.author.id)]['ratio'] = round((wins / losses), 3)
+                    file[str(gameName)][str(user.id)]['ratio'] = round((wins / losses), 3)
         with open(filenamepath, 'w') as f:
             json.dump(file, f, indent=4)
