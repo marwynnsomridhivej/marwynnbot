@@ -63,7 +63,7 @@ class Help(commands.Cog):
         gcmds.incrCounter(gcmds, ctx, 'help')
         if ctx.invoked_subcommand is None:
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
-                                      colour=discord.Colour(0x3498db),
+                                      colour=discord.Color(0x3498db),
                                       url="https://discord.gg/fYBTdUp",
                                       description="These are all the commands I currently support! Type"
                                                   f"\n`{gcmds.prefix(gcmds, ctx)}help [command]`\nto get help on that "
@@ -85,7 +85,7 @@ class Help(commands.Cog):
 
             debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
-            gamesCmds = "*Under Development* `balance` `blackjack`"
+            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `connectfour` `uno`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
@@ -321,10 +321,26 @@ class Help(commands.Cog):
         commandName = "ConnectFour"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}connectfour [opponent @mention]`"
         aliases = "`c4` `conn` `connect`"
+        specialCases = "You can win a random amount of credits (between 1 - 5), with a very small chance " \
+                       "of getting a jackpot of `1000000` credits"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases)
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+    @help.command()
+    async def uno(self, ctx):
+        commandName = "Uno"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}uno [opponent(s) @mention(s)]`"
+        specialCases = "You can mention up to `9` other opponents" \
+                       "\n\nYou will receive a random amount of credits that scales according to the amount of turns "\
+                       "it took to establish a winner\n\n"\
+                       "Cancel the game by typing `cancel` when it is your turn and you can place a card"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
 
     # =================================================
     # Moderation
