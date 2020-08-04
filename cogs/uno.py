@@ -135,7 +135,7 @@ class UnoPile:
             if top_card.card_type == 7:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739903642475167814/7_b.png"
             if top_card.card_type == 8:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903642475167814/7_b.png"
+                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903646292115456/8_b.png"
             if top_card.card_type == 9:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739903650356265050/9_b.png"
             if top_card.card_type == "block":
@@ -241,6 +241,8 @@ class UnoPlayer:
         else:
             for card in self.hand:
                 if card.color == topcard.color or card.card_type == topcard.card_type:
+                    return True
+                elif card.color == 'black':
                     return True
             return False
 
@@ -657,7 +659,7 @@ class UNO(commands.Cog):
                                                    f"\n{emoji_to_player(gameMembers[index])}",
                                        color=pile.embed_color())
                     DM.set_thumbnail(url=pile.top_thumbnail())
-                    await uno.set_footer(text=f"{user.display_name} cannot place a valid card. Ending turn...")
+                    uno.set_footer(text=f"{user.display_name} cannot place a valid card. Ending turn...")
                     await dm_message.edit(embed=DM)
                     await orig_embed.edit(embed=uno)
                     index = game.set_index(gameMembers)
@@ -762,7 +764,10 @@ class UNO(commands.Cog):
             else:
                 balance = file['Balance'][str(placement[0].member.id)]
 
-            award_amount = int(math.floor(randint(1, 10) * turns_to_win / randint(2, 5)))
+            if turns_to_win > 300:
+                award_amount = int(math.floor(randint(10, 100) * turns_to_win / randint(2, 20)))
+            else:
+                award_amount = int(math.floor(randint(1, 10) * turns_to_win / randint(2, 5)))
             balance += award_amount
             with open('balance.json', 'w') as g:
                 json.dump(file, g, indent=4)
@@ -774,6 +779,7 @@ class UNO(commands.Cog):
 
         win(placement[0])
         lose(placement[-1])
+        gcmds.incrCounter(gcmds, ctx, 'uno')
         return
 
 
