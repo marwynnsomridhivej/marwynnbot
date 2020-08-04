@@ -188,7 +188,7 @@ def player_busts(player, dealer, chips, ctx):
                 load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'Blackjack')
+    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
 
 
 def player_wins(player, dealer, chips, ctx):
@@ -215,7 +215,7 @@ def player_wins(player, dealer, chips, ctx):
                 load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'Blackjack')
+    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
 
 
 def dealer_busts(player, dealer, chips, ctx):
@@ -242,7 +242,7 @@ def dealer_busts(player, dealer, chips, ctx):
                 load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'Blackjack')
+    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
 
 
 def dealer_wins(player, dealer, chips, ctx):
@@ -269,7 +269,7 @@ def dealer_wins(player, dealer, chips, ctx):
                 load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'Blackjack')
+    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
 
 
 def push(player, dealer, ctx):
@@ -325,7 +325,7 @@ def _blackjack(player, dealer, chips, ctx):
                 load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx, 'gamestats.json', 'Blackjack')
+    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
 
 
 def show_dealer(dealer, won):
@@ -662,7 +662,7 @@ class Blackjack(commands.Cog):
 
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
                     _blackjack(player_hand, dealer_hand, player_chips, ctx)
-                    description = f"Blackjack! {ctx.author.mention} wins **{bet * 2}** {spell}"
+                    description = f"Blackjack! {ctx.author.mention} wins **{bet * 2}** credits"
                     if bet >= 1000:
                         large_bet_win = True
                 elif dealer_hand.value > 21:
@@ -694,9 +694,14 @@ class Blackjack(commands.Cog):
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
-                    await message.pin()
-                if large_bet_win:
-                    await message.pin(reason="Thats a large reward!")
+                    if large_bet_win:
+                        if large_bet_win:
+                            await message.pin(reason="Blackjack and thats a large reward!")
+                        else:
+                            await message.pin(reason="Blackjack!")
+                else:
+                    if large_bet_win:
+                        await message.pin(reason="Thats a large reward!")
                 gcmds.incrCounter(gcmds, ctx, 'blackjack')
                 return
 
