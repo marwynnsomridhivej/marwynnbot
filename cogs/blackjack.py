@@ -648,8 +648,6 @@ class Blackjack(commands.Cog):
             if player_hand.value <= 21 and not stopiter:
                 while dealer_hand.value < 17:
                     hit(deck, dealer_hand)
-                    dealer_value = dealer_hand.list_hand(gameEnd=won)
-                    dr_int = dealer_hand.added()
 
                 player_value = player_hand.list_hand(gameEnd=won)
                 pv_int = player_hand.added()
