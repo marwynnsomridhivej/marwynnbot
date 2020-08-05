@@ -37,6 +37,7 @@ frequently as the bot's functionality grows.
 - Currently under development
 - `blackjack`
 - `connectfour`
+- `uno`
 
 **Games Commands**
 - `balance`
