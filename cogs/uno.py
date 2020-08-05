@@ -121,6 +121,8 @@ class UnoPile:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739903217789305003/rev_r.png"
             if top_card.card_type == "wild":
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
+            if top_card.card_type == "+4":
+                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
         if top_card.color == "blue":
             if top_card.card_type == 0:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739903614616600576/0_b.png"
@@ -150,6 +152,8 @@ class UnoPile:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739903711450628256/rev_b.png"
             if top_card.card_type == "wild":
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
+            if top_card.card_type == "+4":
+                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
         if top_card.color == "green":
             if top_card.card_type == 0:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739904049163272382/0_g.png"
@@ -179,6 +183,8 @@ class UnoPile:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739905465076547654/rev_g.png"
             if top_card.card_type == "wild":
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
+            if top_card.card_type == "+4":
+                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
         if top_card.color == "yellow":
             if top_card.card_type == 0:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906035107627058/0_y.png"
@@ -208,6 +214,8 @@ class UnoPile:
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906094318485665/rev_y.png"
             if top_card.card_type == "wild":
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
+            if top_card.card_type == "+4":
+                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
         if top_card.color == "black":
             if top_card.card_type == "wild":
                 url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
@@ -636,7 +644,8 @@ class UNO(commands.Cog):
                 game.reverse()
                 uno.set_footer(text="Game order was reversed!")
                 await orig_embed.edit(embed=uno)
-                index = game.set_index(gameMembers)
+                for _ in range(2):
+                    index = game.set_index(gameMembers)
                 special_count = 1
                 await asyncio.sleep(3.0)
                 continue
@@ -859,7 +868,7 @@ class UNO(commands.Cog):
 
                             try:
                                 await color_choice.delete()
-                            except discord.NotFound:
+                            except (UnboundLocalError, discord.NotFound):
                                 pass
 
                             if not gameMembers[index].hand:
