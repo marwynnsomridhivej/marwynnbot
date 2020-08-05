@@ -1,10 +1,9 @@
 import asyncio
 import math
-
 from num2words import num2words
 import discord
 from discord.ext import commands
-from random import shuffle, randint
+from random import shuffle, randint, random
 import json
 from globalcommands import GlobalCMDS as gcmds
 
@@ -25,6 +24,10 @@ class UnoCard:
 
     def __str__(self):
         return f"{self.color} {self.card_type}"
+
+    def wild_color(self, new_color):
+        if self.color == 'black':
+            self.color = new_color
 
 
 class UnoDeck:
@@ -227,17 +230,22 @@ class UnoPlayer:
         card = deck.deal()
         self.hand.append(card)
 
-    def select(self, index: int):
-        return self.hand[index]
-
     def place(self, card, pile):
         self.hand.remove(card)
         pile.place(card)
 
+    def remove_wild(self, card):
+        self.hand.remove(card)
+
     def can_play(self, pile):
         topcard = pile.top_card()
+        if topcard.card_type == 'wild':
+            for card in self.hand:
+                if card.color == topcard.color:
+                    return True
         if topcard.color == 'black':
             return True
+
         else:
             for card in self.hand:
                 if card.color == topcard.color or card.card_type == topcard.card_type:
@@ -563,185 +571,287 @@ class UNO(commands.Cog):
         turns_to_win = 0
 
         while True:
-            turns_to_win += 1
-            user = gameMembers[index].member
-            uno = discord.Embed(title="Uno",
-                                color=pile.embed_color())
-            if placement:
-                print(placement)
-                p_index = 0
-                uno.set_author(name=f"👑 {placement[0].member.display_name} wins!",
-                               icon_url=placement[0].member.avatar_url)
-                for p in placement:
-                    uno.add_field(name=f"{num2words(int(p_index + 1), to='ordinal_num')} Place:",
-                                  value=f"{p.member.mention}",
+            try:
+                turns_to_win += 1
+                user = gameMembers[index].member
+                uno = discord.Embed(title="Uno",
+                                    color=pile.embed_color())
+                if placement:
+                    print(placement)
+                    p_index = 0
+                    uno.set_author(name=f"👑 {placement[0].member.display_name} wins!",
+                                   icon_url=placement[0].member.avatar_url)
+                    for p in placement:
+                        uno.add_field(name=f"{num2words(int(p_index + 1), to='ordinal_num')} Place:",
+                                      value=f"{p.member.mention}",
+                                      inline=False)
+                        p_index += 1
+                if not gameMembers:
+                    uno.set_thumbnail(url=pile.top_thumbnail())
+                    await orig_embed.edit(embed=uno)
+                    break
+                elif int(len(gameMembers)) < 2:
+                    uno.add_field(name="Last Place:",
+                                  value=f"{gameMembers[0].member.mention}",
                                   inline=False)
-                    p_index += 1
-            if not gameMembers:
+                    await orig_embed.edit(embed=uno)
+                    placement.append(gameMembers[0])
+                    break
+                for gameMember in gameMembers:
+                    if gameMember.member.id == user.id:
+                        uno.add_field(name=f"{gameMember.name} 🟢",
+                                      value=emoji_to_game(gameMember),
+                                      inline=False)
+                    else:
+                        uno.add_field(name=gameMember.name,
+                                      value=emoji_to_game(gameMember),
+                                      inline=False)
                 uno.set_thumbnail(url=pile.top_thumbnail())
+                uno.set_author(name=f"{user.display_name}'s turn",
+                               icon_url=user.avatar_url)
                 await orig_embed.edit(embed=uno)
-                break
-            elif int(len(gameMembers)) < 2:
-                uno.add_field(name="Last Place:",
-                              value=f"{gameMembers[0].member.mention}",
-                              inline=False)
-                await orig_embed.edit(embed=uno)
-                placement.append(gameMembers[0])
-                break
-            for gameMember in gameMembers:
-                if gameMember.member.id == user.id:
-                    uno.add_field(name=f"{gameMember.name} 🟢",
-                                  value=emoji_to_game(gameMember),
-                                  inline=False)
-                else:
-                    uno.add_field(name=gameMember.name,
-                                  value=emoji_to_game(gameMember),
-                                  inline=False)
-            uno.set_thumbnail(url=pile.top_thumbnail())
-            uno.set_author(name=f"{user.display_name}'s turn",
-                           icon_url=user.avatar_url)
-            await orig_embed.edit(embed=uno)
 
-            if pile.top_card().card_type == "block" and special_count == 0:
-                game.block()
-                uno.set_footer(text=f"{user.display_name} was blocked! Skipping turn...")
-                await orig_embed.edit(embed=uno)
-                index = game.set_index(gameMembers)
-                special_count = 1
-                await asyncio.sleep(7.0)
-                continue
-            if pile.top_card().card_type == "reverse" and special_count == 0:
-                game.reverse()
-                uno.set_footer(text="Game order was reversed!")
-                await orig_embed.edit(embed=uno)
-                index = game.set_index(gameMembers)
-                special_count = 1
-                await asyncio.sleep(7.0)
-                continue
-            if pile.top_card().card_type == "+2" and special_count == 0:
-                i = 0
-                uno.set_footer(text=f"{user.display_name} is drawing 2 cards and will have their turn skipped...")
-                await orig_embed.edit(embed=uno)
-                while i < 2:
-                    gameMembers[index].draw(deck)
-                    i += 1
-                index = game.set_index(gameMembers)
-                special_count = 1
-                await asyncio.sleep(7.0)
-                continue
-            if pile.top_card().card_type == "+4" and special_count == 0:
-                i = 0
-                uno.set_footer(text=f"{user.display_name} is drawing 4 cards and will have their turn skipped...")
-                await orig_embed.edit(embed=uno)
-                while i < 4:
-                    gameMembers[index].draw(deck)
-                    i += 1
-                index = game.set_index(gameMembers)
-                special_count = 1
-                await asyncio.sleep(7.0)
-                continue
+                if pile.top_card().card_type == "block" and special_count == 0:
+                    game.block()
+                    uno.set_footer(text=f"{user.display_name} was blocked! Skipping turn...")
+                    await orig_embed.edit(embed=uno)
+                    index = game.set_index(gameMembers)
+                    special_count = 1
+                    await asyncio.sleep(3.0)
+                    continue
+                if pile.top_card().card_type == "reverse" and special_count == 0:
+                    game.reverse()
+                    uno.set_footer(text="Game order was reversed!")
+                    await orig_embed.edit(embed=uno)
+                    index = game.set_index(gameMembers)
+                    special_count = 1
+                    await asyncio.sleep(3.0)
+                    continue
+                if pile.top_card().card_type == "+2" and special_count == 0:
+                    i = 0
+                    uno.set_footer(text=f"{user.display_name} is drawing 2 cards and will have their turn skipped...")
+                    await orig_embed.edit(embed=uno)
+                    while i < 2:
+                        gameMembers[index].draw(deck)
+                        i += 1
+                    index = game.set_index(gameMembers)
+                    special_count = 1
+                    await asyncio.sleep(3.0)
+                    continue
+                if pile.top_card().card_type == "+4" and special_count == 0:
+                    i = 0
+                    uno.set_footer(text=f"{user.display_name} is drawing 4 cards and will have their turn skipped...")
+                    await orig_embed.edit(embed=uno)
+                    while i < 4:
+                        gameMembers[index].draw(deck)
+                        i += 1
+                    index = game.set_index(gameMembers)
+                    special_count = 1
+                    await asyncio.sleep(3.0)
+                    continue
 
-            if not gameMembers[index].can_play(pile):
+                if not gameMembers[index].can_play(pile):
+                    DM = discord.Embed(title=user.display_name,
+                                       description=f"*no playable cards in hand, drawing a card...*"
+                                                   f"\n{emoji_to_player(gameMembers[index])}",
+                                       color=pile.embed_color())
+                    DM.set_thumbnail(url=pile.top_thumbnail())
+                    dm_message = await user.send(embed=DM)
+                    uno.set_footer(text=f"{user.display_name} is drawing a card...")
+                    await orig_embed.edit(embed=uno)
+                    await asyncio.sleep(3.0)
+
+                    gameMembers[index].draw(deck)
+
+                    if not gameMembers[index].can_play(pile):
+                        DM = discord.Embed(title=user.display_name,
+                                           description=f"*no playable cards in hand. You have ended your turn."
+                                                       f"\n{emoji_to_player(gameMembers[index])}",
+                                           color=pile.embed_color())
+                        DM.set_thumbnail(url=pile.top_thumbnail())
+                        uno.set_footer(text=f"{user.display_name} cannot place a valid card. Ending turn...")
+                        await dm_message.edit(embed=DM)
+                        await orig_embed.edit(embed=uno)
+                        index = game.set_index(gameMembers)
+                        await asyncio.sleep(3.0)
+                        continue
+                    else:
+                        await dm_message.delete()
+
                 DM = discord.Embed(title=user.display_name,
-                                   description=f"*no playable cards in hand, drawing a card...*"
+                                   description=f"*to pick a card, type in the number the card is in the order of cards "
+                                               f"in the channel that contains the main UNO game within 60 seconds*\n"
                                                f"\n{emoji_to_player(gameMembers[index])}",
                                    color=pile.embed_color())
                 DM.set_thumbnail(url=pile.top_thumbnail())
                 dm_message = await user.send(embed=DM)
-                uno.set_footer(text=f"{user.display_name} is drawing a card...")
+                uno.set_footer(text=f"{user.display_name} is picking a card to place...")
                 await orig_embed.edit(embed=uno)
-                await asyncio.sleep(7.0)
 
-                gameMembers[index].draw(deck)
-                if not gameMembers[index].can_play(pile):
-                    DM = discord.Embed(title=user.display_name,
-                                       description=f"*no playable cards in hand. You have ended your turn."
-                                                   f"\n{emoji_to_player(gameMembers[index])}",
-                                       color=pile.embed_color())
-                    DM.set_thumbnail(url=pile.top_thumbnail())
-                    uno.set_footer(text=f"{user.display_name} cannot place a valid card. Ending turn...")
-                    await dm_message.edit(embed=DM)
-                    await orig_embed.edit(embed=uno)
-                    index = game.set_index(gameMembers)
-                    await asyncio.sleep(7.0)
-                    continue
-                else:
-                    await dm_message.delete()
-
-            DM = discord.Embed(title=user.display_name,
-                               description=f"*to pick a card, type in the number the card is in the order of cards in "
-                                           f"the channel that contains the main UNO game within 60 seconds*\n"
-                                           f"\n{emoji_to_player(gameMembers[index])}",
-                               color=pile.embed_color())
-            DM.set_thumbnail(url=pile.top_thumbnail())
-            dm_message = await user.send(embed=DM)
-
-            def from_player(message):
-                if message.author == user and message.channel == ctx.channel:
-                    return True
-                else:
-                    return False
-
-            loop = True
-
-            while loop:
-                try:
-                    choice = await commands.AutoShardedBot.wait_for(self.client, 'message', timeout=60,
-                                                                    check=from_player)
-                except asyncio.TimeoutError:
-                    played_card = gameMembers[index].auto_play(pile)
-                    gameMembers[index].place(played_card, pile)
-                    DM = discord.Embed(title=user.display_name,
-                                       description=f"*you did not pick a card within 60 seconds, so a valid card "
-                                                   f"has been selected for you*"
-                                                   f"\n\nYou placed: {played_card.__str__()}",
-                                       color=pile.embed_color())
-                    DM.set_thumbnail(url=pile.top_thumbnail())
-                    await dm_message.edit(embed=DM)
-                    if not gameMembers[index].hand:
-                        placement.append(gameMembers[index])
-                        gameMembers.pop(index)
-                    index = game.set_index(gameMembers)
-                    special_count = 0
-                    await asyncio.sleep(7.0)
-                    loop = False
-                else:
-                    try:
-                        if choice.content == "cancel":
-                            cancelEmbed = discord.Embed(title="Uno Game Canceled",
-                                                        description=f"The current uno game was canceled by {user.mention}",
-                                                        color=discord.Color.dark_red())
-                            await orig_embed.edit(embed=cancelEmbed)
-                            break
-                        else:
-                            int_choice = int(choice.content)
-                    except ValueError:
-                        not_int = discord.Embed(title="Not a Valid Selection",
-                                                description=f"{user.mention}, {choice.content} is not a valid selection. "
-                                                            f"Please try again.",
-                                                color=discord.Color.dark_red())
-                        await ctx.channel.send(embed=not_int, delete_after=5)
-                        await choice.delete()
+                def from_player(message):
+                    if message.author == user and message.channel == ctx.channel:
+                        return True
                     else:
-                        if int_choice <= (int(len(gameMembers[index].hand)) + 1):
+                        return False
+
+                loop = True
+
+                while loop:
+                    try:
+                        choice = await commands.AutoShardedBot.wait_for(self.client, 'message', timeout=60,
+                                                                        check=from_player)
+                        message_id = orig_embed.id
+                    except asyncio.TimeoutError:
+                        played_card = gameMembers[index].auto_play(pile)
+                        gameMembers[index].place(played_card, pile)
+                        DM = discord.Embed(title=user.display_name,
+                                           description=f"*you did not pick a card within 60 seconds, so a valid card "
+                                                       f"has been selected for you*"
+                                                       f"\n\nYou placed: {played_card.__str__()}",
+                                           color=pile.embed_color())
+                        DM.set_thumbnail(url=pile.top_thumbnail())
+                        await dm_message.edit(embed=DM)
+                        if not gameMembers[index].hand:
+                            placement.append(gameMembers[index])
+                            gameMembers.pop(index)
+                        index = game.set_index(gameMembers)
+                        special_count = 0
+                        await asyncio.sleep(2.0)
+                        loop = False
+                    else:
+                        try:
+                            if choice.content == "cancel":
+                                await choice.delete()
+                                cancelEmbed = discord.Embed(title="Uno Game Canceled",
+                                                            description=f"The current uno game was canceled by {user.mention}",
+                                                            color=discord.Color.dark_red())
+                                await orig_embed.edit(embed=cancelEmbed)
+                                loop = False
+                                return
+                            else:
+                                message_id = orig_embed.id
+                                int_choice = int(choice.content)
+                        except (ValueError, IndexError):
+                            not_int = discord.Embed(title="Not a Valid Selection",
+                                                    description=f"{user.mention}, {choice.content} is not a valid "
+                                                                f"selection. Please try again.",
+                                                    color=discord.Color.dark_red())
+                            await ctx.channel.send(embed=not_int, delete_after=5)
                             await choice.delete()
-                            hand = gameMembers[index].get_hand()
-                            played_card = hand[int_choice - 1]
-                            gameMembers[index].place(played_card, pile)
-                            DM = discord.Embed(title=user.display_name,
-                                               description=f"\n\nYou placed: {played_card.__str__()}",
-                                               color=pile.embed_color())
-                            DM.set_thumbnail(url=pile.top_thumbnail())
-                            await dm_message.edit(embed=DM)
-                            special_count = 0
-                            if not gameMembers[index].hand:
-                                placement.append(gameMembers[index])
-                                gameMembers.remove(gameMembers[index])
+                        else:
+                            if int_choice <= (int(len(gameMembers[index].hand)) + 1):
+                                await choice.delete()
+                                hand = gameMembers[index].get_hand()
+
+                                try:
+                                    played_card = hand[int_choice - 1]
+                                except IndexError:
+                                    not_int = discord.Embed(title="Not a Valid Selection",
+                                                            description=f"{user.mention}, {choice.content} is not a "
+                                                                        f"valid selection. Please try again.",
+                                                            color=discord.Color.dark_red())
+                                    await ctx.channel.send(embed=not_int, delete_after=5)
+                                    await choice.delete()
+                                else:
+                                    played_card = hand[int_choice - 1]
+
+                                if played_card.color == 'black':
+                                    played_card_original = played_card
+                                    reaction_confirmed = False
+                                    red = "🟥"
+                                    blue = "🟦"
+                                    green = "🟩"
+                                    yellow = "🟨"
+                                    rlist = [red, blue, green, yellow]
+                                    choose_color = discord.Embed(title="What color will the card be?",
+                                                                 description="*react to choose the "
+                                                                             "color in 20 seconds*"
+                                                                             "\nRed: 🟥\nBlue: 🟦\nGreen: "
+                                                                             "🟩\nYellow: 🟨\n")
+                                    color_choice = await ctx.channel.send(embed=choose_color)
+                                    await color_choice.add_reaction(red)
+                                    await color_choice.add_reaction(blue)
+                                    await color_choice.add_reaction(green)
+                                    await color_choice.add_reaction(yellow)
+
+                                    def check(reaction, game_player):
+                                        if game_player == user and reaction.emoji in rlist:
+                                            return True
+
+                                    while not reaction_confirmed:
+                                        try:
+                                            choice_check = await commands.AutoShardedBot.wait_for(self.client,
+                                                                                                  'reaction_add',
+                                                                                                  timeout=10.0,
+                                                                                                  check=check)
+                                        except asyncio.TimeoutError:
+                                            await color_choice.clear_reactions()
+                                            color = random.choice(rlist)
+                                        else:
+                                            for item in choice_check:
+                                                if isinstance(item, discord.Reaction):
+                                                    if str(item) in rlist:
+                                                        color = item
+                                                        print(color)
+                                            await color_choice.remove_reaction(color, user)
+
+                                        if color == red:
+                                            played_card.wild_color("red")
+                                        if color == blue:
+                                            played_card.wild_color("blue")
+                                        if color == green:
+                                            played_card.wild_color("green")
+                                        if color == yellow:
+                                            played_card.wild_color("yellow")
+                                        reaction_confirmed = True
+                                        print(played_card.color)
+
+                                    gameMembers[index].remove_wild(played_card_original)
+                                    pile.place(played_card)
+
+                                    wildEmbed = discord.Embed(title="Card Color Set",
+                                                              description=f"The card's color is now {played_card.color}",
+                                                              color=pile.embed_color())
+                                    await color_choice.edit(embed=wildEmbed, delete_after=60)
+                                    DM = discord.Embed(title=user.display_name,
+                                                       description=f"\n\nYou placed: {played_card.__str__()}",
+                                                       color=pile.embed_color())
+                                    DM.set_thumbnail(url=pile.top_thumbnail())
+                                    await dm_message.edit(embed=DM)
+                                    special_count = 0
+                                    if not gameMembers[index].hand:
+                                        placement.append(gameMembers[index])
+                                        gameMembers.remove(gameMembers[index])
+                                        index = game.set_index(gameMembers)
+                                        await asyncio.sleep(2.0)
+                                        break
+                                    index = game.set_index(gameMembers)
+                                    await asyncio.sleep(2.0)
+                                    break
+
+                                gameMembers[index].place(played_card, pile)
+                                DM = discord.Embed(title=user.display_name,
+                                                   description=f"\n\nYou placed: {played_card.__str__()}",
+                                                   color=pile.embed_color())
+                                DM.set_thumbnail(url=pile.top_thumbnail())
+                                await dm_message.edit(embed=DM)
+                                special_count = 0
+                                if not gameMembers[index].hand:
+                                    placement.append(gameMembers[index])
+                                    gameMembers.remove(gameMembers[index])
+                                    index = game.set_index(gameMembers)
+                                    await asyncio.sleep(2.0)
+                                    break
                                 index = game.set_index(gameMembers)
-                                break
-                            index = game.set_index(gameMembers)
-                            await asyncio.sleep(7.0)
-                            loop = False
+                                await asyncio.sleep(2.0)
+                                loop = False
+
+            except discord.NotFound:
+                cancelEmbed = discord.Embed(title="Uno Game Canceled",
+                                            description="The original game message was deleted",
+                                            color=discord.Color.dark_red())
+                await ctx.channel.send(embed=cancelEmbed, delete_after=60)
+                return
 
         init = {'Balance': {}}
         gcmds.json_load(gcmds, 'balance.json', init)
