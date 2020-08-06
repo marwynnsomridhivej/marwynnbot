@@ -642,10 +642,9 @@ class UNO(commands.Cog):
                 continue
             if pile.top_card().card_type == "reverse" and special_count == 0:
                 game.reverse()
-                uno.set_footer(text="Game order was reversed!")
+                uno.set_footer(text="Turn rotation order was reversed!")
                 await orig_embed.edit(embed=uno)
-                for _ in range(2):
-                    index = game.set_index(gameMembers)
+                index = game.set_index(gameMembers)
                 special_count = 1
                 await asyncio.sleep(3.0)
                 continue
@@ -854,7 +853,9 @@ class UNO(commands.Cog):
                                     index = game.set_index(gameMembers)
                                     await asyncio.sleep(2.0)
                                     break
-                                index = game.set_index(gameMembers)
+                                if pile.top_card().type != 'reverse':
+                                    index = game.set_index(gameMembers)
+
                                 await asyncio.sleep(2.0)
                                 break
 
@@ -877,7 +878,9 @@ class UNO(commands.Cog):
                                 index = game.set_index(gameMembers)
                                 await asyncio.sleep(2.0)
                                 break
-                            index = game.set_index(gameMembers)
+
+                            if pile.top_card().type != 'reverse':
+                                index = game.set_index(gameMembers)
                             await asyncio.sleep(2.0)
                             loop = False
 
