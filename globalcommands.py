@@ -1,8 +1,5 @@
-import math
-import os
 import json
-
-from discord.ext.commands import CommandInvokeError
+import os
 
 
 class GlobalCMDS:
