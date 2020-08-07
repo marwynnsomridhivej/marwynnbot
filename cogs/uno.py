@@ -809,7 +809,7 @@ class UNO(commands.Cog):
                                         try:
                                             choice_check = await commands.AutoShardedBot.wait_for(self.client,
                                                                                                   'reaction_add',
-                                                                                                  timeout=10.0,
+                                                                                                  timeout=20.0,
                                                                                                   check=check)
                                         except asyncio.TimeoutError:
                                             await color_choice.clear_reactions()
