@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import random
+import traceback
 import discord
 import logging
 from discord.ext import commands
@@ -44,6 +45,14 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild):
+    if not os.path.exists('blacklist.json'):
+        with open('blacklist.json', 'w') as f:
+            json.dump({'Blacklist': {}}, f, indent=4)
+    with open('blacklist.json', 'r') as f:
+        blacklist = json.load(f)
+        if guild.id in blacklist["Blacklist"]:
+            to_leave = client.get_guild(guild.id)
+            await to_leave.leave()
     if not os.path.exists('prefixes.json'):
         with open('prefixes.json', 'w') as f:
             f.write('{\n\n}')
@@ -64,6 +73,20 @@ async def on_guild_remove(guild):
 
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+
+
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, discord.ext.commands.CommandNotFound):
+        await ctx.message.delete()
+        notFound = discord.Embed(title="Command Not Found",
+                                 description=f"{ctx.author.mention}, command `{ctx.message.content}` is not a valid"
+                                             " command",
+                                 color=discord.Color.dark_red())
+        await ctx.channel.send(embed=notFound, delete_after=10)
+    else:
+        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 @client.command(aliases=['l', 'ld'])
