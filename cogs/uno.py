@@ -3,7 +3,8 @@ import math
 from num2words import num2words
 import discord
 from discord.ext import commands
-from random import shuffle, randint, random
+import random
+from random import shuffle, randint
 import json
 from globalcommands import GlobalCMDS as gcmds
 
