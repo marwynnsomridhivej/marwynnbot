@@ -965,3 +965,5 @@ class UNO(commands.Cog):
 
 def setup(client):
     client.add_cog(UNO(client))
+
+#hehe its 969 lines, nice
