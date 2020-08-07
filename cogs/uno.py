@@ -661,7 +661,7 @@ class UNO(commands.Cog):
                 if pile.top_card().card_type == "+2" and special_count == 0:
                     i = 0
                     uno.set_footer(text=f"{user.display_name} is drawing 2 cards and will have their turn skipped...")
-                    bully = discord.Embed(text="You're Actually Just Bad at the Game",
+                    bully = discord.Embed(title="You're Actually Just Bad at the Game",
                                           description=f"{user.mention}, at least it wasn't a `+4`...",
                                           color=discord.Color.dark_red())
                     bully.set_thumbnail(url="https://images.squarespace-cdn.com/content/v1/5a01e930e5dd5bc02c923380"
