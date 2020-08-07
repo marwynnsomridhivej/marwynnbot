@@ -629,6 +629,12 @@ class UNO(commands.Cog):
                 if pile.top_card().card_type == "block" and special_count == 0:
                     game.block()
                     uno.set_footer(text=f"{user.display_name} was blocked! Skipping turn...")
+                    bully = discord.Embed(title="HA YOU GOT BLOCKED LOL",
+                                          description=f"{user.mention} imagine getting bullied by a bot...",
+                                          color=discord.Color.dark_red())
+                    bully.set_thumbnail(url="https://media.tenor.com/images/2c4d4cad3406cc58b96280d6a8be3c98/tenor.gif")
+                    await user.send(embed=bully)
+
                     await orig_embed.edit(embed=uno)
                     index = game.set_index(gameMembers)
                     special_count = 1
@@ -637,6 +643,12 @@ class UNO(commands.Cog):
                 if pile.top_card().card_type == "reverse" and special_count == 0:
                     game.reverse()
                     uno.set_footer(text="Turn rotation order was reversed!")
+                    bully = discord.Embed(title="NICE TURN LOL",
+                                          description=f"{user.mention}, no turn for you hehe :)",
+                                          color=discord.Color.dark_red())
+                    bully.set_thumbnail(url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a"
+                                            ".png")
+                    await user.send(embed=bully)
                     await orig_embed.edit(embed=uno)
                     if int(len(gameMembers)) == 2:
                         for _ in range(2):
@@ -649,6 +661,16 @@ class UNO(commands.Cog):
                 if pile.top_card().card_type == "+2" and special_count == 0:
                     i = 0
                     uno.set_footer(text=f"{user.display_name} is drawing 2 cards and will have their turn skipped...")
+                    bully = discord.Embed(text="You're Actually Just Bad at the Game",
+                                          description=f"{user.mention}, at least it wasn't a `+4`...",
+                                          color=discord.Color.dark_red())
+                    bully.set_thumbnail(url="https://images.squarespace-cdn.com/content/v1/5a01e930e5dd5bc02c923380"
+                                            "/1562183286399-8WCGCUPVA711FOT47134"
+                                            "/ke17ZwdGBToddI8pDm48kCtmdKdgAsruTpHwXjl_sP57gQa3H78H3Y0txjaiv_0fDoOvxcdMm"
+                                            "MKkDsyUqMSsMWxHk725yiiHCCLfrh8O1z5QPOohDIaIeljMHgDF5CVlOqpeNLcJ80NK65_fV7S"
+                                            "1UbdmNwkhqNrL_bbPxyPyPGuzrAAY8ajaVMZ62lb7SCEndyCkb1b6Zgi5IDAmkjIgAQ/%232+"
+                                            "June+19.jpg?format=2500w")
+                    await user.send(embed=bully)
                     await orig_embed.edit(embed=uno)
                     while i < 2:
                         gameMembers[index].draw(deck)
@@ -659,6 +681,11 @@ class UNO(commands.Cog):
                     continue
                 if pile.top_card().card_type == "+4" and special_count == 0:
                     i = 0
+                    bully = discord.Embed(title="Might as Well Quit Now",
+                                          description=f"{user.mention} just got rekt",
+                                          color=discord.Color.dark_red())
+                    bully.set_thumbnail(url="https://i.ytimg.com/vi/8bdwR_qrzm0/maxresdefault.jpg")
+                    await user.send(embed=bully)
                     uno.set_footer(text=f"{user.display_name} is drawing 4 cards and will have their turn skipped...")
                     await orig_embed.edit(embed=uno)
                     while i < 4:
