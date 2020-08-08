@@ -8,6 +8,7 @@ prefixes.json
 counters.json
 balance.json
 gamestats.json
+blacklist.json
 discord.log
 tenor_api.yaml
 imgur_api.yaml
