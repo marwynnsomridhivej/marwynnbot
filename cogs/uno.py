@@ -300,32 +300,31 @@ class UnoGame:
         self.blocked = not self.blocked
 
     def set_index(self, playerlist):
-        try:
-            if self.reversed and not self.blocked:
-                self.index -= 1
-            elif self.blocked:
-                if self.reversed:
-                    self.index -= 1
-                else:
-                    self.index += 1
-                self.blocked = not self.blocked
-            else:
-                self.index += 1
-            test = playerlist[self.index]
-        except IndexError:
-            if self.reversed and not self.blocked:
-                self.index = len(playerlist) - 1
-            elif self.blocked:
-                if self.reversed:
-                    self.index = len(playerlist) - 1
-                else:
-                    self.index = 0
-                self.blocked = not self.blocked
-            else:
+        if self.reversed and self.blocked:
+            self.index -= 1
+            self.block()
+        elif self.reversed and not self.blocked:
+            self.index -= 1
+        elif not self.reversed and self.blocked:
+            self.index += 1
+            self.block()
+        elif not self.reversed and not self.blocked:
+            self.index += 1
+
+        if self.index < 0 or self.index >= int(len(playerlist)):
+            if self.reversed and self.blocked:
+                self.index = int(len(playerlist)) - 1
+                self.block()
+            elif self.reversed and not self.blocked:
+                self.index = int(len(playerlist)) - 1
+            elif not self.reversed and self.blocked:
                 self.index = 0
-            return self.index
-        else:
-            return self.index
+                self.block()
+            elif not self.reversed and not self.blocked:
+                self.index = 0
+
+        return self.index
+
 
 
 def emoji_to_player(player: UnoPlayer):
@@ -653,7 +652,7 @@ class UNO(commands.Cog):
                                             ".png")
                     await user.send(embed=bully)
                     await orig_embed.edit(embed=uno)
-                    if int(len(gameMembers)) == 2:
+                    if int(len(gameMembers)) != 2:
                         for _ in range(2):
                             index = game.set_index(gameMembers)
                     else:
@@ -779,12 +778,7 @@ class UNO(commands.Cog):
                             else:
                                 int_choice = int(choice.content)
                         except (ValueError, IndexError):
-                            await choice.delete()
-                            not_int = discord.Embed(title="Not a Valid Selection",
-                                                    description=f"{user.mention}, {choice.content} is not a valid "
-                                                                f"selection. Please try again.",
-                                                    color=discord.Color.dark_red())
-                            await ctx.channel.send(embed=not_int, delete_after=5)
+                            pass
                         else:
                             if 0 < int_choice <= (int(len(gameMembers[index].hand))):
                                 await choice.delete()
@@ -881,36 +875,32 @@ class UNO(commands.Cog):
                                         index = game.set_index(gameMembers)
                                         await asyncio.sleep(2.0)
                                         break
-                                    if pile.top_card().card_type != 'reverse':
+
+                                    await asyncio.sleep(2.0)
+                                    break
+                                else:
+                                    gameMembers[index].place(played_card, pile)
+                                    DM = discord.Embed(title=user.display_name,
+                                                       description=f"\n\nYou placed: {played_card.__str__()}",
+                                                       color=pile.embed_color())
+                                    DM.set_thumbnail(url=pile.top_thumbnail())
+                                    await dm_message.edit(embed=DM)
+                                    special_count = 0
+
+                                    try:
+                                        await color_choice.delete()
+                                    except (UnboundLocalError, discord.NotFound):
+                                        pass
+
+                                    if not gameMembers[index].hand:
+                                        placement.append(gameMembers[index])
+                                        gameMembers.remove(gameMembers[index])
                                         index = game.set_index(gameMembers)
+                                        await asyncio.sleep(2.0)
+                                        break
 
                                     await asyncio.sleep(2.0)
-                                    break
-
-                                gameMembers[index].place(played_card, pile)
-                                DM = discord.Embed(title=user.display_name,
-                                                   description=f"\n\nYou placed: {played_card.__str__()}",
-                                                   color=pile.embed_color())
-                                DM.set_thumbnail(url=pile.top_thumbnail())
-                                await dm_message.edit(embed=DM)
-                                special_count = 0
-
-                                try:
-                                    await color_choice.delete()
-                                except (UnboundLocalError, discord.NotFound):
-                                    pass
-
-                                if not gameMembers[index].hand:
-                                    placement.append(gameMembers[index])
-                                    gameMembers.remove(gameMembers[index])
-                                    index = game.set_index(gameMembers)
-                                    await asyncio.sleep(2.0)
-                                    break
-
-                                if pile.top_card().card_type != 'reverse':
-                                    index = game.set_index(gameMembers)
-                                await asyncio.sleep(2.0)
-                                loop = False
+                                    loop = False
 
                             else:
                                 await choice.delete()
@@ -968,5 +958,3 @@ class UNO(commands.Cog):
 
 def setup(client):
     client.add_cog(UNO(client))
-
-#hehe its 969 lines, nice
