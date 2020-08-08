@@ -585,12 +585,15 @@ class UNO(commands.Cog):
         placement = []
         special_count = 0
         turns_to_win = 0
+        turn_count = 0
 
         try:
             while True:
                 turns_to_win += 1
+                turn_count += 1
                 user = gameMembers[index].member
                 uno = discord.Embed(title="Uno",
+                                    description=f"Turns Played: {turn_count}",
                                     color=pile.embed_color())
                 if placement:
                     p_index = 0
