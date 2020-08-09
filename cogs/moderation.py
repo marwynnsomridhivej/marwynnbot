@@ -84,13 +84,13 @@ class Moderation(commands.Cog):
 
     @mute.error
     async def mute_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
+        if isinstance(error, commands.MissingPermissions):
             muteError = discord.Embed(title="Insufficient User Permissions",
                                       description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
                                                   " this command",
                                       color=discord.Color.dark_red())
             await ctx.channel.send(embed=muteError)
-        if isinstance(error, BotMissingPermissions):
+        if isinstance(error, commands.BotMissingPermissions):
             muteError = discord.Embed(title="Insufficient Bot Permissions",
                                       description="I need the Administrator permission to mute users",
                                       color=discord.Color.dark_red())
