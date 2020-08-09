@@ -75,24 +75,6 @@ async def on_guild_remove(guild):
         json.dump(prefixes, f, indent=4)
 
 
-@client.event
-async def on_command_error(ctx, error):
-    if isinstance(error, discord.ext.commands.CommandNotFound):
-        await ctx.message.delete()
-        notFound = discord.Embed(title="Command Not Found",
-                                 description=f"{ctx.author.mention}, command `{ctx.message.content}` is not a valid"
-                                             " command",
-                                 color=discord.Color.dark_red())
-        await ctx.channel.send(embed=notFound, delete_after=10)
-    elif isinstance(error, discord.ext.commands.MissingPermissions):
-        pass
-    elif isinstance(error, discord.ext.commands.BotMissingPermissions):
-        pass
-    else:
-        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
-
 @client.command(aliases=['l', 'ld'])
 async def load(ctx, extension):
     await ctx.message.delete()
