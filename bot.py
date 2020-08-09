@@ -84,6 +84,10 @@ async def on_command_error(ctx, error):
                                              " command",
                                  color=discord.Color.dark_red())
         await ctx.channel.send(embed=notFound, delete_after=10)
+    elif isinstance(error, discord.ext.commands.MissingPermissions):
+        pass
+    elif isinstance(error, discord.ext.commands.BotMissingPermissions):
+        pass
     else:
         print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
