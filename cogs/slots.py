@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 import numpy.random as np
@@ -321,12 +322,25 @@ class Slots(commands.Cog):
 
         slot_string = "========\n|" + "|".join(slot_selection) + "|\n========"
 
+        spinning = "<a:slotspin:742369382122127422>"
+
+        spinning_string = "========\n|" + f"{spinning}|" * 3 + "\n========"
+
+        slotEmbed = discord.Embed(title="Slots",
+                                  description=f"{spinning_string}",
+                                  color=discord.Color.blue())
+        slotEmbed.set_author(name=f"{ctx.author.display_name} spun the slot machine", icon_url=ctx.author.avatar_url)
+        slotEmbed.set_footer(text=f"You bet {betAmount} {spell}")
+        message = await ctx.channel.send(embed=slotEmbed)
+
+        await asyncio.sleep(5.0)
+
         slotEmbed = discord.Embed(title="Slots",
                                   description=f"{slot_string}",
                                   color=discord.Color.blue())
         slotEmbed.set_author(name=description, icon_url=ctx.author.avatar_url)
         slotEmbed.set_footer(text=f"You bet {betAmount} {spell}")
-        message = await ctx.channel.send(embed=slotEmbed)
+        await message.edit(embed=slotEmbed)
 
         if reward >= 1000:
             await message.pin()
