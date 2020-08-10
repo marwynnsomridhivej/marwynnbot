@@ -85,7 +85,7 @@ class Help(commands.Cog):
 
             debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
-            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `connectfour` `slots` `uno`"
+            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `coinflip` `connectfour` `slots` `uno`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
@@ -310,6 +310,19 @@ class Help(commands.Cog):
         aliases = "`bj` `Blackjack`"
         specialCases = "If `[betAmount]` is not specified, it will automatically bet 1 credit" \
                        "\n\nIf you do not have enough credits for the `[betAmount]` you will be unable to play"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['flip', 'cf'])
+    async def coinflip(self, ctx):
+        commandName = "Coinflip"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}coinflip [optional betAmount] [optional face]`"
+        aliases = "`flip` `cf`"
+        specialCases = "If not specified:\n- `[optional betAmout]` defaults to `1`\n- `[optional face]` defaults to " \
+                       "`heads` "
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
