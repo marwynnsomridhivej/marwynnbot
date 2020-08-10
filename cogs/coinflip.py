@@ -133,7 +133,7 @@ class Coinflip(commands.Cog):
         else:
             weight = [0.65, 0.35]
 
-        picked_side = np.random.choice(a=sides, size=1, replace=True, p=weight)
+        picked_side = np.random.choice(a=sides, size=1, replace=True, p=weight)[0]
 
         title = f"{picked_side.capitalize()}!"
         description = staticemoji + f" `[{picked_side}]`"
