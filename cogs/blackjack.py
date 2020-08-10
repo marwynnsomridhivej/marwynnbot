@@ -694,12 +694,12 @@ class Blackjack(commands.Cog):
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
                     if large_bet_win:
                         if large_bet_win:
-                            await message.pin(reason="Blackjack and thats a large reward!")
+                            await message.pin()
                         else:
-                            await message.pin(reason="Blackjack!")
+                            await message.pin()
                 else:
                     if large_bet_win:
-                        await message.pin(reason="Thats a large reward!")
+                        await message.pin()
                 gcmds.incrCounter(gcmds, ctx, 'blackjack')
                 return
 
