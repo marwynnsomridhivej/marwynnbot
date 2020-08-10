@@ -129,7 +129,7 @@ class Games(commands.Cog):
                         for item in stats:
                             value = file[str(gameName)][str(user.id)][item]
                             if item == "ratio":
-                                spell = ""
+                                continue
                             else:
                                 if value == 1:
                                     spell = "time"
@@ -138,6 +138,10 @@ class Games(commands.Cog):
                             statsEmbed.add_field(name=str(item).capitalize(),
                                                  value=f"**{value}** {spell}",
                                                  inline=False)
+                        statsEmbed.add_field(name="Ratio",
+                                             value=f"**{file[str(gameName)][str(user.id)]['ratio']}**",
+                                             inline=False)
+
                         await ctx.channel.send(embed=statsEmbed)
                         gcmds.incrCounter(gcmds, ctx, 'gameStats')
                 else:
@@ -153,13 +157,14 @@ class Games(commands.Cog):
                             value = ""
                             for item in user_data:
                                 if item == "ratio":
-                                    spell = ""
+                                    continue
                                 else:
                                     if file[str(game)][str(user.id)][str(item)] == 1:
                                         spell = "time"
                                     else:
                                         spell = "times"
-                                value += f"**{str(item).capitalize()}:** `{str(file[str(game)][str(user.id)][str(item)])}` {spell}\n"
+                                value += f"**{str(item).capitalize()}:** `{str(file[str(game)][str(user.id)][str(item)])}` {spell}\n "
+                            value += f"**Ratio**: `{str(file[str(game)][str(user.id)][str(item)])}`"
                             statsEmbed.add_field(name=game,
                                                  value=value)
                     await ctx.channel.send(embed=statsEmbed)
