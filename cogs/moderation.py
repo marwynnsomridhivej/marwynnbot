@@ -18,6 +18,122 @@ class Moderation(commands.Cog):
     async def on_ready(self):
         print('Cog "moderation" has been loaded')
 
+    @commands.group(aliases=['blist'])
+    async def blacklist(self, ctx):
+        await ctx.message.delete()
+        if not await self.client.is_owner(ctx.author):
+            insuf = discord.Embed(title="Insufficient User Permissions",
+                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
+                                  color=discord.Color.dark_red())
+            await ctx.channel.send(embed=insuf, delete_after=10)
+            return
+
+    @blacklist.command(aliases=['member'])
+    async def user(self, ctx, operation, user: discord.Member = None):
+
+        if user is None:
+            invalid = discord.Embed(title="Invalid User",
+                                    description=f"{ctx.author.mention}, please specify a valid user",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid, delete_after=10)
+            return
+
+        try:
+            user_id = user.id
+            user_mention = commands.AutoShardedBot.get_user(self.client, int(user_id))
+        except (TypeError, AttributeError):
+            invalid = discord.Embed(title="Invalid User",
+                                    description=f"{ctx.author.mention}, please specify a valid user",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid, delete_after=10)
+            return
+        if operation == "add":
+            with open('blacklist.json', 'r') as f:
+                blacklist = json.load(f)
+                try:
+                    blacklist["Users"]
+                except KeyError:
+                    blacklist["Users"] = {}
+                blacklist["Users"][str(user_id)] = 0
+                with open('blacklist.json', 'w') as g:
+                    json.dump(blacklist, g, indent=4)
+
+            b_add = discord.Embed(title="Blacklist Entry Added",
+                                  description=f"{ctx.author.mention}, {user_mention.mention} has been added to the "
+                                              f"blacklist",
+                                  color=discord.Color.blue())
+            await ctx.channel.send(embed=b_add)
+        elif operation == "remove":
+            with open('blacklist.json', 'r') as f:
+                blacklist = json.load(f)
+                del blacklist["Users"][str(user_id)]
+                with open('blacklist.json', 'w') as g:
+                    json.dump(blacklist, g, indent=4)
+
+            b_remove = discord.Embed(title="Blacklist Entry Removed",
+                                     description=f"{ctx.author.mention}, {user_mention.mention} has been removed from "
+                                                 f"the blacklist",
+                                     color=discord.Color.blue())
+            await ctx.channel.send(embed=b_remove)
+        else:
+            invalid = discord.Embed(title="Invalid Operation",
+                                    description=f"{ctx.author.mention}, `{operation}` is an invalid operation",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid, delete_after=10)
+
+    @blacklist.command(aliases=['server'])
+    async def guild(self, ctx, operation, server_id=None):
+
+        if server_id is None:
+            invalid = discord.Embed(title="Invalid Guild ID",
+                                    description=f"{ctx.author.mention}, please provide a valid guild ID",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+
+        try:
+            guild = commands.AutoShardedBot.get_guild(self.client, int(server_id))
+            guild_id = guild.id
+        except (TypeError, AttributeError):
+            invalid = discord.Embed(title="Invalid Guild ID",
+                                    description=f"{ctx.author.mention}, please specify a valid guild ID",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+        if operation == "add":
+            with open('blacklist.json', 'r') as f:
+                blacklist = json.load(f)
+                try:
+                    blacklist["Guild"]
+                except KeyError:
+                    blacklist["Guild"] = {}
+                blacklist["Guild"][str(guild_id)] = 0
+                with open('blacklist.json', 'w') as g:
+                    json.dump(blacklist, g, indent=4)
+
+            b_add = discord.Embed(title="Blacklist Entry Added",
+                                  description=f"{ctx.author.mention}, {guild.name} `ID:{guild_id}` has been added "
+                                              f"to the blacklist",
+                                  color=discord.Color.blue())
+            await ctx.channel.send(embed=b_add)
+        elif operation == "remove":
+            with open('blacklist.json', 'r') as f:
+                blacklist = json.load(f)
+                del blacklist["Guild"][str(guild_id)]
+                with open('blacklist.json', 'w') as g:
+                    json.dump(blacklist, g, indent=4)
+
+            b_remove = discord.Embed(title="Blacklist Entry Removed",
+                                     description=f"{ctx.author.mention}, {guild.name} `ID:{guild_id}` has been "
+                                                 f"removed from the blacklist",
+                                     color=discord.Color.blue())
+            await ctx.channel.send(embed=b_remove)
+        else:
+            invalid = discord.Embed(title="Invalid Operation",
+                                    description=f"{ctx.author.mention}, `{operation}` is an invalid operation",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
