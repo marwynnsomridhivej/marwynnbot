@@ -85,7 +85,7 @@ class Help(commands.Cog):
 
             debugCmds = "`ping` `shard`"
             funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
-            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `connectfour` `uno`"
+            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `connectfour` `slots` `uno`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
@@ -323,6 +323,19 @@ class Help(commands.Cog):
         aliases = "`c4` `conn` `connect`"
         specialCases = "You can win a random amount of credits (between 1 - 5), with a very small chance " \
                        "of getting a jackpot of `1000000` credits"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['slot'])
+    async def slots(self, ctx):
+        commandName = "Slots"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}slots [optional betAmount or keyword]`"
+        aliases = "`slot`"
+        specialCases = "`[betAmount]` defaults to `1 credit` if otherwise specified\n Access the payout menu by " \
+                       "entering `payout`, `rates`, or any `non-integer value` as the `[keyword]` "
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
