@@ -84,11 +84,12 @@ class Help(commands.Cog):
                                 value="`help`")
 
             debugCmds = "`ping` `shard`"
-            funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `say` `toad`"
-            gamesCmds = "*Under Development* `balance` `gamestats` `transfer` `blackjack` `coinflip` `connectfour` `slots` `uno`"
+            funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `peppa` `say` `toad`"
+            gamesCmds = "`balance` `gamestats` `transfer` `blackjack` `coinflip` `connectfour` `slots` `uno`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
+            ownerCmds = "`blacklist` `load` `unload` `reload` `shutdown`"
 
             helpEmbed.add_field(name="Debug",
                                 value=debugCmds,
@@ -107,6 +108,9 @@ class Help(commands.Cog):
                                 inline=False)
             helpEmbed.add_field(name="Utility",
                                 value=utilityCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Owner Only",
+                                value=ownerCmds,
                                 inline=False)
             await ctx.send(embed=helpEmbed)
 
@@ -264,20 +268,6 @@ class Help(commands.Cog):
     # Games
     # =================================================
 
-    @help.command(aliases=['bal'])
-    async def balance(self, ctx):
-        commandName = "Balance"
-        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}balance [optional users @mentions]`"
-        aliases = "`bal`"
-        specialCases = "The `[optional users @mentions]` argument supports multiple user mentions and " \
-                       "will only display the balances for the users mentioned\n\n If the `[optional users " \
-                       "@mentions]` argument is left blank, it will display your current balance"
-        await self.syntaxEmbed(ctx,
-                               commandName=commandName,
-                               syntaxMessage=syntaxMessage,
-                               aliases=aliases,
-                               specialCases=specialCases)
-
     @help.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx):
         commandName = "GameStats"
@@ -360,8 +350,8 @@ class Help(commands.Cog):
         commandName = "Uno"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}uno [opponent(s) @mention(s)]`"
         specialCases = "You can mention up to `9` other opponents" \
-                       "\n\nYou will receive a random amount of credits that scales according to the amount of turns "\
-                       "it took to establish a winner\n\n"\
+                       "\n\nYou will receive a random amount of credits that scales according to the amount of turns " \
+                       "it took to establish a winner\n\n" \
                        "Cancel the game by typing `cancel` when it is your turn and you can place a card"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
@@ -372,7 +362,7 @@ class Help(commands.Cog):
     # Moderation
     # =================================================
 
-    @help.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
+    @ help.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     async def chatclean(self, ctx):
         commandName = "ChatClean"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}chatclean [amount] [optional user @mention]`"
@@ -585,6 +575,77 @@ class Help(commands.Cog):
                                userPerms=userPerms,
                                botPerms=botPerms,
                                specialCases=specialCases)
+
+    # =================================================
+    # Owner
+    # =================================================
+
+    @help.command(aliases=['blist'])
+    async def blacklist(self, ctx):
+        commandName = "Blacklist"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}blacklist [type] [operation] [ID]`"
+        aliases = "`blist`"
+        userPerms = "`Bot Owner`"
+        specialCases = "Valid Options for Arguments:\n" \
+                       "`[type]`: `user` or `guild` *alias for guild is \"server\"*" \
+                       "`[operation]`: `add` or `remove`" \
+                       "`[ID]`: \nUser --> `user @mention` or `user ID`\nGuild --> `guild ID`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['l', 'ld'])
+    async def load(self, ctx):
+        commandName = "Load"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}load [extension]`"
+        aliases = "`l` `ld`"
+        userPerms = "`Bot Owner`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms)
+
+    @help.command(aliases=['ul', 'uld'])
+    async def unload(self, ctx):
+        commandName = "Unload"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}unload [extension]`"
+        aliases = "`ul` `uld`"
+        userPerms = "`Bot Owner`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms)
+
+    @help.command(aliases=['r', 'rl'])
+    async def reload(self, ctx):
+        commandName = "Reload"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}reload [optional extension]`"
+        aliases = "`r` `rl`"
+        userPerms = "`Bot Owner`"
+        specialCases = "If `[optional extension]` is not specified, it will reload all currently loaded extensions"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['taskkill'])
+    async def shutdown(self, ctx):
+        commandName = "Shutdown"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}shutdown`"
+        aliases = "`taskkill`"
+        userPerms = "`Bot Owner`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms)
 
 
 def setup(client):
