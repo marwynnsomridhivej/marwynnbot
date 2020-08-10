@@ -46,7 +46,7 @@ def lose(ctx, betAmount):
     success = False
     with open('balance.json', 'r') as f:
         file = json.load(f)
-        file['Balance'][str(ctx.author.id)] += betAmount
+        file['Balance'][str(ctx.author.id)] -= betAmount
         with open('balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Coinflip': {}}
