@@ -6,7 +6,7 @@ import random
 import traceback
 import discord
 import logging
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandInvokeError
 import yaml
 
@@ -28,9 +28,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
-@client.event
-async def on_ready():
-    print('Successfully logged in as {0.user}'.format(client))
+@tasks.loop(seconds=120)
+async def status():
     activity1 = discord.Activity(name=f"m!h for help!", type=discord.ActivityType.listening)
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
@@ -38,20 +37,73 @@ async def on_ready():
     activity5 = discord.Activity(name=f"MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
     activity6 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
     activityList = [activity1, activity2, activity3, activity4, activity5, activity6]
-    while True:
-        activity = random.choice(activityList)
-        await client.change_presence(status=discord.Status.online, activity=activity)
-        await asyncio.sleep(30.0)
+    activity = random.choice(activityList)
+    await client.change_presence(status=discord.Status.online, activity=activity)
+
+
+@client.event
+async def on_ready():
+    print('Successfully logged in as {0.user}'.format(client))
+    await status.start()
+
+
+@client.check
+async def check_blacklist(ctx):
+    if not os.path.exists('blacklist.json'):
+        with open('blacklist.json', 'w') as f:
+            json.dump({'Users': {}}, f, indent=4)
+    with open('blacklist.json', 'r') as f:
+        blacklist = json.load(f)
+        try:
+            blacklist["Users"]
+            blacklist["Guilds"]
+        except KeyError:
+            blacklist["Users"] = {}
+            blacklist["Guilds"] = {}
+        try:
+            if blacklist["Users"][str(ctx.author.id)]:
+                blacklisted = discord.Embed(title="You Are Blacklisted",
+                                            description=f"{ctx.author.mention}, you are blacklisted from using this bot. "
+                                                        f"Please contact `MS Arranges#3060` if you believe this is a "
+                                                        f"mistake",
+                                            color=discord.Color.dark_red())
+                await ctx.channel.send(embed=blacklisted, delete_after=10)
+                return False
+            elif blacklist["Guilds"][str(ctx.guild.id)]:
+                blacklisted = discord.Embed(title="Guild is Blacklisted",
+                                            description=f"{ctx.guild.name} is blacklisted from using this bot. "
+                                                        f"Please contact `MS Arranges#3060` if you believe this is a "
+                                                        f"mistake",
+                                            color=discord.Color.dark_red())
+                await ctx.channel.send(embed=blacklisted, delete_after=10)
+                return False
+            else:
+                return True
+        except KeyError:
+            return True
+
+
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, discord.ext.commands.errors.CheckFailure):
+        pass
+    else:
+        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 @client.event
 async def on_guild_join(guild):
     if not os.path.exists('blacklist.json'):
         with open('blacklist.json', 'w') as f:
-            json.dump({'Blacklist': {}}, f, indent=4)
+            json.dump({'Guilds': {}}, f, indent=4)
     with open('blacklist.json', 'r') as f:
         blacklist = json.load(f)
-        if guild.id in blacklist["Blacklist"]:
+        try:
+            blacklist["Guilds"]
+        except KeyError:
+            blacklist["Guilds"] = {}
+        if guild.id in blacklist["Guilds"]:
             to_leave = client.get_guild(guild.id)
             await to_leave.leave()
     if not os.path.exists('prefixes.json'):
@@ -179,6 +231,7 @@ async def shutdown(ctx):
                                   description=description,
                                   color=color)
     await ctx.channel.send(embed=shutdownEmbed)
+    await status.stop()
     await client.logout()
 
 
