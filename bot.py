@@ -36,11 +36,12 @@ async def on_ready():
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
     activity4 = discord.Activity(name=f"Under development [WIP]", type=discord.ActivityType.playing)
     activity5 = discord.Activity(name=f"MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
-    activityList = [activity1, activity2, activity3, activity4, activity5]
+    activity6 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
+    activityList = [activity1, activity2, activity3, activity4, activity5, activity6]
     while True:
         activity = random.choice(activityList)
         await client.change_presence(status=discord.Status.online, activity=activity)
-        await asyncio.sleep(20.0)
+        await asyncio.sleep(30.0)
 
 
 @client.event
