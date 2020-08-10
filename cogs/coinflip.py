@@ -129,9 +129,9 @@ class Coinflip(commands.Cog):
         sides = ["heads", "tails"]
 
         if side == "heads":
-            weight = [0.35, 0.65]
+            weight = [0.45, 0.55]
         else:
-            weight = [0.65, 0.35]
+            weight = [0.55, 0.45]
 
         picked_side = np.random.choice(a=sides, size=1, replace=True, p=weight)[0]
 
