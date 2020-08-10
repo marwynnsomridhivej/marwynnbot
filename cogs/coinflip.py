@@ -4,6 +4,7 @@ import discord
 import typing
 from discord.ext import commands
 import json
+import numpy as np
 from globalcommands import GlobalCMDS as gcmds
 
 def win(ctx, betAmount):
@@ -126,7 +127,13 @@ class Coinflip(commands.Cog):
         staticemoji = "<:Coin_spin:742208039310065683>"
 
         sides = ["heads", "tails"]
-        picked_side = random.choice(sides)
+
+        if side == "heads":
+            weight = [0.35, 0.65]
+        else:
+            weight = [0.65, 0.35]
+
+        picked_side = np.random.choice(a=sides, size=1, replace=True, p=weight)
 
         title = f"{picked_side.capitalize()}!"
         description = staticemoji + f" `[{picked_side}]`"
