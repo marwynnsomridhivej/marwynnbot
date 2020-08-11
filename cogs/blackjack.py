@@ -691,15 +691,44 @@ class Blackjack(commands.Cog):
                 bjEmbedEdit.add_field(name=f"{ctx.author.name} `[{player_value[:-1]}={pv_int}]`",
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
-                if (player_hand.iter - 3) == 0 and player_hand.value == 21:
-                    if large_bet_win:
-                        if large_bet_win:
-                            await message.pin()
+
+                if ((player_hand.iter - 3) == 0 and player_hand.value == 21) or large_bet_win:
+                    await message.add_reaction("📌")
+                    await message.add_reaction("🛑")
+
+                    bjEmbedEdit.set_footer(text="To pin, react with 📌, otherwise, react with 🛑")
+                    await message.edit(embed=bjEmbedEdit)
+
+                    def check_pin(reaction, user):
+                        if ctx.author == user and str(reaction.emoji) == '📌':
+                            return True
+                        elif ctx.author == user and str(reaction.emoji) == '🛑':
+                            return True
                         else:
-                            await message.pin()
-                else:
-                    if large_bet_win:
-                        await message.pin()
+                            return False
+
+                    try:
+                        pin_choice = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=20.0,
+                                                                            check=check_pin)
+                    except asyncio.TimeoutError:
+                        await message.clear_reactions()
+                        bjEmbedEdit.set_footer(text="Not pinned 🛑")
+                        await message.edit(embed=bjEmbedEdit)
+                        return
+                    else:
+                        for item in pin_choice:
+                            if str(item) == '📌':
+                                await message.clear_reactions()
+                                await message.pin()
+                                bjEmbedEdit.set_footer(text="Pinned 📌")
+                                break
+                            if str(item) == '🛑':
+                                await message.clear_reactions()
+                                bjEmbedEdit.set_footer(text="Not pinned 🛑")
+                                return
+
+                        await message.edit(embed=bjEmbedEdit)
+
                 gcmds.incrCounter(gcmds, ctx, 'blackjack')
                 return
 
