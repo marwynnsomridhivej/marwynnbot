@@ -89,7 +89,7 @@ class Help(commands.Cog):
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
             utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
-            ownerCmds = "`blacklist` `load` `unload` `reload` `shutdown`"
+            ownerCmds = "`blacklist` `load` `unload` `reload` `shutdown` `balanceadmin`"
 
             helpEmbed.add_field(name="Debug",
                                 value=debugCmds,
@@ -362,7 +362,7 @@ class Help(commands.Cog):
     # Moderation
     # =================================================
 
-    @ help.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
+    @help.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     async def chatclean(self, ctx):
         commandName = "ChatClean"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}chatclean [amount] [optional user @mention]`"
@@ -646,6 +646,23 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                aliases=aliases,
                                userPerms=userPerms)
+
+    @help.command(aliases=['balanceadmin', 'baladmin', 'balop'])
+    async def balanceAdmin(self, ctx):
+        commandName = "BalanceAdmin"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}balanceadmin [operation] [user @mention] [credit amount]`"
+        aliases = "`baladmin` `balop`"
+        userPerms = "`Bot Owner`"
+        specialCases = "Valid Options for Arguments:\n" \
+                       "`[operation]`: `set` `give` `remove`\n" \
+                       "`[user @mention]`: Any user mention\n" \
+                       "`[credit amount]`: Any non-negative integer"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               aliases=aliases,
+                               userPerms=userPerms,
+                               specialCases=specialCases)
 
 
 def setup(client):
