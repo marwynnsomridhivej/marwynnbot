@@ -118,8 +118,9 @@ class Games(commands.Cog):
                 if gameName is not None:
                     try:
                         stats = file[str(gameName)][str(user.id)]
-                        statsEmbed = discord.Embed(title=f"{person_name.display_name}'s Stats for {str(gameName).capitalize()}",
-                                                   color=discord.Color.blue())
+                        statsEmbed = discord.Embed(
+                            title=f"{person_name.display_name}'s Stats for {str(gameName).capitalize()}",
+                            color=discord.Color.blue())
                     except KeyError:
                         errorEmbed = discord.Embed(title="No Stats Available",
                                                    description=f"{ctx.author.mention}, you have no stats for this game",
@@ -290,6 +291,31 @@ class Games(commands.Cog):
                 canceled.set_footer(text=f"{ctx.author.name} did not provide a valid reaction within 60 seconds")
                 await message.edit(embed=canceled, delete_after=10)
                 return
+
+    @commands.group(aliases=['baladmin'])
+    async def balanceAdmin(self, ctx):
+        await ctx.message.delete()
+        if not await self.client.is_owner(ctx.author):
+            insuf = discord.Embed(title="Insufficient User Permissions",
+                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
+                                  color=discord.Color.dark_red())
+            await ctx.channel.send(embed=insuf, delete_after=10)
+            return
+
+    @balanceAdmin.command()
+    async def set(self, ctx, user: discord.Member, amount):
+        return
+    # TODO: Add command set for balanceAdmin group
+
+    @balanceAdmin.command(aliases=['add', 'plus'])
+    async def give(self, ctx, user: discord.Member, amount):
+        return
+    # TODO: Add command give for balanceAdmin group
+
+    @balanceAdmin.command(aliases=['subtract', 'sub'])
+    async def remove(self, ctx, user: discord.Member, amount):
+        return
+    # TODO: Add command remove for balanceAdmin group
 
 
 def setup(client):
