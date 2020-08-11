@@ -292,7 +292,7 @@ class Games(commands.Cog):
                 await message.edit(embed=canceled, delete_after=10)
                 return
 
-    @commands.group(aliases=['baladmin'])
+    @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     async def balanceAdmin(self, ctx):
         await ctx.message.delete()
         if not await self.client.is_owner(ctx.author):
@@ -301,21 +301,147 @@ class Games(commands.Cog):
                                   color=discord.Color.dark_red())
             await ctx.channel.send(embed=insuf, delete_after=10)
             return
+        else:
+            init = {'Balance': {}}
+            gcmds.json_load(gcmds, 'balance.json', init)
 
     @balanceAdmin.command()
     async def set(self, ctx, user: discord.Member, amount):
-        return
-    # TODO: Add command set for balanceAdmin group
+        try:
+            user.id
+        except AttributeError:
+            invalid = discord.Embed(title="Invalid User",
+                                    description=f"{ctx.author.mention}, please specify a valid user",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
 
-    @balanceAdmin.command(aliases=['add', 'plus'])
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            invalid = discord.Embed(title="Invalid Amount",
+                                    description=f"{ctx.author.mention}, please specify a valid credit amount",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+
+        with open('balance.json', 'r') as f:
+            file = json.load(f)
+            try:
+                file['Balance'][str(user.id)]
+            except KeyError:
+                file['Balance'][str(user.id)] = amount
+            else:
+                file['Balance'][str(user.id)] = amount
+            balance = amount
+            with open('balance.json', 'w') as g:
+                json.dump(file, g, indent=4)
+
+        if balance != 1:
+            spell = "credits"
+        else:
+            spell = "credit"
+
+        setEmbed = discord.Embed(title="Balance Set",
+                                 description=f"The balance for {user.mention} is now set to ```{balance} {spell}```",
+                                 color=discord.Color.blue())
+        await ctx.channel.send(embed=setEmbed, delete_after=60)
+
+    @balanceAdmin.command()
     async def give(self, ctx, user: discord.Member, amount):
-        return
-    # TODO: Add command give for balanceAdmin group
+        try:
+            user.id
+        except AttributeError:
+            invalid = discord.Embed(title="Invalid User",
+                                    description=f"{ctx.author.mention}, please specify a valid user",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
 
-    @balanceAdmin.command(aliases=['subtract', 'sub'])
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            invalid = discord.Embed(title="Invalid Amount",
+                                    description=f"{ctx.author.mention}, please specify a valid credit amount",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+
+        with open('balance.json', 'r') as f:
+            file = json.load(f)
+            try:
+                file['Balance'][str(user.id)]
+            except KeyError:
+                file['Balance'][str(user.id)] += amount
+            else:
+                file['Balance'][str(user.id)] += amount
+            balance = file['Balance'][str(user.id)]
+            with open('balance.json', 'w') as g:
+                json.dump(file, g, indent=4)
+
+        if balance != 1:
+            spell = "credits"
+        else:
+            spell = "credit"
+
+        if amount != 1:
+            spell_amt = "credits"
+        else:
+            spell_amt = "credit"
+
+        giveEmbed = discord.Embed(title="Balance Set",
+                                  description=f"{user.mention} has been given `{amount} {spell_amt}`. \nTheir balance "
+                                              f"is now ```{balance} {spell}```",
+                                  color=discord.Color.blue())
+        await ctx.channel.send(embed=giveEmbed, delete_after=60)
+
+    @balanceAdmin.command()
     async def remove(self, ctx, user: discord.Member, amount):
-        return
-    # TODO: Add command remove for balanceAdmin group
+        try:
+            user.id
+        except AttributeError:
+            invalid = discord.Embed(title="Invalid User",
+                                    description=f"{ctx.author.mention}, please specify a valid user",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            invalid = discord.Embed(title="Invalid Amount",
+                                    description=f"{ctx.author.mention}, please specify a valid credit amount",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid)
+            return
+
+        with open('balance.json', 'r') as f:
+            file = json.load(f)
+            try:
+                file['Balance'][str(user.id)]
+            except KeyError:
+                file['Balance'][str(user.id)] -= amount
+            else:
+                file['Balance'][str(user.id)] -= amount
+            balance = file['Balance'][str(user.id)]
+            with open('balance.json', 'w') as g:
+                json.dump(file, g, indent=4)
+
+        if balance != 1:
+            spell = "credits"
+        else:
+            spell = "credit"
+
+        if amount != 1:
+            spell_amt = "credits"
+        else:
+            spell_amt = "credit"
+
+        removeEmbed = discord.Embed(title="Balance Set",
+                                    description=f"{user.mention} has had `{amount} {spell_amt}` removed. \nTheir "
+                                                f"balance is now ```{balance} {spell}```",
+                                    color=discord.Color.blue())
+        await ctx.channel.send(embed=removeEmbed, delete_after=60)
 
 
 def setup(client):
