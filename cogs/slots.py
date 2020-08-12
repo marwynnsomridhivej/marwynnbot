@@ -230,7 +230,7 @@ class Slots(commands.Cog):
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         if betAmount is None:
             betAmount = 1

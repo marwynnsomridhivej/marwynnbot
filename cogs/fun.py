@@ -5,11 +5,10 @@ import random
 import re
 import typing
 import urllib.request
-
+import aiohttp
 import discord
 import requests
 import yaml
-from bs4 import BeautifulSoup
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
 
@@ -26,7 +25,7 @@ class Fun(commands.Cog):
         print('Cog "fun" has been loaded')
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         path = path
         sleepTime = 1.0
 
@@ -45,6 +44,18 @@ class Fun(commands.Cog):
             url = url
             color = discord.Color.blue()
             cmdName = "gifSearch"
+        elif path == "cat":
+            local = False
+            title = "Cat"
+            url = url
+            color = discord.Color.blue()
+            cmdName = "randomCat"
+        elif path == "dog":
+            local = False
+            title = "Dog"
+            url = url
+            color = discord.Color.blue()
+            cmdName = "randomDog"
         else:
             local = True
             files = os.listdir(path)
@@ -135,7 +146,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['8ball', '8b'])
     async def _8ball(self, ctx, *, question):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         file = open('responses', 'r')
         responses = file.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
@@ -147,7 +158,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def choose(self, ctx, *, choices):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)
@@ -224,7 +235,7 @@ class Fun(commands.Cog):
                               description=description,
                               color=color)
 
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         await ctx.channel.send(embed=embed)
 
     @gifSearch.error
@@ -313,9 +324,67 @@ class Fun(commands.Cog):
         path = "./peppa"
         await self.imageSend(ctx, path, toSend=toSend)
 
+    @commands.command(aliases=['randomcat', 'cat'])
+    async def randomCat(self, ctx, toSend: typing.Optional[int] = None):
+        try:
+            with open('./cat_api.yaml', 'r') as f:
+                stream = yaml.full_load(f)
+                api_key = stream[str('api_key')]
+            headers = {"x-api-key": api_key}
+            if toSend is None:
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get("https://api.thecatapi.com/v1/images/search") as image:
+                        response = await image.json()
+                        search = response[0]
+                        url = search['url']
+            else:
+                url = []
+                for _ in range(toSend):
+                    async with aiohttp.ClientSession(headers=headers) as session:
+                        async with session.get("https://api.thecatapi.com/v1/images/search") as image:
+                            response = await image.json()
+                            search = response[0]
+                            url.append(search['url'])
+            path = "cat"
+            await self.imageSend(ctx, path, url=url, toSend=toSend)
+            return
+        except FileNotFoundError:
+            await gcmds.invkDelete(gcmds, ctx)
+            with open('cat_api.yaml', 'w') as f:
+                f.write('api_key: API_KEY_FROM_THECATAPI')
+            title = "Created File"
+            description = "The file `cat_api.yaml` was created. Insert your TheCatAPI API Key in the placeholder"
+            color = discord.Color.red()
+            embed = discord.Embed(title=title,
+                                  description=description,
+                                  color=color)
+            await ctx.channel.send(embed=embed)
+            return
+
+    @commands.command(aliases=['woof', 'dog', 'doggo', 'randomdog'])
+    async def randomDog(self, ctx, toSend: typing.Optional[int] = None):
+        if toSend is None:
+            req_url = "https://dog.ceo/api/breeds/image/random"
+        else:
+            if toSend < 2:
+                req_url = "https://dog.ceo/api/breeds/image/random"
+            elif toSend > 50:
+                toSend = 50
+                req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
+            else:
+                req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(req_url) as image:
+                response = await image.json()
+                url = response["message"]
+        path = "dog"
+        await self.imageSend(ctx, path, url=url, toSend=toSend)
+        return
+
     @commands.command()
     async def say(self, ctx, *, args):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)

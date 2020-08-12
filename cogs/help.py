@@ -59,15 +59,15 @@ class Help(commands.Cog):
 
     @commands.group(aliases=['h'])
     async def help(self, ctx):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         gcmds.incrCounter(gcmds, ctx, 'help')
         if ctx.invoked_subcommand is None:
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
                                       colour=discord.Color(0x3498db),
                                       url="https://discord.gg/fYBTdUp",
                                       description="These are all the commands I currently support! Type"
-                                                  f"\n`{gcmds.prefix(gcmds, ctx)}help [command]`\nto get help on that "
-                                                  "specific command")
+                                                  f"\n```{gcmds.prefix(gcmds, ctx)}help [command]```\n to get help on "
+                                                  f"that specific command")
             helpEmbed.set_image(
                 url="https://cdn.discordapp.com/avatars/623317451811061763/9bb63c734178694e8779aa102cb81062.png"
                     "?size=128")
@@ -306,11 +306,11 @@ class Help(commands.Cog):
                                aliases=aliases,
                                specialCases=specialCases)
 
-    @help.command(aliases=['flip', 'cf'])
+    @help.command(aliases=['cf'])
     async def coinflip(self, ctx):
         commandName = "Coinflip"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}coinflip [optional betAmount] [optional face]`"
-        aliases = "`flip` `cf`"
+        aliases = "`cf`"
         specialCases = "If not specified:\n- `[optional betAmout]` defaults to `1`\n- `[optional face]` defaults to " \
                        "`heads` "
         await self.syntaxEmbed(ctx,

@@ -281,7 +281,7 @@ class ConnectFour(commands.Cog):
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         if member is None:
             error = discord.Embed(title="No Opponent Selected",

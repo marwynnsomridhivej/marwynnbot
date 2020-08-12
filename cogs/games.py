@@ -18,7 +18,7 @@ class Games(commands.Cog):
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         init = {'Balance': {}}
         gcmds.json_load(gcmds, 'balance.json', init)
         with open('balance.json', 'r') as f:
@@ -88,7 +88,7 @@ class Games(commands.Cog):
     @commands.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
                         member: commands.Greedy[discord.Member] = None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         if gameName is not None:
             if "<@!" in gameName:
                 userid = gameName[3:-1]
@@ -173,7 +173,7 @@ class Games(commands.Cog):
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         cmdExit = False
         if amount is None:
@@ -294,7 +294,7 @@ class Games(commands.Cog):
 
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     async def balanceAdmin(self, ctx):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         if not await self.client.is_owner(ctx.author):
             insuf = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, you must be the bot owner to use this command",

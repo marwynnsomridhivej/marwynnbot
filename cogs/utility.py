@@ -19,7 +19,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         gcmds.file_check(gcmds, "counters.json", '{\n\n}')
 
@@ -92,7 +92,7 @@ class Utility(commands.Cog):
     @commands.command(aliases=['fleave'])
     @commands.is_owner()
     async def forceleave(self, ctx, guild_id=None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         if guild_id is not None:
             id = guild_id
         else:
@@ -114,7 +114,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         description = []
         for emoji in ctx.guild.emojis:
             if search is not None:
@@ -134,7 +134,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
@@ -153,7 +153,7 @@ class Utility(commands.Cog):
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
             if prefix != 'reset':
@@ -188,7 +188,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(administrator=True)
     async def serverStats(self, ctx, reset=None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         @tasks.loop(minutes=10)
         async def serverstatsupdate(ctx, names):
@@ -311,7 +311,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(administrator=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         nameSpace = str(timezoneInput)
         name = nameSpace.replace(" ", "")
         if name == 'reset' or name == 'r':

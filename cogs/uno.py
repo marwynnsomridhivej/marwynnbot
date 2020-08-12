@@ -526,7 +526,7 @@ class UNO(commands.Cog):
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",

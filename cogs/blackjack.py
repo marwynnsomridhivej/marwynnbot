@@ -485,7 +485,7 @@ class Blackjack(commands.Cog):
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         won = False
         bet = bet

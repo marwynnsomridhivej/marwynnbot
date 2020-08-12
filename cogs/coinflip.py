@@ -86,9 +86,9 @@ class Coinflip(commands.Cog):
     async def on_ready(self):
         print('Cog "coinflip" has been loaded')
 
-    @commands.command(aliases=['flip', 'cf'])
+    @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
 
         init = {'Balance': {}}
         gcmds.json_load(gcmds, 'balance.json', init)
