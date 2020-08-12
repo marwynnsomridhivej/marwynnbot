@@ -9,14 +9,23 @@ import logging
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandInvokeError
 import yaml
+from globalcommands import GlobalCMDS as gcmds
+
+DISABLED_COGS = ["Blackjack", 'Coinflip', 'Oldmaid', 'Slots', 'Uno', 'Reactions', 'Moderation', 'Music', 'Utility']
+DISABLED_COMMANDS = []
 
 
 async def get_prefix(client, message):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
-        extras = (
-            f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ')
+    if isinstance(message.channel, discord.DMChannel) or isinstance(message.channel, discord.GroupChannel):
+        extras = ('mb ', 'mB ', 'Mb ', 'MB ', 'm!', 'm! ')
         return commands.when_mentioned_or(*extras)(client, message)
+    else:
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
+            extras = (
+                f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ',
+                'm!')
+            return commands.when_mentioned_or(*extras)(client, message)
 
 
 client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1)
@@ -83,6 +92,19 @@ async def check_blacklist(ctx):
             return True
 
 
+@client.check
+async def disable_dm_exec(ctx):
+    if ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS:
+        disabled = discord.Embed(title="Command Disabled in Non Server Channels",
+                                 description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
+                                             f"in a server",
+                                 color=discord.Color.dark_red())
+        await ctx.channel.send(embed=disabled)
+        return False
+    else:
+        return True
+
+
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CheckFailure):
@@ -130,7 +152,7 @@ async def on_guild_remove(guild):
 
 @client.command(aliases=['l', 'ld'])
 async def load(ctx, extension):
-    await ctx.message.delete()
+    await gcmds.invkDelete(gcmds, ctx)
     if await client.is_owner(ctx.author):
         try:
             client.load_extension(f'cogs.{extension}')
@@ -156,7 +178,7 @@ async def load(ctx, extension):
 
 @client.command(aliases=['ul', 'uld'])
 async def unload(ctx, extension):
-    await ctx.message.delete()
+    await gcmds.invkDelete(gcmds, ctx)
     if await client.is_owner(ctx.author):
         try:
             client.unload_extension(f'cogs.{extension}')
@@ -187,7 +209,7 @@ for filename in os.listdir('./cogs'):
 
 @client.command(aliases=['r', 'rl'])
 async def reload(ctx, *, extension=None):
-    await ctx.message.delete()
+    await gcmds.invkDelete(gcmds, ctx)
     if await client.is_owner(ctx.author):
         if extension is None:
             print("==========================")
@@ -218,7 +240,7 @@ async def reload(ctx, *, extension=None):
 
 @client.command(aliases=['taskkill'])
 async def shutdown(ctx):
-    await ctx.message.delete()
+    await gcmds.invkDelete(gcmds, ctx)
     if await client.is_owner(ctx.author):
         title = "Bot Shutdown Successful"
         description = "Bot is logging out"
