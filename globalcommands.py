@@ -1,6 +1,7 @@
 import json
 import os
 import discord
+from discord.ext import commands
 
 
 class GlobalCMDS:
@@ -44,11 +45,11 @@ class GlobalCMDS:
             json.dump(values, f, indent=4)
 
     async def invkDelete(self, ctx):
-        if isinstance(ctx.channel, discord.TextChannel):
+        if isinstance(ctx.channel, discord.TextChannel) and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
     async def msgDelete(self, message):
-        if isinstance(message.channel, discord.TextChannel):
+        if isinstance(message.channel, discord.TextChannel) and message.guild.me.guild_permissions.manage_messages:
             await message.delete()
 
     def isGuild(self, ctx):

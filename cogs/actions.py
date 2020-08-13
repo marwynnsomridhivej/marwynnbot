@@ -109,6 +109,46 @@ class Actions(commands.Cog):
         await ctx.channel.send(embed=embed)
         gcmds.incrCounter(gcmds, ctx, cmdNameQuery)
 
+    @commands.command(aliases=['action'])
+    async def actions(self, ctx, cmdName=None):
+        await gcmds.invkDelete(gcmds, ctx)
+
+        CMDLIST = self.get_commands()
+        del CMDLIST[0]
+        CMDNAMES = [i.name for i in CMDLIST]
+        description = f"Do `{gcmds.prefix(gcmds, ctx)}actions [cmdName]` to get the usage of that particular " \
+                      f"command.\n\n**List of all commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
+        if cmdName is None or cmdName == "actions":
+            helpEmbed = discord.Embed(title="Actions Help",
+                                      description=description,
+                                      color=discord.Color.blue())
+        else:
+            if cmdName in CMDNAMES:
+                action = cmdName.capitalize()
+                helpEmbed = discord.Embed(title=f"Action - {action}",
+                                          color=discord.Color.blue())
+                helpEmbed.add_field(name="Usage",
+                                    value=f"`{gcmds.prefix(gcmds, ctx)}{cmdName} [optional user @mention]`",
+                                    inline=False)
+                pot_alias = self.client.get_command(name=cmdName)
+                if pot_alias.aliases is not None:
+                    print(pot_alias.aliases)
+                    aliases = [g for g in pot_alias.aliases]
+                    value = "`" + "` `".join(sorted(aliases)) + "`"
+                    helpEmbed.add_field(name="Aliases",
+                                        value=value,
+                                        inline=False)
+                helpEmbed.add_field(name="Recipient",
+                                    value=f"\nIf the argument `[optional user @mention]` is specified, "
+                                          f"it will direct the action towards that user. Otherwise, "
+                                          f"{ctx.me.mention} will direct the action to you",
+                                    inline=False)
+            else:
+                helpEmbed = discord.Embed(title="Action Not Found",
+                                          description=f"{ctx.author.mention}, {cmdName} is not a valid action",
+                                          color=discord.Color.blue())
+        await ctx.channel.send(embed=helpEmbed)
+
     @commands.command()
     async def bite(self, ctx, user: discord.Member = None):
         cmdName = "bit"

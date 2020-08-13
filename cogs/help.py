@@ -83,12 +83,22 @@ class Help(commands.Cog):
             helpEmbed.add_field(name="Help",
                                 value="`help`")
 
-            debugCmds = "`ping` `shard`"
+            print(self.client.cogs)
+            cogNames = [i for i in self.client.cogs]
+            print(cogNames)
+            del cogNames[1:4]
+            del cogNames[4]
+            del cogNames[6]
+            del cogNames[8:10]
+            print(cogNames)
+
+            debugCmds = "`ping` `report` `shard`"
             funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `peppa` `say` `toad`"
+            actionCmds = f"`{gcmds.prefix(gcmds, ctx)}actions` *for a full list*"
             gamesCmds = "`balance` `gamestats` `transfer` `blackjack` `coinflip` `connectfour` `slots` `uno`"
             moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
             musicCmds = "*Under Development* `join` `leave`"
-            utilityCmds = "`prefix` `setprefix` `serverstats` `timezone`"
+            utilityCmds = "`prefix` `setprefix` `serveremotes` `serverstats` `timezone`"
             ownerCmds = "`blacklist` `load` `unload` `reload` `shutdown` `balanceadmin`"
 
             helpEmbed.add_field(name="Debug",
@@ -96,6 +106,9 @@ class Help(commands.Cog):
                                 inline=False)
             helpEmbed.add_field(name="Fun",
                                 value=funCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Actions",
+                                value=actionCmds,
                                 inline=False)
             helpEmbed.add_field(name="Games",
                                 value=gamesCmds,
@@ -150,6 +163,19 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['flag'])
+    async def report(self, ctx):
+        commandName = "Report",
+        syntaxMesage = f"`{gcmds.prefix(gcmds, ctx)}report [thing] [message]`"
+        aliases = "`flag`"
+        specialCases = "**Valid Arguments**\n`[thing]`: `bug` `update`\n\nThe `[message]` argument must be present for" \
+                       "the report message to be sent"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMesage,
+                               aliases=aliases,
                                specialCases=specialCases)
 
     # =================================================
@@ -534,6 +560,19 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput,
+                               aliases=aliases,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
+    async def serverEmotes(self, ctx):
+        commandName = "Server Emotes"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}serveremotes [optional query]`"
+        aliases = "`emotes` `serveremotes` `serveremote` `serverEmote` `emojis` `emoji`"
+        specialCases = "If `[optional query]` is specified, it will search for emotes with that substring in its name " \
+                       "*(case sensitive)*"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
                                aliases=aliases,
                                specialCases=specialCases)
 

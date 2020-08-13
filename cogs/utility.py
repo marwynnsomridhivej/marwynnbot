@@ -89,29 +89,6 @@ class Utility(commands.Cog):
                                    color=discord.Color.dark_red())
         await ctx.channel.send(embed=errorEmbed)
 
-    @commands.command(aliases=['fleave'])
-    @commands.is_owner()
-    async def forceleave(self, ctx, guild_id=None):
-        await gcmds.invkDelete(gcmds, ctx)
-        if guild_id is not None:
-            id = guild_id
-        else:
-            id = ctx.guild.id
-        await self.client.get_guild(id).leave()
-        leaveEmbed = discord.Embed(title="Successfully Left Server",
-                                   description=f"Left guild id: {id}",
-                                   color=discord.Color.blue())
-        await ctx.author.send(embed=leaveEmbed)
-        print("Success")
-
-    @forceleave.error
-    async def forceleave_error(self, ctx, error):
-        if isinstance(error, commands.NotOwner):
-            error = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must own this bot to use this command",
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=error, delete_after=10)
-
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
         await gcmds.invkDelete(gcmds, ctx)
