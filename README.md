@@ -19,8 +19,13 @@ frequently as the bot's functionality grows.
 **Help**
 - `help`
 
+**Actions**
+- Check [here]((https://marwynn.gitbook.io/marwynnbot/)) for a full list
+- `actions`
+
 **Debug**
 - `ping`
+- `report`
 - `shard`
 
 **Fun**
@@ -30,14 +35,18 @@ frequently as the bot's functionality grows.
 - `imgursearch`
 - `isabelle`
 - `peppa`
+- `randomcat`
+- `randomdog`
 - `say`
 - `toad`
 
 **Games**
-- Currently under development
 - `blackjack`
+- `coinflip`
 - `connectfour`
+- `slots`
 - `uno`
+- *Currently under development*
 
 **Games Commands**
 - `balance`
@@ -54,15 +63,24 @@ frequently as the bot's functionality grows.
 - `modsonline`
 
 **Music**
-- Currently under development
 - `join`
 - `leave`
+- *Currently under development*
 
 **Utility**
 - `prefix`
 - `setprefix`
+- `serveremotes`
 - `serverstats`
 - `timezone`
+
+**Owner Only**
+- `blacklist`
+- `load`
+- `unload`
+- `reload`
+- `shutdown`
+- `balanceadmin`
 
 ## Self Hosting
 For self hosting, you'll need:
