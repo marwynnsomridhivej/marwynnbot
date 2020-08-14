@@ -18,15 +18,15 @@ class Actions(commands.Cog):
     async def on_ready(self):
         print('Cog "actions" has been loaded')
 
-    def get_count_user(self, ctx, user):
+    async def get_count_user(self, ctx, user):
 
         try:
-            user = converter.convert(ctx, user)
+            user = await converter.convert(ctx, user)
             if user != ctx.author:
                 user_specified = True
             else:
                 user_specified = False
-        except commands.BadArgument:
+        except (commands.BadArgument, TypeError):
             user = ctx.author
             user_specified = False
 
@@ -99,15 +99,17 @@ class Actions(commands.Cog):
 
 
         cmdNameQuery = ctx.command.name
-        query = f"%23anime %23{cmdNameQuery}"
+        query = f"anime {cmdNameQuery}"
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 6)) as image:
+                    "https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (query, api_key, 6)) as image:
                 response = await image.json()
                 getURL = []
                 for i in range(len(response['results'])):
-                    getURL.append(response['results'][i]['media'][0]['gif']['url'])
+                    for j in range(len(response['results'][i]['media'])):
+                        getURL.append(response['results'][i]['media'][j]['gif']['url'])
                 url = random.choice(getURL)
+                print(url)
                 await session.close()
 
         embed = discord.Embed(title=title,
@@ -159,7 +161,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def bite(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -182,7 +184,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def blush(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -205,7 +207,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def bonk(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -228,7 +230,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def boop(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -239,9 +241,9 @@ class Actions(commands.Cog):
             title = f"{action_by} boop {action_to}"
         else:
             action_to = ctx.author.display_name
-            title = f"{action_to} bonked themself"
+            title = f"{action_to} booped themself"
 
-        footer = f"{action_to} was bonked {receive} times and bonked others {give} times"
+        footer = f"{action_to} was booped {receive} times and booped others {give} times"
 
         await self.embed_template(ctx,
                                   title=title,
@@ -251,7 +253,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def bored(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -274,7 +276,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def chase(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -297,7 +299,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def cheer(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -320,7 +322,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def comfort(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -343,7 +345,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def cringe(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -366,7 +368,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def cry(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -389,7 +391,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def cuddle(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -412,7 +414,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def cut(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -435,7 +437,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def dab(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -458,7 +460,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def dance(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -481,7 +483,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def destroy(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -504,7 +506,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def die(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -527,7 +529,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def drown(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -550,7 +552,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def eat(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -573,7 +575,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def facepalm(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -596,7 +598,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def feed(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -619,7 +621,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def flip(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -642,7 +644,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def flirt(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -665,7 +667,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def forget(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -688,7 +690,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def friend(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -711,7 +713,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def glomp(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -734,7 +736,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def handhold(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -757,7 +759,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def happy(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -780,7 +782,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def hate(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -803,7 +805,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def highfive(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -826,7 +828,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def hug(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -849,7 +851,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def kill(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -872,7 +874,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def kiss(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -895,7 +897,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def laugh(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -918,7 +920,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def lick(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -941,7 +943,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def love(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -964,7 +966,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def lurk(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -987,7 +989,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def marry(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1010,7 +1012,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def miss(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1033,7 +1035,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def nervous(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1056,7 +1058,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def no(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1080,7 +1082,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def nom(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1103,7 +1105,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def nuzzle(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1126,7 +1128,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def panic(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1149,7 +1151,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def pat(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1172,7 +1174,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def peck(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1195,7 +1197,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def poke(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1218,7 +1220,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def pout(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1241,7 +1243,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def punt(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1264,7 +1266,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def run(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1287,7 +1289,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def race(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1310,7 +1312,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def sad(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1333,7 +1335,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def shoot(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1356,7 +1358,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def shrug(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1379,7 +1381,7 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def sip(self, ctx, user=None):
-        info = self.get_count_user(ctx, user)
+        info = await self.get_count_user(ctx, user)
         give = info[0]
         receive = info[1]
         user = info[2]
@@ -1392,7 +1394,7 @@ class Actions(commands.Cog):
             action_to = ctx.author.display_name
             title = f"{action_to} is sipping"
 
-        footer = f"{action_to} was pouted at {receive} times and pouted at others {give} times"
+        footer = f"{action_to} was sipped {receive} times and sipped others {give} times"
 
         await self.embed_template(ctx,
                                   title=title,
@@ -1402,257 +1404,755 @@ class Actions(commands.Cog):
 
     @commands.command()
     async def slap(self, ctx, user=None):
-        cmdName = "slapped"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} slapped {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} slapped themself"
+
+        footer = f"{action_to} was slapped {receive} times and slapped others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="slap",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def sleep(self, ctx, user=None):
-        cmdName = "sleep"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} made {action_to} fall asleep"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is sleeping"
+
+        footer = f"{action_to} was made to sleep {receive} times and made others sleep {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="sleep",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def slice(self, ctx, user=None):
-        cmdName = "sliced"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} sliced {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} sliced themself"
+
+        footer = f"{action_to} was sliced {receive} times and sliced others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="slice",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def smug(self, ctx, user=None):
-        cmdName = "smug"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} was smug to {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} has a smug face on"
+
+        footer = f"{action_to} was smug {receive} times and was smug to others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="smug",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def stab(self, ctx, user=None):
-        cmdName = "stabbed"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} stabbed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} stabbed themself"
+
+        footer = f"{action_to} was stabbed {receive} times and stabbed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="stab",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def stare(self, ctx, user=None):
-        cmdName = "stared at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} stared at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is staring"
+
+        footer = f"{action_to} was stared at {receive} times and stared at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="stare",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def tackle(self, ctx, user=None):
-        cmdName = "tackled"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} tackled {action_to}"
+        footer = f"{action_to} was tackled {receive} times and tackled others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="tackle",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def tap(self, ctx, user=None):
-        cmdName = "tapped"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        parts = ['head', 'neck', 'face', 'nose', 'forehead', 'shoulder', 'chest', 'arm', 'elbow', 'hand', 'stomach',
+                 'leg', 'knee', 'foot', 'toe', 'ankle']
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            body = random.choice(parts)
+            title = f"{action_by} tapped {action_to} on their {body}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} tapped themself"
+
+        footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="tap",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def taste(self, ctx, user=None):
-        cmdName = "tasted"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} tasted {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} tasted themself"
+
+        footer = f"{action_to} was tasted {receive} times and tasted others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="taste",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def talk(self, ctx, user=None):
-        cmdName = "talked to"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} talked to {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is talking"
+
+        footer = f"{action_to} was talked with {receive} times and talked with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="talk",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def taunt(self, ctx, user=None):
-        cmdName = "taunted at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} taunted at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is taunting"
+
+        footer = f"{action_to} was taunted at {receive} times and taunted at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="taunt",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def tease(self, ctx, user=None):
-        cmdName = "teased"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} teased {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is teasing"
+
+        footer = f"{action_to} was teased {receive} times and teased others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="tease",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def thank(self, ctx, user=None):
-        cmdName = "thanked"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        adjlist = ['thankful', 'grateful', 'appreciative']
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} thanked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            adj = random.choice(adjlist)
+            title = f"{action_to} is feeling {adj}"
+
+        footer = f"{action_to} was thanked {receive} times and thanked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="thank",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def think(self, ctx, user=None):
-        cmdName = "think"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} thought about {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is thinking"
+
+        footer = f"{action_to} was thought about {receive} times and thought about others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="think",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def throw(self, ctx, user=None):
-        cmdName = "threw"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        objlist = ['an apple', 'an orange', 'a banana', 'a singular grape', 'a bunch of grapes', 'some hands',
+                   'a spear', 'a trident', 'some water balloons', 'some eggs', 'a stuffed toad plushie',
+                   'a computer out the window', 'a fridge at their neighbor', 'away the trash',
+                   'a loaded gun instead of shooting it', 'their last brain cell out the window', 'a paper airplane',
+                   'a plate', 'a blanket', 'a couch', 'a frustratingly long book', 'a knife', 'a samurai sword',
+                   'a baseball', 'a football', 'a water polo ball', 'a pool ball', 'a beach ball', 'some poop',
+                   'an exception', 'an error', 'their phone at the wall', 'a sharp stone', 'a shot put', 'a discus',
+                   'away their chances at a relationship']
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} threw {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            obj = random.choice(objlist)
+            title = f"{action_to} is throwing {obj}"
+
+        footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="throw",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def thumbsdown(self, ctx, user=None):
-        cmdName = "thumbsdown-ed"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} gave {action_to} a thumbs down"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is giving a thumbs down"
+
+        footer = f"{action_to} was given a thumbs down {receive} times and gave others a thumbs down {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="thumbsdown",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def thumbsup(self, ctx, user=None):
-        cmdName = "thumbsup-ed"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} gave {action_to} a thumbs up"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is giving a thumbs up"
+
+        footer = f"{action_to} was given a thumbs up {receive} times and gave others a thumbs up {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="thumbsup",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def tickle(self, ctx, user=None):
-        cmdName = "tickled"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} tickled {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} tickled themself"
+
+        footer = f"{action_to} was tickled {receive} times and tickled others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="tickle",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def touch(self, ctx, user=None):
-        cmdName = "touched"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} touched {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} touched themself"
+
+        footer = f"{action_to} was touched {receive} times and touched others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="touch",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def trash(self, ctx, user=None):
-        cmdName = "trashed"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} trashed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} trashed themself"
+
+        footer = f"{action_to} was trashed {receive} times and trashed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="trash",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command(aliases=['triggered'])
     async def trigger(self, ctx, user=None):
-        cmdName = "triggered"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} triggered {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is triggered"
+
+        footer = f"{action_to} was triggered {receive} times and triggered others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="trigger",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def upset(self, ctx, user=None):
-        cmdName = "upset"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} upset {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is upset"
+
+        footer = f"{action_to} was upset {receive} times and upset others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="upset",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wag(self, ctx, user=None):
-        cmdName = "wagged at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} wagged at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is wagging their tail"
+
+        footer = f"{action_to} was wagged at {receive} times and wagged at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wag",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wait(self, ctx, user=None):
-        cmdName = "waited for"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} waited for {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is waiting"
+
+        footer = f"{action_to} was waited for {receive} times and waited for others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wait",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wakeup(self, ctx, user=None):
-        cmdName = "woke up"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} woke {action_to} up"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} woke up"
+
+        footer = f"{action_to} was woken up {receive} times and woke up others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wakeup",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wash(self, ctx, user=None):
-        cmdName = "washed"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} washed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} washed themself"
+
+        footer = f"{action_to} was washed {receive} times and washed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wash",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wave(self, ctx, user=None):
-        cmdName = "waved at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} waved at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is waving"
+
+        footer = f"{action_to} was waved at {receive} times and waved at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wave",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def whine(self, ctx, user=None):
-        cmdName = "whined at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} whined at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is whining"
+
+        footer = f"{action_to} was whined at {receive} times and whined at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="whine",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def whisper(self, ctx, user=None):
-        cmdName = "whispered to"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} whispered to {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is whispering"
+
+        footer = f"{action_to} was whispered to {receive} times and whispered to others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="whisper",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def wink(self, ctx, user=None):
-        cmdName = "winked at"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} winked at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is winking"
+
+        footer = f"{action_to} was winked at {receive} times and winked at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="wink",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def worry(self, ctx, user=None):
-        cmdName = "worried"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} worried about {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is worrying"
+
+        footer = f"{action_to} was worried about {receive} times and worried about others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="worry",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
     async def yes(self, ctx, user=None):
-        cmdName = "yes"
+        info = await self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+        no_list = ['agreed', 'likey', "likes that", "vibed with that"]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} said yes to {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} {random.choice(no_list)}"
+
+        footer = f"{action_to} was said yes to {receive} times and said yes to others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdNameQuery="yes",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
