@@ -1,9 +1,8 @@
 import random
+from datetime import datetime
 import discord
 import json
 from discord.ext import commands
-
-import globalcommands
 from globalcommands import GlobalCMDS as gcmds
 
 
@@ -16,7 +15,7 @@ class Help(commands.Cog):
     async def on_ready(self):
         print('Cog "help" has been loaded')
 
-    async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None, aliases=None,
+    async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
                                                                                          "/full/71-716621_transparent"
                                                                                          "-clip-art-open-book-frame"
@@ -34,9 +33,11 @@ class Help(commands.Cog):
             embed.add_field(name="Output",
                             value=exampleOutput,
                             inline=False)
+        cmdName = self.client.get_command(ctx.command.name)
+        aliases = cmdName.aliases
         if aliases is not None:
             embed.add_field(name="Aliases",
-                            value=aliases,
+                            value=f"`{'` `'.join(aliases)}`",
                             inline=False)
         if userPerms is not None:
             embed.add_field(name="User Permissions Required",
@@ -52,63 +53,63 @@ class Help(commands.Cog):
                             inline=False)
         if thumbnailURL is not None:
             embed.set_thumbnail(url=thumbnailURL)
-        if delete_after is not None:
-            await ctx.channel.send(embed=embed, delete_after=delete_after)
-        else:
-            await ctx.channel.send(embed=embed, delete_after=delete_after)
+
+        timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        embed.set_footer(text=timestamp,
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.channel.send(embed=embed, delete_after=delete_after)
 
     @commands.group(aliases=['h'])
     async def help(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
         gcmds.incrCounter(gcmds, ctx, 'help')
         if ctx.invoked_subcommand is None:
+            timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
                                       colour=discord.Color(0x3498db),
                                       url="https://discord.gg/fYBTdUp",
                                       description="These are all the commands I currently support! Type"
                                                   f"\n```{gcmds.prefix(gcmds, ctx)}help [command]```\n to get help on "
                                                   f"that specific command")
-            helpEmbed.set_image(
-                url="https://cdn.discordapp.com/avatars/623317451811061763/9bb63c734178694e8779aa102cb81062.png"
-                    "?size=128")
             helpEmbed.set_thumbnail(
                 url="https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png")
             helpEmbed.set_author(name="MarwynnBot",
-                                 url="https://discord.gg/fYBTdUp",
-                                 icon_url="https://cdn.discordapp.com/avatars/623317451811061763"
-                                          "/9bb63c734178694e8779aa102cb81062.png?size=128")
-            helpEmbed.set_footer(text="MarwynnBot",
-                                 icon_url="https://cdn.discordapp.com/avatars/623317451811061763"
-                                          "/9bb63c734178694e8779aa102cb81062.png?size=128")
-            helpEmbed.add_field(name="Help",
-                                value="`help`")
+                                 url="https://marwynn.gitbook.io/marwynnbot/commands/categories",
+                                 icon_url=ctx.me.avatar_url)
+            helpEmbed.set_footer(text=timestamp,
+                                 icon_url=ctx.author.avatar_url)
 
-            print(self.client.cogs)
             cogNames = [i for i in self.client.cogs]
-            print(cogNames)
-            del cogNames[1:4]
-            del cogNames[4]
-            del cogNames[6]
-            del cogNames[8:10]
-            print(cogNames)
+            gameNames = [cogNames.pop(1) for _ in range(3)]
+            gameNames.append(cogNames.pop(7))
+            for _ in range(2):
+                gameNames.append(cogNames.pop(9))
+            cogs = [self.client.get_cog(j) for j in cogNames]
+            strings = [[command.name.lower() for command in cog.get_commands()] for cog in cogs]
 
-            debugCmds = "`ping` `report` `shard`"
-            funCmds = "`8ball` `choose` `gifsearch` `imgursearch` `isabelle` `peppa` `say` `toad`"
             actionCmds = f"`{gcmds.prefix(gcmds, ctx)}actions` *for a full list*"
-            gamesCmds = "`balance` `gamestats` `transfer` `blackjack` `coinflip` `connectfour` `slots` `uno`"
-            moderationCmds = "`chatclean` `mute` `unmute` `kick` `ban` `unban` `modsonline`"
-            musicCmds = "*Under Development* `join` `leave`"
-            utilityCmds = "`prefix` `setprefix` `serveremotes` `serverstats` `timezone`"
-            ownerCmds = "`blacklist` `load` `unload` `reload` `shutdown` `balanceadmin`"
+            debugCmds = f"`{'` `'.join(strings[1])}`"
+            funCmds = f"`{'` `'.join(strings[2])}`"
+            gamesCmds = f"`{'` `'.join(strings[3])}` `blackjack` `coinflip` `connectfour` `oldmaid (under development)` `slots` `uno`"
+            helpCmds = f"`{'` `'.join(strings[4])}`"
+            moderationCmds = f"`{'` `'.join(strings[5])}`"
+            musicCmds = f"*Under development*\n`{'` `'.join(strings[6])}`"
+            ownerCmds = f"`{'` `'.join(strings[7])}`"
+            reactionCmds = f"`{'` `'.join(strings[8])}`"
+            utilityCmds = f"`{'` `'.join(strings[9])}`"
 
+            helpEmbed.add_field(name="Help",
+                                value=helpCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Actions",
+                                value=actionCmds,
+                                inline=False)
             helpEmbed.add_field(name="Debug",
                                 value=debugCmds,
                                 inline=False)
             helpEmbed.add_field(name="Fun",
                                 value=funCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Actions",
-                                value=actionCmds,
                                 inline=False)
             helpEmbed.add_field(name="Games",
                                 value=gamesCmds,
@@ -133,15 +134,13 @@ class Help(commands.Cog):
 
     @help.command(aliases=['h', 'help'])
     async def _help(self, ctx):
-        commandName = 'Command Specific'
+        commandName = 'Command Specific Help'
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}help [commandName]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}help ping`"
-        aliases = "`h`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               exampleUsage=exampleUsage,
-                               aliases=aliases)
+                               exampleUsage=exampleUsage)
 
     # =================================================
     # Debug
@@ -169,13 +168,11 @@ class Help(commands.Cog):
     async def report(self, ctx):
         commandName = "Report",
         syntaxMesage = f"`{gcmds.prefix(gcmds, ctx)}report [thing] [message]`"
-        aliases = "`flag`"
         specialCases = "**Valid Arguments**\n`[thing]`: `bug` `update`\n\nThe `[message]` argument must be present for" \
                        "the report message to be sent"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMesage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     # =================================================
@@ -187,13 +184,11 @@ class Help(commands.Cog):
         commandName = 'Magic 8 Ball'
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}8ball [question]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}8ball Is this a good bot?`"
-        aliases = "`8b`"
         thumbnailURL = 'https://www.horoscope.com/images-US/games/game-magic-8-ball-no-text.png'
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               aliases=aliases,
                                thumbnailURL=thumbnailURL)
 
     @help.command()
@@ -217,7 +212,6 @@ class Help(commands.Cog):
         commandName = 'GifSearch'
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch [optional amount] [searchTerm]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}gifsearch excited`"
-        aliases = "`gif` `gifs` `searchgif` `searchgifs`"
         specialCases = "If the `[optional amount]` argument is specified, Tenor will return that amount of gifs" \
                        "\n\nIf the `tenor_api.yaml` file is not present, it will be created and contents initialised " \
                        "as:\n```yaml\napi_key: API_KEY_FROM_TENOR\n```\nGet an API Key from Tenor and replace " \
@@ -226,7 +220,6 @@ class Help(commands.Cog):
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['imgur', 'imgursearch'])
@@ -234,7 +227,6 @@ class Help(commands.Cog):
         commandName = "ImgurSearch"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}imgursearch [optional amount] [searchTerm]`"
         exampleUsage = f"{gcmds.prefix(gcmds, ctx)}imgursearch Toad"
-        aliases = "`imgur`"
         specialCases = "If the `[optional amount]` argument is specified, Imgur will return that amount of images" \
                        "\n\nIf the `imgur_api.yaml` file is not present, it will be created and contents initialised " \
                        "as:\n```yaml\nClient-ID: CLIENT_ID_FROM_IMGUR\n```\nGet a client ID from Imgur and replace " \
@@ -243,31 +235,26 @@ class Help(commands.Cog):
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
     async def isabelle(self, ctx):
         commandName = "Isabelle"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}isabelle [optional amount]`"
-        aliases = "`isabellepic` `isabelleemote` `belle` `bellepic` `belleemote`"
         specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['peppapic', 'ppic', 'ppig'])
     async def peppa(self, ctx):
         commandName = "Peppa"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}peppa [optional amount]`"
-        aliases = "`peppapic` `ppic` `ppig`"
         specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command()
@@ -282,12 +269,10 @@ class Help(commands.Cog):
     async def toad(self, ctx):
         commandName = 'Toad'
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}toad [optional amount]`"
-        aliases = "`toadpic` `toademote`"
         specialCases = "If the `[optional amount]` argument is specified, it will send that many images"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     # =================================================
@@ -298,14 +283,12 @@ class Help(commands.Cog):
     async def gameStats(self, ctx):
         commandName = "GameStats"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}gamestats [optional gameName] [optional user @mentions]`"
-        aliases = "`stats`"
         specialCases = 'If the `[optional gameName]` argument is not specified, it will show your stats for all the ' \
                        'games you have played at least once before' \
                        "\n\nIf the `[optional user @mentions]` argument is not specified, it will default to yourself"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command()
@@ -323,52 +306,44 @@ class Help(commands.Cog):
     async def blackjack(self, ctx):
         commandName = "Blackjack"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}blackjack [betAmount]`"
-        aliases = "`bj` `Blackjack`"
         specialCases = "If `[betAmount]` is not specified, it will automatically bet 1 credit" \
                        "\n\nIf you do not have enough credits for the `[betAmount]` you will be unable to play"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['cf'])
     async def coinflip(self, ctx):
         commandName = "Coinflip"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}coinflip [optional betAmount] [optional face]`"
-        aliases = "`cf`"
         specialCases = "If not specified:\n- `[optional betAmout]` defaults to `1`\n- `[optional face]` defaults to " \
                        "`heads` "
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx):
         commandName = "ConnectFour"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}connectfour [opponent @mention]`"
-        aliases = "`c4` `conn` `connect`"
         specialCases = "You can win a random amount of credits (between 1 - 5), with a very small chance " \
                        "of getting a jackpot of `1000000` credits"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['slot'])
     async def slots(self, ctx):
         commandName = "Slots"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}slots [optional betAmount or keyword]`"
-        aliases = "`slot`"
         specialCases = "`[betAmount]` defaults to `1 credit` if otherwise specified\n Access the payout menu by " \
                        "entering `payout`, `rates`, or any `non-integer value` as the `[keyword]` "
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command()
@@ -392,7 +367,6 @@ class Help(commands.Cog):
     async def chatclean(self, ctx):
         commandName = "ChatClean"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}chatclean [amount] [optional user @mention]`"
-        aliases = "`clear` `clean` `chatclear` `cleanchat` `clearchat` `purge`"
         userPerms = "`Manage Messages`"
         botPerms = f"`{userPerms}` or `Administrator`"
         specialCases = "When clearing chat indiscriminately, you can eliminate the `[amount]` argument and only 1 " \
@@ -401,7 +375,6 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                botPerms=botPerms,
                                specialCases=specialCases)
@@ -410,13 +383,11 @@ class Help(commands.Cog):
     async def mute(self, ctx):
         commandName = "Mute"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}mute [user @mentions] [optional reason]`"
-        aliases = "`silence` `stfu` `shut` `shush` `shh` `shhh` `shhhh` `quiet`"
         userPerms = "`Manage Roles`"
-        botPerms = "Administrator"
+        botPerms = "`Administrator`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                botPerms=botPerms)
 
@@ -424,13 +395,11 @@ class Help(commands.Cog):
     async def unmute(self, ctx):
         commandName = "Unmute"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}unmute [user @mentions] [optional reason]`"
-        aliases = "`unsilence` `unstfu` `unshut` `unshush` `unshh` `unshhh` `unshhhh` `unquiet`"
         userPerms = "`Manage Roles`"
-        botPerms = "Administrator"
+        botPerms = "`Administrator`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                botPerms=botPerms)
 
@@ -474,7 +443,6 @@ class Help(commands.Cog):
     async def modsOnline(self, ctx):
         commandName = "ModsOnline"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}modsonline`"
-        aliases = "`mod` `mods` `mo`"
         specialCases = "If the server does not have a moderator role with the substring `moderator` (case " \
                        "insensitive), it will not detect that the server has a moderator role" \
                        "\n\nIf the mods have their status set to `invisible`, this command will not register them as " \
@@ -482,7 +450,6 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     # =================================================
@@ -522,14 +489,12 @@ class Help(commands.Cog):
         commandName = "Counter"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}counter [commandName] [optional \"global\"]`"
         exampleUsage = f"{gcmds.prefix(gcmds, ctx)}counter help"
-        aliases = "`counters` `used` `usedcount`"
         specialCases = 'If the `[commandName]` is not specified, it will display the count for all executed commands' \
                        "\n\nIf the `[optional \"global\"]` argument is not specified, it defaults to per server count"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['p', 'checkprefix', 'prefix', 'prefixes'])
@@ -539,13 +504,11 @@ class Help(commands.Cog):
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}prefix`"
         exampleOutput = f"`This server's prefix is: {gcmds.prefix(gcmds, ctx)}`\n\n`The global prefixes are:" \
                         f"`{self.client.user.mention} or `mb `"
-        aliases = "`p` `checkprefix` `prefixes`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
-                               exampleOutput=exampleOutput,
-                               aliases=aliases)
+                               exampleOutput=exampleOutput)
 
     @help.command(aliases=['sp', 'setprefix'])
     async def setPrefix(self, ctx):
@@ -553,34 +516,29 @@ class Help(commands.Cog):
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}setprefix [serverprefix]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}setprefix !m`"
         exampleOutput = "`Server prefix set to: !m`"
-        aliases = "`sp`"
         specialCases = f"To reset the server prefix to bot default, enter `reset` as the `[serverprefix]` argument"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx):
         commandName = "Server Emotes"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}serveremotes [optional query]`"
-        aliases = "`emotes` `serveremotes` `serveremote` `serverEmote` `emojis` `emoji`"
         specialCases = "If `[optional query]` is specified, it will search for emotes with that substring in its name " \
                        "*(case sensitive)*"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                specialCases=specialCases)
 
     @help.command(aliases=['ss', 'serverstats', 'serverstatistics'])
     async def serverStats(self, ctx):
         commandName = "Server Stats"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}serverstats [optional \"reset\"]`"
-        aliases = "`ss` `serverstatistics`"
         userPerms = '`Administrator`'
         botPerms = userPerms
         specialCases = "If the `reset` argument is present, it will delete the currently active server stats channels" \
@@ -589,7 +547,6 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                botPerms=botPerms,
                                specialCases=specialCases)
@@ -600,7 +557,6 @@ class Help(commands.Cog):
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}timezone [GMT time]`"
         exampleUsage = f"`{gcmds.prefix(gcmds, ctx)}timezone GMT+4`"
         exampleOutput = f"{ctx.author.mention}'s nickname will be changed to: `{ctx.author.display_name} [GMT+4]`"
-        aliases = "`tz`"
         userPerms = '`Change Nickname`'
         botPerms = "`Administrator`"
         specialCases = "If the `[GMT time]` argument is `reset` or `r`, the tag will be removed and your nickname " \
@@ -610,7 +566,6 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                exampleOutput=exampleOutput,
-                               aliases=aliases,
                                userPerms=userPerms,
                                botPerms=botPerms,
                                specialCases=specialCases)
@@ -623,7 +578,6 @@ class Help(commands.Cog):
     async def blacklist(self, ctx):
         commandName = "Blacklist"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}blacklist [type] [operation] [ID]`"
-        aliases = "`blist`"
         userPerms = "`Bot Owner`"
         specialCases = "Valid Options for Arguments:\n" \
                        "`[type]`: `user` or `guild` *alias for guild is \"server\"*" \
@@ -632,7 +586,6 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                specialCases=specialCases)
 
@@ -640,37 +593,31 @@ class Help(commands.Cog):
     async def load(self, ctx):
         commandName = "Load"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}load [extension]`"
-        aliases = "`l` `ld`"
         userPerms = "`Bot Owner`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms)
 
     @help.command(aliases=['ul', 'uld'])
     async def unload(self, ctx):
         commandName = "Unload"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}unload [extension]`"
-        aliases = "`ul` `uld`"
         userPerms = "`Bot Owner`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms)
 
     @help.command(aliases=['r', 'rl'])
     async def reload(self, ctx):
         commandName = "Reload"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}reload [optional extension]`"
-        aliases = "`r` `rl`"
         userPerms = "`Bot Owner`"
         specialCases = "If `[optional extension]` is not specified, it will reload all currently loaded extensions"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                specialCases=specialCases)
 
@@ -678,19 +625,16 @@ class Help(commands.Cog):
     async def shutdown(self, ctx):
         commandName = "Shutdown"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}shutdown`"
-        aliases = "`taskkill`"
         userPerms = "`Bot Owner`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms)
 
     @help.command(aliases=['balanceadmin', 'baladmin', 'balop'])
     async def balanceAdmin(self, ctx):
         commandName = "BalanceAdmin"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}balanceadmin [operation] [user @mention] [credit amount]`"
-        aliases = "`baladmin` `balop`"
         userPerms = "`Bot Owner`"
         specialCases = "Valid Options for Arguments:\n" \
                        "`[operation]`: `set` `give` `remove`\n" \
@@ -699,7 +643,6 @@ class Help(commands.Cog):
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
-                               aliases=aliases,
                                userPerms=userPerms,
                                specialCases=specialCases)
 

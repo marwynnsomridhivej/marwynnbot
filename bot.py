@@ -159,3 +159,15 @@ with open('./token.yaml', 'r') as f:
     stream = yaml.full_load(f)
     token = stream[str('token')]
 client.run(token)
+
+# TODO: Add server info command
+# TODO: Add user info command
+# TODO: Add reaction roles setup and relevant commands
+# TODO: Add server and user abuse subcommands for report
+# TODO: Add bot info command
+# TODO: Add case specific titles and footers for all actions
+# TODO: Add complete music functionality
+# TODO: Add cooldowns for commands that require it
+# TODO: Add OS info command
+# TODO: Integrate URLShortener API, Translate API, PokeAPI, FortniteStatsAPI, AmiiboAPI, MerrianWebsterAPI
+# TODO: Allow modsonline to select the mod role by @mention or ID

@@ -6,6 +6,8 @@ import aiohttp
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
 
+converter = commands.UserConverter()
+
 
 class Actions(commands.Cog):
 
@@ -16,7 +18,71 @@ class Actions(commands.Cog):
     async def on_ready(self):
         print('Cog "actions" has been loaded')
 
-    async def embed_template(self, ctx, cmdName: str, cmdNameQuery: str, user: discord.Member = None):
+    def get_count_user(self, ctx, user):
+
+        try:
+            user = converter.convert(ctx, user)
+            if user != ctx.author:
+                user_specified = True
+            else:
+                user_specified = False
+        except commands.BadArgument:
+            user = ctx.author
+            user_specified = False
+
+        cmdNameQuery = ctx.command.name
+
+        init = {f"{cmdNameQuery}": {'give': {}, 'receive': {}}}
+        gcmds.json_load(gcmds, 'actionstats.json', init)
+        with open('actionstats.json', 'r') as f:
+            file = json.load(f)
+
+            try:
+                file[str(cmdNameQuery)]
+            except KeyError:
+                file[str(cmdNameQuery)] = {'give': {}, 'receive': {}}
+
+            if user_specified:
+                try:
+                    file[str(cmdNameQuery)]['give'][str(ctx.author.id)] += 1
+                except KeyError:
+                    file[str(cmdNameQuery)]['give'][str(ctx.author.id)] = 1
+
+                try:
+                    give_exec_count = file[str(cmdNameQuery)]['give'][str(user.id)]
+                except KeyError:
+                    give_exec_count = 0
+
+                try:
+                    file[str(cmdNameQuery)]['receive'][str(user.id)] += 1
+                except KeyError:
+                    file[str(cmdNameQuery)]['receive'][str(user.id)] = 1
+                receive_exec_count = file[str(cmdNameQuery)]['receive'][str(user.id)]
+                with open('actionstats.json', 'w') as g:
+                    json.dump(file, g, indent=4)
+                    
+            else:
+                try:
+                    file[str(cmdNameQuery)]['give'][str(self.client.user.id)] += 1
+                except KeyError:
+                    file[str(cmdNameQuery)]['give'][str(self.client.user.id)] = 1
+
+                try:
+                    give_exec_count = file[str(cmdNameQuery)]['give'][str(ctx.author.id)]
+                except KeyError:
+                    give_exec_count = 0
+
+                try:
+                    file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] += 1
+                except KeyError:
+                    file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] = 1
+                receive_exec_count = file[str(cmdNameQuery)]['receive'][str(ctx.author.id)]
+                with open('actionstats.json', 'w') as g:
+                    json.dump(file, g, indent=4)
+
+            return [give_exec_count, receive_exec_count, user, user_specified]
+
+    async def embed_template(self, ctx, title: str, footer: str, user: discord.User):
         await gcmds.invkDelete(gcmds, ctx)
         try:
             with open('./tenor_api.yaml', 'r') as f:
@@ -30,81 +96,24 @@ class Actions(commands.Cog):
                                                "the placeholder",
                                    color=discord.Color.dark_red())
             await ctx.channel.send(embed=no_api, delete_after=10)
-        else:
-            query = f"%23anime %23{cmdNameQuery}"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                        "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 10)) as image:
-                    response = await image.json()
-                    getURL = []
-                    for i in range(len(response['results'])):
-                        getURL.append(response['results'][i]['media'][0]['gif']['url'])
-                    url = random.choice(getURL)
-                    await session.close()
 
-            if user is None or user == ctx.author:
-                title = f"MarwynnBot {cmdName} {ctx.author.display_name}"
-                user_specified = False
-                user = None
-            else:
-                title = f"{ctx.author.display_name} {cmdName} {user.display_name}"
-                user_specified = True
-                user = user
 
-            embed = discord.Embed(title=title,
-                                  color=discord.Color.blue())
-            embed.set_image(url=url)
+        cmdNameQuery = ctx.command.name
+        query = f"%23anime %23{cmdNameQuery}"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                    "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 6)) as image:
+                response = await image.json()
+                getURL = []
+                for i in range(len(response['results'])):
+                    getURL.append(response['results'][i]['media'][0]['gif']['url'])
+                url = random.choice(getURL)
+                await session.close()
 
-            init = {f"{cmdNameQuery}": {'give': {}, 'receive': {}}}
-            gcmds.json_load(gcmds, 'actionstats.json', init)
-            with open('actionstats.json', 'r') as f:
-                file = json.load(f)
-
-                try:
-                    file[str(cmdNameQuery)]
-                except KeyError:
-                    file[str(cmdNameQuery)] = {'give': {}, 'receive': {}}
-
-                if user_specified:
-                    try:
-                        file[str(cmdNameQuery)]['give'][str(ctx.author.id)] += 1
-                    except KeyError:
-                        file[str(cmdNameQuery)]['give'][str(ctx.author.id)] = 1
-
-                    try:
-                        give_exec_count = file[str(cmdNameQuery)]['give'][str(user.id)]
-                    except KeyError:
-                        give_exec_count = 0
-
-                    try:
-                        file[str(cmdNameQuery)]['receive'][str(user.id)] += 1
-                    except KeyError:
-                        file[str(cmdNameQuery)]['receive'][str(user.id)] = 1
-                    receive_exec_count = file[str(cmdNameQuery)]['receive'][str(user.id)]
-                    with open('actionstats.json', 'w') as g:
-                        json.dump(file, g, indent=4)
-                    embed.set_footer(
-                        text=f"{user.display_name} was {cmdName} {receive_exec_count} times, and {cmdName} others {give_exec_count} times")
-                else:
-                    try:
-                        file[str(cmdNameQuery)]['give'][str(self.client.user.id)] += 1
-                    except KeyError:
-                        file[str(cmdNameQuery)]['give'][str(self.client.user.id)] = 1
-
-                    try:
-                        give_exec_count = file[str(cmdNameQuery)]['give'][str(ctx.author.id)]
-                    except KeyError:
-                        give_exec_count = 0
-
-                    try:
-                        file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] += 1
-                    except KeyError:
-                        file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] = 1
-                    receive_exec_count = file[str(cmdNameQuery)]['receive'][str(ctx.author.id)]
-                    with open('actionstats.json', 'w') as g:
-                        json.dump(file, g, indent=4)
-                    embed.set_footer(
-                        text=f"{ctx.author.display_name} was {cmdName} {receive_exec_count} times, and {cmdName} others {give_exec_count} times")
+        embed = discord.Embed(title=title,
+                              color=discord.Color.blue())
+        embed.set_image(url=url)
+        embed.set_footer(text=footer)
 
         await ctx.channel.send(embed=embed)
         gcmds.incrCounter(gcmds, ctx, cmdNameQuery)
@@ -117,7 +126,7 @@ class Actions(commands.Cog):
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
         description = f"Do `{gcmds.prefix(gcmds, ctx)}actions [cmdName]` to get the usage of that particular " \
-                      f"command.\n\n**List of all commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
+                      f"command.\n\n**List of all {len(CMDLIST)} actions:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
         if cmdName is None or cmdName == "actions":
             helpEmbed = discord.Embed(title="Actions Help",
                                       description=description,
@@ -131,17 +140,16 @@ class Actions(commands.Cog):
                                     value=f"`{gcmds.prefix(gcmds, ctx)}{cmdName} [optional user @mention]`",
                                     inline=False)
                 pot_alias = self.client.get_command(name=cmdName)
-                if pot_alias.aliases is not None:
-                    print(pot_alias.aliases)
-                    aliases = [g for g in pot_alias.aliases]
+                aliases = [g for g in pot_alias.aliases]
+                if aliases:
                     value = "`" + "` `".join(sorted(aliases)) + "`"
                     helpEmbed.add_field(name="Aliases",
                                         value=value,
                                         inline=False)
                 helpEmbed.add_field(name="Recipient",
                                     value=f"\nIf the argument `[optional user @mention]` is specified, "
-                                          f"it will direct the action towards that user. Otherwise, "
-                                          f"{ctx.me.mention} will direct the action to you",
+                                          f"it will direct the action towards that user. Otherwise, {ctx.me.mention} "
+                                          "will direct the action to you if specified as `me` `myself` or unspecified",
                                     inline=False)
             else:
                 helpEmbed = discord.Embed(title="Action Not Found",
@@ -150,892 +158,1500 @@ class Actions(commands.Cog):
         await ctx.channel.send(embed=helpEmbed)
 
     @commands.command()
-    async def bite(self, ctx, user: discord.Member = None):
-        cmdName = "bit"
+    async def bite(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} bit {action_to}"
+        footer = f"{action_to} was bitten {receive} times and bit others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="bite",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def blush(self, ctx, user: discord.Member = None):
-        cmdName = "blushed"
+    async def blush(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} blushed at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is blushing"
+
+        footer = f"{action_to} was blushed at {receive} times and blushed at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="blush",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def bonk(self, ctx, user: discord.Member = None):
-        cmdName = "bonked"
+    async def bonk(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} bonked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} bonked themself"
+
+        footer = f"{action_to} was bonked {receive} times and bonked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="bonk",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def boop(self, ctx, user: discord.Member = None):
-        cmdName = "booped"
+    async def boop(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} boop {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} bonked themself"
+
+        footer = f"{action_to} was bonked {receive} times and bonked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="boop",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def bored(self, ctx, user: discord.Member = None):
-        cmdName = "bored"
+    async def bored(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} bored {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is bored"
+
+        footer = f"{action_to} was bored {receive} times and bored others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="bored",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def chase(self, ctx, user: discord.Member = None):
-        cmdName = "chased"
+    async def chase(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} chased {action_to}"
+        footer = f"{action_to} was chased {receive} times and chased others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="chase",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def cheer(self, ctx, user: discord.Member = None):
-        cmdName = "cheered"
+    async def cheer(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} cheered for {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is cheering"
+
+        footer = f"{action_to} was cheered for {receive} times and cheered for others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="cheer",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def cringe(self, ctx, user: discord.Member = None):
-        cmdName = "cringed"
+    async def comfort(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} comforted {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} comforted themself"
+
+        footer = f"{action_to} was comforted {receive} times and comforted others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="cringe",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def cry(self, ctx, user: discord.Member = None):
-        cmdName = "cried"
+    async def cringe(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} cringed at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is cringing"
+
+        footer = f"{action_to} was cringed at {receive} times and cringed at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="cry",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def cuddle(self, ctx, user: discord.Member = None):
-        cmdName = "cuddled"
+    async def cry(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} cried at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is crying"
+
+        footer = f"{action_to} was cried at {receive} times and cried at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="cuddle",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def cut(self, ctx, user: discord.Member = None):
-        cmdName = "cut"
+    async def cuddle(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} cuddled {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} cuddled themself"
+
+        footer = f"{action_to} was cuddled {receive} times and cuddled others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="cut",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def dab(self, ctx, user: discord.Member = None):
-        cmdName = "dabbed"
+    async def cut(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} cut {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} cut themself"
+
+        footer = f"{action_to} was cut {receive} times and cut others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="dab",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def dance(self, ctx, user: discord.Member = None):
-        cmdName = "danced"
+    async def dab(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} dabbed on {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is dabbing"
+
+        footer = f"{action_to} was dabbed on {receive} times and dabbed on others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="dance",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def destroy(self, ctx, user: discord.Member = None):
-        cmdName = "destroyed"
+    async def dance(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} danced with {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is dancing"
+
+        footer = f"{action_to} was danced with {receive} times and danced with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="destroy",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def die(self, ctx, user: discord.Member = None):
-        cmdName = "died"
+    async def destroy(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} destroyed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} destroyed themself"
+
+        footer = f"{action_to} was destroyed {receive} times and destroyed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="die",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def drown(self, ctx, user: discord.Member = None):
-        cmdName = "drowned"
+    async def die(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} made {action_to} die"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} died"
+
+        footer = f"{action_to} died {receive} times and made others die {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="drown",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def eat(self, ctx, user: discord.Member = None):
-        cmdName = "ate"
+    async def drown(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} drowned {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is drowning"
+
+        footer = f"{action_to} was drowned {receive} times and drowned others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="eat",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def facepalm(self, ctx, user: discord.Member = None):
-        cmdName = "facepalmed"
+    async def eat(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} ate {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is eating"
+
+        footer = f"{action_to} was eaten {receive} times and ate others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="facepalm",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def feed(self, ctx, user: discord.Member = None):
-        cmdName = "fed"
+    async def facepalm(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_to} made {action_by} facepalm"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is facepalming"
+
+        footer = f"{action_to} facepalmed {receive} times and made others facepalm {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="feed",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def flip(self, ctx, user: discord.Member = None):
-        cmdName = "flipped"
+    async def feed(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} fed {action_to}"
+        footer = f"{action_to} was fed {receive} times and fed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="flip",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def flirt(self, ctx, user: discord.Member = None):
-        cmdName = "flirted"
+    async def flip(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} flipped {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} did a flip"
+
+        footer = f"{action_to} was flipped {receive} times and flipped others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="flirt",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def forget(self, ctx, user: discord.Member = None):
-        cmdName = "forgot"
+    async def flirt(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} flirted with {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is flirting"
+
+        footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="forget",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def forgive(self, ctx, user: discord.Member = None):
-        cmdName = "forgave"
+    async def forget(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} forgot about {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} forgot something..."
+
+        footer = f"{action_to} was forgotten {receive} times and forgot others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="forgive",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def friend(self, ctx, user: discord.Member = None):
-        cmdName = "friended"
+    async def friend(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} friended {action_to}"
+        footer = f"{action_to} was friended {receive} times and friended others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="friend",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def fry(self, ctx, user: discord.Member = None):
-        cmdName = "fried"
+    async def glomp(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} glomped {action_to}"
+        footer = f"{action_to} was glomped {receive} times and glomped others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="fry",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def glomp(self, ctx, user: discord.Member = None):
-        cmdName = "glomped"
+    async def handhold(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} held hands with {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is holding hands"
+
+        footer = f"{action_to} was held hands with {receive} times and held hands with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="glomp",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def handhold(self, ctx, user: discord.Member = None):
-        cmdName = "held hands"
+    async def happy(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_to} made {action_by} happy"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is happy"
+
+        footer = f"{action_to} was happy {receive} times and made others happy {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="handhold",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def happy(self, ctx, user: discord.Member = None):
-        cmdName = "happy"
+    async def hate(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} hated {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} hated themself"
+
+        footer = f"{action_to} was hated {receive} times and hated others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="happy",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def hate(self, ctx, user: discord.Member = None):
-        cmdName = "hated"
+    async def highfive(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} highfived {action_to}"
+        footer = f"{action_to} was highfived {receive} times and highfived others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="hate",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def highfive(self, ctx, user: discord.Member = None):
-        cmdName = "highfived"
+    async def hug(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} hugged {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} hugged themself"
+
+        footer = f"{action_to} was hugged {receive} times and hugged others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="highfive",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def hug(self, ctx, user: discord.Member = None):
-        cmdName = "hugged"
+    async def kill(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} killed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} killed themself"
+
+        footer = f"{action_to} was killed {receive} times and killed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="hug",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def kill(self, ctx, user: discord.Member = None):
-        cmdName = "killed"
+    async def kiss(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} kissed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} wants a kiss"
+
+        footer = f"{action_to} was kissed {receive} times and kissed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="kill",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def kiss(self, ctx, user: discord.Member = None):
-        cmdName = "kissed"
+    async def laugh(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} laughed at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is laughing"
+
+        footer = f"{action_to} was laughed at {receive} times and laughed at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="kiss",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def laugh(self, ctx, user: discord.Member = None):
-        cmdName = "laughed"
+    async def lick(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} licked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} licked themself"
+
+        footer = f"{action_to} was licked {receive} times and licked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="laugh",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def lick(self, ctx, user: discord.Member = None):
-        cmdName = "licked"
+    async def love(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} loved {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} loved themself"
+
+        footer = f"{action_to} was loved {receive} times and loved others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="lick",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def love(self, ctx, user: discord.Member = None):
-        cmdName = "loved"
+    async def lurk(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} lurked at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is lurking"
+
+        footer = f"{action_to} was lurked at {receive} times and lurked at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="love",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def lurk(self, ctx, user: discord.Member = None):
-        cmdName = "lurked"
+    async def marry(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} married {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} wants to tie the knot"
+
+        footer = f"{action_to} was married {receive} times and married others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="lurk",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def marry(self, ctx, user: discord.Member = None):
-        cmdName = "married"
+    async def miss(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} missed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} misses their friends"
+
+        footer = f"{action_to} was missed {receive} times and missed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="marry",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def massacre(self, ctx, user: discord.Member = None):
-        cmdName = "massacred"
+    async def nervous(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_to} made {action_by} nervous"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is nervous"
+
+        footer = f"{action_to} was nervous {receive} times and made others nervous {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="massacre",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def miss(self, ctx, user: discord.Member = None):
-        cmdName = "missed"
+    async def no(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+        no_list = ['disagreed', 'no likey', "doesn't like that", "didn't vibe with that"]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} said no to {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} {random.choice(no_list)}"
+
+        footer = f"{action_to} was said no to {receive} times and said no to others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="miss",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def nervous(self, ctx, user: discord.Member = None):
-        cmdName = "nervous"
+    async def nom(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} nommed {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} nommed themself"
+
+        footer = f"{action_to} was nommed {receive} times and nommed others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="nervous",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def no(self, ctx, user: discord.Member = None):
-        cmdName = "no"
+    async def nuzzle(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} nuzzled {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} nuzzled themself"
+
+        footer = f"{action_to} was nuzzled {receive} times and nuzzled others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="no",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def nom(self, ctx, user: discord.Member = None):
-        cmdName = "nommed"
+    async def panic(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} panicked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is panicking"
+
+        footer = f"{action_to} was panicked {receive} times and panicked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="nom",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def nuzzle(self, ctx, user: discord.Member = None):
-        cmdName = "nuzzled"
+    async def pat(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} pat {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} pat themself"
+
+        footer = f"{action_to} was pat {receive} times and pat others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="nuzzle",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def panic(self, ctx, user: discord.Member = None):
-        cmdName = "panicked"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="panic",
-                                  user=user)
-        return
+    async def peck(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
 
-    @commands.command(aliases=['paralyze'])
-    async def paralyse(self, ctx, user: discord.Member = None):
-        cmdName = "paralysed"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="paralyse",
-                                  user=user)
-        return
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} pecked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} pecked themself"
 
-    @commands.command()
-    async def pat(self, ctx, user: discord.Member = None):
-        cmdName = "patted"
+        footer = f"{action_to} was pecked {receive} times and pecked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="pat",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def peck(self, ctx, user: discord.Member = None):
-        cmdName = "pecked"
+    async def poke(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} poked {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} poked themself"
+
+        footer = f"{action_to} was poked {receive} times and poked others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="peck",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def poke(self, ctx, user: discord.Member = None):
-        cmdName = "poked"
+    async def pout(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} pouted at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is pouting"
+
+        footer = f"{action_to} was pouted at {receive} times and pouted at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="poke",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def pout(self, ctx, user: discord.Member = None):
-        cmdName = "pouted"
+    async def punt(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+        else:
+            action_by = ctx.me.display_name
+            action_to = ctx.author.display_name
+
+        title = f"{action_by} punted {action_to}"
+        footer = f"{action_to} was punted {receive} times and punted others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="pout",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def punt(self, ctx, user: discord.Member = None):
-        cmdName = "punted"
+    async def run(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} ran from {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is running"
+
+        footer = f"{action_to} was ran from {receive} times and ran from others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="punt",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def run(self, ctx, user: discord.Member = None):
-        cmdName = "ran"
+    async def race(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} raced with {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} wants to race"
+
+        footer = f"{action_to} was raced with {receive} times and raced with others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="run",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def race(self, ctx, user: discord.Member = None):
-        cmdName = "raced"
+    async def sad(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} saddened {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is sad"
+
+        footer = f"{action_to} was saddened {receive} times and saddened others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="race",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def ramble(self, ctx, user: discord.Member = None):
-        cmdName = "rambled"
+    async def shoot(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} shot {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is shooting aimlessly"
+
+        footer = f"{action_to} was shot {receive} times and shot others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="ramble",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def ransack(self, ctx, user: discord.Member = None):
-        cmdName = "ransacked"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="ransack",
-                                  user=user)
-        return
+    async def shrug(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
 
-    @commands.command(aliases=['realize'])
-    async def realise(self, ctx, user: discord.Member = None):
-        cmdName = "realised"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="realise",
-                                  user=user)
-        return
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} shrugged at {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is shrugging"
 
-    @commands.command()
-    async def rebel(self, ctx, user: discord.Member = None):
-        cmdName = "rebelled"
+        footer = f"{action_to} was shrugged at {receive} times and shrugged at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="rebel",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def reassure(self, ctx, user: discord.Member = None):
-        cmdName = "reassured"
+    async def sip(self, ctx, user=None):
+        info = self.get_count_user(ctx, user)
+        give = info[0]
+        receive = info[1]
+        user = info[2]
+
+        if info[3]:
+            action_by = ctx.author.display_name
+            action_to = user.display_name
+            title = f"{action_by} sipped {action_to}"
+        else:
+            action_to = ctx.author.display_name
+            title = f"{action_to} is sipping"
+
+        footer = f"{action_to} was pouted at {receive} times and pouted at others {give} times"
+
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="reassure",
+                                  title=title,
+                                  footer=footer,
                                   user=user)
         return
 
     @commands.command()
-    async def run(self, ctx, user: discord.Member = None):
-        cmdName = "ran"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="run",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def sad(self, ctx, user: discord.Member = None):
-        cmdName = "saddened"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="sad",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def shoot(self, ctx, user: discord.Member = None):
-        cmdName = "shot"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="shoot",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def shrug(self, ctx, user: discord.Member = None):
-        cmdName = "shrugged"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="shrug",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def sip(self, ctx, user: discord.Member = None):
-        cmdName = "sipped"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="sip",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def slap(self, ctx, user: discord.Member = None):
+    async def slap(self, ctx, user=None):
         cmdName = "slapped"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="slap",
                                   user=user)
         return
 
     @commands.command()
-    async def sleep(self, ctx, user: discord.Member = None):
+    async def sleep(self, ctx, user=None):
         cmdName = "sleep"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="sleep",
                                   user=user)
         return
 
     @commands.command()
-    async def slice(self, ctx, user: discord.Member = None):
+    async def slice(self, ctx, user=None):
         cmdName = "sliced"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="slice",
                                   user=user)
         return
 
     @commands.command()
-    async def smug(self, ctx, user: discord.Member = None):
+    async def smug(self, ctx, user=None):
         cmdName = "smug"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="smug",
                                   user=user)
         return
 
     @commands.command()
-    async def stab(self, ctx, user: discord.Member = None):
+    async def stab(self, ctx, user=None):
         cmdName = "stabbed"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="stab",
                                   user=user)
         return
 
     @commands.command()
-    async def stare(self, ctx, user: discord.Member = None):
-        cmdName = "stared"
+    async def stare(self, ctx, user=None):
+        cmdName = "stared at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="stare",
                                   user=user)
         return
 
     @commands.command()
-    async def tackle(self, ctx, user: discord.Member = None):
-        cmdName = "taunted"
+    async def tackle(self, ctx, user=None):
+        cmdName = "tackled"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="taunt",
+                                  cmdNameQuery="tackle",
                                   user=user)
         return
 
     @commands.command()
-    async def tame(self, ctx, user: discord.Member = None):
-        cmdName = "tamed"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="tame",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def tap(self, ctx, user: discord.Member = None):
+    async def tap(self, ctx, user=None):
         cmdName = "tapped"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="tap",
                                   user=user)
         return
 
     @commands.command()
-    async def taste(self, ctx, user: discord.Member = None):
+    async def taste(self, ctx, user=None):
         cmdName = "tasted"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="taste",
                                   user=user)
         return
 
     @commands.command()
-    async def talk(self, ctx, user: discord.Member = None):
-        cmdName = "talked"
+    async def talk(self, ctx, user=None):
+        cmdName = "talked to"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="talk",
                                   user=user)
         return
 
     @commands.command()
-    async def taunt(self, ctx, user: discord.Member = None):
-        cmdName = "taunted"
+    async def taunt(self, ctx, user=None):
+        cmdName = "taunted at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="taunt",
                                   user=user)
         return
 
     @commands.command()
-    async def tease(self, ctx, user: discord.Member = None):
+    async def tease(self, ctx, user=None):
         cmdName = "teased"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="tease",
                                   user=user)
         return
 
     @commands.command()
-    async def thank(self, ctx, user: discord.Member = None):
+    async def thank(self, ctx, user=None):
         cmdName = "thanked"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="thank",
                                   user=user)
         return
 
     @commands.command()
-    async def think(self, ctx, user: discord.Member = None):
+    async def think(self, ctx, user=None):
         cmdName = "think"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="think",
                                   user=user)
         return
 
     @commands.command()
-    async def throw(self, ctx, user: discord.Member = None):
+    async def throw(self, ctx, user=None):
         cmdName = "threw"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="throw",
                                   user=user)
         return
 
     @commands.command()
-    async def thumbsdown(self, ctx, user: discord.Member = None):
-        cmdName = "thumbsdown"
+    async def thumbsdown(self, ctx, user=None):
+        cmdName = "thumbsdown-ed"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="thumbsdown",
                                   user=user)
         return
 
     @commands.command()
-    async def thumbsup(self, ctx, user: discord.Member = None):
-        cmdName = "thumbsup"
+    async def thumbsup(self, ctx, user=None):
+        cmdName = "thumbsup-ed"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="thumbsup",
                                   user=user)
         return
 
     @commands.command()
-    async def tickle(self, ctx, user: discord.Member = None):
+    async def tickle(self, ctx, user=None):
         cmdName = "tickled"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="tickle",
                                   user=user)
         return
 
     @commands.command()
-    async def torment(self, ctx, user: discord.Member = None):
-        cmdName = "tormented"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="torment",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def touch(self, ctx, user: discord.Member = None):
+    async def touch(self, ctx, user=None):
         cmdName = "touched"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="touch",
                                   user=user)
         return
 
     @commands.command()
-    async def trash(self, ctx, user: discord.Member = None):
+    async def trash(self, ctx, user=None):
         cmdName = "trashed"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="trash",
                                   user=user)
         return
 
     @commands.command(aliases=['triggered'])
-    async def trigger(self, ctx, user: discord.Member = None):
+    async def trigger(self, ctx, user=None):
         cmdName = "triggered"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="trigger",
                                   user=user)
         return
 
     @commands.command()
-    async def understand(self, ctx, user: discord.Member = None):
-        cmdName = "understood"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="understand",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def upset(self, ctx, user: discord.Member = None):
+    async def upset(self, ctx, user=None):
         cmdName = "upset"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="upset",
                                   user=user)
         return
 
     @commands.command()
-    async def wag(self, ctx, user: discord.Member = None):
-        cmdName = "wagged"
+    async def wag(self, ctx, user=None):
+        cmdName = "wagged at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wag",
                                   user=user)
         return
 
     @commands.command()
-    async def wait(self, ctx, user: discord.Member = None):
-        cmdName = "waited"
+    async def wait(self, ctx, user=None):
+        cmdName = "waited for"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wait",
                                   user=user)
         return
 
     @commands.command()
-    async def wakeup(self, ctx, user: discord.Member = None):
+    async def wakeup(self, ctx, user=None):
         cmdName = "woke up"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wakeup",
                                   user=user)
         return
 
     @commands.command()
-    async def wash(self, ctx, user: discord.Member = None):
+    async def wash(self, ctx, user=None):
         cmdName = "washed"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wash",
                                   user=user)
         return
 
     @commands.command()
-    async def wave(self, ctx, user: discord.Member = None):
-        cmdName = "waved"
+    async def wave(self, ctx, user=None):
+        cmdName = "waved at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wave",
                                   user=user)
         return
 
     @commands.command()
-    async def whine(self, ctx, user: discord.Member = None):
-        cmdName = "whined"
+    async def whine(self, ctx, user=None):
+        cmdName = "whined at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="whine",
                                   user=user)
         return
 
     @commands.command()
-    async def whisper(self, ctx, user: discord.Member = None):
-        cmdName = "whispered"
+    async def whisper(self, ctx, user=None):
+        cmdName = "whispered to"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="whisper",
                                   user=user)
         return
 
     @commands.command()
-    async def wink(self, ctx, user: discord.Member = None):
-        cmdName = "winked"
+    async def wink(self, ctx, user=None):
+        cmdName = "winked at"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="wink",
                                   user=user)
         return
 
     @commands.command()
-    async def worship(self, ctx, user: discord.Member = None):
-        cmdName = "worshipped"
-        await self.embed_template(ctx,
-                                  cmdName=cmdName,
-                                  cmdNameQuery="worship",
-                                  user=user)
-        return
-
-    @commands.command()
-    async def worry(self, ctx, user: discord.Member = None):
+    async def worry(self, ctx, user=None):
         cmdName = "worried"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="worry",
                                   user=user)
         return
 
     @commands.command()
-    async def yes(self, ctx, user: discord.Member = None):
+    async def yes(self, ctx, user=None):
         cmdName = "yes"
         await self.embed_template(ctx,
-                                  cmdName=cmdName,
                                   cmdNameQuery="yes",
                                   user=user)
         return

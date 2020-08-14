@@ -401,6 +401,24 @@ class Owner(commands.Cog):
                                   color=discord.Color.dark_red())
             await ctx.channel.send(embed=error, delete_after=10)
 
+    @commands.command(aliases=['dm', 'privatemessage'])
+    async def privateMessage(self, ctx, userID: int, *, message):
+        await gcmds.invkDelete(gcmds, ctx)
+
+        if not await self.client.is_owner(ctx.author):
+            insuf = discord.Embed(title="Insufficient User Permissions",
+                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
+                                  color=discord.Color.dark_red())
+            await ctx.channel.send(embed=insuf, delete_after=10)
+            return
+
+        user = commands.AutoShardedBot.get_user(self.client, id=userID)
+
+        dmEmbed = discord.Embed(title="MarwynnBot",
+                                description=message,
+                                color=discord.Color.blue())
+        await user.send(embed=dmEmbed)
+
     
 def setup(client):
     client.add_cog(Owner(client))

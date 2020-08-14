@@ -145,7 +145,7 @@ class Fun(commands.Cog):
             incr(cmdName)
 
     @commands.command(aliases=['8ball', '8b'])
-    async def _8ball(self, ctx, *, question):
+    async def eightball(self, ctx, *, question):
         await gcmds.invkDelete(gcmds, ctx)
         file = open('responses', 'r')
         responses = file.readlines()
