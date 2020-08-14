@@ -16,7 +16,7 @@ class Actions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "actions" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def get_count_user(self, ctx, user):
 

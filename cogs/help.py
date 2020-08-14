@@ -13,7 +13,7 @@ class Help(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "help" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"

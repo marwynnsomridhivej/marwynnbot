@@ -522,7 +522,7 @@ class UNO(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "UNO" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):

@@ -11,7 +11,7 @@ class Debug(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "debug" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command()
     async def ping(self, ctx):

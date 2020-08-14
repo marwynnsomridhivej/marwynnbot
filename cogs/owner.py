@@ -13,7 +13,7 @@ class Owner(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "owner" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['l', 'ld'])
     async def load(self, ctx, extension):

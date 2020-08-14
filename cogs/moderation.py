@@ -16,7 +16,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "moderation" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)

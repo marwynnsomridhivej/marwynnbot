@@ -7,8 +7,6 @@ import asyncio
 from discord.ext import commands
 from discord.ext.commands import has_permissions, BotMissingPermissions
 from discord.utils import get
-
-import globalcommands
 from globalcommands import GlobalCMDS as gcmds
 
 
@@ -19,7 +17,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "music" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command()
     async def join(self, ctx):

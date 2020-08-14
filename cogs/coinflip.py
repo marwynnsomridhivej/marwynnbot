@@ -84,7 +84,7 @@ class Coinflip(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "coinflip" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):

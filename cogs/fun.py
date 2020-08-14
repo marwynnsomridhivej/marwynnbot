@@ -22,7 +22,7 @@ class Fun(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "fun" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
         await gcmds.invkDelete(gcmds, ctx)

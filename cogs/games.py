@@ -14,7 +14,7 @@ class Games(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "games" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):

@@ -226,7 +226,7 @@ class Slots(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Cog "slots" has been loaded')
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
