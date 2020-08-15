@@ -109,9 +109,15 @@ async def disable_dm_exec(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CheckFailure):
         pass
+    elif isinstance(error, commands.CommandNotFound):
+        await ctx.message.delete()
+        notFound = discord.Embed(title="Command Not Found",
+                                 description=f"{ctx.author.mention}, `{ctx.message.content}` "
+                                             f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
+                                 color=discord.Color.dark_red())
+        await ctx.channel.send(embed=notFound, delete_after=10)
     else:
-        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+        raise error
 
 
 @client.event
