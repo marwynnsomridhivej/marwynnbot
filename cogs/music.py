@@ -1,19 +1,93 @@
-import shutil
 import discord
-import json
-import os
-import youtube_dl
-import asyncio
 from discord.ext import commands
-from discord.ext.commands import has_permissions, BotMissingPermissions
-from discord.utils import get
+import asyncio
+import youtube_dl
+import math
+import json
+from video import Video
 from globalcommands import GlobalCMDS as gcmds
+
+
+async def audio_playing(ctx):
+    client = ctx.guild.voice_client
+    if client and client.channel and client.source:
+        return True
+    else:
+        raise commands.CommandError("Not currently playing any audio")
+
+
+async def in_voice_channel(ctx):
+    voice = ctx.author.voice
+    bot_voice = ctx.guild.voice_client
+    if voice and bot_voice and voice.channel and bot_voice.channel and voice.channel == bot_voice.channel:
+        return True
+    else:
+        raise commands.CommandError("You need to be in the channel to do that")
+
+
+async def is_audio_requester(ctx):
+    music = ctx.bot.get_cog("Music")
+    state = music.get_state(ctx.guild)
+    permissions = ctx.channel.permissions_for(ctx.author)
+    if permissions.administrator or permissions.mute_members or permissions.move_members or state.is_requester(
+            ctx.author):
+        return True
+    else:
+        raise commands.CommandError("You need to be the song requester to do that")
+
+
+def get_config(guild_id: int, key: str, value=None):
+    init = {guild_id: {"max_volume": 100, "vote_skip": True, "vote_skip_ratio": 0.5}}
+    gcmds.json_load(gcmds, 'music.json', init)
+    with open('music.json', 'r') as f:
+        file = json.load(f)
+
+        try:
+            file[guild_id]
+        except KeyError:
+            file[guild_id] = {}
+
+        try:
+            file[guild_id][key]
+        except KeyError:
+            file[guild_id]["max_volume"] = 100
+            file[guild_id]["vote_skip"] = True
+            file[guild_id]["vote_skip_ratio"] = 0.5
+
+        if value:
+            file[guild_id][key] = value
+
+        with open('music.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+        if not value:
+            return file[guild_id][key]
+
+
+class GuildState:
+
+    def __init__(self):
+        self.volume = 1.0
+        self.playlist = []
+        self.skip_votes = set()
+        self.now_playing = None
+
+    def is_requester(self, user):
+        return self.now_playing.requested_by == user
 
 
 class Music(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.states = {}
+
+    def get_state(self, guild):
+        if guild.id in self.states:
+            return self.states[guild.id]
+        else:
+            self.states[guild.id] = GuildState()
+            return self.states[guild.id]
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -21,252 +95,227 @@ class Music(commands.Cog):
 
     @commands.command()
     async def join(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
-        channel = ctx.author.voice.channel
-        await channel.connect()
-        joinEmbed = discord.Embed(title='Join Success!',
-                                  description=f'Successfully joined the voice channel `{channel}`',
-                                  color=discord.Color.blue())
-        await ctx.channel.send(embed=joinEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'join')
-
-    @join.error
-    async def join_error(self, ctx, error):
-        if isinstance(error, BotMissingPermissions):
-            joinError = discord.Embed(title='Error - Insufficient Permissions',
-                                      description='I cannot join this voice channel.',
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=joinError)
-        else:
-            with open('prefixes.json', 'r') as f:
-                sp = json.load(f)
-                serverPrefix = sp[str(ctx.guild.id)]
-            joinError = discord.Embed(title='Error - User Not in a Voice Channel',
-                                      description=f"{ctx.author.mention}, you're currently not in any voice channel! "
-                                                  f"Join a voice channel and then do `{serverPrefix}join`!",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=joinError)
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                await ctx.author.voice.channel.connect()
+            else:
+                not_in = discord.Embed(title="User Not in Voice Channel",
+                                       description=f"{ctx.author.mention}, please join a voice channel to use this "
+                                                   f"command",
+                                       color=discord.Color.dark_red())
+                await ctx.channel.send(embed=not_in, delete_after=10)
 
     @commands.command()
     async def leave(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
-        channel = ctx.voice_client.channel
-        await ctx.voice_client.disconnect()
-        leaveEmbed = discord.Embed(title='Leave Success!',
-                                   description=f'Successfully left the voice channel `{channel}`',
-                                   color=discord.Color.blue())
-        await ctx.channel.send(embed=leaveEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'leave')
-
-    @leave.error
-    async def leave_error(self, ctx, error):
-        with open('prefixes.json', 'r') as f:
-            sp = json.load(f)
-            serverPrefix = sp[str(ctx.guild.id)]
-        leaveError = discord.Embed(title="Error - Not in a Voice Channel",
-                                   description=f"{ctx.author.mention}, I'm not currently connected to a voice channel.",
+        state = self.get_state(ctx.guild)
+        if ctx.me.voice:
+            state.playlist = []
+            state.now_playing = None
+            await ctx.me.voice.channel.disconnect()
+        else:
+            not_in = discord.Embed(title="Not Connected",
+                                   description=f"{ctx.author.mention}, I am not connected to a voice channel",
                                    color=discord.Color.dark_red())
-        leaveError.add_field(name='Special Case: Connected Through Restart',
-                             value=f"If it shows that I am connected to a voice channel, that means the owner "
-                                   f"restarted the bot while it was still connected. Join the voice channel, "
-                                   f"do `{serverPrefix}join`, then do `{serverPrefix}leave`.")
-        await ctx.channel.send(embed=leaveError)
-
-    @commands.command()
-    async def play(self, ctx, url):
-
-        async def check_queue():
-            global voice
-            voice = get(discord.Client.voice_clients, guild=ctx.guild)
-            queue_infile = os.path.isdir("./queue")
-            if queue_infile is True:
-                dir = os.path.abspath(os.path.realpath("./queue"))
-                length = len(os.listdir(dir))
-                still_queued = length - 1
-                try:
-                    first_file = os.listdir(dir)[0]
-                except:
-                    none = discord.Embed(title="No Songs in Queue",
-                                         description=f"Add more with `{gcmds.prefix(gcmds, ctx)}play [url]`",
-                                         color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=none, delete_after=10)
-                main_location = os.path.dirname(os.path.realpath(__file__))
-                song_path = os.path.abspath(os.path.realpath("./queue") + "\\" + first_file)
-                if length != 0:
-                    playNext = discord.Embed(title="Song Done",
-                                             description=f"Playing next song in queue\n\nSongs in queue: {still_queued}",
-                                             color=discord.Color.blue())
-                    song_there = os.path.isfile("song.mp3")
-                    await ctx.channel.send(embed=playNext, delete_after=10)
-                    if song_there:
-                        os.remove("song.mp3")
-                    shutil.move(song_path, main_location)
-                    for file in os.listdir("./"):
-                        if file.endswith(".mp3"):
-                            os.rename(file, "song.mp3")
-
-                    voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
-                    voice.source = discord.PCMVolumeTransformer(voice.source)
-                    voice.source.volume = 0.07
-                else:
-                    self.queues.clear()
-                    return
-            else:
-                self.queues.clear()
-                none = discord.Embed(title="Queue Finished",
-                                     description=f"Add more with `{gcmds.prefix(gcmds, ctx)}play [url]`",
-                                     color=discord.Color.dark_red())
-                await ctx.channel.send(embed=none, delete_after=10)
-
-            song_there = os.path.isfile("song.mp3")
-            try:
-                if song_there:
-                    os.remove("song.mp3")
-                    self.queues.clear()
-                    print("Removed old song file")
-            except PermissionError:
-                print("Song file is being played")
-                error = discord.Embed(title="PermissionError",
-                                      description="Cannot delete song file because it is being played",
-                                      color=discord.Color.dark_red())
-                await ctx.channel.send(embed=error, delete_after=5)
-                return
-
-            queue_infile = os.path.isdir("./queue")
-            try:
-                queue_folder = "./queue"
-                if queue_infile is True:
-                    print("Removed old queue folder")
-                    shutil.rmtree(queue_folder)
-            except:
-                print("No old queue folder")
-
-            ready = discord.Embed(title="Preparing...",
-                                  color=discord.Color.blue())
-            await ctx.channel.send(embed=ready, delete_after=3)
-
-            voice = get(discord.Client.voice_clients, guild=ctx.guild)
-
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'quiet': True,
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-            }
-
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                print("Downloading audio now\n")
-                ydl.download([url])
-
-            for file in os.listdir("./"):
-                if file.endswith(".mp3"):
-                    name = file
-                    print(f"Renamed File: {file}\n")
-                    os.rename(file, "song.mp3")
-
-            voice.play(discord.FFmpegPCMAudio("song.mp3"), after=lambda e: check_queue())
-            voice.source = discord.PCMVolumeTransformer(voice.source)
-            voice.source.volume = 0.07
-
-            nname = name.rsplit("-", 2)
-            playing = discord.Embed(title=f"Now Playing: {nname[0]}",
-                                    color=discord.Color.blue())
-            await ctx.channel.send(embed=playing, delete_after=10)
-            print("Playing\n")
+            await ctx.channel.send(embed=not_in, delete_after=10)
 
     @commands.command()
     async def pause(self, ctx):
+        client = ctx.guild.voice_client
+        self._pause_audio(client)
 
-        voice = get(discord.Client.voice_clients, guild=ctx.guild)
-
-        if voice and voice.is_playing():
-            print("Music Paused")
-            voice.pause()
-            paused = discord.Embed(title="Song Paused",
-                                   color=discord.Color.blue())
-            await ctx.channel.send(embed=paused, delete_after=10)
+    def _pause_audio(self, client):
+        if client.is_paused():
+            client.resume()
         else:
-            print("Music not playing")
-            paused = discord.Embed(title="No Music Playing",
-                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=paused, delete_after=5)
+            client.pause()
 
     @commands.command()
-    async def resume(self, ctx):
+    async def volume(self, ctx, volume: int):
+        state = self.get_state(ctx.guild)
 
-        voice.get(discord.Client.voice_clients, guild=ctx.guild)
+        if volume < 0:
+            volume = 0
 
-        if voice and voice.is_paused():
-            print("Music resumed")
-            voice.resume()
-            resumed = discord.Embed(title="Song Resumed",
-                                    color=discord.Color.blue())
-            await ctx.channel.send(embed=resumed, delete_after=10)
-        else:
-            print("Music is not paused")
-            resumed = discord.Embed(title="Song not Paused",
-                                    color=discord.Color.dark_red())
-            await ctx.channel.send(embed=resumed, delete_after=5)
+        max_vol = get_config(ctx.guild.id, "max_volume")
+        if max_vol > -1:
+            if volume > max_vol:
+                volume = max_vol
+
+        client = ctx.guild.voice_client
+
+        state.volume = float(volume) / 100
+        client.source.volume = state.volume
 
     @commands.command()
     async def skip(self, ctx):
+        state = self.get_state(ctx.guild)
+        client = ctx.guild.voice_client
+        permissions = ctx.channel.permissions_for(ctx.author)
+        if permissions.administrator or permissions.move_members or permissions.mute_members or state.is_requester(
+                ctx.author):
+            client.stop()
+        elif get_config(ctx.guild.id, "vote_skip"):
+            channel = client.channel
+            self._vote_skip(channel, ctx.author)
+            users_in_channel = len([member for member in channel.members if not member.bot])
+            required_votes = math.ceil(get_config(ctx.guild.id, "vote_skip_ratio") * users_in_channel)
 
-        voice = get(discord.Client.voice_clients, guild=ctx.guilds)
-
-        self.queues.clear()
-
-        if voice and voice.is_playing():
-            print("Music skipped")
-            voice.stop()
-            skipped = discord.Embed(title="Song Skipped",
-                                    color=discord.Color.blue())
-            await ctx.channel.send(embed=skipped, delete_after=10)
+            voteEmbed = discord.Embed(title=f"Skip Voted ({len(state.skip_votes) / required_votes})",
+                                      description=f"{ctx.author.mention} voted to skip the current song",
+                                      color=discord.Color.blue())
+            await ctx.channel.send(embed=voteEmbed, delete_after=10)
         else:
-            print("No music playing, cannot skip")
-            skipped = discord.Embed(title="No Music Playing",
-                                    color=discord.Color.dark_red())
-            await ctx.channel.send(embed=skipped, delete_after=10)
+            noSkip = discord.Embed(title="Cannot Skip",
+                                   description="Skip voting is disabled",
+                                   color=discord.Color.blue())
+            await ctx.channel.send(embed=noSkip, delete_after=10)
 
-    queues = {}
-    
-    @commands.command()
-    async def queue(self, ctx, url):
-        queue_infile = os.path.isdir("./queue")
-        if queue_infile is False:
-            os.mkdir("queue")
-        dir = os.path.abspath(os.path.realpath("queue"))
-        q_num = len(os.listdir(dir))
-        q_num += 1
-        add_queue = True
-        while add_queue:
-            if q_num is self.queues:
-                q_num += 1
+    def _vote_skip(self, channel, member):
+        state = self.get_state(channel.guild)
+        state.skip_votes.add(member)
+        users_in_channel = len([member for member in channel.members if not member.bot])
+
+        if (float(len(state.skip_votes)) / users_in_channel) >= get_config(channel.guild.id, "vote_skip_ratio"):
+            channel.guild.voice_client.stop()
+
+    def _play_song(self, client, state, song):
+        state.now_playing = song
+        state.skip_votes = set()
+        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song.stream_url), volume=state.volume)
+
+        def after_playing(err):
+            if len(state.playlist) > 0:
+                next_song = state.playlist.pop(0)
+                self._play_song(client, state, next_song)
             else:
-                add_queue = False
-                self.queues[q_num] = q_num
-        queue_path = os.path.abspath(os.path.realpath("queue") + f"song{q_num}.%(ext)s")
+                asyncio.run_coroutine_threadsafe(client.disconnect(), self.client.loop)
 
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True,
-            'outtmpl': queue_path,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
+        client.play(source, after=after_playing)
 
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            print("Downloading audio now\n")
-            ydl.download([url])
-        adding = discord.Embed(title=f"Adding song {str(q_num)} to the queue",
-                               color=discord.Color.blue())
-        await ctx.channel.send(embed=adding, delete_after=10)
-        print("Song added to the queue")
+    @commands.command()
+    @commands.check(audio_playing)
+    async def nowplaying(self, ctx):
+        state = self.get_state(ctx.guild)
+        message = await ctx.channel.send("", embed=state.now_playing.get_embed())
+        await self._add_reaction_controls(message)
+
+    @commands.command()
+    @commands.check(audio_playing)
+    async def queue(self, ctx):
+        state = self.get_state(ctx.guild)
+        await ctx.channel.send(self._queue_embed(state.playlist))
+
+    def _queue_embed(self, queue):
+        if len(queue) > 0:
+            queue_list = [f"{index + 1}. **{song.title}** (requested by *{song.requested_by.name}*" for (index, song)
+                          in enumerate(queue)]
+            title = "Songs in Queue"
+            description = "\n".join(queue_list)
+            color = discord.Color.blue()
+        else:
+            title = "No Songs in Queue"
+            description = "Songs that are added will appear here"
+            color = discord.Color.dark_red()
+
+        queueEmbed = discord.Embed(title=title,
+                                   description=description,
+                                   color=color)
+        return queueEmbed
+
+    @commands.command()
+    @commands.check(audio_playing)
+    async def clearqueue(self, ctx):
+        state = self.get_state(ctx.guild)
+        state.playlist = []
+
+    @commands.command()
+    @commands.check(audio_playing)
+    async def editqueue(self, ctx, song: int, new_index: int):
+        state = self.get_state(ctx.guild)
+        if 1 <= song <= len(state.playlist) and 1 <= new_index:
+            song = state.playlist.pop(song - 1)
+            state.playlist.insert(new_index - 1, song)
+            await ctx.channel.send(self._queue_embed(state.playlist))
+        else:
+            invalid = discord.Embed(title="Invalid Index",
+                                    description=f"{ctx.author.mention}, please use a valid index",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid, delete_after=10)
+
+    @commands.command()
+    async def play(self, ctx, *, url):
+        client = ctx.guild.voice_client
+        state = self.get_state(ctx.guild)
+
+        if client and client.channel:
+            try:
+                video = Video(url, ctx.author)
+            except youtube_dl.DownloadError as e:
+                errorDL = discord.Embed(title="Cannot Download Video",
+                                        description=f"{ctx.author.mention}, I cannot download the video from the "
+                                                    f"url \n\n*{url}*",
+                                        color=discord.Color.dark_red())
+                await ctx.channel.send(embed=errorDL, delete_after=10)
+                return
+            state.playlist.append(video)
+            message = await ctx.channel.send(embed=video.get_embed())
+            await self._add_reaction_controls(message)
+        else:
+            if ctx.author.voice is not None and ctx.author.voice.channel is not None:
+                channel = ctx.author.voice.channel
+                try:
+                    video = Video(url, ctx.author)
+                except youtube_dl.DownloadError as e:
+                    errorDL = discord.Embed(title="Cannot Download Video",
+                                            description=f"{ctx.author.mention}, I cannot download the video from the "
+                                                        f"url \n\n*{url}*",
+                                            color=discord.Color.dark_red())
+                    await ctx.channel.send(embed=errorDL, delete_after=10)
+                    return
+                client = await channel.connect()
+                self._play_song(client, state, video)
+                message = await ctx.channel.send(embed=video.get_embed())
+                await self._add_reaction_controls(message)
+            else:
+                inVC = discord.Embed(title="Not Connected to Voice Channel",
+                                     description=f"{ctx.author.mention}, you need to be in a voice channel to use "
+                                                 f"this command",
+                                     color=discord.Color.blue())
+                await ctx.channel.send(embed=inVC, delete_after=10)
+
+    async def on_reaction_add(self, reaction, user):
+        message = reaction.message
+        if user != self.client.user and message.author == self.client.user:
+            await message.remove_reaction(reaction, user)
+            if message.guild and message.guild.voice_client:
+                user_in_channel = user.voice and user.voice.channel and user.voice.channel == message.guild.voice_client.channel
+                permissions = message.channel.permissions_for(user)
+                guild = message.guild
+                state = self.get_state(guild)
+                if permissions.administrator or (user_in_channel and state.is_requester(user)):
+                    client = message.guild.voice_client
+                    if reaction.emoji == "⏯":
+                        self._pause_audio(client)
+                    elif reaction.emoji == "⏭":
+                        client.stop()
+                    elif reaction.emoji == "⏮":
+                        state.playlist.insert(0, state.now_playing)
+                        client.stop()
+                elif reaction.emoji == "⏭" and get_config(guild.id, "vote_skip") and user_in_channel and message.guild.voice_client and message.guild.voice_client.channel:
+                    voice_channel = message.guild.voice_client.channel
+                    self._vote_skip(voice_channel, user)
+                    channel = message.channel
+                    users_in_channel = len([member for member in voice_channel.members if not member.bot])
+                    required_votes = math.ceil(get_config(guild.id, "vote_skip_ratio") * users_in_channel)
+                    voteEmbed = discord.Embed(title=f"Skip Voted ({len(state.skip_votes) / required_votes})",
+                                              description=f"{user.mention} voted to skip the current song",
+                                              color=discord.Color.blue())
+                    await channel.send(embed=voteEmbed, delete_after=10)
+
+    async def _add_reaction_controls(self, message):
+        CONTROLS = ["⏮", "⏯", "⏭"]
+        for control in CONTROLS:
+            await message.add_reaction(control)
 
 
 def setup(client):
