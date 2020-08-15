@@ -1,4 +1,7 @@
 # MarwynnBot
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f44fb01c8b8c4208ae64d4ee2f411271)](https://app.codacy.com/manual/marwynnsomridhivej/marwynnbot?utm_source=github.com&utm_medium=referral&utm_content=marwynnsomridhivej/marwynnbot&utm_campaign=Badge_Grade_Dashboard)
+
 A Discord bot written in python using discord.py, a Discord API Wrapper.
 
 ## Add Me To Your Server
