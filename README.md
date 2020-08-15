@@ -110,7 +110,7 @@ For self hosting, you'll need:
 -   A bot token
 
 bot.py has this line of code:
-```python {.line-numbers}
+```python
 with open('./token.yaml', 'r') as f:
     stream = yaml.full_load(f)
     token = stream[str('token')]
