@@ -17,78 +17,78 @@ Commands are separated into categories that determine a command's function. Belo
 frequently as the bot's functionality grows.
 
 **Help**
-- `help`
+-   `help`
 
 **Actions**
-- Check [here]((https://marwynn.gitbook.io/marwynnbot/)) for a full list
-- `actions`
+-   Check [here]((https://marwynn.gitbook.io/marwynnbot/)) for a full list
+-   `actions`
 
 **Debug**
-- `ping`
-- `report`
-- `shard`
+-   `ping`
+-   `report`
+-   `shard`
 
 **Fun**
-- `8ball`
-- `choose`
-- `gifsearch`
-- `imgursearch`
-- `isabelle`
-- `peppa`
-- `randomcat`
-- `randomdog`
-- `say`
-- `toad`
+-   `8ball`
+-   `choose`
+-   `gifsearch`
+-   `imgursearch`
+-   `isabelle`
+-   `peppa`
+-   `randomcat`
+-   `randomdog`
+-   `say`
+-   `toad`
 
 **Games**
-- `blackjack`
-- `coinflip`
-- `connectfour`
-- `slots`
-- `uno`
-- *Currently under development*
+-   `blackjack`
+-   `coinflip`
+-   `connectfour`
+-   `slots`
+-   `uno`
+-   *Currently under development*
 
 **Games Commands**
-- `balance`
-- `gamestats`
-- `transfer`
+-   `balance`
+-   `gamestats`
+-   `transfer`
 
 **Moderation**
-- `chatclean`
-- `mute`
-- `unmute`
-- `kick`
-- `ban`
-- `unban`
-- `modsonline`
+-   `chatclean`
+-   `mute`
+-   `unmute`
+-   `kick`
+-   `ban`
+-   `unban`
+-   `modsonline`
 
 **Music**
-- `join`
-- `leave`
-- *Currently under development*
+-   `join`
+-   `leave`
+-   *Currently under development*
 
 **Utility**
-- `prefix`
-- `setprefix`
-- `serveremotes`
-- `serverstats`
-- `timezone`
+-   `prefix`
+-   `setprefix`
+-   `serveremotes`
+-   `serverstats`
+-   `timezone`
 
 **Owner Only**
-- `blacklist`
-- `load`
-- `unload`
-- `reload`
-- `shutdown`
-- `balanceadmin`
+-   `blacklist`
+-   `load`
+-   `unload`
+-   `reload`
+-   `shutdown`
+-   `balanceadmin`
 
 ## Self Hosting
 For self hosting, you'll need:
-- A bot application
-- A bot token
+-   A bot application
+-   A bot token
 
 bot.py has this line of code:
-```
+```bash
 with open('./token.yaml', 'r') as f:
     stream = yaml.full_load(f)
     token = stream[str('token')]
