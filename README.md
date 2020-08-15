@@ -4,7 +4,7 @@
 ![GitHub stars](https://img.shields.io/github/stars/marwynnsomridhivej/marwynnbot?label=Stars&style=social)
 ![GitHub forks](https://img.shields.io/github/forks/marwynnsomridhivej/marwynnbot?label=Forks&style=social)
 
-# MarwynnBot
+# MarwynnBot <img align="right" src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="150" width="150">
 A Discord bot written in python using discord.py, a Discord API Wrapper.
 
 ## Add Me To Your Server ![uptime](https://img.shields.io/badge/uptime-90.0%25-brightgreen)
