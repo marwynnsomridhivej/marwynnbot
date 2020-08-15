@@ -84,7 +84,7 @@ class Help(commands.Cog):
             gameNames = [cogNames.pop(1) for _ in range(3)]
             gameNames.append(cogNames.pop(7))
             for _ in range(2):
-                gameNames.append(cogNames.pop(9))
+                gameNames.append(cogNames.pop(10))
             cogs = [self.client.get_cog(j) for j in cogNames]
             strings = [[command.name.lower() for command in cog.get_commands()] for cog in cogs]
 
@@ -97,7 +97,8 @@ class Help(commands.Cog):
             musicCmds = f"*Under development*\n`{'` `'.join(strings[6])}`"
             ownerCmds = f"`{'` `'.join(strings[7])}`"
             reactionCmds = f"`{'` `'.join(strings[8])}`"
-            utilityCmds = f"`{'` `'.join(strings[9])}`"
+            redditCmds = f"`{gcmds.prefix(gcmds, ctx)}reddit` *for a full list*"
+            utilityCmds = f"`{'` `'.join(strings[10])}`"
 
             helpEmbed.add_field(name="Help",
                                 value=helpCmds,
@@ -117,11 +118,14 @@ class Help(commands.Cog):
             helpEmbed.add_field(name="Moderation",
                                 value=moderationCmds,
                                 inline=False)
-            helpEmbed.add_field(name="Music",
-                                value=musicCmds,
-                                inline=False)
+            #helpEmbed.add_field(name="Music",
+            #                    value=musicCmds,
+            #                    inline=False)
             helpEmbed.add_field(name="Utility",
                                 value=utilityCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Reddit",
+                                value=redditCmds,
                                 inline=False)
             helpEmbed.add_field(name="Owner Only",
                                 value=ownerCmds,
