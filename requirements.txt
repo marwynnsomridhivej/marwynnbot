@@ -1,10 +1,7 @@
-git+https://github.com/Rapptz/discord.py
-dnspython==1.16.0
-PyNaCl==1.4.0
-async-timeout==3.0.1
 PyYAML==5.3.1
 requests==2.24.0
-youtube_dl==2020.7.28
 numpy==1.19.1
 num2words==0.5.10
 praw~=7.1.0
+aiohttp~=3.6.2
+lavalink~=3.1.2
