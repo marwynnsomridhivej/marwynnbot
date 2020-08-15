@@ -90,16 +90,30 @@ frequently as the bot's functionality grows.
 -   `balanceadmin`
 
 ## Self Hosting
+As of right now, this bot is nowhere near ready for self hosting. I commit many changes to the bot and there is a high
+chance that after you clone this repository, I will have added a feature or fixed an issue that was present in the
+previous commit.
+
+Upon gaining Discord Verification, this bot's source code will become closed source and I will stop pushing commits to
+this repository. There are are some features that this bot will support that are very resource demanding, and they will
+become premium only commands. Please note that there will be very few commands that fit under this category, so the vast
+majority of the bot's functions will be accessible to anyone.
+
+I would prefer that you do not create an instance of my bot for self hosting purposes. I have made this repository
+public so that anyone who needs an example of a bot written in discord.py can freely look at how I have made it. I do
+realise that my python is garbage, and I am working on improving as this project is developed.
+
+If you don't care about what I just said above, I can't stop you. Here is how you would self host:
+
 For self hosting, you'll need:
 -   A bot application
 -   A bot token
 
 bot.py has this line of code:
-```bash
+```python {.line-numbers}
 with open('./token.yaml', 'r') as f:
     stream = yaml.full_load(f)
     token = stream[str('token')]
-client.run(token)
 ```
 You will need to create the token.yaml file in the root directory. File contents should be as follows:
 ```yaml
