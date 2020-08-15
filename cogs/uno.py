@@ -290,9 +290,6 @@ class UnoGame:
         self.reversed = False
         self.blocked = False
 
-    def index(self):
-        return self.index
-
     def reverse(self):
         self.reversed = not self.reversed
 
@@ -324,7 +321,6 @@ class UnoGame:
                 self.index = 0
 
         return self.index
-
 
 
 def emoji_to_player(player: UnoPlayer):

@@ -206,10 +206,6 @@ class Games(commands.Cog):
                     file['Balance'][str(user)]
                 except KeyError:
                     file['Balance'][str(user)] = 1000
-                    balance = 1000
-                    f.close()
-                else:
-                    balance = file['Balance'][str(user)]
                     f.close()
         with open('balance.json', 'w') as f:
             json.dump(file, f, indent=4)

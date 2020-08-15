@@ -1,7 +1,6 @@
 import random
 from datetime import datetime
 import discord
-import json
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
 
@@ -118,11 +117,14 @@ class Help(commands.Cog):
             helpEmbed.add_field(name="Moderation",
                                 value=moderationCmds,
                                 inline=False)
-            #helpEmbed.add_field(name="Music",
-            #                    value=musicCmds,
-            #                    inline=False)
+            helpEmbed.add_field(name="Music",
+                                value=musicCmds,
+                                inline=False)
             helpEmbed.add_field(name="Utility",
                                 value=utilityCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Reactions",
+                                value=reactionCmds,
                                 inline=False)
             helpEmbed.add_field(name="Reddit",
                                 value=redditCmds,

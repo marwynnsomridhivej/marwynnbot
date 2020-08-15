@@ -1,11 +1,11 @@
 import asyncio
-import random
 import discord
 import typing
 from discord.ext import commands
 import json
 import numpy as np
 from globalcommands import GlobalCMDS as gcmds
+
 
 def win(ctx, betAmount):
     load = False
@@ -21,7 +21,9 @@ def win(ctx, betAmount):
         file = json.load(f)
         while not load:
             try:
-                file['Coinflip'][str(ctx.author.id)]['win']
+                file['Coinflip'][str(ctx.author.id)]['win'] += 1
+                load = True
+                success = False
             except KeyError:
                 if not success:
                     try:
@@ -29,14 +31,10 @@ def win(ctx, betAmount):
                             file['Coinflip']
                         except KeyError:
                             file['Coinflip'] = {}
-                        file['Coinflip'][str(ctx.author.id)]
+                        file['Coinflip'][str(ctx.author.id)]['win'] = 0
                     except KeyError:
                         file['Coinflip'][str(ctx.author.id)] = {}
                         success = True
-                file['Coinflip'][str(ctx.author.id)]['win'] = 0
-            else:
-                file['Coinflip'][str(ctx.author.id)]['win'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Coinflip')
@@ -56,7 +54,9 @@ def lose(ctx, betAmount):
         file = json.load(f)
         while not load:
             try:
-                file['Coinflip'][str(ctx.author.id)]['lose']
+                file['Coinflip'][str(ctx.author.id)]['lose'] += 1
+                load = True
+                success = False
             except KeyError:
                 if not success:
                     try:
@@ -64,14 +64,10 @@ def lose(ctx, betAmount):
                             file['Coinflip']
                         except KeyError:
                             file['Coinflip'] = {}
-                        file['Coinflip'][str(ctx.author.id)]
+                        file['Coinflip'][str(ctx.author.id)]['lose'] = 0
                     except KeyError:
                         file['Coinflip'][str(ctx.author.id)] = {}
                         success = True
-                file['Coinflip'][str(ctx.author.id)]['lose'] = 0
-            else:
-                file['Coinflip'][str(ctx.author.id)]['lose'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Coinflip')

@@ -384,10 +384,10 @@ class Owner(commands.Cog):
     async def forceleave(self, ctx, guild_id=None):
         await gcmds.invkDelete(gcmds, ctx)
         if guild_id is not None:
-            id = guild_id
+            guild_id = guild_id
         else:
-            id = ctx.guild.id
-        await self.client.get_guild(id).leave()
+            guild_id = ctx.guild.id
+        await self.client.get_guild(guild_id).leave()
         leaveEmbed = discord.Embed(title="Successfully Left Server",
                                    description=f"Left guild id: {id}",
                                    color=discord.Color.blue())
@@ -419,6 +419,6 @@ class Owner(commands.Cog):
                                 color=discord.Color.blue())
         await user.send(embed=dmEmbed)
 
-    
+
 def setup(client):
     client.add_cog(Owner(client))

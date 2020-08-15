@@ -1,7 +1,6 @@
 import json
 from asyncio import sleep
 import discord
-import typing
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 

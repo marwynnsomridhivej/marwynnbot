@@ -53,8 +53,7 @@ def print_board(board):
 def winning_move(board, piece):
     for c in range(COLUMN_COUNT - 3):
         for r in range(ROW_COUNT):
-            if board[r][c] == piece and board[r][c + 1] == piece and board[r][c + 2] == piece and board[r][
-                c + 3] == piece:
+            if board[r][c] == piece and board[r][c + 1] == piece and board[r][c + 2] == piece and board[r][c + 3] == piece:
                 if piece == 1:
                     board[r][c] = 3
                     board[r][c + 1] = 3
@@ -69,8 +68,7 @@ def winning_move(board, piece):
 
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT - 3):
-            if board[r][c] == piece and board[r + 1][c] == piece and board[r + 2][c] == piece and board[r + 3][
-                c] == piece:
+            if board[r][c] == piece and board[r + 1][c] == piece and board[r + 2][c] == piece and board[r + 3][c] == piece:
                 if piece == 1:
                     board[r][c] = 3
                     board[r + 1][c] = 3
@@ -85,8 +83,7 @@ def winning_move(board, piece):
 
     for c in range(COLUMN_COUNT - 3):
         for r in range(ROW_COUNT - 3):
-            if board[r][c] == piece and board[r + 1][c + 1] == piece and board[r + 2][c + 2] == piece and board[r + 3][
-                c + 3] == piece:
+            if board[r][c] == piece and board[r + 1][c + 1] == piece and board[r + 2][c + 2] == piece and board[r + 3][c + 3] == piece:
                 if piece == 1:
                     board[r][c] = 3
                     board[r + 1][c + 1] = 3
@@ -101,8 +98,7 @@ def winning_move(board, piece):
 
     for c in range(COLUMN_COUNT - 3):
         for r in range(3, ROW_COUNT):
-            if board[r][c] == piece and board[r - 1][c + 1] == piece and board[r - 2][c + 2] == piece and board[r - 3][
-                c + 3] == piece:
+            if board[r][c] == piece and board[r - 1][c + 1] == piece and board[r - 2][c + 2] == piece and board[r - 3][c + 3] == piece:
                 if piece == 1:
                     board[r][c] = 3
                     board[r - 1][c + 1] = 3
@@ -350,8 +346,8 @@ class ConnectFour(commands.Cog):
                 except asyncio.TimeoutError:
                     await message.clear_reactions()
                     canceled = discord.Embed(title="Game Timeout",
-                                             description=f"Connect4 game canceled due to inactivity, "
-                                                         f"create a new game",
+                                             description="ConnectFour game canceled due to inactivity, " \
+                                                         "create a new game",
                                              color=discord.Color.dark_red())
                     canceled.set_thumbnail(url='https://cdn.discordapp.com/attachments/734962101432615006'
                                                '/738083697726849034/nocap.jpg')

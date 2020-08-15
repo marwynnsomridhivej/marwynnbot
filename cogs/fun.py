@@ -4,14 +4,12 @@ import os
 import random
 import re
 import typing
-import urllib.request
 import aiohttp
 import discord
 import requests
 import yaml
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
-
 from globalcommands import GlobalCMDS as gcmds
 
 
@@ -185,17 +183,17 @@ class Fun(commands.Cog):
         if query is None:
             if toSend:
                 query = str(toSend)
-                bool = True
+                bool_check = True
             else:
                 title = "No Search Term Specified"
                 description = f"{ctx.author.mention}, you must specify at least one search term. " \
                               f"`Do {gcmds.prefix(gcmds, ctx)}help gifsearch` for command info"
                 color = discord.Color.dark_red()
-                bool = False
+                bool_check = False
         else:
-            bool = True
+            bool_check = True
 
-        if bool:
+        if bool_check:
             query = str(query)
             r = requests.get("https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 50))
             if r.status_code == 200 or r.status_code == 202:
@@ -216,7 +214,7 @@ class Fun(commands.Cog):
                 return
             elif r.status_code == 429:
                 title = "Error Code 429"
-                description = f"**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
+                description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
                 color = discord.Color.dark_red()
             elif 300 <= r.status_code < 400:
                 title = f"Error Code {r.status_code}"

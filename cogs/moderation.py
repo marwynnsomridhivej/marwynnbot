@@ -1,11 +1,9 @@
 import discord
 import os
 import random
-import json
 import typing
 from discord.ext import commands
-from discord.ext.commands import has_permissions, MissingPermissions, BotMissingPermissions
-import globalcommands
+from discord.ext.commands import MissingPermissions, BotMissingPermissions
 from globalcommands import GlobalCMDS as gcmds
 
 

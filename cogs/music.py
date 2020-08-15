@@ -74,11 +74,15 @@ class GuildState:
     def is_requester(self, user):
         return self.now_playing.requested_by == user
 
+
 YTDL_OPTS = {
-    "default_search": "ytsearch",
+    "default_search": "auto",
     "format": "bestaudio/best",
     "quiet": True,
-    "extract_flat": "in_playlist"
+}
+
+ffmpeg_options = {
+    'options': '-vn'
 }
 
 
@@ -87,7 +91,7 @@ class Video:
 
     def __init__(self, url_or_search, requested_by):
         """Plays audio from (or searches for) a URL."""
-        with youtube_dl.YoutubeDL(YTDL_OPTS) as ydl:
+        with youtube_dl.YoutubeDL(YTDL_OPTS):
             video = self._get_info(url_or_search)
             video_format = video["formats"][0]
             self.stream_url = video_format["url"]
@@ -103,8 +107,7 @@ class Video:
             info = ydl.extract_info(video_url, download=False)
             video = None
             if "_type" in info and info["_type"] == "playlist":
-                return self._get_info(
-                    info["entries"][0]["url"])  # get info for first video
+                return self._get_info(info["entries"][0]["url"])
             else:
                 video = info
             return video
@@ -117,7 +120,7 @@ class Video:
             text=f"Requested by {self.requested_by.name}",
             icon_url=self.requested_by.avatar_url)
         if self.thumbnail:
-            embed.set_thumbnail(url=self.thumbnail)
+            embed.set_image(url=self.thumbnail)
         return embed
 
 
@@ -140,23 +143,55 @@ class Music(commands.Cog):
 
     @commands.command()
     async def join(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         if ctx.voice_client is None:
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
+                connected = discord.Embed(title="Connected",
+                                          description=f"I have joined ```{ctx.me.voice.channel.name}```",
+                                          color=discord.Color.blue())
+                connected.set_thumbnail(url="https://vignette.wikia.nocookie.net/mario/images/0/04/Music_Toad.jpg"
+                                            "/revision/latest/top-crop/width/500/height/500?cb=20180812231020")
+                connected.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+                await ctx.channel.send(embed=connected, delete_after=10)
             else:
                 not_in = discord.Embed(title="User Not in Voice Channel",
                                        description=f"{ctx.author.mention}, please join a voice channel to use this "
                                                    f"command",
                                        color=discord.Color.dark_red())
                 await ctx.channel.send(embed=not_in, delete_after=10)
+        elif ctx.me.voice.channel != ctx.author.voice.channel:
+            if ctx.author.voice:
+                await ctx.guild.voice_client.disconnect()
+                await ctx.author.voice.channel.connect()
+                moved = discord.Embed(title="Move Success",
+                                      description=f"I have moved over to ```{ctx.me.voice.channel}```",
+                                      color=discord.Color.blue())
+                moved.set_thumbnail(url="https://vignette.wikia.nocookie.net/mario/images/0/04/Music_Toad.jpg"
+                                        "/revision/latest/top-crop/width/500/height/500?cb=20180812231020")
+                moved.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+                await ctx.channel.send(embed=moved, delete_after=10)
+        else:
+            invalid = discord.Embed(title="Error",
+                                    description=f"{ctx.author.mention}, an error occurred",
+                                    color=discord.Color.dark_red())
+            await ctx.channel.send(embed=invalid, delete_after=10)
 
     @commands.command()
     async def leave(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
         if ctx.me.voice:
             state.playlist = []
             state.now_playing = None
-            await ctx.me.voice.channel.disconnect()
+            disconnected = discord.Embed(title="Disconnected",
+                                         description=f"I have left {ctx.me.voice.channel.name}",
+                                         color=discord.Color.blue())
+            disconnected.set_thumbnail(url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a"
+                                           ".png")
+            disconnected.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+            await ctx.channel.send(embed=disconnected, delete_after=10)
+            await ctx.voice_client.disconnect()
         else:
             not_in = discord.Embed(title="Not Connected",
                                    description=f"{ctx.author.mention}, I am not connected to a voice channel",
@@ -176,6 +211,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def volume(self, ctx, volume: int):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
 
         if volume < 0:
@@ -193,6 +229,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def skip(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
         client = ctx.guild.voice_client
         permissions = ctx.channel.permissions_for(ctx.author)
@@ -226,7 +263,8 @@ class Music(commands.Cog):
     def _play_song(self, client, state, song):
         state.now_playing = song
         state.skip_votes = set()
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song.stream_url), volume=state.volume)
+        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(source=song.stream_url),
+                                              volume=state.volume)
 
         def after_playing(err):
             if len(state.playlist) > 0:
@@ -240,15 +278,17 @@ class Music(commands.Cog):
     @commands.command()
     @commands.check(audio_playing)
     async def nowplaying(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
-        message = await ctx.channel.send("", embed=state.now_playing.get_embed())
+        message = await ctx.channel.send(embed=state.now_playing.get_embed())
         await self._add_reaction_controls(message)
 
     @commands.command()
     @commands.check(audio_playing)
     async def queue(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
-        await ctx.channel.send(self._queue_embed(state.playlist))
+        await ctx.channel.send(embed=self._queue_embed(state.playlist))
 
     def _queue_embed(self, queue):
         if len(queue) > 0:
@@ -270,12 +310,14 @@ class Music(commands.Cog):
     @commands.command()
     @commands.check(audio_playing)
     async def clearqueue(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
         state.playlist = []
 
     @commands.command()
     @commands.check(audio_playing)
     async def editqueue(self, ctx, song: int, new_index: int):
+        await gcmds.invkDelete(gcmds, ctx)
         state = self.get_state(ctx.guild)
         if 1 <= song <= len(state.playlist) and 1 <= new_index:
             song = state.playlist.pop(song - 1)
@@ -289,20 +331,23 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *, url):
+        await gcmds.invkDelete(gcmds, ctx)
         client = ctx.guild.voice_client
         state = self.get_state(ctx.guild)
 
         if client and client.channel:
             try:
                 video = Video(url, ctx.author)
-            except youtube_dl.DownloadError as e:
+            except youtube_dl.DownloadError:
                 errorDL = discord.Embed(title="Cannot Download Video",
                                         description=f"{ctx.author.mention}, I cannot download the video from the "
                                                     f"url \n\n*{url}*",
                                         color=discord.Color.dark_red())
                 await ctx.channel.send(embed=errorDL, delete_after=10)
                 return
+
             state.playlist.append(video)
+            self._play_song(client, state, video)
             message = await ctx.channel.send(embed=video.get_embed())
             await self._add_reaction_controls(message)
         else:
@@ -310,7 +355,7 @@ class Music(commands.Cog):
                 channel = ctx.author.voice.channel
                 try:
                     video = Video(url, ctx.author)
-                except youtube_dl.DownloadError as e:
+                except youtube_dl.DownloadError:
                     errorDL = discord.Embed(title="Cannot Download Video",
                                             description=f"{ctx.author.mention}, I cannot download the video from the "
                                                         f"url \n\n*{url}*",
@@ -328,6 +373,7 @@ class Music(commands.Cog):
                                      color=discord.Color.blue())
                 await ctx.channel.send(embed=inVC, delete_after=10)
 
+    @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         message = reaction.message
         if user != self.client.user and message.author == self.client.user:
@@ -346,7 +392,12 @@ class Music(commands.Cog):
                     elif reaction.emoji == "⏮":
                         state.playlist.insert(0, state.now_playing)
                         client.stop()
-                elif reaction.emoji == "⏭" and get_config(guild.id, "vote_skip") and user_in_channel and message.guild.voice_client and message.guild.voice_client.channel:
+                    elif reaction.emoji == '⏹':
+                        state.playlist = []
+                        await message.guild.voice_client.disconnect()
+                        await message.delete()
+                elif reaction.emoji == "⏭" and get_config(guild.id,
+                                                          "vote_skip") and user_in_channel and message.guild.voice_client and message.guild.voice_client.channel:
                     voice_channel = message.guild.voice_client.channel
                     self._vote_skip(voice_channel, user)
                     channel = message.channel
@@ -358,7 +409,7 @@ class Music(commands.Cog):
                     await channel.send(embed=voteEmbed, delete_after=10)
 
     async def _add_reaction_controls(self, message):
-        CONTROLS = ["⏮", "⏯", "⏭"]
+        CONTROLS = ["⏮", "⏯", "⏭", "⏹"]
         for control in CONTROLS:
             await message.add_reaction(control)
 

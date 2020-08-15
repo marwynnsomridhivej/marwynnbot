@@ -36,11 +36,11 @@ logger.addHandler(handler)
 
 @tasks.loop(seconds=120)
 async def status():
-    activity1 = discord.Activity(name=f"m!h for help!", type=discord.ActivityType.listening)
+    activity1 = discord.Activity(name="m!h for help!", type=discord.ActivityType.listening)
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
-    activity4 = discord.Activity(name=f"Under development [WIP]", type=discord.ActivityType.playing)
-    activity5 = discord.Activity(name=f"MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
+    activity4 = discord.Activity(name="Under development [WIP]", type=discord.ActivityType.playing)
+    activity5 = discord.Activity(name="MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
     activity6 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
     activityList = [activity1, activity2, activity3, activity4, activity5, activity6]
     activity = random.choice(activityList)

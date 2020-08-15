@@ -2,7 +2,6 @@ import asyncio
 import json
 import random
 import discord
-from discord import reaction
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
 
@@ -174,7 +173,8 @@ def player_busts(player, dealer, chips, ctx):
         file = json.load(f)
         while not load:
             try:
-                file['Blackjack'][str(ctx.author.id)]['lose']
+                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -183,9 +183,6 @@ def player_busts(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
@@ -201,7 +198,8 @@ def player_wins(player, dealer, chips, ctx):
         file = json.load(f)
         while not load:
             try:
-                file['Blackjack'][str(ctx.author.id)]['win']
+                file['Blackjack'][str(ctx.author.id)]['win'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -210,9 +208,6 @@ def player_wins(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
@@ -228,7 +223,8 @@ def dealer_busts(player, dealer, chips, ctx):
         file = json.load(f)
         while not load:
             try:
-                file['Blackjack'][str(ctx.author.id)]['win']
+                file['Blackjack'][str(ctx.author.id)]['win'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -237,9 +233,6 @@ def dealer_busts(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
@@ -255,7 +248,8 @@ def dealer_wins(player, dealer, chips, ctx):
         file = json.load(f)
         while not load:
             try:
-                file['Blackjack'][str(ctx.author.id)]['lose']
+                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -264,9 +258,6 @@ def dealer_wins(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')
@@ -281,7 +272,8 @@ def push(player, dealer, ctx):
         file = json.load(f)
         while not load:
             try:
-                file['Blackjack'][str(ctx.author.id)]['tie']
+                file['Blackjack'][str(ctx.author.id)]['tie'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -290,9 +282,6 @@ def push(player, dealer, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['tie'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['tie'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
@@ -308,8 +297,9 @@ def _blackjack(player, dealer, chips, ctx):
         file = json.load(f)
         while not load:
             try:
-                win = file['Blackjack'][str(ctx.author.id)]['win']
-                blackjack = file['Blackjack'][str(ctx.author.id)]['blackjack']
+                file['Blackjack'][str(ctx.author.id)]['win'] += 1
+                file['Blackjack'][str(ctx.author.id)]['blackjack'] += 1
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -319,10 +309,7 @@ def _blackjack(player, dealer, chips, ctx):
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
                 file['Blackjack'][str(ctx.author.id)]['blackjack'] = 0
-            else:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                file['Blackjack'][str(ctx.author.id)]['blackjack'] += 1
-                load = True
+
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Blackjack')

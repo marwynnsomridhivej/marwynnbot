@@ -1,7 +1,6 @@
 import json
 import os
 import discord
-from discord.ext import commands
 
 
 class GlobalCMDS:
@@ -9,14 +8,14 @@ class GlobalCMDS:
     def file_check(self, filenamepath, init):
         if not os.path.exists(filenamepath):
             with open(filenamepath, 'w') as f:
-                for str in init:
-                    f.write(str)
+                for string in init:
+                    f.write(string)
 
     def incrCounter(self, ctx, cmdName):
 
         init = {'Server': {}, 'Global': {}}
 
-        self.json_load(self, "./counters.json", init)
+        self.json_load("./counters.json", init)
         with open('counters.json', 'r') as f:
             values = json.load(f)
 
@@ -27,7 +26,7 @@ class GlobalCMDS:
             else:
                 values['Global'][str(cmdName)] += 1
 
-            if not self.isGuild(self, ctx):
+            if not self.isGuild(ctx):
                 pass
             else:
                 try:

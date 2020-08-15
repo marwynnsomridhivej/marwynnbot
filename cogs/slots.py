@@ -14,9 +14,8 @@ music = [":violin:", ":musical_keyboard:"]
 
 global_jackpot = False
 
-def rewards(slot_selection, bet):
 
-    global_jackpot = False
+def rewards(slot_selection, bet):
 
     if ":pirate_flag:" in slot_selection:
         return 0
@@ -198,7 +197,9 @@ def jackpot(ctx, reward):
         file = json.load(f)
         while not load:
             try:
-                file['Slots'][str(ctx.author.id)]['jackpot']
+                file['Slots'][str(ctx.author.id)]['jackpot'] += 1
+                success = False
+                load = True
             except KeyError:
                 if not success:
                     try:
@@ -206,14 +207,10 @@ def jackpot(ctx, reward):
                             file['Slots']
                         except KeyError:
                             file['Slots'] = {}
-                        file['Slots'][str(ctx.author.id)]
+                            file['Slots'][str(ctx.author.id)]['jackpot'] = 0
                     except KeyError:
                         file['Slots'][str(ctx.author.id)] = {}
                         success = True
-                file['Slots'][str(ctx.author.id)]['jackpot'] = 0
-            else:
-                file['Slots'][str(ctx.author.id)]['jackpot'] += 1
-                load = True
         with open('gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
     gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Slots')
