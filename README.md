@@ -1,14 +1,20 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/41bbb30fede24aa09a3bb772cc4f4d7f)](https://www.codacy.com/manual/marwynnsomridhivej/marwynnbot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=marwynnsomridhivej/marwynnbot&amp;utm_campaign=Badge_Grade)
+![License](https://img.shields.io/badge/license-GPLv3.0-brightgreen)
+![Clone Size](https://img.shields.io/github/repo-size/marwynnsomridhivej/marwynnbot?color=red&label=Clone%20Size)
+![GitHub stars](https://img.shields.io/github/stars/marwynnsomridhivej/marwynnbot?label=Stars&style=social)
+![GitHub forks](https://img.shields.io/github/forks/marwynnsomridhivej/marwynnbot?label=Forks&style=social)
+
 # MarwynnBot
 A Discord bot written in python using discord.py, a Discord API Wrapper.
 
-## Add Me To Your Server
+## Add Me To Your Server ![uptime](https://img.shields.io/badge/uptime-90.0%25-brightgreen)
 You can add the public MarwynnBot to your own Discord server by clicking [here](https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=8)
 
 ## Prefix
 - The default prefix is `m!`
 - Global prefixes are mentioning the bot or `mb`
 
-## Commands
+## Commands ![progress](https://img.shields.io/badge/coverage-20%25-orange)
 WIP, for an updated list, add the bot and do `m!help`.
 
 For a guide on all commands and their usages, I will be updating [MarwynnBot's GitBook page](https://marwynn.gitbook.io/marwynnbot/)
@@ -99,7 +105,7 @@ You will need to create the token.yaml file in the root directory. File contents
 token: botTokenHere
 ```
 The bot will pull the token value from the `token.yaml` file and use that as the token value in `client.run(token)`
-## Contact Info
+## Contact Info ![Discord](https://img.shields.io/discord/707981159748993084?color=blue&label=Discord)
 **Discord:** MS Arranges#3060
 
 **Discord Server:** https://discord.gg/fYBTdUp
