@@ -4,8 +4,9 @@
 ![GitHub stars](https://img.shields.io/github/stars/marwynnsomridhivej/marwynnbot?label=Stars&style=social)
 ![GitHub forks](https://img.shields.io/github/forks/marwynnsomridhivej/marwynnbot?label=Forks&style=social)
 
-# MarwynnBot <img align="right" src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="150" width="150">
-A Discord bot written in python using discord.py, a Discord API Wrapper.
+# MarwynnBot <img align="right" src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="100" width="100">
+I am a general purpose discord bot written in python using discord.py, a Discord API Wrapper. I am currently under
+development, so please expect new features to come and any issues to be addressed as soon as I can.
 
 ## Add Me To Your Server ![uptime](https://img.shields.io/badge/uptime-90.0%25-brightgreen)
 You can add the public MarwynnBot to your own Discord server by clicking [here](https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=8)
