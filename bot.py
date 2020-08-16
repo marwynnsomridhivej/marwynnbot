@@ -4,6 +4,7 @@ import os
 import random
 import discord
 import yaml
+import socket
 from discord.ext import commands, tasks
 
 from globalcommands import GlobalCMDS as gcmds
@@ -49,7 +50,13 @@ async def status():
 
 @client.event
 async def on_ready():
-    print('Successfully logged in as {0.user}'.format(client))
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            client.load_extension(f'cogs.{filename[:-3]}')
+            print(f"Cog \"{filename[:-3].upper()}\" has been loaded")
+    hostname = socket.gethostname()
+    ip = socket.gethostbyname(hostname)
+    print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}')
     await status.start()
 
 
@@ -66,6 +73,7 @@ async def check_blacklist(ctx):
         except KeyError:
             blacklist["Users"] = {}
             blacklist["Guilds"] = {}
+
         try:
             if blacklist["Users"][str(ctx.author.id)]:
                 blacklisted = discord.Embed(title="You Are Blacklisted",
@@ -151,11 +159,6 @@ async def on_guild_remove(guild):
 
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
-
-
-for filename in os.listdir('./cogs'):
-    if filename.endswith('.py'):
-        client.load_extension(f'cogs.{filename[:-3]}')
 
 
 with open('./token.yaml', 'r') as f:
