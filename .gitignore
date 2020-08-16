@@ -1,7 +1,7 @@
 .idea
 cogs/__pycache__
 venv
-./logs
+logs
 __pycache__
 *.pyc
 token.yaml
