@@ -15,7 +15,7 @@ class GlobalCMDS:
 
         init = {'Server': {}, 'Global': {}}
 
-        self.json_load("./counters.json", init)
+        self.json_load(self, 'counters.json', init)
         with open('counters.json', 'r') as f:
             values = json.load(f)
 
@@ -26,7 +26,7 @@ class GlobalCMDS:
             else:
                 values['Global'][str(cmdName)] += 1
 
-            if not self.isGuild(ctx):
+            if not self.isGuild(self, ctx):
                 pass
             else:
                 try:
@@ -57,7 +57,7 @@ class GlobalCMDS:
         else:
             return False
 
-    def json_load(self, filenamepath, init):
+    def json_load(self, filenamepath: str, init: dict):
         if not os.path.exists(filenamepath):
             with open(filenamepath, 'w') as f:
                 json.dump(init, f, indent=4)
