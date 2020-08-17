@@ -15,17 +15,20 @@ class Music(commands.Cog):
         self.client = client
         self.context = None
         self.message = None
+        self.queue = []
+        self.rewind_message = None
         self.queue_message = None
         self.paused = False
         self.paused_message = None
 
         if not hasattr(client, 'lavalink'):
             client.lavalink = lavalink.Client(client.user.id)
-            client.lavalink.add_node('localhost', 6942, 'password', 'na', 'default-node')
+            client.lavalink.add_node('localhost', 1000, 'password', 'na', 'default-node')
             client.add_listener(client.lavalink.voice_update_handler, 'on_socket_response')
 
         lavalink.add_event_hook(self.track_hook)
         lavalink.add_event_hook(self.update_play)
+        lavalink.add_event_hook(self.add_rewind_queue)
 
     def cog_unload(self):
         self.client.lavalink._event_hooks.clear()
@@ -79,6 +82,8 @@ class Music(commands.Cog):
         if isinstance(event, lavalink.events.QueueEndEvent):
             guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
+        if isinstance(event, lavalink.exceptions.NodeException):
+            print("Test")
 
     async def update_play(self, event):
         if isinstance(event, lavalink.events.TrackStartEvent):
@@ -99,6 +104,12 @@ class Music(commands.Cog):
         if isinstance(event, lavalink.events.QueueEndEvent) or isinstance(event, lavalink.events.WebSocketClosedEvent):
             await self.del_temp_msgs()
 
+    async def add_rewind_queue(self, event):
+        if isinstance(event, lavalink.events.TrackEndEvent):
+            track = event.track
+            if track not in self.queue:
+                self.queue.append(track)
+
     async def connect_to(self, guild_id: int, channel_id: str):
         ws = self.client._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
@@ -115,6 +126,11 @@ class Music(commands.Cog):
         if self.paused_message:
             await self.paused_message.delete()
             self.paused_message = None
+        if self.queue:
+            self.queue = []
+        if self.rewind_message:
+            await self.rewind_message.delete()
+            self.rewind_message = None
         if self.queue_message:
             await self.queue_message.delete()
             self.queue_message = None
@@ -139,12 +155,21 @@ class Music(commands.Cog):
                                                 "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
                         await reaction.message.channel.send(embed=stopped, delete_after=5)
                     if reaction.emoji == "⏪":
-                        udev = discord.Embed(title="Function Not Available",
-                                             description=f"{user.mention}, the rewind function is currently unavailable",
-                                             color=discord.Color.dark_red())
-                        udev.set_footer(text=f"Executed by {user.display_name} " + \
-                                             "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
-                        await reaction.message.channel.send(embed=udev, delete_after=5)
+                        if not self.queue:
+                            rewind = discord.Embed(title="No Tracks to Rewind",
+                                                   description=f"{user.mention}, there are no tracks to rewind to",
+                                                   color=discord.Color.dark_red())
+                        else:
+                            track = self.queue.pop(-1)
+                            player.add(requester=user.id, track=track, index=0)
+                            await player.stop()
+                            await player.play()
+                            rewind = discord.Embed(title="Rewind Successful",
+                                                   color=discord.Color.blue())
+                        if self.rewind_message:
+                            await self.rewind_message.edit(embed=rewind, delete_after=5)
+                        else:
+                            self.rewind_message = await reaction.message.channel.send(embed=rewind, delete_after=5)
                     if reaction.emoji == "⏯":
                         self.paused = not self.paused
                         await player.set_pause(self.paused)
@@ -448,6 +473,7 @@ class Music(commands.Cog):
         player.queue.clear()
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
+        await self.del_temp_msgs()
         disconnected = discord.Embed(title="Disconnected",
                                      color=discord.Color.blue())
         disconnected.set_thumbnail(url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a"
