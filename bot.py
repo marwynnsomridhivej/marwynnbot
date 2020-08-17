@@ -53,7 +53,7 @@ async def on_ready():
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             client.load_extension(f'cogs.{filename[:-3]}')
-            print(f"Cog \"{filename[:-3].upper()}\" has been loaded")
+            print(f"Cog \"{filename[:-3].capitalize()}\" has been loaded")
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}')
