@@ -13,13 +13,7 @@ reactions = ["⏪", "⏯", "⏩", "⏹"]
 class Music(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.context = None
-        self.message = None
-        self.queue = []
-        self.rewind_message = None
-        self.queue_message = None
-        self.paused = False
-        self.paused_message = None
+        self.info = {}
 
         if not hasattr(client, 'lavalink'):
             client.lavalink = lavalink.Client(client.user.id)
@@ -29,6 +23,10 @@ class Music(commands.Cog):
         lavalink.add_event_hook(self.track_hook)
         lavalink.add_event_hook(self.update_play)
         lavalink.add_event_hook(self.add_rewind_queue)
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f'Cog "{self.qualified_name}" has been loaded')
 
     def cog_unload(self):
         self.client.lavalink._event_hooks.clear()
@@ -88,7 +86,7 @@ class Music(commands.Cog):
     async def update_play(self, event):
         if isinstance(event, lavalink.events.TrackStartEvent):
             track = event.track
-            ctx = self.context
+            ctx = self.info[str(event.player.guild_id)]['context']
             timestamp = f"Executed by {ctx.author.display_name} " + \
                         "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
             embed = discord.Embed(title="Now Playing",
@@ -96,57 +94,88 @@ class Music(commands.Cog):
             embed.description = f'[{track["title"]}](https://www.youtube.com/watch?v={track["identifier"]})'
             embed.set_image(url=f"http://img.youtube.com/vi/{track['identifier']}/maxresdefault.jpg")
             embed.set_footer(text=timestamp)
-            if not self.message:
-                self.message = await ctx.channel.send(embed=embed)
+            message = self.info[str(event.player.guild_id)]['message']
+            if not message:
+                message_sent = await ctx.channel.send(embed=embed)
             else:
-                await self.message.edit(embed=embed)
-            await self.add_reaction_panel()
+                message_sent = await message.edit(embed=embed)
+            await self.set_value(event.player.guild_id, 'message', message_sent)
+            await self.add_reaction_panel(message_sent)
         if isinstance(event, lavalink.events.QueueEndEvent) or isinstance(event, lavalink.events.WebSocketClosedEvent):
-            await self.del_temp_msgs()
+            await self.del_temp_msgs(event.player.guild_id)
 
     async def add_rewind_queue(self, event):
-        if isinstance(event, lavalink.events.TrackEndEvent):
+        if isinstance(event, lavalink.events.TrackStartEvent):
             track = event.track
-            if track not in self.queue:
-                self.queue.append(track)
+            queue = self.info[str(event.player.guild_id)]['queue']
+            if track not in queue:
+                queue.append(track)
 
     async def connect_to(self, guild_id: int, channel_id: str):
         ws = self.client._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
-    async def add_reaction_panel(self):
-        if self.message is not None:
-            for reaction in reactions:
-                await self.message.add_reaction(reaction)
+    async def add_reaction_panel(self, message):
+        for reaction in reactions:
+            await message.add_reaction(reaction)
 
-    async def del_temp_msgs(self):
-        if self.message:
-            await self.message.delete()
-            self.message = None
-        if self.paused_message:
-            await self.paused_message.delete()
-            self.paused_message = None
-        if self.queue:
-            self.queue = []
-        if self.rewind_message:
-            await self.rewind_message.delete()
-            self.rewind_message = None
-        if self.queue_message:
-            await self.queue_message.delete()
-            self.queue_message = None
+    async def set_value(self, guild_id: int, key: str, value):
+        if value is None:
+            try:
+                return self.info[str(guild_id)][key]
+            except KeyError:
+                return None
+        else:
+            try:
+                self.info[str(guild_id)][key] = value
+            except KeyError:
+                self.info[str(guild_id)] = {'message': None, 'paused': False, 'paused_message': None, 'queue': [],
+                                            'rewind_message': None, 'queue_message': None}
+                self.info[str(guild_id)][key] = value
+
+    async def del_temp_msgs(self, guild_id: int):
+        message = self.info[str(guild_id)]['message']
+        paused = self.info[str(guild_id)]['paused']
+        paused_message = self.info[str(guild_id)]['paused_message']
+        queue = self.info[str(guild_id)]['queue']
+        rewind_message = self.info[str(guild_id)]['rewind_message']
+        queue_message = self.info[str(guild_id)]['queue_message']
+        if message:
+            await message.delete()
+            await self.set_value(guild_id, 'message', None)
+        if paused:
+            await self.set_value(guild_id, 'paused', False)
+        if paused_message:
+            await paused_message.delete()
+            await self.set_value(guild_id, 'paused_message', None)
+        if queue:
+            await self.set_value(guild_id, 'queue', [])
+        if rewind_message:
+            await rewind_message.delete()
+            await self.set_value(guild_id, 'rewind_message', None)
+        if queue_message:
+            await queue_message.delete()
+            await self.set_value(guild_id, 'queue_message', None)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         player = self.client.lavalink.player_manager.get(reaction.message.guild.id)
-        if not user.bot:
-            if self.message:
-                if self.message.id == reaction.message.id:
-                    await self.message.remove_reaction(reaction.emoji, user)
+        if not user.bot and player:
+            guild_id = reaction.message.guild.id
+            message = self.info[str(guild_id)]['message']
+            paused = self.info[str(guild_id)]['paused']
+            paused_message = self.info[str(guild_id)]['paused_message']
+            queue = self.info[str(guild_id)]['queue']
+            rewind_message = self.info[str(guild_id)]['rewind_message']
+
+            if message:
+                if message.id == reaction.message.id:
+                    await message.remove_reaction(reaction.emoji, user)
                     if reaction.emoji == "⏹":
                         if player.queue:
                             player.queue.clear()
                         await player.stop()
-                        await self.del_temp_msgs()
+                        await self.del_temp_msgs(reaction.message.guild.id)
                         stopped = discord.Embed(title="Player Stopped",
                                                 description=f"{user.mention}, I have stoppped the music player and "
                                                             f"cleared the queue",
@@ -155,25 +184,27 @@ class Music(commands.Cog):
                                                 "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
                         await reaction.message.channel.send(embed=stopped, delete_after=5)
                     if reaction.emoji == "⏪":
-                        if not self.queue:
+                        if not queue:
                             rewind = discord.Embed(title="No Tracks to Rewind",
                                                    description=f"{user.mention}, there are no tracks to rewind to",
                                                    color=discord.Color.dark_red())
                         else:
-                            track = self.queue.pop(-1)
+                            track = queue.pop(len(self.queue) - 2)
                             player.add(requester=user.id, track=track, index=0)
                             await player.stop()
                             await player.play()
                             rewind = discord.Embed(title="Rewind Successful",
                                                    color=discord.Color.blue())
-                        if self.rewind_message:
-                            await self.rewind_message.edit(embed=rewind, delete_after=5)
+                        if rewind_message:
+                            rewind_message_sent = await rewind_message.edit(embed=rewind, delete_after=5)
                         else:
-                            self.rewind_message = await reaction.message.channel.send(embed=rewind, delete_after=5)
+                            rewind_message_sent = await reaction.message.channel.send(embed=rewind, delete_after=5)
+                        await self.set_value(guild_id, 'rewind_message', rewind_message_sent)
                     if reaction.emoji == "⏯":
-                        self.paused = not self.paused
-                        await player.set_pause(self.paused)
-                        if self.paused:
+                        paused = not paused
+                        await player.set_pause(paused)
+                        await self.set_value(guild_id, "paused", paused)
+                        if paused:
                             pause = "Paused"
                         else:
                             pause = "Resumed"
@@ -182,11 +213,12 @@ class Music(commands.Cog):
                                                    color=discord.Color.blue())
                         pauseEmbed.set_footer(text=f"Executed by {user.display_name} " + \
                                                    "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
-                        if self.paused_message:
-                            await self.paused_message.edit(embed=pauseEmbed, delete_after=5)
-                            self.paused_message = None
+                        if paused_message:
+                            await paused_message.edit(embed=pauseEmbed, delete_after=5)
+                            paused_message_sent = None
                         else:
-                            self.paused_message = await reaction.message.channel.send(embed=pauseEmbed)
+                            paused_message_sent = await reaction.message.channel.send(embed=pauseEmbed)
+                        await self.set_value(guild_id, "paused_message", paused_message_sent)
                     if reaction.emoji == "⏩":
                         await player.skip()
                         skipped = discord.Embed(title="Skipped to Next Track",
@@ -241,7 +273,7 @@ class Music(commands.Cog):
     @commands.command()
     async def play(self, ctx, *, query: str = None):
         await gcmds.invkDelete(gcmds, ctx)
-        self.context = ctx
+        await self.set_value(ctx.guild.id, "context", ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if ctx.author.voice:
@@ -276,6 +308,8 @@ class Music(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blue())
 
+        queue = self.info[str(ctx.guild.id)]['queue']
+
         # Valid loadTypes are:
         #   TRACK_LOADED    - single video/direct URL)
         #   PLAYLIST_LOADED - direct URL to playlist)
@@ -287,9 +321,8 @@ class Music(commands.Cog):
             tracklist = []
             for track in tracks:
                 tracklist.append(f"**{len(tracklist) + 1}:** [{track['info']['title']}]({track['info']['uri']})")
-
-            for track in tracks:
                 player.add(requester=ctx.author.id, track=track)
+                queue.append(track)
 
             embed.title = 'Playlist Queued!'
             embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks:\n\n' + \
@@ -306,9 +339,12 @@ class Music(commands.Cog):
 
             track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
             player.add(requester=ctx.author.id, track=track)
+            queue.append(track)
 
         if not player.is_playing:
             await player.play()
+
+        await self.set_value(ctx.guild.id, "queue", queue)
 
     @commands.command()
     async def queue(self, ctx, *, query: str = None):
@@ -341,6 +377,8 @@ class Music(commands.Cog):
 
                     embed = discord.Embed(color=discord.Color.blue())
 
+                    queue = self.info[str(ctx.guild.id)]['queue']
+
                     # Valid loadTypes are:
                     #   TRACK_LOADED    - single video/direct URL)
                     #   PLAYLIST_LOADED - direct URL to playlist)
@@ -353,9 +391,8 @@ class Music(commands.Cog):
                         for track in tracks:
                             tracklist.append(
                                 f"**{len(tracklist) + 1}:** [{track['info']['title']}]({track['info']['uri']})")
-
-                        for track in tracks:
                             player.add(requester=ctx.author.id, track=track)
+                            queue.append(track)
 
                         embed.title = 'Playlist Queued!'
                         embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks' \
@@ -375,11 +412,15 @@ class Music(commands.Cog):
 
                         track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
                         player.add(requester=ctx.author.id, track=track)
+                        queue.append(track)
 
-                    if self.message:
-                        await self.message.edit(embed=embed)
+                    message = self.info[str(ctx.guild.id)]['message']
+
+                    if message:
+                        message_sent = await message.edit(embed=embed)
                     else:
-                        self.message = await ctx.send(embed=embed)
+                        message_sent = await ctx.channel.send(embed=embed)
+                    await self.set_value(ctx.guild.id, 'message', message_sent)
             else:
                 notConn = discord.Embed(title="Error",
                                         description=f"{ctx.author.mention}, you must be connected to a voice channel "
@@ -414,10 +455,13 @@ class Music(commands.Cog):
 
             queueEmbed.description = "".join(description)
 
-            if self.queue_message:
-                await self.queue_message.edit(embed=queueEmbed, delete_after=60)
+            queue_message = self.info[str(ctx.guild.id)]['queue_message']
+
+            if queue_message:
+                queue_message_sent = await queue_message.edit(embed=queueEmbed, delete_after=60)
             else:
-                self.queue_message = await ctx.channel.send(embed=queueEmbed, delete_after=60)
+                queue_message_sent = await ctx.channel.send(embed=queueEmbed, delete_after=60)
+            await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
     @commands.command()
     @commands.is_owner()
@@ -444,7 +488,7 @@ class Music(commands.Cog):
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
         await player.stop()
-        await self.del_temp_msgs()
+        await self.del_temp_msgs(ctx.guild.id)
 
         stopped = discord.Embed(title="Player Stopped",
                                 description=f"{ctx.author.mention}, I have stoppped the music player and cleared the "
@@ -473,7 +517,7 @@ class Music(commands.Cog):
         player.queue.clear()
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
-        await self.del_temp_msgs()
+        await self.del_temp_msgs(ctx.guild.id)
         disconnected = discord.Embed(title="Disconnected",
                                      color=discord.Color.blue())
         disconnected.set_thumbnail(url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a"
