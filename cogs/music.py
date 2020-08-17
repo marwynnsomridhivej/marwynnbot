@@ -21,7 +21,7 @@ class Music(commands.Cog):
 
         if not hasattr(client, 'lavalink'):
             client.lavalink = lavalink.Client(client.user.id)
-            client.lavalink.add_node('localhost', 80, 'password', 'na', 'default-node')
+            client.lavalink.add_node('localhost', 420, 'password', 'na', 'default-node')
             client.add_listener(client.lavalink.voice_update_handler, 'on_socket_response')
 
         lavalink.add_event_hook(self.track_hook)
