@@ -74,7 +74,7 @@ class Owner(commands.Cog):
                 for filenameReload in os.listdir('./cogs'):
                     if filenameReload.endswith('.py'):
                         self.client.reload_extension(f'cogs.{filenameReload[:-3]}')
-                        print(f'Cog "{filenameReload}" has been reloaded')
+                        print(f'Cog "{filenameReload[:-3].capitalize()}" has been reloaded')
                 reloadEmbed = discord.Embed(title="Reload Success",
                                             description="Successfully reloaded all cogs",
                                             color=discord.Color.blue())
