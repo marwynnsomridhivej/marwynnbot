@@ -16,6 +16,8 @@ class Music(commands.Cog):
         self.context = None
         self.message = None
         self.queue_message = None
+        self.paused = False
+        self.paused_message = None
 
         if not hasattr(client, 'lavalink'):
             client.lavalink = lavalink.Client(client.user.id)
@@ -95,27 +97,79 @@ class Music(commands.Cog):
                 await self.message.edit(embed=embed)
             await self.add_reaction_panel()
         if isinstance(event, lavalink.events.QueueEndEvent) or isinstance(event, lavalink.events.WebSocketClosedEvent):
-            if self.message:
-                await self.message.delete()
-                self.message = None
-            if self.queue_message:
-                self.queue_message = None
-
+            await self.del_temp_msgs()
 
     async def connect_to(self, guild_id: int, channel_id: str):
         ws = self.client._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
     async def add_reaction_panel(self):
-        if self.message:
+        if self.message is not None:
             for reaction in reactions:
                 await self.message.add_reaction(reaction)
+
+    async def del_temp_msgs(self):
+        if self.message:
+            await self.message.delete()
+            self.message = None
+        if self.paused_message:
+            await self.paused_message.delete()
+            self.paused_message = None
+        if self.queue_message:
+            await self.queue_message.delete()
+            self.queue_message = None
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         player = self.client.lavalink.player_manager.get(reaction.message.guild.id)
         if not user.bot:
-            await self.message.remove_reaction(reaction.emoji, user)
+            if self.message:
+                if self.message.id == reaction.message.id:
+                    await self.message.remove_reaction(reaction.emoji, user)
+                    if reaction.emoji == "⏹":
+                        if player.queue:
+                            player.queue.clear()
+                        await player.stop()
+                        await self.del_temp_msgs()
+                        stopped = discord.Embed(title="Player Stopped",
+                                                description=f"{user.mention}, I have stoppped the music player and "
+                                                            f"cleared the queue",
+                                                color=discord.Color.blue())
+                        stopped.set_footer(text=f"Executed by {user.display_name} " + \
+                                                "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+                        await reaction.message.channel.send(embed=stopped, delete_after=5)
+                    if reaction.emoji == "⏪":
+                        udev = discord.Embed(title="Function Not Available",
+                                             description=f"{user.mention}, the rewind function is currently unavailable",
+                                             color=discord.Color.dark_red())
+                        udev.set_footer(text=f"Executed by {user.display_name} " + \
+                                             "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+                        await reaction.message.channel.send(embed=udev, delete_after=5)
+                    if reaction.emoji == "⏯":
+                        self.paused = not self.paused
+                        await player.set_pause(self.paused)
+                        if self.paused:
+                            pause = "Paused"
+                        else:
+                            pause = "Resumed"
+                        pauseEmbed = discord.Embed(title=f"Player {pause}",
+                                                   description=f"{user.mention}, the player has been {pause.lower()}",
+                                                   color=discord.Color.blue())
+                        pauseEmbed.set_footer(text=f"Executed by {user.display_name} " + \
+                                                   "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+                        if self.paused_message:
+                            await self.paused_message.edit(embed=pauseEmbed, delete_after=5)
+                            self.paused_message = None
+                        else:
+                            self.paused_message = await reaction.message.channel.send(embed=pauseEmbed)
+                    if reaction.emoji == "⏩":
+                        await player.skip()
+                        skipped = discord.Embed(title="Skipped to Next Track",
+                                                description=f"{user.mention}, I have skipped to the next track in queue",
+                                                color=discord.Color.blue())
+                        skipped.set_footer(text=f"Executed by {user.display_name} " + \
+                                                "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+                        await reaction.message.channel.send(embed=skipped, delete_after=3)
 
     @commands.command()
     async def join(self, ctx):
@@ -309,13 +363,25 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=notConn, delete_after=15)
                 return
         else:
-            description = []
+            if player.is_playing:
+                description = [
+                    f"**Now Playing:** [{player.current['title']}]({player.current['identifier']})\n\n**Queue"
+                    ":**\n"]
+            else:
+                description = []
             index = 0
-            queueEmbed = discord.Embed(title="Current Queue",
+            q_amt = len(player.queue)
+            if q_amt == 0:
+                title_append = ""
+            elif q_amt == 1:
+                title_append = ": 1 Track"
+            else:
+                title_append = f": {q_amt} Tracks"
+            queueEmbed = discord.Embed(title=f"Current Queue{title_append}",
                                        color=discord.Color.blue())
 
             if not player.queue:
-                description = "Nothing queued"
+                description.append("Nothing queued")
             for item in player.queue:
                 description.append(f"**{index + 1}**: [{item['title']}]"
                                    f"(https://www.youtube.com/watch?v={item['identifier']})\n")
@@ -326,7 +392,7 @@ class Music(commands.Cog):
             if self.queue_message:
                 await self.queue_message.edit(embed=queueEmbed, delete_after=60)
             else:
-                await ctx.channel.send(embed=queueEmbed, delete_after=60)
+                self.queue_message = await ctx.channel.send(embed=queueEmbed, delete_after=60)
 
     @commands.command()
     @commands.is_owner()
@@ -338,31 +404,28 @@ class Music(commands.Cog):
             invalid = discord.Embed(title="Error",
                                     description=f"{ctx.author.mention}, I am not currently in a voice channel",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=15)
+            return await ctx.channel.send(embed=invalid, delete_after=5)
 
         if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
             invalid = discord.Embed(title="Error",
                                     description=f"{ctx.author.mention}, you can only execute this command when you "
                                                 f"are connected to the same voice channel as I am",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=15)
+            return await ctx.channel.send(embed=invalid, delete_after=10)
         if not player.queue and not player.is_playing:
             invalid = discord.Embed(title="Error",
                                     description=f"{ctx.author.mention}, my queue is empty",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=15)
+            return await ctx.channel.send(embed=invalid, delete_after=5)
 
         await player.stop()
-        if self.message:
-            await self.message.delete()
-            self.message = None
-        if self.queue_message:
-            self.queue_message = None
+        await self.del_temp_msgs()
+
         stopped = discord.Embed(title="Player Stopped",
                                 description=f"{ctx.author.mention}, I have stoppped the music player and cleared the "
                                             f"queue",
                                 color=discord.Color.blue())
-        await ctx.channel.send(embed=stopped, delete_after=15)
+        await ctx.channel.send(embed=stopped, delete_after=5)
 
     @commands.command()
     async def leave(self, ctx):
