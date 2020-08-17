@@ -50,10 +50,10 @@ async def status():
 
 @client.event
 async def on_ready():
-    for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
-            client.load_extension(f'cogs.{filename[:-3]}')
-            print(f"Cog \"{filename[:-3].capitalize()}\" has been loaded")
+    cogs = [filename[:-3] for filename in os.listdir('./cogs')]
+    for cog in sorted(cogs):
+        client.load_extension(f'cogs.{cog}')
+        print(f"Cog \"{cog.capitalize()}\" has been loaded")
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}')
@@ -99,7 +99,8 @@ async def check_blacklist(ctx):
 
 @client.check
 async def disable_dm_exec(ctx):
-    if not isinstance(ctx.channel, discord.TextChannel) and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
+    if not isinstance(ctx.channel, discord.TextChannel) and (
+            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
         disabled = discord.Embed(title="Command Disabled in Non Server Channels",
                                  description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
                                              f"in a server",
