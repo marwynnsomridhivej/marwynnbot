@@ -170,7 +170,7 @@ class Utility(commands.Cog):
         async def serverstatsupdate(ctx, names):
             guildSearch = self.client.get_guild(ctx.guild.id)
             for categorySearch in guildSearch.categories:
-                if categorySearch.name == "📊Server Stats📊":
+                if "server stats" in categorySearch.name.lower():
                     for vcs in categorySearch.voice_channels:
                         for channelName in names:
                             await vcs.edit(name=channelName)
@@ -185,9 +185,14 @@ class Utility(commands.Cog):
         client = self.client
         guild = client.get_guild(ctx.guild.id)
 
+        confirm = False
+
         if reset == "reset":
             if guild == ctx.author.guild:
-                if "📊Server Stats📊" not in guild.categories:
+                for category in guild.categories:
+                    if "server stats" in category.name.lower():
+                        confirm = True
+                if not confirm:
                     resetEmbed = discord.Embed(title="📊Server Stats📊 Category does not exist",
                                                description=f"{ctx.author.mention}, "
                                                            f"do `{serverPrefix}serverstats` "
@@ -197,7 +202,7 @@ class Utility(commands.Cog):
                     gcmds.incrCounter(gcmds, ctx, 'serverStats')
 
                 for category in guild.categories:
-                    if category.name == "📊Server Stats📊":
+                    if "server stats" in category.name.lower():
                         resetEmbed = discord.Embed(title=f"{category.name} Reset",
                                                    description=f"{int(len(category.voice_channels))} Channels to be "
                                                                f"deleted",
@@ -238,7 +243,7 @@ class Utility(commands.Cog):
 
         if guild == ctx.author.guild:
             for category in guild.categories:
-                if category.name == "📊Server Stats📊":
+                if "server stats" in category.name.lower():
                     statsEmbed = discord.Embed(title="📊Server Stats📊 Channel Already Exists",
                                                description=f"{ctx.author.mention}, there is no need for duplicate "
                                                            f"channels",
