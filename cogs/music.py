@@ -30,6 +30,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         player = self.client.lavalink.player_manager.get(reaction.message.guild.id)
+        if reaction.emoji not in reactions:
+            return
         if not user.bot and player:
             guild_id = reaction.message.guild.id
             message = self.info[str(guild_id)]['message']
@@ -64,9 +66,9 @@ class Music(commands.Cog):
                                 rewind = discord.Embed(title="Rewind Failed",
                                                        description=f"{user.mention}, this is the first song in queue",
                                                        color=discord.Color.dark_red())
-                                if rewind_message:
+                                try:
                                     rewind_message_sent = await rewind_message.edit(embed=rewind, delete_after=5)
-                                else:
+                                except (discord.NotFound, AttributeError):
                                     rewind_message_sent = await reaction.message.channel.send(embed=rewind,
                                                                                               delete_after=5)
                                 await self.set_value(guild_id, 'rewind_message', rewind_message_sent)
@@ -77,6 +79,8 @@ class Music(commands.Cog):
                             await player.stop()
                             await player.play()
                             rewind = discord.Embed(title="Rewind Successful",
+                                                   description=f"**Now Playing:** [{track['title']}](https://www"
+                                                               f".youtube.com/watch?v={track['identifier']})",
                                                    color=discord.Color.blue())
                         try:
                             rewind_message_sent = await rewind_message.edit(embed=rewind, delete_after=5)
@@ -248,10 +252,12 @@ class Music(commands.Cog):
     async def join(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        if not player:
+            player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
         if ctx.author.voice:
+            player.store("channel", ctx.author.voice.channel.id)
             if not player.is_connected:
                 await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
-                player.store("channel", ctx.author.voice.channel.id)
                 joinEmbed = discord.Embed(title="Successfully Joined Voice Channel",
                                           description=f"{ctx.author.mention}, I have joined {ctx.author.voice.channel.name}",
                                           color=discord.Color.blue())
@@ -271,7 +277,6 @@ class Music(commands.Cog):
                 return
             else:
                 await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
-                player.store("channel", ctx.author.voice.channel.id)
                 joinEmbed = discord.Embed(title="Successfully Moved Voice Channel",
                                           description=f"{ctx.author.mention}, I have moved to {ctx.author.voice.channel.name}",
                                           color=discord.Color.blue())
