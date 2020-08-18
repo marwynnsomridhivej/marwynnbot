@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime
 import discord
@@ -120,6 +121,10 @@ class Music(commands.Cog):
 
     def cog_unload(self):
         self.client.lavalink._event_hooks.clear()
+
+    def init_playlist(self, ctx):
+        init = {f"{ctx.author.id}": {'0': {'name': None, 'urls': []}}}
+        gcmds.json_load(gcmds, 'playlists.json', init)
 
     async def ensure_voice(self, ctx):
         player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -615,6 +620,29 @@ class Music(commands.Cog):
     @commands.group()
     async def playlist(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
+        self.init_playlist(ctx)
+
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+
+        name = file[str(ctx.author.id)][0]['name']
+        urls = file[str(ctx.author.id)][0]['urls']
+        length = len(file[str(ctx.author.id)])
+
+        if name is None and urls is [] and length == 1:
+            no_plist = discord.Embed(title="No Playlists",
+                                     description=f"{ctx.author.mention}, you have not made any playlists yet.",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_plist, delete_after=5)
+
+        names = []
+        tracks = []
+        index = 0
+
+        for _ in range(len(file[str(ctx.author.id)])):
+            names.append(file[str(ctx.author.id)][index]['name'])
+            tracks.append(file[str(ctx.author.id)][index]['urls'])
+            index += 1
 
     @playlist.command()
     async def save(self, ctx):
@@ -628,6 +656,9 @@ class Music(commands.Cog):
     async def add(self, ctx, playlist_id: int, *, url: str):
         return
 
+    @playlist.command()
+    async def remove(self, ctx, playlist_id: int):
+        return
 
 def setup(client):
     client.add_cog(Music(client))
