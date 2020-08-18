@@ -249,9 +249,9 @@ class Music(commands.Cog):
         await gcmds.invkDelete(gcmds, ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
         if ctx.author.voice:
-            player.store("channel", ctx.author.voice.channel.id)
             if not player.is_connected:
                 await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
+                player.store("channel", ctx.author.voice.channel.id)
                 joinEmbed = discord.Embed(title="Successfully Joined Voice Channel",
                                           description=f"{ctx.author.mention}, I have joined {ctx.author.voice.channel.name}",
                                           color=discord.Color.blue())
@@ -271,6 +271,7 @@ class Music(commands.Cog):
                 return
             else:
                 await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
+                player.store("channel", ctx.author.voice.channel.id)
                 joinEmbed = discord.Embed(title="Successfully Moved Voice Channel",
                                           description=f"{ctx.author.mention}, I have moved to {ctx.author.voice.channel.name}",
                                           color=discord.Color.blue())
@@ -605,6 +606,22 @@ class Music(commands.Cog):
         except (discord.NotFound, AttributeError):
             volume_message_sent = await ctx.channel.send(embed=volumeEmbed)
         await self.set_value(ctx.guild.id, "volume_message", volume_message_sent)
+
+    @commands.group()
+    async def playlist(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
+
+    @playlist.command()
+    async def save(self, ctx):
+        return
+
+    @playlist.command()
+    async def edit(self, ctx, playlist_id: int):
+        return
+
+    @playlist.command()
+    async def add(self, ctx, playlist_id: int, *, url: str):
+        return
 
 
 def setup(client):
