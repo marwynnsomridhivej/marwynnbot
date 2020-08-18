@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from datetime import datetime
@@ -9,6 +10,7 @@ from globalcommands import GlobalCMDS as gcmds
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 reactions = ["⏪", "⏯", "⏩", "⏹"]
+plist_reactions = ["💾", "📝"]
 
 
 class Music(commands.Cog):
@@ -123,8 +125,33 @@ class Music(commands.Cog):
         self.client.lavalink._event_hooks.clear()
 
     def init_playlist(self, ctx):
-        init = {f"{ctx.author.id}": {'0': {'name': None, 'urls': []}}}
+        init = {f"{ctx.author.id}": {0: {'name': None, 'urls': []}}}
         gcmds.json_load(gcmds, 'playlists.json', init)
+
+    def save_playlist(self, ctx, index: int, key: str, value):
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        file[str(ctx.author.id)][str(index)][str(key)] = value
+
+        with open('playlists.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+    def get_playlist(self, ctx, index: int):
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            if index is not None:
+                info = (file[str(ctx.author.id)][str(index)]['name'], file[str(ctx.author.id)][str(index)]['urls'])
+            else:
+                info = []
+                incr = 0
+                for _ in range(len(file[str(ctx.author.id)])):
+                    info.append(
+                        (file[str(ctx.author.id)][str(incr)]['name'], file[str(ctx.author.id)][str(incr)]['urls']))
+                    incr += 1
+            f.close()
+        return info
 
     async def ensure_voice(self, ctx):
         player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -201,6 +228,13 @@ class Music(commands.Cog):
                                 description=f"{ctx.author.mention}, I don't have a music player instance started",
                                 color=discord.Color.dark_red())
         return await ctx.channel.send(embed=invalid, delete_after=5)
+
+    async def not_owner(self, ctx):
+        embed = discord.Embed(title="Not Server Owner",
+                              description=f"{ctx.author.mention}, you must be the owner of this server to use this "
+                                          f"command",
+                              color=discord.Color.dark_red())
+        await ctx.channel.send(embed=embed, delete_after=5)
 
     async def set_value(self, guild_id: int, key: str, value):
         try:
@@ -510,10 +544,39 @@ class Music(commands.Cog):
                 queue_message_sent = await ctx.channel.send(embed=queueEmbed)
             await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
+    @commands.command(aliases=['clearqueue', 'qc'])
+    async def queueclear(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
+
+        if ctx.author != ctx.guild.owner:
+            return await self.not_owner(ctx)
+
+        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+
+        if not player:
+            return await self.no_player(ctx)
+
+        if not player.queue:
+            no_queue = discord.Embed(title="Nothing in Queue",
+                                     description=f"{ctx.author.mention}, there is already nothing in my queue",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_queue, delete_after=5)
+
+        player.queue.clear()
+        await self.set_value(ctx.guild.id, 'queue', [])
+
+        cleared = discord.Embed(title="Queue Cleared",
+                                description=f"{ctx.author.mention}, I have cleared the current queue",
+                                color=discord.Color.blue())
+        await ctx.channel.send(embed=cleared, delete_after=5)
+
     @commands.command()
-    @commands.is_owner()
     async def stop(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
+
+        if ctx.author != ctx.guild.owner:
+            return await self.not_owner(ctx)
+
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
@@ -617,40 +680,283 @@ class Music(commands.Cog):
             volume_message_sent = await ctx.channel.send(embed=volumeEmbed)
         await self.set_value(ctx.guild.id, "volume_message", volume_message_sent)
 
-    @commands.group()
+    @commands.group(aliases=['playlists'])
     async def playlist(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
         self.init_playlist(ctx)
 
-        with open('playlists.json', 'r') as f:
-            file = json.load(f)
+        name = self.get_playlist(ctx, 0)[0]
+        urls = self.get_playlist(ctx, 0)[1]
+        length = len(self.get_playlist(ctx, None))
 
-        name = file[str(ctx.author.id)][0]['name']
-        urls = file[str(ctx.author.id)][0]['urls']
-        length = len(file[str(ctx.author.id)])
-
-        if name is None and urls is [] and length == 1:
+        if not name and not urls and length == 1 and ctx.invoked_subcommand is None:
             no_plist = discord.Embed(title="No Playlists",
                                      description=f"{ctx.author.mention}, you have not made any playlists yet.",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_plist, delete_after=5)
 
-        names = []
-        tracks = []
+        if length != 1:
+            spell = "playlists"
+        else:
+            spell = "playlist"
+
+        details = self.get_playlist(ctx, None)
+
         index = 0
 
-        for _ in range(len(file[str(ctx.author.id)])):
-            names.append(file[str(ctx.author.id)][index]['name'])
-            tracks.append(file[str(ctx.author.id)][index]['urls'])
+        description = f"{ctx.author.mention}, you have 💽**{length}** {spell}:\n\n"
+        for name, url in details:
             index += 1
+            if len(url) != 1:
+                spell = "tracks"
+            else:
+                spell = "track"
+            description += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*"
+
+        playlistEmbed = discord.Embed(title=f"{ctx.author.display_name}'s Saved Playlists",
+                                      description=description,
+                                      color=discord.Color.blue())
+        if ctx.invoked_subcommand is None:
+            await ctx.channel.send(embed=playlistEmbed, delete_after=60)
 
     @playlist.command()
+    async def load(self, ctx, *, playlist_name: str):
+        await self.set_value(ctx.guild.id, 'queue', [])
+        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+
+        if not player:
+            return await self.no_player(ctx)
+
+        if not player.is_connected:
+            invalid = discord.Embed(title="Error",
+                                    description=f"{ctx.author.mention}, I am not currently in a voice channel",
+                                    color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=invalid, delete_after=5)
+
+        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+            invalid = discord.Embed(title="Error",
+                                    description=f"{ctx.author.mention}, you can only execute this command when you "
+                                                f"are connected to the same voice channel as I am",
+                                    color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=invalid, delete_after=10)
+
+        if not self.get_playlist(ctx, 0)[0]:
+            no_plist = discord.Embed(title="No Playlists",
+                                     description=f"{ctx.author.mention}, you have not made any playlists yet.",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_plist, delete_after=5)
+
+        index = 0
+        exists = False
+
+        for _ in range(len(self.get_playlist(ctx, None))):
+            if playlist_name == self.get_playlist(ctx, index)[0]:
+                exists = True
+                break
+            else:
+                index += 1
+
+        if not exists:
+            no_plist = discord.Embed(title="Invalid Playlist",
+                                     description=f"{ctx.author.mention}, you don't have any playlists named **{playlist_name}**",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_plist, delete_after=10)
+
+        for item in self.get_playlist(ctx, index)[1]:
+            results = await player.node.get_tracks(item)
+            track = results['tracks'][0]
+            track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
+            player.add(requester=ctx.author.id, track=track)
+            self.info[str(ctx.guild.id)]['queue'].append(track)
+
+        loaded = discord.Embed(title="Playlist Loaded",
+                               description=f"{ctx.author.mention}, I have loaded all tracks to queue from **{playlist_name}**",
+                               color=discord.Color.blue())
+        await ctx.channel.send(embed=loaded, delete_after=10)
+
+    @playlist.command(aliases=['edit'])
     async def save(self, ctx):
-        return
+        self.init_playlist(ctx)
 
-    @playlist.command()
-    async def edit(self, ctx, playlist_id: int):
-        return
+        try:
+            queue = self.info[str(ctx.guild.id)]['queue']
+        except KeyError:
+            queue = None
+
+        if not queue:
+            no_queue = discord.Embed(title="No Queue Available for Saving",
+                                     description=f"{ctx.author.mention}, I cannot save an empty queue as a playlist",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_queue, delete_after=5)
+
+        print(queue)
+
+        urls = [f"https://www.youtube.com/watch?v={item['info']['identifier']}" for item in queue]
+
+        panel = discord.Embed(title="Playlist Save Confirmation",
+                              description=f"{ctx.author.mention}, do you want to save or edit a playlist?\n"
+                                          f"React with {plist_reactions[0]} to save, or {plist_reactions[1]} to edit",
+                              color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel)
+
+        no_panel = discord.Embed(title="Playlist Setup Panel Not Found",
+                                 description=f"{ctx.author.mention}, the playlist setup panel was deleted. Playlist "
+                                             f"saving was cancelled",
+                                 color=discord.Color.dark_red())
+
+        for reaction in plist_reactions:
+            await panel.add_reaction(reaction)
+
+        def reaction_check(reaction, user):
+            if user == ctx.author and reaction.emoji in plist_reactions and reaction.message.id == panel.id:
+                return True
+            else:
+                return False
+
+        def from_user(message):
+            if message.author == ctx.author:
+                return True
+            else:
+                return False
+
+        while True:
+            try:
+                try:
+                    panel_message = await ctx.channel.fetch_message(panel.id)
+                except discord.NotFound:
+                    return await ctx.channel.send(embed=no_panel, delete_after=5)
+                choice = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check,
+                                                                timeout=30)
+                print(choice)
+            except asyncio.TimeoutError:
+                timeout = discord.Embed(title="Save Request Timed Out",
+                                        description=f"{ctx.author.mention}, your save request timed out. Please try again",
+                                        color=discord.Color.blue())
+                return await panel.edit(embed=timeout, delete_after=10)
+            else:
+                if str(choice[0].emoji) == plist_reactions[0]:
+                    await panel.clear_reactions()
+                    action = "save"
+                    break
+                elif str(choice[0].emoji) == plist_reactions[1]:
+                    await panel.clear_reactions()
+                    action = "edit"
+                    break
+                else:
+                    continue
+
+        name = self.get_playlist(ctx, 0)[0]
+        length = len(self.get_playlist(ctx, None))
+
+        edit_desc = "💽**Playlists:**\n\n"
+        incr = 0
+        for item in self.get_playlist(ctx, None):
+            incr += 1
+            if len(self.get_playlist(ctx, incr - 1)[1]) != 1:
+                spell = "tracks"
+            else:
+                spell = "track"
+            edit_desc += f"**{incr}**: {item[0]} ⟶ 🎶{len(item[1])} {spell}"
+
+        if action == "save" or not name:
+            try:
+                getName = discord.Embed(title="Specify the Playlist Name",
+                                        description=f"{ctx.author.mention}, please specify what the playlist name should be",
+                                        color=discord.Color.blue())
+                await panel.edit(embed=getName)
+            except discord.NotFound:
+                await ctx.channel.send(embed=no_panel, delete_after=5)
+            while True:
+                try:
+                    reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                except asyncio.TimeoutError:
+                    timeout = discord.Embed(title="Save Request Timed Out",
+                                            description=f"{ctx.author.mention}, you did not specify a name within the "
+                                                        f"time limit",
+                                            color=discord.Color.blue())
+                    return await panel.edit(embed=timeout, delete_after=10)
+                else:
+                    break
+
+            if not name:
+                index = 0
+            else:
+                index = length
+            saveEmbed = discord.Embed(color=discord.Color.blue())
+            plist_name = reply.content
+            saveEmbed.title = "Saved Playlist"
+            saveEmbed.description = f"Playlist Name: {plist_name}\nTracks: {len(queue)}"
+            try:
+                await panel.edit(embed=saveEmbed, delete_after=10)
+            except discord.NotFound:
+                return await ctx.channel.send(embed=no_panel, delete_after=10)
+            self.save_playlist(ctx, index, "name", plist_name)
+            self.save_playlist(ctx, index, "urls", urls)
+            await reply.delete()
+        else:
+            try:
+                getName = discord.Embed(title="Specify the Playlist Index",
+                                        description=f"{ctx.author.mention}, type the number that is in front of the "
+                                                    f"playlist you want to edit\n\n{edit_desc}",
+                                        color=discord.Color.blue())
+                await panel.edit(embed=getName)
+            except discord.NotFound:
+                return await ctx.channel.send(embed=no_panel, delete_after=5)
+            while True:
+                try:
+                    reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                except asyncio.TimeoutError:
+                    timeout = discord.Embed(title="Save Request Timed Out",
+                                            description=f"{ctx.author.mention}, you did not specify a name within the "
+                                                        f"time limit",
+                                            color=discord.Color.blue())
+                    return await panel.edit(embed=timeout, delete_after=10)
+                else:
+                    try:
+                        index = int(reply.content) - 1
+                        await reply.delete()
+                        break
+                    except ValueError:
+                        continue
+            try:
+                getName = discord.Embed(title="Specify the Playlist Name",
+                                        description=f"{ctx.author.mention}, please specify what the playlist name "
+                                                    f"should be *(enter \"skip\" to keep the playlist's current "
+                                                    f"name)*\n\n**Current Name:** {self.get_playlist(ctx, index)[0]}",
+                                        color=discord.Color.blue())
+                await panel.edit(embed=getName)
+            except discord.NotFound:
+                await ctx.channel.send(embed=no_panel, delete_after=5)
+            while True:
+                try:
+                    name_reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                                                                        timeout=30)
+                except asyncio.TimeoutError:
+                    timeout = discord.Embed(title="Save Request Timed Out",
+                                            description=f"{ctx.author.mention}, you did not specify a name within the "
+                                                        f"time limit",
+                                            color=discord.Color.blue())
+                    return await panel.edit(embed=timeout, delete_after=10)
+                else:
+                    break
+            if name_reply.content != "skip":
+                self.save_playlist(ctx, index, 'name', name_reply.content)
+            await name_reply.delete()
+            self.save_playlist(ctx, index, "urls", urls)
+            info = self.get_playlist(ctx, index)
+            if len(info[1]) != 1:
+                spell = "tracks"
+            else:
+                spell = "track"
+            edited_plist = discord.Embed(title="Successfully Edited Playlist",
+                                         description=f"{ctx.author.mention}, your playlist has been "
+                                                     f"edited:\n\n💽**Playlist Name:** {info[0]}\n"
+                                                     f"🎶**Track Count:** {len(info[1])} {spell}",
+                                         color=discord.Color.blue)
+            try:
+                await panel.edit(embed=edited_plist, delete_after=20)
+            except discord.NotFound:
+                await ctx.channel.send(embed=edited_plist, delete_after=20)
 
     @playlist.command()
     async def add(self, ctx, playlist_id: int, *, url: str):
@@ -659,6 +965,7 @@ class Music(commands.Cog):
     @playlist.command()
     async def remove(self, ctx, playlist_id: int):
         return
+
 
 def setup(client):
     client.add_cog(Music(client))
