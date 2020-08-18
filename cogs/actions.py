@@ -159,7 +159,7 @@ class Actions(commands.Cog):
                                           color=discord.Color.blue())
         await ctx.channel.send(embed=helpEmbed)
 
-    @commands.command()
+    @commands.command(aliases=['BITE'])
     async def bite(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -182,7 +182,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['BLUSH'])
     async def blush(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -205,7 +205,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['BONK'])
     async def bonk(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -228,7 +228,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['BOOP'])
     async def boop(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -251,7 +251,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['BORED'])
     async def bored(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -274,7 +274,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CHASE'])
     async def chase(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -297,7 +297,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CHEER'])
     async def cheer(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -320,7 +320,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['COMFORT'])
     async def comfort(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -343,7 +343,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CRINGE'])
     async def cringe(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -366,7 +366,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CRY'])
     async def cry(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -389,7 +389,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CUDDLE'])
     async def cuddle(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -412,7 +412,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['CUT'])
     async def cut(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -435,7 +435,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['DAB'])
     async def dab(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -458,7 +458,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['DANCE'])
     async def dance(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -481,7 +481,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['DESTROY'])
     async def destroy(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -504,7 +504,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['DIE'])
     async def die(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -527,7 +527,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['DROWN'])
     async def drown(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -550,7 +550,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['EAT'])
     async def eat(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -573,7 +573,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FACEPALM'])
     async def facepalm(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -596,7 +596,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FEED'])
     async def feed(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -619,7 +619,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FLIP'])
     async def flip(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -642,7 +642,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FLIRT'])
     async def flirt(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -665,7 +665,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FORGET'])
     async def forget(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -688,7 +688,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['FRIEND'])
     async def friend(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -711,7 +711,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['GLOMP'])
     async def glomp(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -734,7 +734,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['HANDHOLD'])
     async def handhold(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -757,7 +757,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['HAPPY'])
     async def happy(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -780,7 +780,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['HATE'])
     async def hate(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -803,7 +803,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['HIGHFIVE'])
     async def highfive(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -826,7 +826,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['HUG'])
     async def hug(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -849,7 +849,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['KILL'])
     async def kill(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -872,7 +872,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['KISS'])
     async def kiss(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -895,7 +895,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['LAUGH'])
     async def laugh(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -918,7 +918,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['LICK'])
     async def lick(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -941,7 +941,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['LOVE'])
     async def love(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -964,7 +964,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['LURK'])
     async def lurk(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -987,7 +987,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['MARRY'])
     async def marry(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1010,7 +1010,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['MISS'])
     async def miss(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1033,7 +1033,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['NERVOUS'])
     async def nervous(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1056,7 +1056,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['NO'])
     async def no(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1080,7 +1080,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['NOM'])
     async def nom(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1103,7 +1103,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['NUZZLE'])
     async def nuzzle(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1126,7 +1126,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['PANIC'])
     async def panic(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1149,7 +1149,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['PAT'])
     async def pat(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1172,7 +1172,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['PECK'])
     async def peck(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1195,7 +1195,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['POKE'])
     async def poke(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1218,7 +1218,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['POUT'])
     async def pout(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1241,7 +1241,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['PUNT'])
     async def punt(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1264,7 +1264,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['RUN'])
     async def run(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1287,7 +1287,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['RACE'])
     async def race(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1310,7 +1310,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SAD'])
     async def sad(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1333,7 +1333,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SHOOT'])
     async def shoot(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1356,7 +1356,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SHRUG'])
     async def shrug(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1379,7 +1379,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SIP'])
     async def sip(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1402,7 +1402,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SLAP'])
     async def slap(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1425,7 +1425,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SLEEP'])
     async def sleep(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1448,7 +1448,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SLICE'])
     async def slice(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1471,7 +1471,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['SMUG'])
     async def smug(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1494,7 +1494,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['STAB'])
     async def stab(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1517,7 +1517,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['STARE'])
     async def stare(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1540,7 +1540,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TACKLE'])
     async def tackle(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1563,7 +1563,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TAP'])
     async def tap(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1590,7 +1590,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TASTE'])
     async def taste(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1613,7 +1613,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TALK'])
     async def talk(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1636,7 +1636,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TAUNT'])
     async def taunt(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1659,7 +1659,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TEASE'])
     async def tease(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1682,7 +1682,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['THANK'])
     async def thank(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1708,7 +1708,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['THINK'])
     async def think(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1731,7 +1731,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['THROW'])
     async def throw(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1764,7 +1764,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['THUMBSDOWN'])
     async def thumbsdown(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1787,7 +1787,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['THUMBSUP'])
     async def thumbsup(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1810,7 +1810,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TICKLE'])
     async def tickle(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1833,7 +1833,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TOUCH'])
     async def touch(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1856,7 +1856,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['TRASH'])
     async def trash(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1902,7 +1902,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['UPSET'])
     async def upset(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1925,7 +1925,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WAG'])
     async def wag(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1948,7 +1948,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WAIT'])
     async def wait(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1971,7 +1971,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WAKEUP'])
     async def wakeup(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -1994,7 +1994,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WASH'])
     async def wash(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2017,7 +2017,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WAVE'])
     async def wave(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2040,7 +2040,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WHINE'])
     async def whine(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2063,7 +2063,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WHISPER'])
     async def whisper(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2086,7 +2086,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WINK'])
     async def wink(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2109,7 +2109,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['WORRY'])
     async def worry(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
@@ -2132,7 +2132,7 @@ class Actions(commands.Cog):
                                   user=user)
         return
 
-    @commands.command()
+    @commands.command(aliases=['YES'])
     async def yes(self, ctx, user=None):
         info = await self.get_count_user(ctx, user)
         give = info[0]
