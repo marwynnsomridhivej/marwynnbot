@@ -109,7 +109,6 @@ class Actions(commands.Cog):
                     for j in range(len(response['results'][i]['media'])):
                         getURL.append(response['results'][i]['media'][j]['gif']['url'])
                 url = random.choice(getURL)
-                print(url)
                 await session.close()
 
         embed = discord.Embed(title=title,
