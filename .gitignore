@@ -4,7 +4,6 @@ venv
 logs
 __pycache__
 *.pyc
-.env
 token.yaml
 prefixes.json
 counters.json
