@@ -5,7 +5,6 @@ logs
 __pycache__
 *.pyc
 .env
-token.yaml
 prefixes.json
 counters.json
 balance.json
@@ -14,9 +13,5 @@ blacklist.json
 actionstats.json
 playlists.json
 discord.log
-tenor_api.yaml
-imgur_api.yaml
-cat_api.yaml
-reddit_api.yaml
 Lavalink.jar
 application.yml
