@@ -17,27 +17,17 @@ class Reddit(commands.Cog):
         print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def get_id_secret(self, ctx):
-        try:
-            with open('./reddit_api.yaml', 'r') as f:
-                stream = yaml.full_load(f)
-                client_id = stream[str('client_id')]
-                client_secret = stream[str('client_secret')]
-                user_agent = stream[str('user_agent')]
-            return [client_id, client_secret, user_agent]
-
-        except FileNotFoundError:
-            with open('reddit_api.yaml', 'w') as f:
-                f.write('client_id: CLIENT_ID_FROM_REDDIT_APPLICATION\nclient_secret: '
-                        'CLIENT_SECRET_FROM_REDDIT_APPLICATION')
-            title = "Created File"
-            description = "The file `reddit_api.yaml` was created. Insert your Reddit application's client ID and " \
-                          "secret in the placeholder "
-            color = discord.Color.red()
+        client_id = gcmds.env_check(gcmds, "REDDIT_CLIENT_ID")
+        client_secret = gcmds.env_check(gcmds, "REDDIT_CLIENT_SECRET")
+        user_agent = gcmds.env_check(gcmds, "USER_AGENT")
+        if not client_id or not client_secret or not user_agent:
+            title = "Missing Reddit Client ID or Client Secret or User Agent"
+            description = "Insert your Reddit Client ID, Client Secret, and User Agent in the `.env` file"
             embed = discord.Embed(title=title,
                                   description=description,
-                                  color=color)
-            await ctx.channel.send(embed=embed, delete_after=10)
-            return None
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed, delete_after=10)
+        return [client_id, client_secret, user_agent]
 
     async def embed_template(self, ctx):
         info = await self.get_id_secret(ctx)

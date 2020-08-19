@@ -169,16 +169,15 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
-        try:
-            with open('./tenor_api.yaml', 'r') as f:
-                stream = yaml.full_load(f)
-                api_key = stream[str('api_key')]
-        except FileNotFoundError:
-            with open('tenor_api.yaml', 'w') as f:
-                f.write('api_key: API_KEY_FROM_TENOR')
-            title = "Created File"
-            description = "The file `tenor_api.yaml` was created. Insert your Tenor API Key in the placeholder"
+        api_key = gcmds.env_check(gcmds, "TENOR_API")
+        if not api_key:
+            title = "Missing API Key"
+            description = "Insert your Tenor API Key in the `.env` file"
             color = discord.Color.red()
+            embed = discord.Embed(title=title,
+                                  description=description,
+                                  color=color)
+            return await ctx.channel.send(embed=embed, delete_after=10)
 
         if query is None:
             if toSend:
@@ -210,8 +209,7 @@ class Fun(commands.Cog):
                 else:
                     url = random.choice(getURL)
                 path = f"tenor{str(query)}"
-                await self.imageSend(ctx, path, url=url, toSend=toSend)
-                return
+                return await self.imageSend(ctx, path, url=url, toSend=toSend)
             elif r.status_code == 429:
                 title = "Error Code 429"
                 description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
@@ -232,43 +230,25 @@ class Fun(commands.Cog):
         embed = discord.Embed(title=title,
                               description=description,
                               color=color)
-
         await gcmds.invkDelete(gcmds, ctx)
         await ctx.channel.send(embed=embed)
 
-    @gifSearch.error
-    async def gifSearch_error(self, ctx, error):
-        if isinstance(error, CommandInvokeError):
-            title = "No Tenor API Key"
-            description = "Please paste your Tenor API Key in the file `tenor_api.yaml` in the placeholder"
-            color = discord.Color.red()
-            errorEmbed = discord.Embed(title=title,
-                                       description=description,
-                                       color=color)
-            await ctx.channel.send(embed=errorEmbed, delete_after=20)
-
     @commands.command(aliases=['imgur', 'imgursearch'])
     async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query):
-        try:
-            with open('./imgur_api.yaml', 'r') as f:
-                stream = yaml.full_load(f)
-                clientID = stream[str('Client-ID')]
-        except FileNotFoundError:
-            with open('imgur_api.yaml', 'w') as f:
-                f.write('Client-ID: CLIENT_ID_FROM_IMGUR')
-            title = "Created File"
-            description = "The file `imgur_api.yaml` was created. Insert your Imgur Client ID in the placeholder"
+        client_id = gcmds.env_check(gcmds, "IMGUR_API")
+        if not client_id:
+            title = "Missing Client ID"
+            description = "Insert your Imgur Client ID in the `.env` file"
             color = discord.Color.red()
-            errorEmbed = discord.Embed(title=title,
-                                       description=description,
-                                       color=color)
-            await ctx.channel.send(embed=errorEmbed)
-            return
+            embed = discord.Embed(title=title,
+                                  description=description,
+                                  color=color)
+            return await ctx.channel.send(embed=embed, delete_after=10)
 
         path = f"imgur{str(query)}"
         query = str(query)
         reqURL = f"https://api.imgur.com/3/gallery/search/?q_all={query}"
-        headers = {'Authorization': f'Client-ID {clientID}'}
+        headers = {'Authorization': f'Client-ID {client_id}'}
         r = requests.request("GET", reqURL, headers=headers)
         results = json.loads(r.content)
 
@@ -301,17 +281,6 @@ class Fun(commands.Cog):
 
         await self.imageSend(ctx, path, url=url, toSend=toSend)
 
-    @imgurSearch.error
-    async def imgurSearch_error(self, ctx, error):
-        if isinstance(error, CommandInvokeError):
-            title = "No Imgur Client ID"
-            description = "Please paste your Imgur Client ID in the file `imgur_api.yaml` in the placeholder"
-            color = discord.Color.red()
-            errorEmbed = discord.Embed(title=title,
-                                       description=description,
-                                       color=color)
-            await ctx.channel.send(embed=errorEmbed, delete_after=20)
-
     @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
     async def isabelle(self, ctx, toSend: typing.Optional[int] = None):
         path = "./isabelle"
@@ -324,40 +293,35 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['randomcat', 'cat'])
     async def randomCat(self, ctx, toSend: typing.Optional[int] = None):
-        try:
-            with open('./cat_api.yaml', 'r') as f:
-                stream = yaml.full_load(f)
-                api_key = stream[str('api_key')]
-            headers = {"x-api-key": api_key}
-            if toSend is None:
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get("https://api.thecatapi.com/v1/images/search") as image:
-                        response = await image.json()
-                        search = response[0]
-                        url = search['url']
-            else:
-                url = []
-                for _ in range(toSend):
-                    async with aiohttp.ClientSession(headers=headers) as session:
-                        async with session.get("https://api.thecatapi.com/v1/images/search") as image:
-                            response = await image.json()
-                            search = response[0]
-                            url.append(search['url'])
-            path = "cat"
-            await self.imageSend(ctx, path, url=url, toSend=toSend)
-            return
-        except FileNotFoundError:
-            await gcmds.invkDelete(gcmds, ctx)
-            with open('cat_api.yaml', 'w') as f:
-                f.write('api_key: API_KEY_FROM_THECATAPI')
-            title = "Created File"
-            description = "The file `cat_api.yaml` was created. Insert your TheCatAPI API Key in the placeholder"
+        api_key = gcmds.env_check(gcmds, "CAT_API")
+        if not api_key:
+            title = "Missing API Key"
+            description = "Insert your TheCatAPI Key in the `.env` file"
             color = discord.Color.red()
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-            await ctx.channel.send(embed=embed)
-            return
+            return await ctx.channel.send(embed=embed, delete_after=10)
+
+        headers = {"x-api-key": api_key}
+
+        if toSend is None:
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.get("https://api.thecatapi.com/v1/images/search") as image:
+                    response = await image.json()
+                    search = response[0]
+                    url = search['url']
+        else:
+            url = []
+            for _ in range(toSend):
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get("https://api.thecatapi.com/v1/images/search") as image:
+                        response = await image.json()
+                        search = response[0]
+                        url.append(search['url'])
+        path = "cat"
+        await self.imageSend(ctx, path, url=url, toSend=toSend)
+        return
 
     @commands.command(aliases=['woof', 'dog', 'doggo', 'randomdog'])
     async def randomDog(self, ctx, toSend: typing.Optional[int] = None):
