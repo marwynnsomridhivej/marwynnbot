@@ -123,6 +123,7 @@ class Music(commands.Cog):
 
     def cog_unload(self):
         self.client.lavalink._event_hooks.clear()
+        self.info = {}
 
     def init_playlist(self, ctx):
         init = {f"{ctx.author.id}": {0: {'name': None, 'urls': []}}}
@@ -412,6 +413,14 @@ class Music(commands.Cog):
 
         if not player.is_playing:
             await player.play()
+        else:
+            queue_message = self.info[str(ctx.guild.id)]['queue_message']
+            try:
+                await queue_message.edit(embed=embed)
+                queue_message_sent = await ctx.channel.fetch_message(queue_message.id)
+            except (discord.NotFound, AttributeError):
+                queue_message_sent = await ctx.channel.send(embed=embed)
+            await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
         await self.set_value(ctx.guild.id, "queue", queue)
 
