@@ -1,5 +1,7 @@
 import json
 from asyncio import sleep
+from datetime import datetime
+
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
@@ -11,6 +13,29 @@ class Utility(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.messages = {}
+
+    def load_messages(self):
+        init = {}
+        gcmds.json_load(gcmds, 'requests.json', init)
+        with open('requests.json', 'r') as f:
+            self.messages = json.load(f)
+            f.close()
+
+    def add_entry(self, ctx, message_id: int):
+        self.messages[str(message_id)] = str(ctx.author.id)
+        with open('requests.json', 'w') as f:
+            json.dump(self.messages, f, indent=4)
+            f.close()
+
+    def get_entry(self, message_id: int):
+        return self.messages[str(message_id)]
+
+    def remove_entry(self, message_id: int):
+        del self.messages[str(message_id)]
+        with open('requests.json', 'w') as f:
+            json.dump(self.messages, f, indent=4)
+            f.close()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -87,6 +112,74 @@ class Utility(commands.Cog):
                                    description=description,
                                    color=discord.Color.dark_red())
         await ctx.channel.send(embed=errorEmbed)
+
+    @commands.group()
+    async def request(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
+        self.load_messages()
+        if not ctx.invoked_subcommand:
+            menu = discord.Embed(title="Request Options",
+                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(gcmds, ctx)}request feature` "
+                                             f"to submit a feature request",
+                                 color=discord.Color.blue())
+            await ctx.channel.send(embed=menu)
+
+    @request.command()
+    async def feature(self, ctx, *, feature_message: str = None):
+        if not feature_message:
+            menu = discord.Embed(title="Request Options",
+                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(gcmds, ctx)}request feature` "
+                                             f"to submit a feature request",
+                                 color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=menu)
+
+        timestamp = f"Executed at: " + "{:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+
+        feature_embed = discord.Embed(title="Feature Request",
+                                      description=feature_message,
+                                      color=discord.Color.blue())
+        feature_embed.set_footer(text=timestamp)
+        owner_id = gcmds.env_check(gcmds, "OWNER_ID")
+        if not owner_id:
+            no_api = discord.Embed(title="Missing Owner ID",
+                                   description="This command is disabled",
+                                   color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_api, delete_after=10)
+        owner = self.client.get_user(int(owner_id))
+        message = await owner.send(embed=feature_embed)
+        feature_embed.set_footer(text=f"{timestamp}\nMessage ID: {message.id}")
+        await message.edit()
+        if not feature_message.endswith(" --noreceipt"):
+            feature_embed.set_author(name=f"Copy of your request", icon_url=ctx.author.avatar_url)
+            await ctx.author.send(embed=feature_embed)
+        self.add_entry(ctx, message.id)
+
+    @request.command()
+    async def reply(self, ctx, message_id: int = None, *, reply_message: str = None):
+        if not reply_message or not message_id:
+            menu = discord.Embed(title="Request Options",
+                                 description=f"{ctx.author.mention}, please write specify a valid message ID and a "
+                                             f"reply message",
+                                 color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=menu)
+        user_id = self.get_entry(message_id)
+        user = await self.client.fetch_user(user_id)
+        if reply_message == "spam":
+            reply_message = f"{user.mention}, your request was either not related to a feature, or was categorised as " \
+                            f"spam. Please review the content of your request carefully next time so that it isn't " \
+                            f"marked as this. If you believe this was a mistake, please contact the bot owner: " \
+                            f"{ctx.author.mention}"
+        if reply_message == "no":
+            reply_message = f"{user.mention}, unfortunately, your request could not be considered as of this time."
+        thank = f"{user.mention}, thank you for submitting your feature request. Here is a message from" \
+                f"{ctx.author.mention}, the bot owner:\n\n "
+        timestamp = f"Replied at: " + "{:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        reply_embed = discord.Embed(title=f"Reply From {ctx.author} To Your Request",
+                                    description=thank + reply_message,
+                                    color=discord.Color.blue())
+        reply_embed.set_footer(text=timestamp)
+
+        await user.send(embed=reply_embed)
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
