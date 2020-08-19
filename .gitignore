@@ -12,6 +12,7 @@ gamestats.json
 blacklist.json
 actionstats.json
 playlists.json
+requests.json
 discord.log
 Lavalink.jar
 application.yml
