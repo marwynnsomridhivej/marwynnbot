@@ -1,7 +1,9 @@
 import json
+import os
 import random
 import discord
 import yaml
+from dotenv import load_dotenv
 import aiohttp
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
@@ -82,22 +84,14 @@ class Actions(commands.Cog):
 
             return [give_exec_count, receive_exec_count, user, user_specified]
 
-    async def embed_template(self, ctx, title: str, footer: str, user: discord.User):
+    async def embed_template(self, ctx, title: str, footer: str):
         await gcmds.invkDelete(gcmds, ctx)
-        try:
-            with open('./tenor_api.yaml', 'r') as f:
-                stream = yaml.full_load(f)
-                api_key = stream[str('api_key')]
-        except FileNotFoundError:
-            with open('tenor_api.yaml', 'w') as f:
-                f.write('api_key: API_KEY_FROM_TENOR')
-            no_api = discord.Embed(title="Created File",
-                                   description="The file `tenor_api.yaml` was created. Insert your Tenor API Key in "
-                                               "the placeholder",
+        api_key = gcmds.env_check(gcmds, "TENOR_API")
+        if not api_key:
+            no_api = discord.Embed(title="Missing API Key",
+                                   description="Insert your Tenor API Key in the `.env` file",
                                    color=discord.Color.dark_red())
-            await ctx.channel.send(embed=no_api, delete_after=10)
-
-
+            return await ctx.channel.send(embed=no_api, delete_after=10)
         cmdNameQuery = ctx.command.name
         query = f"anime {cmdNameQuery}"
         async with aiohttp.ClientSession() as session:
