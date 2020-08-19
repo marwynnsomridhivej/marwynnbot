@@ -102,7 +102,7 @@ async def check_blacklist(ctx):
 @client.check
 async def disable_dm_exec(ctx):
     if not isinstance(ctx.channel, discord.TextChannel) and (
-            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
+            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and not await client.is_owner(ctx.author):
         disabled = discord.Embed(title="Command Disabled in Non Server Channels",
                                  description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
                                              f"in a server",
@@ -118,7 +118,7 @@ async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CheckFailure):
         pass
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.message.delete()
+        await gcmds.invkDelete(gcmds, ctx)
         notFound = discord.Embed(title="Command Not Found",
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                              f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
