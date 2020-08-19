@@ -2,10 +2,12 @@ import json
 import logging
 import os
 import random
-import discord
-import yaml
 import socket
+import sys
+
+import discord
 from discord.ext import commands, tasks
+from dotenv import load_dotenv
 
 from globalcommands import GlobalCMDS as gcmds
 
@@ -161,10 +163,10 @@ async def on_guild_remove(guild):
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
-
-with open('./token.yaml', 'r') as f:
-    stream = yaml.full_load(f)
-    token = stream[str('token')]
+if not gcmds.init_env(gcmds):
+    sys.exit("Please put your bot's token inside the created ..env file")
+load_dotenv()
+token = os.getenv('TOKEN')
 client.run(token)
 
 # TODO: Add server info command
