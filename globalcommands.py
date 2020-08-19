@@ -3,6 +3,7 @@ import os
 import discord
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
+             "OWNER_ID=YOUR_ID_HERE"
              "CAT_API=API_KEY_FROM_CAT_API",
              "IMGUR_API=API_KEY_FROM_IMGUR",
              "REDDIT_CLIENT_ID=CLIENT_ID_FROM_REDDIT_API",
@@ -10,6 +11,7 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "USER_AGENT=YOUR_USER_AGENT",
              "TENOR_API=API_KEY_FROM_TENOR"]
 default_env = ["YOUR_BOT_TOKEN",
+               "YOUR_ID_HERE",
                "API_KEY_FROM_CAT_API",
                "API_KEY_FROM_IMGUR",
                "CLIENT_ID_FROM_REDDIT_API",
