@@ -1,14 +1,12 @@
 import json
-import os
 import random
-import discord
-import yaml
-from dotenv import load_dotenv
 import aiohttp
+import discord
 from discord.ext import commands
+
 from globalcommands import GlobalCMDS as gcmds
 
-converter = commands.UserConverter()
+converter = commands.MemberConverter()
 
 
 class Actions(commands.Cog):
@@ -21,7 +19,6 @@ class Actions(commands.Cog):
         print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def get_count_user(self, ctx, user):
-
         try:
             user = await converter.convert(ctx, user)
             if user != ctx.author:
@@ -171,8 +168,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['BLUSH'])
@@ -194,8 +190,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['BONK'])
@@ -217,8 +212,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['BOOP'])
@@ -240,8 +234,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['BORED'])
@@ -263,8 +256,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CHASE'])
@@ -286,8 +278,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CHEER'])
@@ -309,8 +300,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['COMFORT'])
@@ -332,8 +322,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CRINGE'])
@@ -355,8 +344,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CRY'])
@@ -378,8 +366,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CUDDLE'])
@@ -401,8 +388,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['CUT'])
@@ -424,8 +410,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['DAB'])
@@ -447,8 +432,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['DANCE'])
@@ -470,8 +454,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['DESTROY'])
@@ -493,8 +476,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['DIE'])
@@ -516,8 +498,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['DROWN'])
@@ -539,8 +520,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['EAT'])
@@ -562,8 +542,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FACEPALM'])
@@ -585,8 +564,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FEED'])
@@ -608,8 +586,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FLIP'])
@@ -631,8 +608,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FLIRT'])
@@ -654,8 +630,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FORGET'])
@@ -677,8 +652,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['FRIEND'])
@@ -700,8 +674,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['GLOMP'])
@@ -723,8 +696,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['HANDHOLD'])
@@ -746,8 +718,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['HAPPY'])
@@ -769,8 +740,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['HATE'])
@@ -792,8 +762,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['HIGHFIVE'])
@@ -815,8 +784,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['HUG'])
@@ -838,8 +806,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['KILL'])
@@ -861,8 +828,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['KISS'])
@@ -884,8 +850,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['LAUGH'])
@@ -907,8 +872,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['LICK'])
@@ -930,8 +894,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['LOVE'])
@@ -953,8 +916,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['LURK'])
@@ -976,8 +938,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['MARRY'])
@@ -999,8 +960,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['MISS'])
@@ -1022,8 +982,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['NERVOUS'])
@@ -1045,8 +1004,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['NO'])
@@ -1069,8 +1027,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['NOM'])
@@ -1092,8 +1049,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['NUZZLE'])
@@ -1115,8 +1071,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['PANIC'])
@@ -1138,8 +1093,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['PAT'])
@@ -1161,8 +1115,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['PECK'])
@@ -1184,8 +1137,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['POKE'])
@@ -1207,8 +1159,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['POUT'])
@@ -1230,8 +1181,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['PUNT'])
@@ -1253,8 +1203,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['RUN'])
@@ -1276,8 +1225,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['RACE'])
@@ -1299,8 +1247,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SAD'])
@@ -1322,8 +1269,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SHOOT'])
@@ -1345,8 +1291,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SHRUG'])
@@ -1368,8 +1313,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SIP'])
@@ -1391,8 +1335,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SLAP'])
@@ -1414,8 +1357,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SLEEP'])
@@ -1437,8 +1379,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SLICE'])
@@ -1460,8 +1401,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['SMUG'])
@@ -1483,8 +1423,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['STAB'])
@@ -1506,8 +1445,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['STARE'])
@@ -1529,8 +1467,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TACKLE'])
@@ -1552,8 +1489,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TAP'])
@@ -1579,8 +1515,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TASTE'])
@@ -1602,8 +1537,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TALK'])
@@ -1625,8 +1559,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TAUNT'])
@@ -1648,8 +1581,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TEASE'])
@@ -1671,8 +1603,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['THANK'])
@@ -1697,8 +1628,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['THINK'])
@@ -1720,8 +1650,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['THROW'])
@@ -1753,8 +1682,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['THUMBSDOWN'])
@@ -1776,8 +1704,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['THUMBSUP'])
@@ -1799,8 +1726,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TICKLE'])
@@ -1822,8 +1748,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TOUCH'])
@@ -1845,8 +1770,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['TRASH'])
@@ -1868,8 +1792,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['triggered'])
@@ -1891,8 +1814,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['UPSET'])
@@ -1914,8 +1836,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WAG'])
@@ -1937,8 +1858,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WAIT'])
@@ -1960,8 +1880,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WAKEUP'])
@@ -1983,8 +1902,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WASH'])
@@ -2006,8 +1924,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WAVE'])
@@ -2029,8 +1946,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WHINE'])
@@ -2052,8 +1968,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WHISPER'])
@@ -2075,8 +1990,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WINK'])
@@ -2098,8 +2012,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['WORRY'])
@@ -2121,8 +2034,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
     @commands.command(aliases=['YES'])
@@ -2145,8 +2057,7 @@ class Actions(commands.Cog):
 
         await self.embed_template(ctx,
                                   title=title,
-                                  footer=footer,
-                                  user=user)
+                                  footer=footer)
         return
 
 
