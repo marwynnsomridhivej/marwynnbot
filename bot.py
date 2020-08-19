@@ -164,7 +164,7 @@ async def on_guild_remove(guild):
         json.dump(prefixes, f, indent=4)
 
 if not gcmds.init_env(gcmds):
-    sys.exit("Please put your bot's token inside the created ..env file")
+    sys.exit("Please put your bot's token inside the created .env file")
 load_dotenv()
 token = os.getenv('TOKEN')
 client.run(token)
