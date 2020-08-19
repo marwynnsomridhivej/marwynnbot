@@ -22,7 +22,7 @@ class GlobalCMDS:
 
     def init_env(self):
         if not os.path.exists('.env'):
-            with open('./..env', 'w') as f:
+            with open('./.env', 'w') as f:
                 f.write("\n".join(env_write))
                 return False
         return True
