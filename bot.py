@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import random
 import socket
@@ -102,7 +103,8 @@ async def check_blacklist(ctx):
 @client.check
 async def disable_dm_exec(ctx):
     if not isinstance(ctx.channel, discord.TextChannel) and (
-            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and not await client.is_owner(ctx.author):
+            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and not await client.is_owner(
+        ctx.author):
         disabled = discord.Embed(title="Command Disabled in Non Server Channels",
                                  description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
                                              f"in a server",
@@ -124,8 +126,18 @@ async def on_command_error(ctx, error):
                                              f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
                                  color=discord.Color.dark_red())
         await ctx.channel.send(embed=notFound, delete_after=10)
+    elif isinstance(error, commands.CommandOnCooldown):
+        cooldown = discord.Embed(title="Command on Cooldown",
+                                 description=f"{ctx.author.mention}, this command is still on cooldown for {truncate(error.retry_after, 3)} seconds",
+                                 color=discord.Color.dark_red())
+        await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
     else:
         raise error
+
+
+def truncate(number: float, decimal_places: int):
+    stepper = 10.0 ** decimal_places
+    return math.trunc(stepper * number) / stepper
 
 
 @client.event
@@ -162,6 +174,7 @@ async def on_guild_remove(guild):
 
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+
 
 if not gcmds.init_env(gcmds):
     sys.exit("Please put your bot's token inside the created .env file")
