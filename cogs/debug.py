@@ -25,6 +25,13 @@ class Debug(commands.Cog):
     @commands.group(aliases=['flag'])
     async def report(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
+        if not ctx.invoked_subcommand:
+            menu = discord.Embed(title="Report Options",
+                                 description=f"{ctx.author.mention}, here are the options for the report command:\n`["
+                                             f"bug]` - reports a bug\n`[update]` - owner only\n`[userAbuse]` - "
+                                             f"reports user from mention\n`[serverabuse] - reports server from ID`",
+                                 color=discord.Color.blue())
+            await ctx.channel.send(embed=menu)
 
     @report.command(aliases=['issue'])
     async def bug(self, ctx, *, bug_message):
@@ -49,16 +56,16 @@ class Debug(commands.Cog):
             message = await marwynnbot_channel.send(embed=bugEmbed)
             await message.publish()
 
-    @report.command(aliases=['server', 'guild'])
+    @report.command(aliases=['server', 'guild', 'serverabuse'])
     async def serverAbuse(self, ctx, *, abuse_message):
         return
 
-    @report.command(aliases=['user', 'member'])
+    @report.command(aliases=['user', 'member', 'userabuse'])
     async def userAbuse(self, ctx, *, abuse_message):
         return
 
     @report.command(aliases=['fix', 'patch'])
-    async def update(self, ctx, *, update_message):
+    async def update(self, ctx, *, update_message=None):
         if not await self.client.is_owner(ctx.author):
             insuf = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, you must be the bot owner to use this command",
