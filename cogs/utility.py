@@ -180,6 +180,7 @@ class Utility(commands.Cog):
         reply_embed.set_footer(text=timestamp)
 
         await user.send(embed=reply_embed)
+        await ctx.author.send(embed=reply_embed, delete_after=60)
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
