@@ -2,16 +2,43 @@ import json
 import os
 import discord
 
+env_write = ["TOKEN=YOUR_BOT_TOKEN",
+             "CAT_API=API_KEY_FROM_CAT_API",
+             "IMGUR_API=API_KEY_FROM_IMGUR",
+             "REDDIT_CLIENT_ID=CLIENT_ID_FROM_REDDIT_API",
+             "REDDIT_CLIENT_SECRET=CLIENT_SECRET_FROM_REDDIT_API",
+             "USER_AGENT=YOUR_USER_AGENT",
+             "TENOR_API=API_KEY_FROM_TENOR"]
+default_env = ["YOUR_BOT_TOKEN",
+               "API_KEY_FROM_CAT_API",
+               "API_KEY_FROM_IMGUR",
+               "CLIENT_ID_FROM_REDDIT_API",
+               "CLIENT_SECRET_FROM_REDDIT_API",
+               "YOUR_USER_AGENT",
+               "API_KEY_FROM_TENOR"]
+
 
 class GlobalCMDS:
 
-    def file_check(self, filenamepath, init):
+    def init_env(self):
+        if not os.path.exists('.env'):
+            with open('./..env', 'w') as f:
+                f.write("\n".join(env_write))
+                return False
+        return True
+
+    def env_check(self, key: str):
+        if not self.init_env(self) or os.getenv(key) in default_env:
+            return False
+        return os.getenv(key)
+
+    def file_check(self, filenamepath: str, init):
         if not os.path.exists(filenamepath):
             with open(filenamepath, 'w') as f:
                 for string in init:
                     f.write(string)
 
-    def incrCounter(self, ctx, cmdName):
+    def incrCounter(self, ctx, cmdName: str):
 
         init = {'Server': {}, 'Global': {}}
 
@@ -47,7 +74,7 @@ class GlobalCMDS:
         if isinstance(ctx.channel, discord.TextChannel) and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
-    async def msgDelete(self, message):
+    async def msgDelete(self, message: discord.Message):
         if isinstance(message.channel, discord.TextChannel) and message.guild.me.guild_permissions.manage_messages:
             await message.delete()
 
@@ -71,7 +98,7 @@ class GlobalCMDS:
 
         return prefixes[str(ctx.guild.id)]
 
-    def ratio(self, user, filenamepath, gameName):
+    def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:
             file = json.load(f)
             try:
