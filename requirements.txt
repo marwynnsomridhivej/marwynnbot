@@ -1,7 +1,7 @@
-PyYAML==5.3.1
 requests==2.24.0
 numpy==1.19.1
 num2words==0.5.10
 praw~=7.1.0
 aiohttp~=3.6.2
 lavalink~=3.1.2
+python-dotenv~=0.14.0
