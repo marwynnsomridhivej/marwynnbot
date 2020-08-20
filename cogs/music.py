@@ -20,9 +20,15 @@ class Music(commands.Cog):
         self.info = {}
 
         if not hasattr(client, 'lavalink'):
-            client.lavalink = lavalink.Client(client.user.id)
-            client.lavalink.add_node('localhost', 42424, 'password', 'na', 'default-node')
-            client.add_listener(client.lavalink.voice_update_handler, 'on_socket_response')
+            ip = gcmds.env_check(gcmds, "LAVALINK_IP")
+            port = gcmds.env_check(gcmds, "LAVALINK_PORT")
+            password = gcmds.env_check(gcmds, "LAVALINK_PASSWORD")
+            if not ip or not port or not password:
+                pass
+            else:
+                client.lavalink = lavalink.Client(client.user.id)
+                client.lavalink.add_node(ip, port, password, 'na', 'default-node', name="lavalink")
+                client.add_listener(client.lavalink.voice_update_handler, 'on_socket_response')
 
         lavalink.add_event_hook(self.track_hook)
         lavalink.add_event_hook(self.update_play)
@@ -198,8 +204,10 @@ class Music(commands.Cog):
         if isinstance(event, lavalink.events.QueueEndEvent):
             guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
-        if isinstance(event, lavalink.exceptions.NodeException):
-            print("Test")
+        if isinstance(event, lavalink.events.NodeConnectedEvent):
+            print(f"Connected to Lavalink Node \"{event.node.name}\"@{event.node.host}:{event.node.port}")
+        if isinstance(event, lavalink.events.NodeDisconnectedEvent):
+            print(f"Disconnected from Node {event.node.name} with Code {event.code} for {event.reason}")
 
     async def update_play(self, event):
         if isinstance(event, lavalink.events.TrackStartEvent):
