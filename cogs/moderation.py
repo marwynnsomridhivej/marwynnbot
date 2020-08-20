@@ -38,17 +38,8 @@ class Moderation(commands.Cog):
         await ctx.channel.send(embed=clearEmbed, delete_after=5)
         gcmds.incrCounter(gcmds, ctx, 'chatclean')
 
-    @chatclean.error
-    async def chatclean_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            clearError = discord.Embed(title="Insufficient User Permissions",
-                                       description=f'{ctx.author.mention}, you need the \"Manage Messages\" '
-                                                   f'permission to clear messages from chat.',
-                                       color=discord.Color.dark_red())
-            await ctx.channel.send(embed=clearError)
-
     @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         await gcmds.invkDelete(gcmds, ctx)
@@ -80,22 +71,8 @@ class Moderation(commands.Cog):
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
         gcmds.incrCounter(gcmds, ctx, 'mute')
 
-    @mute.error
-    async def mute_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            muteError = discord.Embed(title="Insufficient User Permissions",
-                                      description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
-                                                  " this command",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=muteError)
-        if isinstance(error, BotMissingPermissions):
-            muteError = discord.Embed(title="Insufficient Bot Permissions",
-                                      description="I need the Administrator permission to mute users",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=muteError)
-
     @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         await gcmds.invkDelete(gcmds, ctx)
@@ -120,22 +97,8 @@ class Moderation(commands.Cog):
                 await ctx.channel.send(embed=unmuteEmbed)
                 gcmds.incrCounter(gcmds, ctx, 'unmute')
 
-    @unmute.error
-    async def unmute_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            muteError = discord.Embed(title="Insufficient User Permissions",
-                                      description=f"{ctx.author.mention}, you need the Manage Roles permission to use"
-                                                  " this command",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=muteError)
-        if isinstance(error, BotMissingPermissions):
-            muteError = discord.Embed(title="Insufficient Bot Permissions",
-                                      description="I need the Administrator permission to unmute users",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=muteError)
-
     @commands.command()
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason='Unspecified'):
         await gcmds.invkDelete(gcmds, ctx)
@@ -151,23 +114,8 @@ class Moderation(commands.Cog):
             await ctx.channel.send(embed=kickEmbed)
             gcmds.incrCounter(gcmds, ctx, 'kick')
 
-    @kick.error
-    async def kick_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            kickError = discord.Embed(title='Insufficient User Permissions',
-                                      description=f'{ctx.author.mention}, you are missing the required perms to kick '
-                                                  f'users! Make sure you have the kick members permission!',
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=kickError)
-        if isinstance(error, BotMissingPermissions):
-            kickError = discord.Embed(title='Insufficient Bot Permissions',
-                                      description="I require the \"Administrator\" permission to kick users! Please "
-                                                  "check my permissions.",
-                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=kickError)
-
     @commands.command()
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, members: commands.Greedy[discord.Member], days: typing.Optional[int] = 0, *,
                   reason='Unspecified'):
@@ -189,23 +137,8 @@ class Moderation(commands.Cog):
             await ctx.channel.send(embed=banEmbed)
             gcmds.incrCounter(gcmds, ctx, 'ban')
 
-    @ban.error
-    async def ban_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            banError = discord.Embed(title='Insufficient User Permissions',
-                                     description=f'{ctx.author.mention}, you are missing the required perms to ban '
-                                                 f'users! Make sure you have the ban members permission!',
-                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=banError)
-        if isinstance(error, BotMissingPermissions):
-            banError = discord.Embed(title='Insufficient Bot Permissions',
-                                     description="I require the \"Administrator\" permission to ban users! Please "
-                                                 "check my permissions.",
-                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=banError)
-
     @commands.command()
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, users: commands.Greedy[discord.User]):
         await gcmds.invkDelete(gcmds, ctx)
@@ -242,21 +175,6 @@ class Moderation(commands.Cog):
                                     inline=False)
                 await ctx.channel.send(embed=notBanned, delete_after=5)
                 gcmds.incrCounter(gcmds, ctx, 'unban')
-
-    @unban.error
-    async def unban_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            unbanError = discord.Embed(title='Insufficient User Permissions',
-                                       description=f'{ctx.author.mention}, you are missing the required perms to '
-                                                   f'unban users! Make sure you have the ban members permission!',
-                                       color=discord.Color.dark_red())
-            await ctx.channel.send(embed=unbanError)
-        if isinstance(error, BotMissingPermissions):
-            unbanError = discord.Embed(title='Insufficient Bot Permissions',
-                                       description="I require the \"Administrator\" permission to unban users! Please "
-                                                   "check my permissions.",
-                                       color=discord.Color.dark_red())
-            await ctx.channel.send(embed=unbanError)
 
     @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
     async def modsOnline(self, ctx):
