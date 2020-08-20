@@ -263,6 +263,26 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                specialCases=specialCases)
 
+    @help.command(aliases=['randomcat', 'cat'])
+    async def randomCat(self, ctx):
+        commandName = "RandomDog"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}randomcat [optional amount]`"
+        specialCases = "If specified, `[optional amount]` is limited to at most 50. Otherwise, defaults to 1"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['woof', 'dog', 'doggo', 'randomdog'])
+    async def randomDog(self, ctx):
+        commandName = "RandomDog"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}randomdog [optional amount]`"
+        specialCases = "If specified, `[optional amount]` is limited to at most 50. Otherwise, defaults to 1"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
     @help.command()
     async def say(self, ctx):
         commandName = 'Say'
@@ -284,6 +304,17 @@ class Help(commands.Cog):
     # =================================================
     # Games
     # =================================================
+
+    @help.command(aliases=['bal'])
+    async def balance(self, ctx):
+        commandName = "Balance"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}balance [optional members @mentions]`"
+        specialCases = "If `[optional members @mentions]` is specified, it will display the balances for only those " \
+                       "members. If unspecified, defaults to your own balance "
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
 
     @help.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx):
@@ -374,7 +405,7 @@ class Help(commands.Cog):
         commandName = "ChatClean"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}chatclean [amount] [optional user @mention]`"
         userPerms = "`Manage Messages`"
-        botPerms = f"`{userPerms}` or `Administrator`"
+        botPerms = userPerms
         specialCases = "When clearing chat indiscriminately, you can eliminate the `[amount]` argument and only 1 " \
                        "message will be cleared.\n\nWhen an `[optional user @mention]` is specified, the `[amount]` " \
                        "must also be specified."
@@ -390,7 +421,7 @@ class Help(commands.Cog):
         commandName = "Mute"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}mute [user @mentions] [optional reason]`"
         userPerms = "`Manage Roles`"
-        botPerms = "`Administrator`"
+        botPerms = userPerms
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -402,7 +433,7 @@ class Help(commands.Cog):
         commandName = "Unmute"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}unmute [user @mentions] [optional reason]`"
         userPerms = "`Manage Roles`"
-        botPerms = "`Administrator`"
+        botPerms = userPerms
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -414,7 +445,7 @@ class Help(commands.Cog):
         commandName = "Kick"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}kick [user @mentions] [optional reason]`"
         userPerms = "`Kick Members`"
-        botPerms = f"`{userPerms}` or `Administrator`"
+        botPerms = userPerms
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -426,7 +457,7 @@ class Help(commands.Cog):
         commandName = "Ban"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}ban [user @mentions] [optional deleteMessageDays] [optional reason]`"
         userPerms = "`Ban Members`"
-        botPerms = f"`{userPerms}` or `Administrator`"
+        botPerms = userPerms
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -438,7 +469,7 @@ class Help(commands.Cog):
         commandName = "Unban"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}ban [user @mentions or users + discriminators] [optional reason]`"
         userPerms = "`Unban Members`"
-        botPerms = f"`{userPerms}` or `Administrator`"
+        botPerms = userPerms
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -477,10 +508,75 @@ class Help(commands.Cog):
                                specialCases=specialCases)
 
     @help.command()
+    async def play(self, ctx):
+        commandName = "Play"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}play [query or url]`"
+        specialCases = "`[query or url]` currently only supports YouTube queries and links. You can play livestreams " \
+                       "as well"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command()
+    async def queue(self, ctx):
+        commandName = "Queue"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}queue [query or url]`"
+        specialCases = "`[query or url]` currently only supports YouTube queries and links. You can play livestreams " \
+                       "as well"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['clearqueue', 'qc'])
+    async def queueclear(self, ctx):
+        commandName = "Queue"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}queueclear"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
+
+    @help.command()
+    async def stop(self, ctx):
+        commandName = "Stop"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}stop`"
+        userPerms = "`Bot Owner`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms)
+
+    @help.command()
     async def leave(self, ctx):
         commandName = "Leave"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}leave`"
         specialCases = "You must currently be connected to a voice channel in order to use this command"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command()
+    async def volume(self, ctx):
+        commandName = "Volume"
+        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}volume [integer]"
+        specialCases = "``[integer]` must be a valid integer between 1 - 100"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['playlists'])
+    async def playlist(self, ctx):
+        commandName = "Playlist"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}playlist [optional operation]`"
+        specialCases = "If `[optional operation]` is unspecified, it displays your saved playlists\n\n" \
+                       "Valid arguments for `[optional operation]`:\n" \
+                       "`add [playlistID] [url]` - adds track to playlist *(under development)*\n" \
+                       "`load [playlistName]` - loads a playlist to queue\n" \
+                       "`save` - saves current queue as a new playlist *alias=edit*\n" \
+                       "`remove` - deletes a playlist *(under development)* *aliase=delete*"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -502,6 +598,14 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                specialCases=specialCases)
+
+    @help.command()
+    async def request(self, ctx):
+        commandName = "Request"
+        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}request"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     @help.command(aliases=['p', 'checkprefix', 'prefix', 'prefixes'])
     async def _prefix(self, ctx):
@@ -574,6 +678,38 @@ class Help(commands.Cog):
                                exampleOutput=exampleOutput,
                                userPerms=userPerms,
                                botPerms=botPerms,
+                               specialCases=specialCases)
+
+    # =================================================
+    # Reactions
+    # =================================================
+
+    @help.command()
+    async def reactionrole(self, ctx):
+        commandName = "ReactionRole"
+        syntaxMessage = ""
+        specialCases = "*Currently under development*"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    # =================================================
+    # Reddit
+    # =================================================
+
+    @help.command(aliases=['reddithelp'])
+    async def reddit(self, ctx):
+        commandName = "RedditHelp"
+        syntaxMessage = f"{gcmds.prefix(gcmds, ctx)}reddit"
+        specialCases = "This command will bring up the reddit help panel where all the reddit commands are documented." \
+                       "Please note that the name of the commands corresponds to the name of the subreddit the images " \
+                       "are being pulled from. I have provided aliases so that those who are uncomfortable with the " \
+                       "names of some subreddits can use a non-suggestive name to invoke the command\n\n" \
+                       "**All of the images pulled are SFW**"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
                                specialCases=specialCases)
 
     # =================================================
@@ -651,6 +787,28 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                userPerms=userPerms,
                                specialCases=specialCases)
+
+    @help.command(aliases=['fleave'])
+    async def forceleave(self, ctx):
+        commandName = "ForceLeave"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}forceleave [optional guild ID]`"
+        userPerms = "`Bot Owner`"
+        specialCases = "If `[optional guild id]` is not specified, the bot will use the current guild's ID"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms,
+                               specialCases=specialCases)
+
+    @help.command(aliases=['dm', 'privatemessage'])
+    async def privateMessage(self, ctx):
+        commandName = "PrivateMessage"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}privatemessage [user ID] [message]`"
+        userPerms = "`Bot Owner`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               userPerms=userPerms)
 
 
 def setup(client):
