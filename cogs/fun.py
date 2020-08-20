@@ -312,6 +312,8 @@ class Fun(commands.Cog):
                     search = response[0]
                     url = search['url']
         else:
+            if toSend > 50:
+                toSend = 50
             url = []
             for _ in range(toSend):
                 async with aiohttp.ClientSession(headers=headers) as session:
