@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 import discord
 import lavalink
-from discord.ext import commands
+from discord.ext import commands, tasks
 from globalcommands import GlobalCMDS as gcmds
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
@@ -139,33 +139,64 @@ class Music(commands.Cog):
         self.info = {}
 
     def init_playlist(self, ctx):
-        init = {f"{ctx.author.id}": {0: {'name': None, 'urls': []}}}
+        init = {f"{ctx.author.id}": {None: {'urls': []}}}
         gcmds.json_load(gcmds, 'playlists.json', init)
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            if len(file[str(ctx.author.id)]) > 0:
+                return
+            else:
+                file[str(ctx.author.id)] = {None: {'urls': []}}
+                with open('playlists.json', 'w') as g:
+                    json.dump(file, g, indent=4)
 
-    def save_playlist(self, ctx, index: int, key: str, value):
+    def save_playlist(self, ctx, key: str, value: list):
         with open('playlists.json', 'r') as f:
             file = json.load(f)
             f.close()
 
-        file[str(ctx.author.id)][str(index)][str(key)] = value
+        try:
+            file[str(ctx.author.id)][str(key)]['urls'] = value
+        except KeyError:
+            prev = file[str(ctx.author.id)]
+            prev.update({f"{str(key)}": {'urls': value}})
 
         with open('playlists.json', 'w') as g:
             json.dump(file, g, indent=4)
 
-    def get_playlist(self, ctx, index: int):
+    def get_playlist(self, ctx, key: str):
         with open('playlists.json', 'r') as f:
             file = json.load(f)
-            if index is not None:
-                info = (file[str(ctx.author.id)][str(index)]['name'], file[str(ctx.author.id)][str(index)]['urls'])
+            if key is not None:
+                if key in file[str(ctx.author.id)]:
+                    name = key
+                    urls = file[str(ctx.author.id)][str(key)]['urls']
+                else:
+                    name = None
+                    urls = None
+                info = (name, urls)
             else:
-                info = []
-                incr = 0
-                for _ in range(len(file[str(ctx.author.id)])):
-                    info.append(
-                        (file[str(ctx.author.id)][str(incr)]['name'], file[str(ctx.author.id)][str(incr)]['urls']))
-                    incr += 1
+                info = [(item, file[str(ctx.author.id)][item]['urls']) for item in file[str(ctx.author.id)].keys()]
             f.close()
         return info
+
+    def check_playlist(self, ctx, key: str):
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            if not key in file[str(ctx.author.id)]:
+                return False
+            return True
+
+    def remove_playlist(self, ctx, key: str):
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            try:
+                del file[str(ctx.author.id)][key]
+                with open('playlists.json', 'w') as g:
+                    json.dump(file, g, indent=4)
+                return True
+            except KeyError:
+                return False
 
     async def ensure_voice(self, ctx):
         player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -592,7 +623,19 @@ class Music(commands.Cog):
         cleared = discord.Embed(title="Queue Cleared",
                                 description=f"{ctx.author.mention}, I have cleared the current queue",
                                 color=discord.Color.blue())
-        await ctx.channel.send(embed=cleared, delete_after=5)
+
+        try:
+            queue_message = self.info[str(ctx.guild.id)]['queue_message']
+        except KeyError:
+            await self.set_value(ctx.guild.id, "queue_message", None)
+            queue_message = self.info[str(ctx.guild.id)]['queue_message']
+
+        try:
+            await queue_message.edit(embed=cleared)
+            queue_message_sent = await ctx.channel.fetch_message(queue_message.id)
+        except (discord.NotFound, AttributeError):
+            queue_message_sent = await ctx.channel.send(embed=cleared)
+        await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
     @commands.command()
     async def stop(self, ctx):
@@ -709,11 +752,11 @@ class Music(commands.Cog):
         await gcmds.invkDelete(gcmds, ctx)
         self.init_playlist(ctx)
 
-        name = self.get_playlist(ctx, 0)[0]
-        urls = self.get_playlist(ctx, 0)[1]
+        name = self.get_playlist(ctx, None)[0][0]
+        urls = self.get_playlist(ctx, None)[0][1]
         length = len(self.get_playlist(ctx, None))
 
-        if not name and not urls and length == 1 and ctx.invoked_subcommand is None:
+        if name == "null" and not urls and length == 1 and ctx.invoked_subcommand is None:
             no_plist = discord.Embed(title="No Playlists",
                                      description=f"{ctx.author.mention}, you have not made any playlists yet.",
                                      color=discord.Color.dark_red())
@@ -735,7 +778,7 @@ class Music(commands.Cog):
                 spell = "tracks"
             else:
                 spell = "track"
-            description += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*"
+            description += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*\n"
 
         playlistEmbed = discord.Embed(title=f"{ctx.author.display_name}'s Saved Playlists",
                                       description=description,
@@ -744,7 +787,7 @@ class Music(commands.Cog):
             await ctx.channel.send(embed=playlistEmbed, delete_after=60)
 
     @playlist.command()
-    async def load(self, ctx, *, playlist_name: str):
+    async def load(self, ctx, *, playlist_name: str = None):
         await self.set_value(ctx.guild.id, 'queue', [])
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
@@ -764,17 +807,23 @@ class Music(commands.Cog):
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=10)
 
-        if not self.get_playlist(ctx, 0)[0]:
+        if self.get_playlist(ctx, None)[0][0] == 'null' and not self.get_playlist(ctx, None)[0][1]:
             no_plist = discord.Embed(title="No Playlists",
                                      description=f"{ctx.author.mention}, you have not made any playlists yet.",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_plist, delete_after=5)
 
+        if playlist_name is None:
+            no_name = discord.Embed(title="Invalid Playlist Name",
+                                    description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{gcmds.prefix(gcmds, ctx)}playlist` to get a list of your currently saved playlists",
+                                    color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_name, delete_after=10)
+
         index = 0
         exists = False
 
         for _ in range(len(self.get_playlist(ctx, None))):
-            if playlist_name == self.get_playlist(ctx, index)[0]:
+            if playlist_name == self.get_playlist(ctx, None)[index][0]:
                 exists = True
                 break
             else:
@@ -786,7 +835,9 @@ class Music(commands.Cog):
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_plist, delete_after=10)
 
-        for item in self.get_playlist(ctx, index)[1]:
+        print(self.get_playlist(ctx, playlist_name)[0])
+
+        for item in self.get_playlist(ctx, playlist_name)[1]:
             results = await player.node.get_tracks(item)
             track = results['tracks'][0]
             track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
@@ -812,8 +863,6 @@ class Music(commands.Cog):
                                      description=f"{ctx.author.mention}, I cannot save an empty queue as a playlist",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_queue, delete_after=5)
-
-        print(queue)
 
         urls = [f"https://www.youtube.com/watch?v={item['info']['identifier']}" for item in queue]
 
@@ -869,20 +918,19 @@ class Music(commands.Cog):
                 else:
                     continue
 
-        name = self.get_playlist(ctx, 0)[0]
-        length = len(self.get_playlist(ctx, None))
+        name = self.get_playlist(ctx, None)[0][0]
 
         edit_desc = "💽**Playlists:**\n\n"
         incr = 0
         for item in self.get_playlist(ctx, None):
             incr += 1
-            if len(self.get_playlist(ctx, incr - 1)[1]) != 1:
+            if len(item[1]) != 1:
                 spell = "tracks"
             else:
                 spell = "track"
-            edit_desc += f"**{incr}**: {item[0]} ⟶ 🎶{len(item[1])} {spell}"
+            edit_desc += f"**{incr}**: {item[0]} ⟶ 🎶{len(item[1])} {spell}\n"
 
-        if action == "save" or not name:
+        if action == "save" or name == "null":
             try:
                 getName = discord.Embed(title="Specify the Playlist Name",
                                         description=f"{ctx.author.mention}, please specify what the playlist name should be",
@@ -902,26 +950,23 @@ class Music(commands.Cog):
                 else:
                     break
 
-            if not name:
-                index = 0
-            else:
-                index = length
             saveEmbed = discord.Embed(color=discord.Color.blue())
             plist_name = reply.content
             saveEmbed.title = "Saved Playlist"
-            saveEmbed.description = f"Playlist Name: {plist_name}\nTracks: {len(queue)}"
+            saveEmbed.description = f"💽Playlist Name: {plist_name}\n🎶Tracks: {len(queue)}"
             try:
                 await panel.edit(embed=saveEmbed, delete_after=10)
             except discord.NotFound:
                 return await ctx.channel.send(embed=no_panel, delete_after=10)
-            self.save_playlist(ctx, index, "name", plist_name)
-            self.save_playlist(ctx, index, "urls", urls)
+            self.save_playlist(ctx, plist_name, urls)
+            if name == "null":
+                self.remove_playlist(ctx, 'null')
             await reply.delete()
         else:
             try:
                 getName = discord.Embed(title="Specify the Playlist Index",
-                                        description=f"{ctx.author.mention}, type the number that is in front of the "
-                                                    f"playlist you want to edit\n\n{edit_desc}",
+                                        description=f"{ctx.author.mention}, type the name of the playlist you want to "
+                                                    f"edit:\n\n{edit_desc}",
                                         color=discord.Color.blue())
                 await panel.edit(embed=getName)
             except discord.NotFound:
@@ -936,17 +981,16 @@ class Music(commands.Cog):
                                             color=discord.Color.blue())
                     return await panel.edit(embed=timeout, delete_after=10)
                 else:
-                    try:
-                        index = int(reply.content) - 1
-                        await reply.delete()
-                        break
-                    except ValueError:
+                    name = reply.content
+                    await reply.delete()
+                    if not self.check_playlist(ctx, name):
                         continue
+                    break
             try:
-                getName = discord.Embed(title="Specify the Playlist Name",
+                getName = discord.Embed(title="Change Playlist Name",
                                         description=f"{ctx.author.mention}, please specify what the playlist name "
                                                     f"should be *(enter \"skip\" to keep the playlist's current "
-                                                    f"name)*\n\n**Current Name:** {self.get_playlist(ctx, index)[0]}",
+                                                    f"name)*\n\n**Current Name:** {self.get_playlist(ctx, name)[0]}",
                                         color=discord.Color.blue())
                 await panel.edit(embed=getName)
             except discord.NotFound:
@@ -964,10 +1008,16 @@ class Music(commands.Cog):
                 else:
                     break
             if name_reply.content != "skip":
-                self.save_playlist(ctx, index, 'name', name_reply.content)
+                plist_name = name_reply.content
+                self.save_playlist(ctx, plist_name, self.get_playlist(ctx, name)[1])
+                self.remove_playlist(ctx, name)
+
+            else:
+                plist_name = name
             await name_reply.delete()
-            self.save_playlist(ctx, index, "urls", urls)
-            info = self.get_playlist(ctx, index)
+
+            info = self.get_playlist(ctx, plist_name)
+
             if len(info[1]) != 1:
                 spell = "tracks"
             else:
@@ -976,7 +1026,7 @@ class Music(commands.Cog):
                                          description=f"{ctx.author.mention}, your playlist has been "
                                                      f"edited:\n\n💽**Playlist Name:** {info[0]}\n"
                                                      f"🎶**Track Count:** {len(info[1])} {spell}",
-                                         color=discord.Color.blue)
+                                         color=discord.Color.blue())
             try:
                 await panel.edit(embed=edited_plist, delete_after=20)
             except discord.NotFound:
@@ -1002,11 +1052,11 @@ class Music(commands.Cog):
             else:
                 return False
 
-        name = self.get_playlist(ctx, 0)[0]
-        urls = self.get_playlist(ctx, 0)[1]
+        name = self.get_playlist(ctx, None)[0][0]
+        urls = self.get_playlist(ctx, None)[0][1]
         length = len(self.get_playlist(ctx, None))
 
-        if not name and not urls and length == 1:
+        if name == "null" and not urls and length == 1:
             no_plist = discord.Embed(title="No Playlists",
                                      description=f"{ctx.author.mention}, you have not made any playlists yet.",
                                      color=discord.Color.dark_red())
@@ -1024,7 +1074,7 @@ class Music(commands.Cog):
                 spell = "tracks"
             else:
                 spell = "track"
-            user_playlists += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*"
+            user_playlists += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*\n"
 
         embed = discord.Embed(title="Delete Playlist",
                               description=user_playlists,
@@ -1056,7 +1106,7 @@ class Music(commands.Cog):
                     return await panel.edit(embed=cancelled, delete_after=10)
                 valid = False
                 for names, urls in details:
-                    if choice.content.lower() == names:
+                    if choice.content == names:
                         name = choice.content
                         valid = True
                         break
@@ -1065,13 +1115,19 @@ class Music(commands.Cog):
                     break
                 continue
 
+        embed.description = "React with ✅ to confirm or 🛑 to cancel playlist deletion"
+
         while True:
             try:
                 try:
                     panel_message = await ctx.channel.fetch_message(panel.id)
+                    await panel_message.edit(embed=embed)
+                    for reaction in plist_delete_reactions:
+                        await panel.add_reaction(reaction)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                reacted = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check, timeout=30)
+                reacted = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check,
+                                                                 timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Remove Request Timed Out",
                                         description=f"{ctx.author.mention}, you did not react within the time limit",
@@ -1090,7 +1146,19 @@ class Music(commands.Cog):
                     continue
 
         if action == "confirm":
-            return
+            test = self.remove_playlist(ctx, name)
+            print(test)
+            edited = discord.Embed(title="Deleted Playlist",
+                                   description=f"{ctx.author.mention}, your playlist *\"{name}\"* was deleted",
+                                   color=discord.Color.blue())
+            try:
+                return await panel.edit(embed=edited, delete_after=10)
+            except discord.NotFound:
+                return await ctx.channel.send(embed=edited, delete_after=10)
+        try:
+            await panel.edit(embed=no_panel, delete_after=5)
+        except discord.NotFound:
+            await ctx.channel.send(embed=no_panel, delete_after=5)
 
 
 def setup(client):
