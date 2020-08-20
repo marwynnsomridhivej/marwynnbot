@@ -129,6 +129,12 @@ async def on_command_error(ctx, error):
                                 description=f"{ctx.author.mention}, to execute this command, I need `{'` `'.join(error.missing_perms)}`",
                                 color=discord.Color.dark_red())
         return await ctx.channel.send(embed=missing, delete_after=10)
+    elif isinstance(error, commands.NotOwner):
+        not_owner = discord.Embed(title="Insufficient User Permissions",
+                                  description=f"{ctx.author.mention}, only the bot owner is authorised to use this "
+                                              f"command",
+                                  color=discord.Color.dark_red())
+        await ctx.channel.send(embed=not_owner, delete_after=10)
     elif isinstance(error, commands.CommandNotFound):
         await gcmds.invkDelete(gcmds, ctx)
         notFound = discord.Embed(title="Command Not Found",
