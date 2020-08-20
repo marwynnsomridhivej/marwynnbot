@@ -3,7 +3,10 @@ import os
 import discord
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
-             "OWNER_ID=YOUR_ID_HERE"
+             "OWNER_ID=YOUR_ID_HERE",
+             "LAVALINK_IP=IP_ADDR",
+             "LAVALINK_PORT=PORT",
+             "LAVALINK_PASSWORD=DEFAULT_STRING",
              "CAT_API=API_KEY_FROM_CAT_API",
              "IMGUR_API=API_KEY_FROM_IMGUR",
              "REDDIT_CLIENT_ID=CLIENT_ID_FROM_REDDIT_API",
@@ -12,6 +15,9 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "TENOR_API=API_KEY_FROM_TENOR"]
 default_env = ["YOUR_BOT_TOKEN",
                "YOUR_ID_HERE",
+               "IP_ADDR",
+               "PORT",
+               "DEFAULT_STRING",
                "API_KEY_FROM_CAT_API",
                "API_KEY_FROM_IMGUR",
                "CLIENT_ID_FROM_REDDIT_API",
