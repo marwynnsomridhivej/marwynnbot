@@ -120,7 +120,7 @@ class Utility(commands.Cog):
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Request Options",
                                  description=f"{ctx.author.mention}, do `{gcmds.prefix(gcmds, ctx)}request feature` "
-                                             f"to submit a feature request",
+                                             f"to submit a feature request with a 60 second cooldown",
                                  color=discord.Color.blue())
             await ctx.channel.send(embed=menu)
 
