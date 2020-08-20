@@ -11,6 +11,7 @@ url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 reactions = ["⏪", "⏯", "⏩", "⏹"]
 plist_reactions = ["💾", "📝"]
+plist_delete_reactions = ["✅", "🛑"]
 
 
 class Music(commands.Cog):
@@ -111,14 +112,20 @@ class Music(commands.Cog):
                         await self.set_value(guild_id, "paused_message", paused_message_sent)
                     if reaction.emoji == "⏩":
                         await player.skip()
-                        vid_info = f"**Now Playing:** [{player.current['title']}]" \
-                                   f"(https://www.youtube.com/watch?v={player.current['identifier']}) "
-                        skipped = discord.Embed(title="Skipped to Next Track",
-                                                description=f"{user.mention}, I have skipped to the next track in "
-                                                            f"queue\n\n{vid_info}",
-                                                color=discord.Color.blue())
-                        skipped.set_footer(text=f"Executed by {user.display_name} " + \
-                                                "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+                        if not player.current:
+                            skipped = discord.Embed(title="Ended Previous Track",
+                                                    description=f"{user.mention}, I have finished playing all songs "
+                                                                f"in queue",
+                                                    color=discord.Color.blue())
+                        else:
+                            vid_info = f"**Now Playing:** [{player.current['title']}]" \
+                                       f"(https://www.youtube.com/watch?v={player.current['identifier']}) "
+                            skipped = discord.Embed(title="Skipped to Next Track",
+                                                    description=f"{user.mention}, I have skipped to the next track in "
+                                                                f"queue\n\n{vid_info}",
+                                                    color=discord.Color.blue())
+                            skipped.set_footer(text=f"Executed by {user.display_name} " + \
+                                                    "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
                         await reaction.message.channel.send(embed=skipped, delete_after=5)
 
     def cog_unload(self):
@@ -256,7 +263,7 @@ class Music(commands.Cog):
         if message:
             try:
                 await message.delete()
-            except (discord.NotFound, AttributeError):
+            except (discord.NotFound, AttributeError, KeyError):
                 pass
             await self.set_value(guild_id, 'message', None)
         if paused:
@@ -264,7 +271,7 @@ class Music(commands.Cog):
         if paused_message:
             try:
                 await paused_message.delete()
-            except (discord.NotFound, AttributeError):
+            except (discord.NotFound, AttributeError, KeyError):
                 pass
             await self.set_value(guild_id, 'paused_message', None)
         if queue:
@@ -272,19 +279,19 @@ class Music(commands.Cog):
         if rewind_message:
             try:
                 await rewind_message.delete()
-            except (discord.NotFound, AttributeError):
+            except (discord.NotFound, AttributeError, KeyError):
                 pass
             await self.set_value(guild_id, 'rewind_message', None)
         if queue_message:
             try:
                 await queue_message.delete()
-            except (discord.NotFound, AttributeError):
+            except (discord.NotFound, AttributeError, KeyError):
                 pass
             await self.set_value(guild_id, 'queue_message', None)
         if volume_message:
             try:
                 await volume_message.delete()
-            except (discord.NotFound, AttributeError):
+            except (discord.NotFound, AttributeError, KeyError):
                 pass
             await self.set_value(guild_id, 'volume_message', None)
 
@@ -971,9 +978,110 @@ class Music(commands.Cog):
     async def add(self, ctx, playlist_id: int, *, url: str):
         return
 
-    @playlist.command()
-    async def remove(self, ctx, playlist_id: int):
-        return
+    @playlist.command(aliases=['delete'])
+    async def remove(self, ctx):
+        self.init_playlist(ctx)
+
+        def reaction_check(reaction, user):
+            if user == ctx.author and reaction.emoji in plist_delete_reactions and reaction.message.id == panel.id:
+                return True
+            else:
+                return False
+
+        def from_user(message):
+            if message.author == ctx.author:
+                return True
+            else:
+                return False
+
+        name = self.get_playlist(ctx, 0)[0]
+        urls = self.get_playlist(ctx, 0)[1]
+        length = len(self.get_playlist(ctx, None))
+
+        if not name and not urls and length == 1:
+            no_plist = discord.Embed(title="No Playlists",
+                                     description=f"{ctx.author.mention}, you have not made any playlists yet.",
+                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_plist, delete_after=5)
+
+        details = self.get_playlist(ctx, None)
+
+        index = 0
+
+        user_playlists = f"{ctx.author.mention}, type the name of the playlist you want to delete *(type \"cancel\" to cancel)*:\n\n"
+        for name, url in details:
+            index += 1
+            if len(url) != 1:
+                spell = "tracks"
+            else:
+                spell = "track"
+            user_playlists += f"**{index}:** {name} ⟶ 🎶*{len(url)} {spell}*"
+
+        embed = discord.Embed(title="Delete Playlist",
+                              description=user_playlists,
+                              color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=embed)
+
+        no_panel = discord.Embed(title="Playlist Remove Panel Deleted",
+                                 description=f"{ctx.author.mention}, the remove playlist panel was deleted",
+                                 color=discord.Color.dark_red())
+
+        while True:
+            try:
+                try:
+                    panel_message = await ctx.channel.fetch_message(panel.id)
+                except discord.NotFound:
+                    return await ctx.channel.send(embed=no_panel, delete_after=5)
+                choice = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+            except asyncio.TimeoutError:
+                timeout = discord.Embed(title="Remove Request Timed Out",
+                                        description=f"{ctx.author.mention}, you did not specify a name within the "
+                                                    f"time limit",
+                                        color=discord.Color.blue())
+                return await panel.edit(embed=timeout, delete_after=10)
+            else:
+                if choice.content.lower() == "cancel":
+                    cancelled = discord.Embed(title="Remove Request Cancelled",
+                                              description=f"{ctx.author.mention}, you cancelled the remove request",
+                                              color=discord.Color.blue())
+                    return await panel.edit(embed=cancelled, delete_after=10)
+                valid = False
+                for names, urls in details:
+                    if choice.content.lower() == names:
+                        name = choice.content
+                        valid = True
+                        break
+                await choice.delete()
+                if valid:
+                    break
+                continue
+
+        while True:
+            try:
+                try:
+                    panel_message = await ctx.channel.fetch_message(panel.id)
+                except discord.NotFound:
+                    return await ctx.channel.send(embed=no_panel, delete_after=5)
+                reacted = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check, timeout=30)
+            except asyncio.TimeoutError:
+                timeout = discord.Embed(title="Remove Request Timed Out",
+                                        description=f"{ctx.author.mention}, you did not react within the time limit",
+                                        color=discord.Color.blue())
+                return await panel.edit(embed=timeout, delete_after=10)
+            else:
+                if str(reacted[0].emoji) == plist_delete_reactions[0]:
+                    await panel.clear_reactions()
+                    action = "confirm"
+                    break
+                elif str(reacted[0].emoji) == plist_delete_reactions[1]:
+                    await panel.clear_reactions()
+                    action = "cancel"
+                    break
+                else:
+                    continue
+
+        if action == "confirm":
+            return
 
 
 def setup(client):
