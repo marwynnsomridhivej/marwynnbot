@@ -125,6 +125,7 @@ class Utility(commands.Cog):
             await ctx.channel.send(embed=menu)
 
     @request.command()
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def feature(self, ctx, *, feature_message: str = None):
         if not feature_message:
             menu = discord.Embed(title="Request Options",
@@ -148,7 +149,7 @@ class Utility(commands.Cog):
         owner = self.client.get_user(int(owner_id))
         message = await owner.send(embed=feature_embed)
         feature_embed.set_footer(text=f"{timestamp}\nMessage ID: {message.id}")
-        await message.edit()
+        await message.edit(embed=feature_embed)
         if not feature_message.endswith(" --noreceipt"):
             feature_embed.set_author(name=f"Copy of your request", icon_url=ctx.author.avatar_url)
             await ctx.author.send(embed=feature_embed)
@@ -164,6 +165,7 @@ class Utility(commands.Cog):
             return await ctx.channel.send(embed=menu)
         user_id = self.get_entry(message_id)
         user = await self.client.fetch_user(user_id)
+        raw_reply = reply_message
         if reply_message == "spam":
             reply_message = f"{user.mention}, your request was either not related to a feature, or was categorised as " \
                             f"spam. Please review the content of your request carefully next time so that it isn't " \
@@ -180,7 +182,9 @@ class Utility(commands.Cog):
         reply_embed.set_footer(text=timestamp)
 
         await user.send(embed=reply_embed)
+        reply_embed.description = f"Message was successfully sent:\n\n{raw_reply}"
         await ctx.author.send(embed=reply_embed, delete_after=60)
+        self.remove_entry(message_id)
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
