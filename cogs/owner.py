@@ -16,114 +16,86 @@ class Owner(commands.Cog):
         print(f'Cog "{self.qualified_name}" has been loaded')
 
     @commands.command(aliases=['l', 'ld'])
+    @commands.is_owner()
     async def load(self, ctx, extension):
         await gcmds.invkDelete(gcmds, ctx)
-        if await self.client.is_owner(ctx.author):
-            try:
-                self.client.load_extension(f'cogs.{extension}')
-            except CommandInvokeError:
-                title = "Cog Load Fail"
-                description = f"Failed to load cog {extension}, it is already loaded"
-                color = discord.Color.blue()
-            else:
-                print(f'Cog "{extension}" has been loaded')
-                title = "Cog Load Success"
-                description = f"Successfully loaded cog {extension}"
-                color = discord.Color.blue()
+        try:
+            self.client.load_extension(f'cogs.{extension}')
+        except CommandInvokeError:
+            title = "Cog Load Fail"
+            description = f"Failed to load cog {extension}, it is already loaded"
+            color = discord.Color.blue()
         else:
-            title = 'Insufficient User Permissions'
-            description = 'You need to be the bot owner to use this command'
-            color = discord.Color.dark_red()
-
+            print(f'Cog "{extension}" has been loaded')
+            title = "Cog Load Success"
+            description = f"Successfully loaded cog {extension}"
+            color = discord.Color.blue()
         loadEmbed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
         await ctx.channel.send(embed=loadEmbed, delete_after=5)
 
     @commands.command(aliases=['ul', 'uld'])
+    @commands.is_owner()
     async def unload(self, ctx, extension):
         await gcmds.invkDelete(gcmds, ctx)
-        if await self.client.is_owner(ctx.author):
-            try:
-                self.client.unload_extension(f'cogs.{extension}')
-            except CommandInvokeError:
-                title = "Cog Unoad Fail"
-                description = f"Failed to unload cog {extension}, it is already unloaded"
-                color = discord.Color.blue()
-            else:
-                print(f'Cog "{extension}" has been unloaded')
-                title = "Cog Unload Success"
-                description = f"Successfully unloaded cog {extension}"
-                color = discord.Color.blue()
+        try:
+            self.client.unload_extension(f'cogs.{extension}')
+        except CommandInvokeError:
+            title = "Cog Unoad Fail"
+            description = f"Failed to unload cog {extension}, it is already unloaded"
+            color = discord.Color.blue()
         else:
-            title = 'Insufficient User Permissions'
-            description = 'You need to be the bot owner to use this command'
-            color = discord.Color.dark_red()
-
+            print(f'Cog "{extension}" has been unloaded')
+            title = "Cog Unload Success"
+            description = f"Successfully unloaded cog {extension}"
+            color = discord.Color.blue()
         unloadEmbed = discord.Embed(title=title,
                                     description=description,
                                     color=color)
         await ctx.channel.send(embed=unloadEmbed, delete_after=5)
 
     @commands.command(aliases=['r', 'rl'])
+    @commands.is_owner()
     async def reload(self, ctx, *, extension=None):
         await gcmds.invkDelete(gcmds, ctx)
-        if await self.client.is_owner(ctx.author):
-            if extension is None:
-                print("==========================")
-                for filenameReload in os.listdir('./cogs'):
-                    if filenameReload.endswith('.py'):
-                        self.client.reload_extension(f'cogs.{filenameReload[:-3]}')
-                        print(f'Cog "{filenameReload[:-3].capitalize()}" has been reloaded')
-                reloadEmbed = discord.Embed(title="Reload Success",
-                                            description="Successfully reloaded all cogs",
-                                            color=discord.Color.blue())
-                await ctx.channel.send(embed=reloadEmbed, delete_after=5)
-                print("==========================")
-            else:
-                print("==========================")
-                self.client.reload_extension(f'cogs.{extension}')
-                print(f'Cog "{extension}" has been reloaded')
-                reloadEmbed = discord.Embed(title="Reload Success",
-                                            description=f"Successfully reloaded cog `{extension}`",
-                                            color=discord.Color.blue())
-                await ctx.channel.send(embed=reloadEmbed, delete_after=5)
-                print("==========================")
+        if extension is None:
+            print("==========================")
+            for filenameReload in os.listdir('./cogs'):
+                if filenameReload.endswith('.py'):
+                    self.client.reload_extension(f'cogs.{filenameReload[:-3]}')
+                    print(f'Cog "{filenameReload[:-3].capitalize()}" has been reloaded')
+            reloadEmbed = discord.Embed(title="Reload Success",
+                                        description="Successfully reloaded all cogs",
+                                        color=discord.Color.blue())
+            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            print("==========================")
         else:
-            reloadError = discord.Embed(title='Insufficient User Permissions',
-                                        description='You need to be the bot owner to use this command',
-                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=reloadError, delete_after=5)
+            print("==========================")
+            self.client.reload_extension(f'cogs.{extension}')
+            print(f'Cog "{extension}" has been reloaded')
+            reloadEmbed = discord.Embed(title="Reload Success",
+                                        description=f"Successfully reloaded cog `{extension}`",
+                                        color=discord.Color.blue())
+            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            print("==========================")
 
     @commands.command(aliases=['taskkill'])
+    @commands.is_owner()
     async def shutdown(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
-        if await self.client.is_owner(ctx.author):
-            title = "Bot Shutdown Successful"
-            description = "Bot is logging out"
-            color = discord.Color.blue()
-        else:
-            title = "Insufficient User Permissions"
-            description = "You need to be the bot owner to use this command"
-            color = discord.Color.dark_red()
-        shutdownEmbed = discord.Embed(title=title,
-                                      description=description,
-                                      color=color)
+        shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
+                                      description="Bot is logging out",
+                                      color=discord.Color.blue())
         await ctx.channel.send(embed=shutdownEmbed)
         await self.client.logout()
 
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
+    @commands.is_owner()
     async def balanceAdmin(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
-        if not await self.client.is_owner(ctx.author):
-            insuf = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
-            return
-        else:
-            init = {'Balance': {}}
-            gcmds.json_load(gcmds, 'balance.json', init)
+        init = {'Balance': {}}
+        gcmds.json_load(gcmds, 'balance.json', init)
 
     @balanceAdmin.command()
     async def set(self, ctx, user: discord.Member, amount):
@@ -264,14 +236,9 @@ class Owner(commands.Cog):
         await ctx.channel.send(embed=removeEmbed, delete_after=60)
 
     @commands.group(aliases=['blist'])
+    @commands.is_owner()
     async def blacklist(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
-        if not await self.client.is_owner(ctx.author):
-            insuf = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
-            return
 
     @blacklist.command(aliases=['member'])
     async def user(self, ctx, operation, user: discord.Member = None):
@@ -383,9 +350,7 @@ class Owner(commands.Cog):
     @commands.is_owner()
     async def forceleave(self, ctx, guild_id=None):
         await gcmds.invkDelete(gcmds, ctx)
-        if guild_id is not None:
-            guild_id = guild_id
-        else:
+        if guild_id is None:
             guild_id = ctx.guild.id
         await self.client.get_guild(guild_id).leave()
         leaveEmbed = discord.Embed(title="Successfully Left Server",
@@ -393,31 +358,30 @@ class Owner(commands.Cog):
                                    color=discord.Color.blue())
         await ctx.author.send(embed=leaveEmbed)
 
-    @forceleave.error
-    async def forceleave_error(self, ctx, error):
-        if isinstance(error, commands.NotOwner):
-            error = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must own this bot to use this command",
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=error, delete_after=10)
-
     @commands.command(aliases=['dm', 'privatemessage'])
-    async def privateMessage(self, ctx, userID: int, *, message):
+    @commands.is_owner()
+    async def privateMessage(self, ctx, userID: int = None, *, message):
         await gcmds.invkDelete(gcmds, ctx)
 
-        if not await self.client.is_owner(ctx.author):
-            insuf = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
+        if userID is None:
+            no_id = discord.Embed(title="No User ID Specified",
+                                  description=f"{ctx.author.mention}, you did not specify a user ID",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
-            return
+            await ctx.channel.send(embed=no_id, delete_after=10)
 
-        user = commands.AutoShardedBot.get_user(self.client, id=userID)
+        try:
+            user = commands.AutoShardedBot.get_user(self.client, id=userID)
+        except commands.BadArgument:
+            bad_id = discord.Embed(title="Invalid User ID Specified",
+                                   description=f"{ctx.author.mention}, please specify a valid user ID",
+                                   color=discord.Color.dark_red())
+            await ctx.channel.send(embed=bad_id, delete_after=10)
 
         dmEmbed = discord.Embed(title="MarwynnBot",
                                 description=message,
                                 color=discord.Color.blue())
         await user.send(embed=dmEmbed)
+        await ctx.author.send(embed=dmEmbed)
 
 
 def setup(client):
