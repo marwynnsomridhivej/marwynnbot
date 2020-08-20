@@ -119,18 +119,34 @@ async def disable_dm_exec(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CheckFailure):
         pass
+    elif isinstance(error, discord.ext.commands.MissingPermissions):
+        missing = discord.Embed(title="Insufficient User Permissions",
+                                description=f"{ctx.author.mention}, to execute this command, you need `{'` `'.join(error.missing_perms)}`",
+                                color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=missing, delete_after=10)
+    elif isinstance(error, discord.ext.commands.BotMissingPermissions):
+        missing = discord.Embed(title="Insufficient Bot Permissions",
+                                description=f"{ctx.author.mention}, to execute this command, I need `{'` `'.join(error.missing_perms)}`",
+                                color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=missing, delete_after=10)
     elif isinstance(error, commands.CommandNotFound):
         await gcmds.invkDelete(gcmds, ctx)
         notFound = discord.Embed(title="Command Not Found",
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                              f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
                                  color=discord.Color.dark_red())
-        await ctx.channel.send(embed=notFound, delete_after=10)
+        return await ctx.channel.send(embed=notFound, delete_after=10)
     elif isinstance(error, commands.CommandOnCooldown):
+        cooldown_time_truncated = truncate(error.retry_after, 3)
+        if cooldown_time_truncated < 1:
+            spell = "milliseconds"
+            cooldown_time_truncated *= 1000
+        else:
+            spell = "seconds"
         cooldown = discord.Embed(title="Command on Cooldown",
-                                 description=f"{ctx.author.mention}, this command is still on cooldown for {truncate(error.retry_after, 3)} seconds",
+                                 description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                  color=discord.Color.dark_red())
-        await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
+        return await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
     else:
         raise error
 
