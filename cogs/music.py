@@ -24,7 +24,7 @@ class Music(commands.Cog):
             port = gcmds.env_check(gcmds, "LAVALINK_PORT")
             password = gcmds.env_check(gcmds, "LAVALINK_PASSWORD")
             if not ip or not port or not password:
-                pass
+                print("Make sure your server IP, port, and password are in the .env file")
             else:
                 client.lavalink = lavalink.Client(client.user.id)
                 client.lavalink.add_node(ip, port, password, 'na', 'default-node', name="lavalink")
@@ -1016,7 +1016,8 @@ class Music(commands.Cog):
 
         index = 0
 
-        user_playlists = f"{ctx.author.mention}, type the name of the playlist you want to delete *(type \"cancel\" to cancel)*:\n\n"
+        user_playlists = f"{ctx.author.mention}, type the name of the playlist you want to delete *(type \"cancel\" " \
+                         f"to cancel)*:\n\n "
         for name, url in details:
             index += 1
             if len(url) != 1:
