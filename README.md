@@ -18,7 +18,7 @@ You can add the public MarwynnBot to your own Discord server by clicking [here](
 ## Commands ![progress](https://img.shields.io/badge/coverage-20%25-orange)
 WIP, for an updated list, add the bot and do `m!help`.
 
-For a guide on all commands and their usages, I will be updating [MarwynnBot's GitBook page](https://marwynn.gitbook.io/marwynnbot/)
+For a guide on all commands and their usages, I will be updating [MarwynnBot's Website](https://www.marwynnbot.tk)
 
 Commands are separated into categories that determine a command's function. Below is a list that will be updated
 frequently as the bot's functionality grows.
@@ -27,7 +27,7 @@ frequently as the bot's functionality grows.
 -   `help`
 
 **Actions**
--   Check [here]((https://marwynn.gitbook.io/marwynnbot/)) for a full list
+-   Check [here]((https://www.marwynnbot.tk)) for a full list
 -   `actions`
 
 **Debug**
@@ -103,23 +103,6 @@ I would prefer that you do not create an instance of my bot for self hosting pur
 public so that anyone who needs an example of a bot written in discord.py can freely look at how I have made it. I do
 realise that my python is garbage, and I am working on improving as this project is developed.
 
-If you don't care about what I just said above, I can't stop you. Here is how you would self host:
-
-For self hosting, you'll need:
--   A bot application
--   A bot token
-
-bot.py has this line of code:
-```python
-with open('./token.yaml', 'r') as f:
-    stream = yaml.full_load(f)
-    token = stream[str('token')]
-```
-You will need to create the token.yaml file in the root directory. File contents should be as follows:
-```yaml
-token: botTokenHere
-```
-The bot will pull the token value from the `token.yaml` file and use that as the token value in `client.run(token)`
 ## Contact Info ![Discord](https://img.shields.io/discord/707981159748993084?color=blue&label=Discord)
 **Discord:** MS Arranges#3060
 
