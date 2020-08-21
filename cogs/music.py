@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+from ctypes import Union
 from datetime import datetime
 import discord
 import lavalink
@@ -160,6 +161,21 @@ class Music(commands.Cog):
         except KeyError:
             prev = file[str(ctx.author.id)]
             prev.update({f"{str(key)}": {'urls': value}})
+
+        with open('playlists.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+    def append_playlist(self, ctx, key: str, value):
+        with open('playlists.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        current_urls = file[str(ctx.author.id)][str(key)]['urls']
+        if isinstance(value, str):
+            current_urls.append(value)
+        if isinstance(value, list):
+            for item in value:
+                current_urls.append(item)
 
         with open('playlists.json', 'w') as g:
             json.dump(file, g, indent=4)
@@ -1033,8 +1049,113 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=edited_plist, delete_after=20)
 
     @playlist.command()
-    async def add(self, ctx, playlist_id: int, *, url: str):
-        return
+    async def add(self, ctx):
+        self.init_playlist(ctx)
+
+        def from_user(message):
+            if message.author.id != ctx.author.id:
+                return False
+            else:
+                return True
+
+        playlists = ""
+        index = 1
+        details = self.get_playlist(ctx, None)
+        for name, url in details:
+            if len(url) != 1:
+                spell = "tracks"
+            else:
+                spell = "track"
+            playlists += f"**{index}**: {name} ⟶ 🎶{len(url)} {spell}\n"
+            index += 1
+
+        panel_embed = discord.Embed(title="Add Tracks to Playlist",
+                                    description=f"{ctx.author.mention}, type the name of the playlist you would like "
+                                                f"to add tracks to *(or type \"cancel\" to cancel)*\n\n{playlists}",
+                                    color=discord.Color.blue())
+        timeout = discord.Embed(title="Playlist Edit Timed Out",
+                                description=f"{ctx.author.mention}, your add tracks request timed out",
+                                color=discord.Color.dark_red())
+        cancelled = discord.Embed(title="Add Tracks Cancelled",
+                                  description=f"{ctx.author.mention}, your add tracks request was cancelled",
+                                  color=discord.Color.dark_red())
+        invalid = discord.Embed(title="Invalid Link",
+                                description=f"{ctx.author.mention}, your link was not a valid YouTube link",
+                                color=discord.Color.dark_red())
+        panel = await ctx.channel.send(embed=panel_embed)
+
+        while True:
+            try:
+                message = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+            except asyncio.TimeoutError:
+                try:
+                    return await panel.edit(embed=timeout, delete_after=10)
+                except discord.NotFound:
+                    return await ctx.channel.send(embed=timeout, delete_after=10)
+            else:
+                if message.content == "cancel":
+                    await message.delete()
+                    try:
+                        return await panel.edit(embed=cancelled, delete_after=10)
+                    except discord.NotFound:
+                        return await ctx.channel.send(embed=cancelled, delete_after=10)
+                elif not self.check_playlist(ctx, message.content):
+                    await message.delete()
+                    continue
+                else:
+                    name = message.content
+                    await message.delete()
+                    break
+
+        try:
+            panel_embed.description = f"{ctx.author.mention}, please enter a YouTube video link or a YouTube playlist " \
+                                      f"link that you would like to have added to {name} "
+            await panel.edit(embed=panel_embed)
+        except discord.NotFound:
+            return await ctx.channel.send(embed=cancelled, delete_after=10)
+
+        try:
+            message_link = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+        except asyncio.TimeoutError:
+            try:
+                return await panel.edit(embed=timeout, delete_after=10)
+            except discord.NotFound:
+                return await ctx.channel.send(embed=timeout, delete_after=10)
+        else:
+            yt_link = message_link.content
+            await message_link.delete()
+
+        if not url_rx.match(yt_link) or "youtube.com" not in yt_link:
+            try:
+                return await panel.edit(embed=invalid, delete_after=10)
+            except discord.NotFound:
+                return await ctx.channel.send(embed=invalid, delete_after=10)
+        else:
+            player = self.client.lavalink.player_manager.get(ctx.guild.id)
+            if not player:
+                player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+            results = await player.node.get_tracks(yt_link)
+            tracks = results['tracks']
+            if results['loadType'] == 'PLAYLIST_LOADED':
+                info = [(track['info']['title'], track['info']['uri']) for track in tracks]
+                urls = [track['info']['uri'] for track in tracks]
+                self.append_playlist(ctx, name, urls)
+                tracks_added = ""
+                index = 1
+                for title, url in info:
+                    tracks_added += f"**{index}:** [{title}]({url})\n"
+                    index += 1
+                panel_embed.description = f"Added the following tracks to {name}:\n{tracks_added}"
+            else:
+                url = tracks[0]['info']['uri']
+                title = tracks[0]['info']['title']
+                self.append_playlist(ctx, name, url)
+                panel_embed.description = f"Added the following track to {name}:\n**1:** [{title}]({url})"
+
+            try:
+                await panel.edit(embed=panel_embed, delete_after=10)
+            except discord.NotFound:
+                await ctx.channel.send(embed=panel_embed, delete_after=10)
 
     @playlist.command(aliases=['delete'])
     async def remove(self, ctx):
