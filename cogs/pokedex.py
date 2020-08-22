@@ -1,15 +1,18 @@
 import math
-
 import discord
 from discord.ext import commands
 import pokepy
-
 from globalcommands import GlobalCMDS as gcmds
 
 poke_client = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
 move_status_icon_urls = ["https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/e/ef/Physical.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/2/24/Special.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/d/d0/Status.png?width=325"]
+
+"""
+German Translation for the ability command is thanks to Isabelle. Thank you so much. I wouldn't have been able to make
+high quality translations that are actually grammatically correct.
+"""
 
 
 class Pokedex(commands.Cog):
@@ -31,7 +34,7 @@ class Pokedex(commands.Cog):
         except Exception:
             return None
 
-    async def get_dex_entry(self, name):
+    async def get_dex_entry(self, name) -> tuple:
         value = await self.check_pokemon(name)
         if not value:
             return None
@@ -70,7 +73,7 @@ class Pokedex(commands.Cog):
         except Exception:
             return None
 
-    async def get_move_entry(self, name):
+    async def get_move_entry(self, name) -> tuple:
         value = await self.check_move(name)
         if not value:
             return None
@@ -92,6 +95,30 @@ class Pokedex(commands.Cog):
         move_target = f"Target: `{value.target.name.replace('-', ' ').capitalize()}`"
         return (move_effect_entry, move_type, move_damage_class, move_power, move_accuracy,
                 move_target, move_pp, move_max_pp, move_priority)
+
+    async def check_ability(self, name: str) -> pokepy.api.rv2.AbilityResource:
+        try:
+            return poke_client.get_ability(name)
+        except Exception:
+            return None
+
+    async def get_ability_entry(self, name: str, flag: str) -> tuple:
+        value = await self.check_ability(name)
+        if not value:
+            return None
+
+        ability_pokemon_list = [name.pokemon.name.capitalize() for name in value.pokemon]
+        if flag == "-de":
+            ability_name_temp = [locale.name for locale in value.names if locale.language.name == "de"]
+            ability_effect_entry = f"Beschreibung: ```{value.effect_entries[0].effect}```"
+            ability_pokemon = "Pokémon mit dieser Fähigkeit: \n`" + "` `".join(ability_pokemon_list) + "`"
+        else:
+            ability_name_temp = [locale.name for locale in value.names if locale.language.name == "en"]
+            ability_effect_entry = f"Description: ```{value.effect_entries[1].effect}```"
+            ability_pokemon = "Pokémon with this Ability: \n`" + "` `".join(ability_pokemon_list) + "`"
+        ability_name = ability_name_temp[0]
+
+        return ability_name, ability_effect_entry, ability_pokemon
 
     async def get_dex_sprite(self, name):
         value = await self.check_pokemon(name)
@@ -128,8 +155,10 @@ class Pokedex(commands.Cog):
                                   f"Aliases: `moves` `-m`",
                             inline=False)
             panel.add_field(name="Ability",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex ability [name]`\n"
-                                  f"Returns: Details about the specified ability",
+                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex ability [name] [optional flag]`\n"
+                                  f"Returns: Details about the specified ability\n"
+                                  f"Flag: `-de` `-en` or blank *(defaults to english)*\n"
+                                  f"Aliases: `-a`",
                             inline=False)
             panel.add_field(name="Item",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)} pokedex item [name]`\n"
@@ -139,7 +168,7 @@ class Pokedex(commands.Cog):
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
                                   f"Returns: Details about that type")
             panel.add_field(name="Command Progress",
-                            value="As of right now, the only working commands are `pokemon` and `move`. The bot "
+                            value="As of right now, the only working commands are `pokemon` `move` `ability`. The bot "
                                   "developer is working on the rest of the commands.",
                             inline=False)
             return await ctx.channel.send(embed=panel)
@@ -179,8 +208,43 @@ class Pokedex(commands.Cog):
             return await ctx.channel.send(embed=embed)
         else:
             invalid = discord.Embed(title="Invalid Move Name",
-                                    description = f"{ctx.author.mention}, `{move_name}` is not a valid move",
+                                    description=f"{ctx.author.mention}, `{move_name}` is not a valid move",
                                     color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=invalid, delete_after=5)
+
+    @pokedex.command(aliases=['-a'])
+    async def ability(self, ctx, *, ability_name_with_flag: str):
+        flag = ability_name_with_flag[-4:]
+        if flag == " -de" or flag == " -en":
+            ability_name = ability_name_with_flag[:-4].replace(" ", "-")
+            value = await self.get_ability_entry(ability_name, flag[-3:])
+        else:
+            if flag == " -en":
+                ability_name = ability_name_with_flag[:-4].replace(" ", "-")
+            else:
+                ability_name = ability_name_with_flag.replace(" ", "-")
+            value = await self.get_ability_entry(ability_name, "-en")
+        if value:
+            embed = discord.Embed(title=value[0],
+                                  color=discord.Color.blue())
+            if flag == " -de":
+                embed.description = f"{ctx.author.mention}, hier ist die Info für {value[0]}\n\n"
+            else:
+                embed.description = f"{ctx.author.mention}, here is the info for {value[0]}\n\n"
+            fields = (value[1], value[2])
+            embed.description += "\n".join(fields)
+
+            await ctx.channel.send(embed=embed)
+        else:
+            if flag == "-de":
+                invalid = discord.Embed(title="Ungültiger Fähigkeitsname",
+                                        description=f"{ctx.author.mention}, `{ability_name}` ist keine gültige Fähigkeit",
+                                        color=discord.Color.dark_red())
+
+            else:
+                invalid = discord.Embed(title="Invalid Ability Name",
+                                        description=f"{ctx.author.mention}, `{ability_name}` is not a valid ability",
+                                        color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
 
