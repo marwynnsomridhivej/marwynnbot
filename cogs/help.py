@@ -83,7 +83,7 @@ class Help(commands.Cog):
             gameNames = [cogNames.pop(1) for _ in range(3)]
             gameNames.append(cogNames.pop(7))
             for _ in range(2):
-                gameNames.append(cogNames.pop(10))
+                gameNames.append(cogNames.pop(11))
             cogs = [self.client.get_cog(j) for j in cogNames]
             strings = [[command.name.lower() for command in cog.get_commands()] for cog in cogs]
 
@@ -95,9 +95,10 @@ class Help(commands.Cog):
             moderationCmds = f"`{'` `'.join(strings[5])}`"
             musicCmds = f"*Under development*\n`{'` `'.join(strings[6])}`"
             ownerCmds = f"`{'` `'.join(strings[7])}`"
-            reactionCmds = f"`{'` `'.join(strings[8])}`"
+            pokedexCmds = f"`{'` `'.join(strings[8])}`"
+            reactionCmds = f"`{'` `'.join(strings[9])}`"
             redditCmds = f"`{gcmds.prefix(gcmds, ctx)}reddit` *for a full list*"
-            utilityCmds = f"`{'` `'.join(strings[10])}`"
+            utilityCmds = f"`{'` `'.join(strings[11])}`"
 
             helpEmbed.add_field(name="Help",
                                 value=helpCmds,
@@ -122,6 +123,9 @@ class Help(commands.Cog):
                                 inline=False)
             helpEmbed.add_field(name="Utility",
                                 value=utilityCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Pokedex",
+                                value=pokedexCmds,
                                 inline=False)
             helpEmbed.add_field(name="Reactions",
                                 value=reactionCmds,
@@ -707,6 +711,21 @@ class Help(commands.Cog):
                        "are being pulled from. I have provided aliases so that those who are uncomfortable with the " \
                        "names of some subreddits can use a non-suggestive name to invoke the command\n\n" \
                        "**All of the images pulled are SFW**"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage,
+                               specialCases=specialCases)
+
+    # =================================================
+    # Pokedex
+    # =================================================
+
+    @help.command(aliases=['dex'])
+    async def pokedex(self, ctx):
+        commandName = "PokedexHelp"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}pokedex`"
+        specialCases = "This command will bring up the pokedex help panel where all the pokedex commands are " \
+                       "documented. "
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
