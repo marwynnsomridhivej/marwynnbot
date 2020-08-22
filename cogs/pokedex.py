@@ -75,12 +75,11 @@ class Pokedex(commands.Cog):
         if not value:
             return None
 
-        move_name = f'Name: `{value.name.replace("-", " ").capitalize()}`'
         if value.accuracy:
             move_accuracy = f"Accuracy: `{value.accuracy}`"
         else:
             move_accuracy = f"Accuracy: `N/A`"
-        move_effect_entry = f"Description: `{value.effect_entries[0]['effect']}`"
+        move_effect_entry = f"Description: ```{value.effect_entries[0].effect}```"
         move_type = f"Type: `{value.type.name.capitalize()}`"
         move_damage_class = f"Move Class: `{value.damage_class.name.capitalize()}`"
         if value.power:
@@ -91,23 +90,8 @@ class Pokedex(commands.Cog):
         move_max_pp = f"Max PP: `{math.ceil(float(value.pp) * 8.0 / 5.0)}`"
         move_priority = f"Priority: `{value.priority}`"
         move_target = f"Target: `{value.target.name.replace('-', ' ').capitalize()}`"
-        stat_changes = [(stat.stat.name, stat.change) for stat in value.stat_changes]
-        move_stat_changes = "User Stat Changes: "
-        if not stat_changes:
-            move_stat_changes += "`N/A`"
-        else:
-            for stat_name, stat_change_amount in stat_changes:
-                if stat_change_amount < 0:
-                    r_or_l = "Lowers"
-                else:
-                    r_or_l = "Raises"
-                if math.fabs(stat_change_amount) == 1.0:
-                    spell = "stage"
-                else:
-                    spell = "stages"
-                move_stat_changes += f"{r_or_l} the user's {stat_name} by {int(math.fabs(stat_change_amount))} {spell}\n"
-        return (move_name, move_effect_entry, move_type, move_damage_class, move_power, move_accuracy,
-                move_target, move_pp, move_max_pp, move_priority, move_stat_changes)
+        return (move_effect_entry, move_type, move_damage_class, move_power, move_accuracy,
+                move_target, move_pp, move_max_pp, move_priority)
 
     async def get_dex_sprite(self, name):
         value = await self.check_pokemon(name)
@@ -115,11 +99,11 @@ class Pokedex(commands.Cog):
 
     async def get_move_status_icon(self, name):
         value = await self.get_move_entry(name)
-        if "physical" in value[3].lower():
+        if "physical" in value[2].lower():
             return move_status_icon_urls[0]
-        elif "special" in value[3].lower():
+        elif "special" in value[2].lower():
             return move_status_icon_urls[1]
-        elif "status" in value[3].lower():
+        elif "status" in value[2].lower():
             return move_status_icon_urls[2]
 
     @commands.group(aliases=['dex'])
@@ -135,11 +119,13 @@ class Pokedex(commands.Cog):
                                   color=discord.Color.blue())
             panel.add_field(name="Pokémon",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex pokemon [name]`\n"
-                                  f"Returns: Details about the specified Pokémon",
+                                  f"Returns: Details about the specified Pokémon\n"
+                                  f"Aliases: `-p`",
                             inline=False)
             panel.add_field(name="Move",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex move [name]`\n"
-                                  f"Returns: Details about the move",
+                                  f"Returns: Details about the move\n"
+                                  f"Aliases: `moves` `-m`",
                             inline=False)
             panel.add_field(name="Ability",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex ability [name]`\n"
@@ -152,6 +138,10 @@ class Pokedex(commands.Cog):
             panel.add_field(name="Type",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
                                   f"Returns: Details about that type")
+            panel.add_field(name="Command Progress",
+                            value="As of right now, the only working commands are `pokemon` and `move`. The bot "
+                                  "developer is working on the rest of the commands.",
+                            inline=False)
             return await ctx.channel.send(embed=panel)
 
     @pokedex.command(aliases=['-p'])
