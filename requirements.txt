@@ -5,3 +5,5 @@ praw~=7.1.0
 aiohttp~=3.6.2
 lavalink~=3.1.2
 python-dotenv~=0.14.0
+PyYAML~=5.3.1
+pokepy~=0.6.1
