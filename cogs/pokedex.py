@@ -119,6 +119,10 @@ class Pokedex(commands.Cog):
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
+    @pokedex.command(aliases=['-m', 'moves'])
+    async def move(self, ctx, *, move_name: str):
+
+
 
 def setup(client):
     client.add_cog(Pokedex(client))
