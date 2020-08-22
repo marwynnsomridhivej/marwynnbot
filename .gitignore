@@ -3,6 +3,7 @@ cogs/__pycache__
 venv
 logs
 __pycache__
+pokepy_cache
 *.pyc
 .env
 prefixes.json
