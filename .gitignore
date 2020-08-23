@@ -14,6 +14,7 @@ blacklist.json
 actionstats.json
 playlists.json
 requests.json
+reactionroles.json
 discord.log
 Lavalink.jar
 application.yml
