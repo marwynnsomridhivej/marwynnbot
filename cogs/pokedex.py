@@ -67,6 +67,10 @@ class Pokedex(commands.Cog):
         weight = f"Weight: `{value.weight / 10} kg`"
         return pokemon_name, nat_dex_num, type, abilities, items, weight, height, base_xp
 
+    async def get_dex_sprite(self, name):
+        value = await self.check_pokemon(name)
+        return value.sprites.front_default, value.sprites.front_shiny
+
     async def check_move(self, name) -> pokepy.api.rv2.MoveResource:
         try:
             return poke_client.get_move(name)
@@ -96,6 +100,15 @@ class Pokedex(commands.Cog):
         return (move_effect_entry, move_type, move_damage_class, move_power, move_accuracy,
                 move_target, move_pp, move_max_pp, move_priority)
 
+    async def get_move_status_icon(self, name):
+        value = await self.get_move_entry(name)
+        if "physical" in value[2].lower():
+            return move_status_icon_urls[0]
+        elif "special" in value[2].lower():
+            return move_status_icon_urls[1]
+        elif "status" in value[2].lower():
+            return move_status_icon_urls[2]
+
     async def check_ability(self, name: str) -> pokepy.api.rv2.AbilityResource:
         try:
             return poke_client.get_ability(name)
@@ -120,18 +133,46 @@ class Pokedex(commands.Cog):
 
         return ability_name, ability_effect_entry, ability_pokemon
 
-    async def get_dex_sprite(self, name):
-        value = await self.check_pokemon(name)
-        return value.sprites.front_default, value.sprites.front_shiny
+    async def check_item(self, name) -> pokepy.api.rv2.ItemResource:
+        try:
+            return poke_client.get_item(name)
+        except Exception:
+            return None
 
-    async def get_move_status_icon(self, name):
-        value = await self.get_move_entry(name)
-        if "physical" in value[2].lower():
-            return move_status_icon_urls[0]
-        elif "special" in value[2].lower():
-            return move_status_icon_urls[1]
-        elif "status" in value[2].lower():
-            return move_status_icon_urls[2]
+    async def get_item_entry(self, name) -> tuple:
+        value = await self.check_item(name)
+        if not value:
+            return None
+
+        item_name = f"Name: `{value.name.replace('-', ' ').capitalize()}`"
+        if value.cost == 0:
+            item_purchase_cost = "Purchase Price: `N/A`"
+        else:
+            item_purchase_cost = f"Purchase Price: `{value.cost} Pokédollars`"
+        item_description = f"Description: ```{value.effect_entries[0].short_effect}```"
+        item_fling_power = f"Fling Power: `{value.fling_power}`"
+        if not value.fling_effect:
+            item_fling_effect = "Fling Effect: `N/A`"
+        else:
+            item_fling_effect = f"Fling Effect: `{value.fling_effect}`"
+        if value.held_by_pokemon:
+            item_held_by_list = [pokemon.pokemon.name.capitalize() for pokemon in value.held_by_pokemon]
+            item_held_by = "Items Held in Wild By: `" + "` `".join(item_held_by_list) + '`'
+        else:
+            item_held_by = "Items Held in Wild By: `N/A`"
+        if value.attributes:
+            item_attributes_list = [item.name.capitalize() for item in value.attributes]
+            item_attributes = "Attributes: `" + "` `".join(item_attributes_list) + "`"
+        else:
+            item_attributes = "Attributes: `N/A`"
+        item_category = f"Category: `{value.category.name.replace('-', ' ').capitalize()}`"
+
+        return (item_name, item_category, item_description, item_attributes, item_purchase_cost, item_fling_power,
+                item_fling_effect, item_held_by)
+
+    async def get_item_sprite(self, name):
+        value = await self.check_item(name)
+        return value.sprites.default
 
     @commands.group(aliases=['dex'])
     async def pokedex(self, ctx):
@@ -217,13 +258,15 @@ class Pokedex(commands.Cog):
         flag = ability_name_with_flag[-4:]
         if flag == " -de" or flag == " -en":
             ability_name = ability_name_with_flag[:-4].replace(" ", "-")
-            value = await self.get_ability_entry(ability_name, flag[-3:])
+            ability_name_sent = ability_name.lower()
+            value = await self.get_ability_entry(ability_name_sent, flag[-3:])
         else:
             if flag == " -en":
                 ability_name = ability_name_with_flag[:-4].replace(" ", "-")
             else:
                 ability_name = ability_name_with_flag.replace(" ", "-")
-            value = await self.get_ability_entry(ability_name, "-en")
+            ability_name_sent = ability_name.lower()
+            value = await self.get_ability_entry(ability_name_sent, "-en")
         if value:
             embed = discord.Embed(title=value[0],
                                   color=discord.Color.blue())
@@ -245,6 +288,22 @@ class Pokedex(commands.Cog):
                 invalid = discord.Embed(title="Invalid Ability Name",
                                         description=f"{ctx.author.mention}, `{ability_name}` is not a valid ability",
                                         color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=invalid, delete_after=5)
+
+    @pokedex.command(aliases=['-i'])
+    async def item(self, ctx, *, item_name: str):
+        item_name_sent = item_name.replace(" ", "-").lower()
+        value = await self.get_item_entry(item_name_sent)
+        if value:
+            embed = discord.Embed(title=item_name.capitalize(),
+                                  description=f"{ctx.author.mention}, here is the info for {item_name}\n\n",
+                                  color=discord.Color.blue())
+            embed.description += "\n".join(value)
+            await ctx.channel.send(embed=embed)
+        else:
+            invalid = discord.Embed(title="Invalid Item Name",
+                                    description=f"{ctx.author.mention}, `{item_name}` is not a valid item",
+                                    color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
 
