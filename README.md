@@ -1,4 +1,4 @@
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/41bbb30fede24aa09a3bb772cc4f4d7f)](https://www.codacy.com/manual/marwynnsomridhivej/marwynnbot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=marwynnsomridhivej/marwynnbot&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/2e6c3dab900e45f9bd53047e4740f435)](https://www.codacy.com/manual/marwynnsomridhivej/marwynnbot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=marwynnsomridhivej/marwynnbot&amp;utm_campaign=Badge_Grade)
 ![License](https://img.shields.io/badge/license-GPLv3.0-brightgreen)
 ![Clone Size](https://img.shields.io/github/repo-size/marwynnsomridhivej/marwynnbot?color=red&label=Clone%20Size)
 ![GitHub stars](https://img.shields.io/github/stars/marwynnsomridhivej/marwynnbot?label=Stars&style=social)
