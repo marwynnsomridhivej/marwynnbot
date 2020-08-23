@@ -83,22 +83,24 @@ class Help(commands.Cog):
             gameNames = [cogNames.pop(1) for _ in range(3)]
             gameNames.append(cogNames.pop(7))
             for _ in range(2):
-                gameNames.append(cogNames.pop(11))
+                gameNames.append(cogNames.pop(12))
             cogs = [self.client.get_cog(j) for j in cogNames]
             strings = [[command.name.lower() for command in cog.get_commands()] for cog in cogs]
 
             actionCmds = f"`{gcmds.prefix(gcmds, ctx)}actions` *for a full list*"
             debugCmds = f"`{'` `'.join(strings[1])}`"
             funCmds = f"`{'` `'.join(strings[2])}`"
-            gamesCmds = f"`{'` `'.join(strings[3])}` `blackjack` `coinflip` `connectfour` `oldmaid (under development)` `slots` `uno`"
+            gamesCmds = f"`{'` `'.join(strings[3])}` `blackjack` `coinflip` `connectfour` " \
+                        f"`oldmaid (under development)` `slots` `uno`"
             helpCmds = f"`{'` `'.join(strings[4])}`"
-            moderationCmds = f"`{'` `'.join(strings[5])}`"
-            musicCmds = f"*Under development*\n`{'` `'.join(strings[6])}`"
-            ownerCmds = f"`{'` `'.join(strings[7])}`"
-            pokedexCmds = f"`{'` `'.join(strings[8])}`"
-            reactionCmds = f"`{'` `'.join(strings[9])}`"
+            minecraftCmds = f"`{gcmds.prefix(gcmds, ctx)}minecraft` *for a full list*"
+            moderationCmds = f"`{'` `'.join(strings[6])}`"
+            musicCmds = f"`{'` `'.join(strings[7])}`"
+            ownerCmds = f"`{'` `'.join(strings[8])}`"
+            pokedexCmds = f"`{gcmds.prefix(gcmds, ctx)}pokedex` *for a full list*"
+            reactionCmds = f"`{'` `'.join(strings[10])}`"
             redditCmds = f"`{gcmds.prefix(gcmds, ctx)}reddit` *for a full list*"
-            utilityCmds = f"`{'` `'.join(strings[11])}`"
+            utilityCmds = f"`{'` `'.join(strings[12])}`"
 
             helpEmbed.add_field(name="Help",
                                 value=helpCmds,
@@ -114,6 +116,9 @@ class Help(commands.Cog):
                                 inline=False)
             helpEmbed.add_field(name="Games",
                                 value=gamesCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Minecraft",
+                                value=minecraftCmds,
                                 inline=False)
             helpEmbed.add_field(name="Moderation",
                                 value=moderationCmds,
@@ -399,6 +404,18 @@ class Help(commands.Cog):
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
                                specialCases=specialCases)
+
+    # =================================================
+    # Minecraft
+    # =================================================
+
+    @help.command(aliases=['mc'])
+    async def minecraft(self, ctx):
+        commandName = "MinecraftHelp"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}minecraft`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     # =================================================
     # Moderation
