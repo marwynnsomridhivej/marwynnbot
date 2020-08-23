@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from ctypes import Union
 from datetime import datetime
 import discord
 import lavalink
