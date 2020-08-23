@@ -233,7 +233,7 @@ class Pokedex(commands.Cog):
     async def pokedex(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
 
-        if ctx.invoked_subcommand is None:
+        if not ctx.invoked_subcommand:
             panel = discord.Embed(title="Pokedex Commands",
                                   description=f"Access MarwynnBot's Pokédex using `{gcmds.prefix(gcmds, ctx)}pokedex "
                                               f"[option]`. Please note that in order to avoid discrepancies in "
