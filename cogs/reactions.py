@@ -1,11 +1,22 @@
 import asyncio
 import re
+import json
+from ctypes import Union
+
 import discord
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
 
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
+role_tag_rx = re.compile(r'<@&[0-9]{18}>')
+hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
+
+gcmds.json_load(gcmds, 'reactionroles.json', {})
+with open('reactionroles.json', 'r') as rr:
+    rr_json = json.load(rr)
+    rr.close()
+
 
 class Reactions(commands.Cog):
 
@@ -58,6 +69,33 @@ class Reactions(commands.Cog):
         else:
             return await panel_message.edit(embed=embed, delete_after=10)
 
+    async def send_rr_message(self, ctx, send_embed: discord.Embed, emoji_list: list, role_emoji: tuple):
+        rr_message = await ctx.channel.send(embed=send_embed)
+        for emoji in emoji_list:
+            await rr_message.add_reaction(emoji)
+        init = {str(ctx.guild.id): {str(rr_message.id): []}}
+        gcmds.json_load(gcmds, 'reactionroles.json', init)
+        with open('reactionroles.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        file[str(ctx.guild.id)].update({str(rr_message.id): []})
+        for role, emoji in role_emoji:
+            file[str(ctx.guild.id)][str(rr_message.id)].append((str(role), str(emoji)))
+        with open('reactionroles.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user):
+        try:
+            member = await reaction.message.guild.fetch_member(user.id)
+            role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
+            for role, emoji in role_emoji:
+                if reaction.emoji == emoji:
+                    if reaction.message.guild.get_role(role) not in user.roles:
+                        await member.add_roles(reaction.message.guild.get_role(role))
+        except KeyError:
+            pass
+
     @commands.group(aliases=['rr'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
@@ -83,12 +121,19 @@ class Reactions(commands.Cog):
                                                 f"menu. Just follow the prompts and you will have a working reaction "
                                                 f"roles panel!",
                                     color=discord.Color.blue())
+        panel_embed.set_footer(text="Type *cancel* to cancel at any time")
         panel = await ctx.channel.send(embed=panel_embed)
 
         await asyncio.sleep(5.0)
 
         def from_user(message: discord.Message) -> bool:
             if message.author == ctx.author and message.channel == ctx.channel:
+                return True
+            else:
+                return False
+
+        def panel_react(reaction: discord.Reaction, user: discord.User) -> bool:
+            if reaction.message.id == panel.id and ctx.author.id == user.id:
                 return True
             else:
                 return False
@@ -113,6 +158,8 @@ class Reactions(commands.Cog):
                     await result.delete()
                     break
                 else:
+                    if result.content == "cancel":
+                        return await self.user_cancelled(ctx, panel_message)
                     continue
             channel_id = result.content[2:20]
             await result.delete()
@@ -131,6 +178,9 @@ class Reactions(commands.Cog):
             result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
+        else:
+            if result.content == "cancel":
+                return await self.user_cancelled(ctx, panel_message)
 
         title = result.content
         await result.delete()
@@ -146,13 +196,94 @@ class Reactions(commands.Cog):
             result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
+        else:
+            if result.content == "cancel":
+                return await self.user_cancelled(ctx, panel_message)
 
         description = result.content
         await result.delete()
 
+        # User will input the embed color
+        while True:
+            try:
+                panel_message = await self.check_panel(panel)
+                if not panel_message:
+                    return self.no_panel(ctx)
+                await self.edit_panel(panel_embed, panel_message, title=None,
+                                      description=f"{ctx.author.mention}, please enter the hex color of the embed "
+                                                  f"that will be sent")
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx, timeout, panel)
+            if not re.match(hex_color_rx, result.content):
+                if result.content == "cancel":
+                    return await self.user_cancelled(ctx, panel_message)
+                else:
+                    continue
+            break
+
+        color = int(result.content, 16)
+        await result.delete()
+
         # User will input the emoji, then appropriate role by tag
         emoji_role_list = []
-        return
+        emoji_list = []
+        while True:
+            while True:
+                try:
+                    panel_message = await self.check_panel(panel)
+                    if not panel_message:
+                        return self.no_panel(ctx)
+                    await self.edit_panel(panel_embed, panel_message, title=None,
+                                          description=f"{ctx.author.mention}, please tag the role you would like to be "
+                                                      f"added into the reaction role or type *finish* to finish setup")
+                    result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                                                                    timeout=timeout)
+                except asyncio.TimeoutError:
+                    return await self.timeout(ctx, timeout, panel)
+                if not re.match(role_tag_rx, result.content):
+                    if result.content == "cancel":
+                        return await self.user_cancelled(ctx, panel_message)
+                    elif result.content == "finish":
+                        break
+                    else:
+                        continue
+                else:
+                    break
+            if result.content == "finish":
+                break
+
+            role = result.content[4:22]
+            await result.delete()
+
+            while True:
+                try:
+                    panel_message = await self.check_panel(panel)
+                    if not panel_message:
+                        return self.no_panel(ctx)
+                    await self.edit_panel(panel_embed, panel_message, title=None,
+                                          description=f"{ctx.author.mention}, please react to this panel with the emoji"
+                                                      f" you want the user to react with to get the role {role}")
+                    result = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=panel_react,
+                                                                    timeout=timeout)
+                except asyncio.TimeoutError:
+                    return await self.timeout(ctx, timeout, panel)
+                if result.emoji in emoji_list:
+                    continue
+                else:
+                    break
+
+            emoji = result.emoji
+            emoji_list.append(emoji)
+            await result.message.clear_reactions()
+
+            emoji_role_list.append((role, emoji))
+
+        # Post reaction role panel in the channel
+        rr_embed = discord.Embed(title=title,
+                                 description=description,
+                                 color=color)
+        return await self.send_rr_message(ctx, rr_embed, emoji_list, emoji_role_list)
 
 
 def setup(client):
