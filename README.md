@@ -13,82 +13,15 @@ You can add the public MarwynnBot to your own Discord server by clicking [here](
 
 ## Prefix
 - The default prefix is `m!`
-- Global prefixes are mentioning the bot or `mb`
+- Global prefixes are mentioning the bot or `mb` *(case insensitive)*
 
 ## Commands ![progress](https://img.shields.io/badge/coverage-20%25-orange)
 WIP, for an updated list, add the bot and do `m!help`.
 
-For a guide on all commands and their usages, I will be updating [MarwynnBot's Website](https://www.marwynnbot.tk)
+Commands are separated into categories that determine a command's function. I am currently working on making a website
+that will display all of MarwynnBot's commands. Please stay tuned for its release
 
-Commands are separated into categories that determine a command's function. Below is a list that will be updated
-frequently as the bot's functionality grows.
-
-**Help**
--   `help`
-
-**Actions**
--   Check [here]((https://www.marwynnbot.tk)) for a full list
--   `actions`
-
-**Debug**
--   `ping`
--   `report`
--   `shard`
-
-**Fun**
--   `8ball`
--   `choose`
--   `gifsearch`
--   `imgursearch`
--   `isabelle`
--   `peppa`
--   `randomcat`
--   `randomdog`
--   `say`
--   `toad`
-
-**Games**
--   `blackjack`
--   `coinflip`
--   `connectfour`
--   `slots`
--   `uno`
--   *Currently under development*
-
-**Games Commands**
--   `balance`
--   `gamestats`
--   `transfer`
-
-**Moderation**
--   `chatclean`
--   `mute`
--   `unmute`
--   `kick`
--   `ban`
--   `unban`
--   `modsonline`
-
-**Music**
--   `join`
--   `leave`
--   *Currently under development*
-
-**Utility**
--   `prefix`
--   `setprefix`
--   `serveremotes`
--   `serverstats`
--   `timezone`
-
-**Owner Only**
--   `blacklist`
--   `load`
--   `unload`
--   `reload`
--   `shutdown`
--   `balanceadmin`
-
+For a guide on all commands and their usages, I will be updating [MarwynnBot's Website](http://www.marwynnbot.tk)
 ## Self Hosting
 As of right now, this bot is nowhere near ready for self hosting. I commit many changes to the bot and there is a high
 chance that after you clone this repository, I will have added a feature or fixed an issue that was present in the
