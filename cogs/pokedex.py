@@ -28,13 +28,13 @@ class Pokedex(commands.Cog):
         stepper = 10.0 ** decimal_places
         return math.trunc(stepper * number) / stepper
 
-    async def check_pokemon(self, name) -> pokepy.api.rv2.PokemonResource:
+    async def check_pokemon(self, name: str) -> pokepy.api.rv2.PokemonResource:
         try:
             return poke_client.get_pokemon(name)
         except Exception:
             return None
 
-    async def get_dex_entry(self, name) -> tuple:
+    async def get_dex_entry(self, name: str) -> tuple:
         value = await self.check_pokemon(name)
         if not value:
             return None
@@ -67,17 +67,17 @@ class Pokedex(commands.Cog):
         weight = f"Weight: `{value.weight / 10} kg`"
         return pokemon_name, nat_dex_num, type, abilities, items, weight, height, base_xp
 
-    async def get_dex_sprite(self, name):
+    async def get_dex_sprite(self, name: str) -> tuple:
         value = await self.check_pokemon(name)
         return value.sprites.front_default, value.sprites.front_shiny
 
-    async def check_move(self, name) -> pokepy.api.rv2.MoveResource:
+    async def check_move(self, name: str) -> pokepy.api.rv2.MoveResource:
         try:
             return poke_client.get_move(name)
         except Exception:
             return None
 
-    async def get_move_entry(self, name) -> tuple:
+    async def get_move_entry(self, name: str) -> tuple:
         value = await self.check_move(name)
         if not value:
             return None
@@ -100,7 +100,7 @@ class Pokedex(commands.Cog):
         return (move_effect_entry, move_type, move_damage_class, move_power, move_accuracy,
                 move_target, move_pp, move_max_pp, move_priority)
 
-    async def get_move_status_icon(self, name):
+    async def get_move_status_icon(self, name: str) -> str:
         value = await self.get_move_entry(name)
         if "physical" in value[2].lower():
             return move_status_icon_urls[0]
@@ -139,7 +139,7 @@ class Pokedex(commands.Cog):
         except Exception:
             return None
 
-    async def get_item_entry(self, name) -> tuple:
+    async def get_item_entry(self, name: str) -> tuple:
         value = await self.check_item(name)
         if not value:
             return None
@@ -174,6 +174,40 @@ class Pokedex(commands.Cog):
         value = await self.check_item(name)
         return value.sprites.default
 
+    async def check_type(self, name: str) -> pokepy.api.rv2.TypeResource:
+        try:
+            return poke_client.get_type(name)
+        except Exception:
+            return None
+
+    async def get_type_interactions(self, name: str) -> str:
+        value = await self.check_type(name)
+        damage = value.damage_relations
+        key_names = [key.replace("_", " ").title() for key in damage]
+        index = 0
+        string = ""
+        non = "`N/A`"
+
+        for relation in damage:
+            if relation:
+                string += f"{key_names[index]}: "
+                for item in relation:
+                    string += f"`{item.name.capitalize}` "
+            else:
+                string += non
+            index += 1
+            string += "\n"
+
+        print(string)
+        return string
+
+    async def get_type_entry(self, name: str) -> tuple:
+        value = await self.check_type(name)
+        if not value:
+            return None
+
+        type_name = f"Name: `{value.name}`"
+
     @commands.group(aliases=['dex'])
     async def pokedex(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
@@ -203,11 +237,14 @@ class Pokedex(commands.Cog):
                             inline=False)
             panel.add_field(name="Item",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)} pokedex item [name]`\n"
-                                  f"Returns: Details about the item",
+                                  f"Returns: Details about the item"
+                                  f"Aliases: `-i`",
                             inline=False)
             panel.add_field(name="Type",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
-                                  f"Returns: Details about that type")
+                                  f"Returns: Details about that type"
+                                  f"Aliases: `-t` `types`",
+                            inline=False)
             return await ctx.channel.send(embed=panel)
 
     @pokedex.command(aliases=['-p'])
@@ -295,12 +332,17 @@ class Pokedex(commands.Cog):
                                   description=f"{ctx.author.mention}, here is the info for {item_name}\n\n",
                                   color=discord.Color.blue())
             embed.description += "\n".join(value)
+            embed.set_thumbnail(url=await self.get_item_sprite(item_name_sent))
             await ctx.channel.send(embed=embed)
         else:
             invalid = discord.Embed(title="Invalid Item Name",
                                     description=f"{ctx.author.mention}, `{item_name}` is not a valid item",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=5)
+
+    @pokedex.command(aliases=['-t', 'types'])
+    async def type(self, ctx, *, type_name: str):
+        return
 
 
 def setup(client):
