@@ -182,24 +182,39 @@ class Pokedex(commands.Cog):
 
     async def get_type_interactions(self, name: str) -> str:
         value = await self.check_type(name)
-        damage = value.damage_relations
-        key_names = [key.replace("_", " ").title() for key in damage]
+        dr = value.damage_relations
+        key_names = ["Double Damage From: ", "Double Damage To: ", "Half Damage From: ", "Half Damage To: ",
+                     "No Damage From: ", "No Damage To: "]
+        damage = [dr.double_damage_from, dr.double_damage_to, dr.half_damage_from, dr.half_damage_to,
+                  dr.no_damage_from, dr.no_damage_to]
+
         index = 0
         string = ""
         non = "`N/A`"
 
         for relation in damage:
+            string += key_names[index]
             if relation:
-                string += f"{key_names[index]}: "
                 for item in relation:
-                    string += f"`{item.name.capitalize}` "
+                    string += f"`{item.name.capitalize()}` "
             else:
                 string += non
             index += 1
-            string += "\n"
-
-        print(string)
+            if index != 6:
+                string += "\n"
         return string
+
+    async def get_type_moves(self, name: str) -> str:
+        value = await self.check_type(name)
+        key = value.moves
+        move_list = [item.name.replace("-", " ").title() for item in key]
+        return "Moves:\n`" + "` `".join(sorted(move_list)) + "`"
+
+    async def get_type_pokemon(self, name: str) -> str:
+        value = await self.check_type(name)
+        key = value.pokemon
+        pokemon_list = [item.pokemon.name.replace("-", " ").title() for item in key]
+        return "Pokemon:\n`" + "` `".join(sorted(pokemon_list)) + "`"
 
     async def get_type_entry(self, name: str) -> tuple:
         value = await self.check_type(name)
@@ -207,6 +222,12 @@ class Pokedex(commands.Cog):
             return None
 
         type_name = f"Name: `{value.name}`"
+        type_interactions = await self.get_type_interactions(name)
+        if not value.move_damage_class:
+            type_move_damage_class = f"Damage Class: `N/A`"
+        else:
+            type_move_damage_class = f"Damage Class: `{value.move_damage_class.name.capitalize()}`"
+        return type_name, type_interactions, type_move_damage_class
 
     @commands.group(aliases=['dex'])
     async def pokedex(self, ctx):
@@ -243,7 +264,8 @@ class Pokedex(commands.Cog):
             panel.add_field(name="Type",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
                                   f"Returns: Details about that type"
-                                  f"Aliases: `-t` `types`",
+                                  f"Flag: `-p` `-m` or blank *(defaults to none)*"
+                                  f"Aliases: `-t`",
                             inline=False)
             return await ctx.channel.send(embed=panel)
 
@@ -333,16 +355,44 @@ class Pokedex(commands.Cog):
                                   color=discord.Color.blue())
             embed.description += "\n".join(value)
             embed.set_thumbnail(url=await self.get_item_sprite(item_name_sent))
-            await ctx.channel.send(embed=embed)
+            return await ctx.channel.send(embed=embed)
         else:
             invalid = discord.Embed(title="Invalid Item Name",
                                     description=f"{ctx.author.mention}, `{item_name}` is not a valid item",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
-    @pokedex.command(aliases=['-t', 'types'])
-    async def type(self, ctx, *, type_name: str):
-        return
+    @pokedex.command(aliases=['-t'])
+    async def type(self, ctx, *, type_name_flag: str):
+        flag = type_name_flag[-3:]
+        if flag == " -p" or flag == " -m":
+            type_name = type_name_flag[:-3]
+        else:
+            flag = None
+            type_name = type_name_flag
+        type_name_sent = type_name.lower()
+        value = await self.get_type_entry(type_name_sent)
+        if value:
+            embed = discord.Embed(title=type_name_sent.title(),
+                                  description=f"{ctx.author.mention}, here is the info for type {type_name_sent}\n\n",
+                                  color=discord.Color.blue())
+            if flag:
+                if flag == " -p":
+                    embed.description = f"{ctx.author.mention}, here are all the Pokémon of type {type_name_sent}\n\n" \
+                                        f"{await self.get_type_pokemon(type_name_sent)}"
+                elif flag == " -m":
+                    embed.description = f"{ctx.author.mention}, here are all the moves of type {type_name_sent}\n\n" \
+                                        f"{await self.get_type_moves(type_name_sent)}"
+            else:
+                embed.description += "\n\n".join(value)
+                embed.description += f"\n\n*For information on what Pokémon or moves are {type_name_sent} type, add " \
+                                     f"the flag `-p` or `-m` respectively to the command*"
+            return await ctx.channel.send(embed=embed)
+        else:
+            invalid = discord.Embed(title="Invalid Type Name",
+                                    description=f"{ctx.author.mention}, `{type_name}` is not a valid type",
+                                    color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=invalid, delete_after=5)
 
 
 def setup(client):
