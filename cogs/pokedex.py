@@ -208,10 +208,6 @@ class Pokedex(commands.Cog):
             panel.add_field(name="Type",
                             value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
                                   f"Returns: Details about that type")
-            panel.add_field(name="Command Progress",
-                            value="As of right now, the only working commands are `pokemon` `move` `ability`. The bot "
-                                  "developer is working on the rest of the commands.",
-                            inline=False)
             return await ctx.channel.send(embed=panel)
 
     @pokedex.command(aliases=['-p'])
