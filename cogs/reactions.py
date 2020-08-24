@@ -79,7 +79,7 @@ class Reactions(commands.Cog):
         with open('reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
-        file[str(ctx.guild.id)].update({str(rr_message.id): []})
+        file[str(ctx.guild.id)].update({str(rr_message.id): {"type": type_name, "details": []}})
         for role, emoji in role_emoji:
             file[str(ctx.guild.id)][str(rr_message.id)].append((str(role), str(emoji)))
         with open('reactionroles.json', 'w') as g:
