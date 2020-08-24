@@ -69,11 +69,12 @@ class Reactions(commands.Cog):
         else:
             return await panel_message.edit(embed=embed, delete_after=10)
 
-    async def send_rr_message(self, ctx, send_embed: discord.Embed, emoji_list: list, role_emoji: tuple):
-        rr_message = await ctx.channel.send(embed=send_embed)
+    async def send_rr_message(self, ctx, channel: discord.TextChannel, send_embed: discord.Embed, emoji_list: list,
+                              role_emoji: list, type_name: str):
+        rr_message = await channel.send(embed=send_embed)
         for emoji in emoji_list:
             await rr_message.add_reaction(emoji)
-        init = {str(ctx.guild.id): {str(rr_message.id): []}}
+        init = {str(ctx.guild.id): {str(rr_message.id): {"type": type_name, "details": []}}}
         gcmds.json_load(gcmds, 'reactionroles.json', init)
         with open('reactionroles.json', 'r') as f:
             file = json.load(f)
@@ -86,15 +87,44 @@ class Reactions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
-        try:
-            member = await reaction.message.guild.fetch_member(user.id)
-            role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
-            for role, emoji in role_emoji:
-                if reaction.emoji == emoji:
-                    if reaction.message.guild.get_role(role) not in user.roles:
-                        await member.add_roles(reaction.message.guild.get_role(role))
-        except KeyError:
-            pass
+        if not user.bot:
+            try:
+                member = await reaction.message.guild.fetch_member(user.id)
+                role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
+                type_name = role_emoji['type']
+                for item in role_emoji['details']:
+                    role = reaction.message.guild.get_role(int(item[0]))
+                    if reaction.emoji == item:
+                        if type_name == "normal" or type_name == "single_normal":
+                            if role not in member.roles:
+                                await member.add_roles(role)
+                        if type_name == "reverse":
+                            if role in member.roles:
+                                await member.remove_roles(role)
+                    elif type_name == "single_normal":
+                        if role in member.roles:
+                            await member.remove_roles(role)
+            except (discord.Forbidden, KeyError):
+                pass
+
+    @commands.Cog.listener()
+    async def on_reaction_remove(self, reaction: discord.Reaction, user):
+        if not user.bot:
+            try:
+                member = await reaction.message.guild.fetch_member(user.id)
+                role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
+                type_name = role_emoji['type']
+                for item in role_emoji['details']:
+                    role = reaction.message.guild.get_role(int(item[0]))
+                    if reaction.emoji == item:
+                        if type_name == "normal" or type_name == "single_normal":
+                            if role in member.roles:
+                                await member.remove_roles(role)
+                        if type_name == "reverse":
+                            if role not in member.roles:
+                                await member.add_roles(role)
+            except (discord.Forbidden, KeyError):
+                pass
 
     @commands.group(aliases=['rr'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
@@ -121,7 +151,7 @@ class Reactions(commands.Cog):
                                                 f"menu. Just follow the prompts and you will have a working reaction "
                                                 f"roles panel!",
                                     color=discord.Color.blue())
-        panel_embed.set_footer(text="Type *cancel* to cancel at any time")
+        panel_embed.set_footer(text="Type \"cancel\" to cancel at any time")
         panel = await ctx.channel.send(embed=panel_embed)
 
         await asyncio.sleep(5.0)
@@ -222,7 +252,7 @@ class Reactions(commands.Cog):
                     continue
             break
 
-        color = int(result.content, 16)
+        color = int(result.content[1:], 16)
         await result.delete()
 
         # User will input the emoji, then appropriate role by tag
@@ -253,7 +283,7 @@ class Reactions(commands.Cog):
             if result.content == "finish":
                 break
 
-            role = result.content[4:22]
+            role = result.content[3:21]
             await result.delete()
 
             while True:
@@ -268,22 +298,56 @@ class Reactions(commands.Cog):
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
-                if result.emoji in emoji_list:
+                if result[0].emoji in emoji_list:
                     continue
                 else:
                     break
 
-            emoji = result.emoji
+            emoji = result[0].emoji
             emoji_list.append(emoji)
-            await result.message.clear_reactions()
+            await result[0].message.clear_reactions()
 
             emoji_role_list.append((role, emoji))
+
+        # User will input number to dictate type of reaction role
+        while True:
+            try:
+                panel_message = await self.check_panel(panel)
+                if not panel_message:
+                    return self.no_panel(ctx)
+                await self.edit_panel(panel_embed, panel_message, title=None,
+                                      description=f"{ctx.author.mention}, please enter the number that corresponds to the "
+                                                  f"type of reaction role behavior you would like\n\n"
+                                                  f"**1:** Normal *(react to add, unreact to remove, multiple at a time)*\n"
+                                                  f"**2:** Reverse *(react to remove, unreact to add, multiple at a time)*\n"
+                                                  f"**3:** Single Normal *(same as normal, except you can only have one "
+                                                  f"role at a time)*\n\n"
+                                                  f"*If I wanted to pick `Normal`, I would type \"1\" as the response")
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx, timeout, panel)
+            else:
+                if result.content == "cancel":
+                    return await self.user_cancelled(ctx, panel_message)
+                if result.content == "1":
+                    type_name = "normal"
+                    break
+                if result.content == "2":
+                    type_name = "reverse"
+                    break
+                if result.content == "3":
+                    type_name = "single_normal"
+                    break
+                continue
+
+        type_name = type_name
+        await result.delete()
 
         # Post reaction role panel in the channel
         rr_embed = discord.Embed(title=title,
                                  description=description,
                                  color=color)
-        return await self.send_rr_message(ctx, rr_embed, emoji_list, emoji_role_list)
+        return await self.send_rr_message(ctx, channel, rr_embed, emoji_list, emoji_role_list, type_name)
 
 
 def setup(client):
