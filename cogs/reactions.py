@@ -60,7 +60,7 @@ class Reactions(commands.Cog):
                             for reacted in user:
                                 if member.id == reacted.id:
                                     await message.remove_reaction(emoji, member)
-            except (discord.Forbidden, KeyError):
+            except (discord.Forbidden, discord.NotFound, KeyError):
                 pass
 
     @commands.Cog.listener()
@@ -85,7 +85,7 @@ class Reactions(commands.Cog):
                         if type_name == "reverse":
                             if role not in member.roles:
                                 await member.add_roles(role)
-            except (discord.Forbidden, KeyError):
+            except (discord.Forbidden, discord.NotFound, KeyError):
                 pass
 
     async def check_panel(self, panel: discord.Message) -> discord.Message:
