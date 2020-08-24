@@ -1,10 +1,9 @@
 import asyncio
-import re
 import json
-from ctypes import Union
-
+import re
 import discord
 from discord.ext import commands
+
 from globalcommands import GlobalCMDS as gcmds
 
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -15,7 +14,6 @@ hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
 gcmds.json_load(gcmds, 'reactionroles.json', {})
 with open('reactionroles.json', 'r') as rr:
     rr_json = json.load(rr)
-    rr.close()
 
 
 class Reactions(commands.Cog):
@@ -26,6 +24,69 @@ class Reactions(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'Cog "{self.qualified_name}" has been loaded')
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        member = payload.member
+        reacted_emoji = payload.emoji
+        message_id = payload.message_id
+        guild_id = payload.guild_id
+        event_type = payload.event_type
+        channel_id = payload.channel_id
+        channel = await self.client.fetch_channel(channel_id)
+        message = await channel.fetch_message(message_id)
+        reactions = message.reactions
+        users = [(reaction.emoji, await reaction.users().flatten()) for reaction in reactions]
+        guild = await commands.AutoShardedBot.fetch_guild(self.client, guild_id)
+        if not member.bot and event_type == "REACTION_ADD":
+            try:
+                role_emoji = rr_json[str(guild_id)][str(message_id)]
+                type_name = role_emoji['type']
+                for item in role_emoji['details']:
+                    role = guild.get_role(int(item['role_id']))
+                    if str(reacted_emoji) == str(item['emoji']):
+                        if type_name == "normal" or type_name == "single_normal":
+                            if role not in member.roles:
+                                await member.add_roles(role)
+                        if type_name == "reverse":
+                            if role in member.roles:
+                                await member.remove_roles(role)
+                    elif str(reacted_emoji) != str(item['emoji']) and type_name == "single_normal":
+                        if role in member.roles:
+                            await member.remove_roles(role)
+                if type_name == "single_normal":
+                    for emoji, user in users:
+                        if str(emoji) != str(reacted_emoji):
+                            for reacted in user:
+                                if member.id == reacted.id:
+                                    await message.remove_reaction(emoji, member)
+            except (discord.Forbidden, KeyError):
+                pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        member_id = payload.user_id
+        reacted_emoji = payload.emoji
+        message_id = payload.message_id
+        guild_id = payload.guild_id
+        event_type = payload.event_type
+        guild = await commands.AutoShardedBot.fetch_guild(self.client, guild_id)
+        member = await guild.fetch_member(member_id)
+        if not member.bot and event_type == "REACTION_REMOVE":
+            try:
+                role_emoji = rr_json[str(guild_id)][str(message_id)]
+                type_name = role_emoji['type']
+                for item in role_emoji['details']:
+                    role = guild.get_role(int(item['role_id']))
+                    if str(reacted_emoji) == str(item['emoji']):
+                        if type_name == "normal" or type_name == "single_normal":
+                            if role in member.roles:
+                                await member.remove_roles(role)
+                        if type_name == "reverse":
+                            if role not in member.roles:
+                                await member.add_roles(role)
+            except (discord.Forbidden, KeyError):
+                pass
 
     async def check_panel(self, panel: discord.Message) -> discord.Message:
         try:
@@ -79,52 +140,13 @@ class Reactions(commands.Cog):
         with open('reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
+        file.update({str(ctx.guild.id): {}})
+        file.update({str(ctx.guild.id): {str(rr_message.id): {}}})
         file[str(ctx.guild.id)].update({str(rr_message.id): {"type": type_name, "details": []}})
         for role, emoji in role_emoji:
-            file[str(ctx.guild.id)][str(rr_message.id)].append((str(role), str(emoji)))
+            file[str(ctx.guild.id)][str(rr_message.id)]['details'].append({"role_id": str(role), "emoji": str(emoji)})
         with open('reactionroles.json', 'w') as g:
             json.dump(file, g, indent=4)
-
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Reaction, user):
-        if not user.bot:
-            try:
-                member = await reaction.message.guild.fetch_member(user.id)
-                role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
-                type_name = role_emoji['type']
-                for item in role_emoji['details']:
-                    role = reaction.message.guild.get_role(int(item[0]))
-                    if reaction.emoji == item:
-                        if type_name == "normal" or type_name == "single_normal":
-                            if role not in member.roles:
-                                await member.add_roles(role)
-                        if type_name == "reverse":
-                            if role in member.roles:
-                                await member.remove_roles(role)
-                    elif type_name == "single_normal":
-                        if role in member.roles:
-                            await member.remove_roles(role)
-            except (discord.Forbidden, KeyError):
-                pass
-
-    @commands.Cog.listener()
-    async def on_reaction_remove(self, reaction: discord.Reaction, user):
-        if not user.bot:
-            try:
-                member = await reaction.message.guild.fetch_member(user.id)
-                role_emoji = rr_json[str(reaction.message.guild.id)][str(reaction.message.id)]
-                type_name = role_emoji['type']
-                for item in role_emoji['details']:
-                    role = reaction.message.guild.get_role(int(item[0]))
-                    if reaction.emoji == item:
-                        if type_name == "normal" or type_name == "single_normal":
-                            if role in member.roles:
-                                await member.remove_roles(role)
-                        if type_name == "reverse":
-                            if role not in member.roles:
-                                await member.add_roles(role)
-            except (discord.Forbidden, KeyError):
-                pass
 
     @commands.group(aliases=['rr'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
@@ -179,7 +201,8 @@ class Reactions(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please tag the channel you would like the "
                                                   f"embed to be sent in (or type its ID)")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                                                                timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
             if not re.match(channel_tag_rx, result.content):
@@ -242,7 +265,8 @@ class Reactions(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please enter the hex color of the embed "
                                                   f"that will be sent")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                                                                timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
             if not re.match(hex_color_rx, result.content):
@@ -281,6 +305,7 @@ class Reactions(commands.Cog):
                 else:
                     break
             if result.content == "finish":
+                await result.delete()
                 break
 
             role = result.content[3:21]
@@ -323,7 +348,8 @@ class Reactions(commands.Cog):
                                                   f"**3:** Single Normal *(same as normal, except you can only have one "
                                                   f"role at a time)*\n\n"
                                                   f"*If I wanted to pick `Normal`, I would type \"1\" as the response")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                                                                timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
             else:
