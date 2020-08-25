@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 from globalcommands import GlobalCMDS as gcmds
 
-DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
-                 'Reactions', 'Moderation', 'Music', 'Utility']
+DISABLED_COGS = ["blackjack", 'coinflip', 'connectfour', 'oldmaid', 'slots', 'uno',
+                 'reactions', 'moderation', 'music', 'utility']
 DISABLED_COMMANDS = []
 
 
