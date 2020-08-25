@@ -5,14 +5,14 @@ import os
 import random
 import socket
 import sys
-
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from globalcommands import GlobalCMDS as gcmds
 
-DISABLED_COGS = ["Blackjack", 'Coinflip', 'Oldmaid', 'Slots', 'Uno', 'Reactions', 'Moderation', 'Music', 'Utility']
+DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
+                 'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
 
 
@@ -102,9 +102,8 @@ async def check_blacklist(ctx):
 
 @client.check
 async def disable_dm_exec(ctx):
-    if not isinstance(ctx.channel, discord.TextChannel) and (
-            ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and not await client.is_owner(
-        ctx.author):
+    if not ctx.guild and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and \
+            not await client.is_owner(ctx.author):
         disabled = discord.Embed(title="Command Disabled in Non Server Channels",
                                  description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
                                              f"in a server",
