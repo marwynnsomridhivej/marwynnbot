@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 from globalcommands import GlobalCMDS as gcmds
 
-DISABLED_COGS = ["blackjack", 'coinflip', 'connectfour', 'oldmaid', 'slots', 'uno',
-                 'reactions', 'moderation', 'music', 'utility']
+DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
+                 'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
 
 
@@ -102,8 +102,7 @@ async def check_blacklist(ctx):
 
 @client.check
 async def disable_dm_exec(ctx):
-    if not ctx.guild and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS) and \
-            not await client.is_owner(ctx.author):
+    if not ctx.guild and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
         disabled = discord.Embed(title="Command Disabled in Non Server Channels",
                                  description=f"{ctx.author.mention}, `m!{ctx.invoked_with}` can only be accessed "
                                              f"in a server",
