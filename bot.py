@@ -117,18 +117,18 @@ async def disable_dm_exec(ctx):
 
 @client.event
 async def on_command_error(ctx, error):
-    if isinstance(error, discord.ext.commands.errors.CheckFailure):
-        pass
-    elif isinstance(error, discord.ext.commands.MissingPermissions):
+    if isinstance(error, discord.ext.commands.MissingPermissions):
         missing = discord.Embed(title="Insufficient User Permissions",
-                                description=f"{ctx.author.mention}, to execute this command, you need `{'` `'.join(error.missing_perms)}`",
+                                description=f"{ctx.author.mention}, to execute this command, you need "
+                                            f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                 color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=missing, delete_after=10)
+        await ctx.channel.send(embed=missing, delete_after=10)
     elif isinstance(error, discord.ext.commands.BotMissingPermissions):
         missing = discord.Embed(title="Insufficient Bot Permissions",
-                                description=f"{ctx.author.mention}, to execute this command, I need `{'` `'.join(error.missing_perms)}`",
+                                description=f"{ctx.author.mention}, to execute this command, I need "
+                                            f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                 color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=missing, delete_after=10)
+        await ctx.channel.send(embed=missing, delete_after=10)
     elif isinstance(error, commands.NotOwner):
         not_owner = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, only the bot owner is authorised to use this "
@@ -141,7 +141,7 @@ async def on_command_error(ctx, error):
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                              f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
                                  color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=notFound, delete_after=10)
+        await ctx.channel.send(embed=notFound, delete_after=10)
     elif isinstance(error, commands.CommandOnCooldown):
         cooldown_time_truncated = truncate(error.retry_after, 3)
         if cooldown_time_truncated < 1:
@@ -152,7 +152,7 @@ async def on_command_error(ctx, error):
         cooldown = discord.Embed(title="Command on Cooldown",
                                  description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                  color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
+        await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
     else:
         raise error
 
