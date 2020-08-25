@@ -32,8 +32,11 @@ class Reactions(commands.Cog):
             file = json.load(f)
             f.close()
         member = payload.member
+        if not member:
+            return
         guild_id = payload.guild_id
         event_type = payload.event_type
+
         if not member.bot and event_type == "REACTION_ADD" and str(guild_id) in file.keys():
             reacted_emoji = payload.emoji
             message_id = payload.message_id

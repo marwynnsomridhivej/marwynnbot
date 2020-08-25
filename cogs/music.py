@@ -39,6 +39,8 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
+        if not reaction.message.guild:
+            return
         player = self.client.lavalink.player_manager.get(reaction.message.guild.id)
         if reaction.emoji not in reactions:
             return
