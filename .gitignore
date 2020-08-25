@@ -15,6 +15,7 @@ actionstats.json
 playlists.json
 requests.json
 reactionroles.json
+reminders.json
 discord.log
 Lavalink.jar
 application.yml
