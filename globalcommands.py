@@ -87,7 +87,7 @@ class GlobalCMDS:
             await message.delete()
 
     def isGuild(self, ctx):
-        if isinstance(ctx.channel, discord.TextChannel):
+        if ctx.guild:
             return True
         else:
             return False
