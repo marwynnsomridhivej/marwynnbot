@@ -153,6 +153,8 @@ async def on_command_error(ctx, error):
                                  description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                  color=discord.Color.dark_red())
         await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
+    elif isinstance(error, commands.CheckFailure):
+        pass
     else:
         raise error
 
