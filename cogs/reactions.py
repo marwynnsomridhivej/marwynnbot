@@ -328,6 +328,8 @@ class Reactions(commands.Cog):
                                   f"Aliases: `-d` `-rm` `del`\n"
                                   f"Special Cases: {message_id_message}. If the panel was manually deleted, "
                                   f"MarwynnBot will delete the panel's record from its database of reaction role panels")
+            embed.add_field(name="Useful Resources",
+                            value="Hex Color Picker: https://www.google.com/search?q=color+picker")
             return await ctx.channel.send(embed=embed)
 
     @reactionrole.command(aliases=['-c', 'start', 'make'])
