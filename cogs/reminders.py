@@ -23,7 +23,6 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=15)
     async def check_single(self):
-        print("iters")
         with open('reminders.json', 'r') as f:
             file = json.load(f)
             f.close()
@@ -32,11 +31,9 @@ class Reminders(commands.Cog):
                 index = 0
                 for reminder in file[str(guild)][str(user)]:
                     if reminder['type'] == "single":
-                        print(reminder['time'] - datetime.utcnow().timestamp())
-                        if reminder['time'] - datetime.utcnow().timestamp() <= 15.0:
-                            print("sent value")
+                        if reminder['time'] - datetime.now().timestamp() <= 15.0:
                             user_id = int(user)
-                            sleep_time = reminder['time'] - datetime.utcnow().timestamp()
+                            sleep_time = reminder['time'] - datetime.now().timestamp()
                             if sleep_time <= 0:
                                 sleep_time = 0
                             await asyncio.create_task(self.send_single(sleep_time, user_id, reminder['channel_id'],
