@@ -14,7 +14,8 @@ class Reminders(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.check_single.start()
+        if not self.check_single.is_running():
+            self.check_single.start()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -22,6 +23,7 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=15)
     async def check_single(self):
+        print("iters")
         with open('reminders.json', 'r') as f:
             file = json.load(f)
             f.close()
@@ -30,9 +32,11 @@ class Reminders(commands.Cog):
                 index = 0
                 for reminder in file[str(guild)][str(user)]:
                     if reminder['type'] == "single":
-                        if int(reminder['time'] - datetime.utcnow().timestamp()) <= 15:
+                        print(reminder['time'] - datetime.utcnow().timestamp())
+                        if reminder['time'] - datetime.utcnow().timestamp() <= 15.0:
+                            print("sent value")
                             user_id = int(user)
-                            sleep_time = int(reminder['time'] - datetime.utcnow().timestamp())
+                            sleep_time = reminder['time'] - datetime.utcnow().timestamp()
                             if sleep_time <= 0:
                                 sleep_time = 0
                             await asyncio.create_task(self.send_single(sleep_time, user_id, reminder['channel_id'],
@@ -40,9 +44,8 @@ class Reminders(commands.Cog):
                                                                        file))
                     index += 1
 
-    async def send_single(self, sleep_time: int, user_id: int, channel_id: int, message_content: str, guild_id: int,
+    async def send_single(self, sleep_time: float, user_id: int, channel_id: int, message_content: str, guild_id: int,
                           index: int, file: dict):
-        print("Task created")
         if sleep_time > 0:
             await asyncio.sleep(sleep_time)
         try:
@@ -118,6 +121,12 @@ class Reminders(commands.Cog):
         else:
             return await ctx.channel.send(embed=embed, delete_after=10)
 
+    async def not_valid_time(self, ctx) -> discord.Message:
+        embed = discord.Embed(title="Invalid Time",
+                              description=f"{ctx.author.mention}, you did not provide a valid time",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+
     async def create_single_reminder(self, user_id: int, channel_id: int, guild_id: int,
                                      send_time: int, message_content: str, remind_type: str):
         init = {
@@ -154,13 +163,15 @@ class Reminders(commands.Cog):
         with open('reminders.json', 'w') as g:
             json.dump(file, g, indent=4)
 
-    @commands.group()
+    @commands.group(aliases=['reminder'])
     async def remind(self, ctx, *, message_with_time: str = None):
         await gcmds.invkDelete(gcmds, ctx)
         if not message_with_time:
             return await self.send_remind_help(ctx)
 
-        dates = search_dates(text=message_with_time)
+        dates = search_dates(text=message_with_time, settings={'PREFER_DATES_FROM': "future"})
+        if not dates:
+            return await self.not_valid_time(ctx)
         time_to_send = dates[0][1].timestamp()
         remind_message_rem_time = message_with_time.replace(f"{dates[0][0]}", "")
         if remind_message_rem_time.startswith(" "):
@@ -203,14 +214,17 @@ class Reminders(commands.Cog):
             remind_type = "loop"
 
         if remind_type == "single":
+            if str(dates[0][0]).startswith("in ") or str(dates[0][0]).startswith("at "):
+                str_time = str(dates[0][0])
+            else:
+                str_time = "in " + str(dates[0][0])
             panel_new_title = "Reminder Successfully Created"
             panel_new_description = f"{ctx.author.mention}, your reminder has been created and will be dispatched to " \
-                                    f"this channel in {dates[0][0]}"
+                                    f"this channel {str_time}"
             finished = await self.edit_panel(panel_embed, panel, panel_new_title, panel_new_description)
             if not finished:
                 return await self.cancelled(ctx, panel)
-            time_sent = (datetime.utcnow().timestamp() - time_to_send) + datetime.utcnow().timestamp()
-            await self.create_single_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, time_sent,
+            await self.create_single_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, time_to_send,
                                               remind_message, remind_type)
 
 
