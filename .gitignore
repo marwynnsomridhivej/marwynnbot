@@ -1,4 +1,4 @@
-.idea
+.vscode
 cogs/__pycache__
 venv
 logs
