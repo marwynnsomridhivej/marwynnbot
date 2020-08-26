@@ -1,8 +1,9 @@
 import asyncio
 import json
+import os
 import discord
 from discord.ext import commands, tasks
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dateparser.search import search_dates
 from globalcommands import GlobalCMDS as gcmds
 
@@ -97,11 +98,17 @@ class Reminders(commands.Cog):
                                           f"option]`. Here is a list of valid options",
                               color=discord.Color.blue())
         embed.add_field(name="Create",
-                        value=f"Usage: `{gcmds.prefix(gcmds, ctx)}remind create [message]`\n"
+                        value=f"Usage: `{gcmds.prefix(gcmds, ctx)}remind [message_with_time]`\n"
                               f"Returns: Your reminder message at the specified time\n"
-                              f"Aliases: `-c` `make` `set`\n"
+                              f"Aliases: `reminder`\n"
                               f"Special Cases: You must specify a time within your message, whether it be exact or "
                               f"relative",
+                        inline=False)
+        embed.add_field(name="Edit",
+                        value=f"Usage: `{gcmds.prefix(gcmds, ctx)}remind edit`\n"
+                              f"Returns: An interactive reminder edit panel\n"
+                              f"Aliases: `-e`\n"
+                              f"Special Cases: You must have at least one reminder queued",
                         inline=False)
         return await ctx.channel.send(embed=embed)
 
@@ -195,14 +202,120 @@ class Reminders(commands.Cog):
 
         await asyncio.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
 
+    async def get_reminders(self, guild_id: int, user_id: int) -> str:
+        if not os.path.exists('reminders.json'):
+            return None
+
+        with open('reminders.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        index = 1
+        string = ""
+        user_info = file[str(guild_id)][str(user_id)]
+        if len(user_info) == 0 or not user_info:
+            return None
+        for entry in user_info:
+            if entry['type'] == "single":
+                string += f"**{index}:** {entry['type']}, fires at {datetime.fromtimestamp(entry['time'])}, "
+                f"{entry['message_content']}\n\n"
+            elif entry['type'] == "loop":
+                td = timedelta(seconds=entry['time'])
+                time_formatted = ""
+                days = divmod(86400, td.seconds)
+                if days[0] != 0:
+                    time_formatted += f"{days[0]} days, "
+                rem_sec = days[1]
+                hours = divmod(3600, rem_sec)
+                if hours[0] != 0:
+                    time_formatted += f"{hours[0]} hours, "
+                rem_sec = hours[1]
+                minutes = divmod(60, rem_sec)
+                if minutes[0] != 0:
+                    time_formatted += f"{minutes[0]} minutes, "
+                seconds = rem_sec
+                if seconds != 0:
+                    time_formatted += f"{seconds} seconds"
+                print(days, hours, minutes, seconds)
+                string += f"**{index}:** {entry['type']}, fires every {time_formatted}, {entry['message_content']}\n\n"
+            index += 1
+        return string
+
+    async def get_reminder_time(self, guild_id: int, user_id: int, index: int) -> str:
+        with open('reminders.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        if file[str(guild_id)][str(user_id)][index]['type'] == "single":
+            return datetime.fromtimestamp(file[str(guild_id)][str(user_id)][index]['time']).strftime("%m/%d/%Y %H:%M:%S UTC")
+        else:
+            td = timedelta(seconds=file[str(guild_id)]
+                           [str(user_id)][index]['time'])
+            time_formatted = ""
+            days = divmod(86400, td.seconds)
+            if days[0] != 0:
+                time_formatted += f"{days[0]} days, "
+            rem_sec = days[1]
+            hours = divmod(3600, rem_sec)
+            if hours[0] != 0:
+                time_formatted += f"{hours[0]} hours, "
+            rem_sec = hours[1]
+            minutes = divmod(60, rem_sec)
+            if minutes[0] != 0:
+                time_formatted += f"{minutes[0]} minutes, "
+            seconds = rem_sec
+            if seconds != 0:
+                time_formatted += f"{seconds} seconds"
+            return time_formatted
+
+    async def no_reminders(self, ctx) -> discord.Message:
+        embed = discord.Embed(title="No Reminders",
+                              description=f"{ctx.author.mention}, you currently have no reminders scheduled",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+
+    async def get_reminder_type(self, guild_id: int, user_id: int, index: int) -> str:
+        with open('reminders.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        
+        print(file[str(guild_id)][str(user_id)][index])
+
+        return file[str(guild_id)][str(user_id)][index]['type']
+
+    async def get_reminder_content(self, guild_id: int, user_id: int, index: int) -> str:
+        with open('reminders.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        return file[str(guild_id)][str(user_id)][index]['message_content']
+
+    async def edit_reminder(self, guild_id: int, user_id: int, index: int, time_to_send, edited_content):
+        try:
+            with open('reminders.json', 'r') as f:
+                file = json.load(f)
+                f.close()
+            info = file[str(guild_id)][str(user_id)][index]
+            if time_to_send:
+                info['time'] = time_to_send
+            if edited_content:
+                info['message_content'] = edited_content
+            with open('reminders.json', 'w') as g:
+                json.dump(file, g, indent=4)
+                g.close()
+            return True
+        except KeyError:
+            return False
+
     @commands.group(aliases=['reminder'])
     async def remind(self, ctx, *, message_with_time: str = None):
         await gcmds.invkDelete(gcmds, ctx)
         if not message_with_time:
             return await self.send_remind_help(ctx)
-        
-        if message_with_time.startswith(('-e', 'edit')):
-            return await ctx.invoke(self.edit(ctx))
+
+        if message_with_time == "-e" or message_with_time == "edit":
+            await ctx.invoke(self.edit)
+            return
 
         current_time = datetime.now().timestamp()
         dates = search_dates(text=message_with_time, settings={
@@ -219,17 +332,12 @@ class Reminders(commands.Cog):
 
         panel_embed = discord.Embed(title="Reminder Setup Panel",
                                     description=f"{ctx.author.mention}, would you like this reminder to loop?\n\n"
-                                                f"*React with* 🔁 *to loop,* ✅ *to have it send once, or* 🛑 *to cancel",
+                                                f"*React with* 🔁 *to loop,* ✅ *to have it send once, or* 🛑 "
+                                                f"*to cancel",
                                     color=discord.Color.blue())
         panel = await ctx.channel.send(embed=panel_embed)
         for reaction in reactions:
             await panel.add_reaction(reaction)
-
-        def from_user(message: discord.Message) -> bool:
-            if message.author.id == ctx.author.id:
-                return True
-            else:
-                return False
 
         def reacted_user(reaction: discord.Reaction, user: discord.User) -> bool:
             if reaction.message.id == panel.id and user.id == ctx.author.id and (reaction.emoji in reactions):
@@ -276,9 +384,105 @@ class Reminders(commands.Cog):
             loop_interval = time_to_send - current_time
             await self.create_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, loop_interval,
                                        remind_message, remind_type)
-    
+
     @remind.command(aliases=['-e'])
     async def edit(self, ctx):
+        reminders_list = await self.get_reminders(ctx.guild.id, ctx.author.id)
+        if not reminders_list:
+            return await self.no_reminders(ctx)
+        panel_embed = discord.Embed(title="Edit Reminders",
+                                    description=f"{ctx.author.mention}, please type the number of the reminder that "
+                                    f"you would like to edit, or type *\"cancel\"* to cancel\n\n{reminders_list}",
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+
+        def from_user(message: discord.Message) -> bool:
+            if message.author.id == ctx.author.id:
+                return True
+            else:
+                return False
+
+        while True:
+            try:
+                if not await self.check_panel_exists(panel):
+                    return await self.cancelled(ctx, panel)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx)
+            if result.content == "cancel":
+                return await self.cancelled(ctx, panel)
+            try:
+                index = int(result.content) - 1
+                break
+            except (ValueError, TypeError):
+                continue
+        await result.delete()
+
+        reminder_type = await self.get_reminder_type(ctx.guild.id, ctx.author.id, index)
+        if reminder_type == "single":
+            description = f"{ctx.author.mention}, please enter the time you would like this reminder to fire, type " \
+                f"*\"skip\"* to keep the current time or type *\"cancel\"* to cancel\n\n" \
+                f"Current Time: {await self.get_reminder_time(ctx.guild.id, ctx.author.id, index)}"
+        elif reminder_type == "loop":
+            description = f"{ctx.author.mention}, please enter the interval you would like this reminder to loop or" \
+                f"type *\"cancel\"* to cancel\n\n" \
+                f"Loops Every: {await self.get_reminder_time(ctx.guild.id, ctx.author.id, index)}"
+
+        await self.edit_panel(panel_embed, panel, title=None, description=description)
+
+        while True:
+            try:
+                if not await self.check_panel_exists(panel):
+                    return await self.cancelled(ctx, panel)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx)
+            if result.content == "cancel":
+                return await self.cancelled(ctx, panel)
+            if result.content == "skip":
+                time_to_send = None
+                break
+
+            current_time = datetime.now().timestamp()
+            dates = search_dates(text=result.content, settings={
+                                 'PREFER_DATES_FROM': "future"})
+            if not dates:
+                continue
+            if reminder_type == "single":
+                time_to_send = dates[0][1].timestamp()
+            elif reminder_type == "loop":
+                time_to_send = dates[0][1].timestamp() - current_time
+            break
+        await result.delete()
+
+        description = f"{ctx.author.mention}, please type what you would like the reminder content to be if you would "\
+            "like to change it, otherwise, type *\"skip\"* to keep the current content or type *\"cancel\"* to cancel" \
+            f"\n\nCurrent Content: {await self.get_reminder_content(ctx.guild.id, ctx.author.id, index)}"
+        await self.edit_panel(panel_embed, panel, title=None, description=description)
+
+        while True:
+            try:
+                if not await self.check_panel_exists(panel):
+                    return await self.cancelled(ctx, panel)
+                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx)
+            if result.content == "cancel":
+                return await self.cancelled(ctx, panel)
+            elif result.content == "skip":
+                edited_content = None
+            else:
+                edited_content = result.content
+            break
+        await result.delete()
+
+        succeeded = await self.edit_reminder(ctx.guild.id, ctx.author.id, index, time_to_send, edited_content)
+        if succeeded:
+            await self.edit_panel(panel_embed, panel, title="Reminder Successfully Edited",
+                                  description=f"{ctx.author.mention}, your reminder was successfully edited")
+        else:
+            await self.edit_panel(panel_embed, panel, title="Reminder Edit Failed",
+                                  description=f"{ctx.author.menbtion}, your reminder could not be edited")
         return
 
 
