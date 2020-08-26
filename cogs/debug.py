@@ -87,10 +87,12 @@ class Debug(commands.Cog):
             update_string = str(update_message)
             if update_string.splitlines()[0].startswith("**") and update_string.splitlines()[0].endswith("**"):
                 title = update_string.splitlines()[0]
+                description = update_string.replace(title, "")
             else:
                 title = "Bot Update"
+                description = update_string
             updateEmbed = discord.Embed(title=title,
-                                        description=update_string,
+                                        description=description,
                                         color=discord.Color.blue())
             updateEmbed.set_footer(text=timestamp,
                                    icon_url=ctx.author.avatar_url)
