@@ -1,4 +1,4 @@
-https://github.com/Rapptz/discord.py.git
+git+https://github.com/Rapptz/discord.py.git
 requests==2.24.0
 numpy==1.19.1
 num2words==0.5.10
