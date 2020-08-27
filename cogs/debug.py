@@ -29,7 +29,7 @@ class Debug(commands.Cog):
     async def cancel(self, ctx, message: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Report Update Cancelled",
                               description=f"{ctx.author.mention}, your report update request was cancelled",
-                              color=discord.Color.blue())
+                              color=discord.Color.dark_red())
         try:
             return await message.edit(embed=embed, delete_after=10)
         except (discord.NotFound, discord.HTTPError, discord.Forbidden):
@@ -131,95 +131,104 @@ class Debug(commands.Cog):
                                     color=discord.Color.blue())
         updateEmbed.set_footer(text=timestamp,
                                icon_url=ctx.author.avatar_url)
-        preview = await ctx.author.send(embed=updateEmbed)
-        for reaction in updates_reaction:
-            await preview.add_reaction(reaction)
-
-        # User confirms send, requests edit, or cancels send
-        while True:
-            try:
-                response = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=confirm, timeout=30)
-            except asyncio.TimeoutError:
-                return await self.timeout(ctx, preview)
-            else:
-                if response[0].emoji in updates_reaction:
-                    await preview.clear_reactions()
-                    break
-                else:
-                    await preview.remove_reaction(response[0].emoji, ctx.author)
-                    continue
-
-        if response[0].emoji == "✅":
-            message = await updates_channel.send(embed=updateEmbed)
-            await message.publish()
-            updateEmbed.set_footer(text="Successfully reported update to announcement channel",
-                                   icon_url=ctx.author.avatar_url)
-            return await preview.edit(embed=updateEmbed)
-
-        if response[0].emoji == '📝':
-            def from_user(message: discord.Message) -> bool:
-                if message.author.id == ctx.author.id:
-                    return True
-                else:
-                    return False
-
-            panel_embed = discord.Embed(title="Edit Title",
-                                        description=f"{ctx.author.mention}, please enter what you would like the update "
-                                              f"title to be or type *\"skip\"* to keep the current title",
+        preview = await ctx.channel.send(embed=updateEmbed)
+        
+        panel_embed_start = discord.Embed(title="Confirmation",
+                                        description=f"{ctx.author.mention}, react below for actions",
                                         color=discord.Color.blue())
-            panel_embed.set_footer(text="Type \"cancel\" to cancel at any time")
-            panel = await ctx.author.send(embed=panel_embed)
+        panel = await ctx.channel.send(embed=panel_embed_start)
 
-            # User edits title
-            try:
-                response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
-            except asyncio.TimeoutError:
-                try:
-                    await preview.delete()
-                except Exception:
-                    pass
-                return await self.timeout(ctx, panel)
-            if response.content == "cancel":
-                await response.delete()
-                return await self.cancel(ctx, panel)
-            if not response.content == "skip":
-                updateEmbed.title = response.content
-                await preview.edit(embed=updateEmbed)
-            await response.delete()
+        while True:
+            if panel:
+                await panel.edit(embed=panel_embed_start)
+            else:
+                panel = await ctx.channel.send(embed=panel_embed_start)
             
-            panel_embed.title = "Edit Description"
-            panel_embed.description = f"{ctx.author.mention}, please enter what you would like the update description" \
-                f"to be or type *\"skip\" to keep the current title*"
-            try:
+            # Adds reaction controls
+            for reaction in updates_reaction:
+                await panel.add_reaction(reaction)
+
+            # User confirms send, requests edit, or cancels send
+            while True:
+                try:
+                    response = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=confirm, timeout=30)
+                except asyncio.TimeoutError:
+                    await panel.delete()
+                    return await self.timeout(ctx, preview)
+                else:
+                    if response[0].emoji in updates_reaction:
+                        await panel.clear_reactions()
+                        break
+                    else:
+                        await panel.remove_reaction(response[0].emoji, ctx.author)
+                        continue
+
+            if response[0].emoji == "✅":
+                message = await updates_channel.send(embed=updateEmbed)
+                await message.publish()
+                updateEmbed.set_footer(text="Successfully reported update to announcement channel",
+                                       icon_url=ctx.author.avatar_url)
+                return await preview.edit(embed=updateEmbed)
+
+            elif response[0].emoji == '📝':
+                def from_user(message: discord.Message) -> bool:
+                    if message.author.id == ctx.author.id:
+                        return True
+                    else:
+                        return False
+
+                panel_embed = discord.Embed(title="Edit Title",
+                                            description=f"{ctx.author.mention}, please enter what you would like the update "
+                                            f"title to be or type *\"skip\"* to keep the current title",
+                                            color=discord.Color.blue())
+                panel_embed.set_footer(text="Type \"cancel\" to cancel at any time")
                 await panel.edit(embed=panel_embed)
-            except (discord.NotFound, discord.Forbidden, discord.HTTPError):
-                return await self.cancel(ctx, panel)
 
-            # User edits description
-            try:
-                response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
-            except asyncio.TimeoutError:
+                # User edits title
                 try:
-                    await preview.delete()
-                except Exception:
-                    pass
-                return await self.timeout(ctx, panel)
-            if response.content == "cancel":
+                    response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                except asyncio.TimeoutError:
+                    try:
+                        await preview.delete()
+                    except Exception:
+                        pass
+                    return await self.timeout(ctx, panel)
+                if response.content == "cancel":
+                    await response.delete()
+                    return await self.cancel(ctx, panel)
+                if not response.content == "skip":
+                    updateEmbed.title = response.content
+                    await preview.edit(embed=updateEmbed)
                 await response.delete()
-                return await self.cancel(ctx, panel)
-            if not response.content == "skip":
-                updateEmbed.description = response.content
-                await preview.edit(embed=updateEmbed)
-            await response.delete()
-            
-            message = await updates_channel.send(embed=updateEmbed)
-            await message.publish()
-            updateEmbed.set_footer(text="Successfully reported update to announcement channel",
-                                   icon_url=ctx.author.avatar_url)
-            return await preview.edit(embed=updateEmbed)
 
-        if response[0].emoji == '🛑':
-            return await self.cancel(ctx, preview)
+                panel_embed.title = "Edit Description"
+                panel_embed.description = f"{ctx.author.mention}, please enter what you would like the update description" \
+                    f"to be or type *\"skip\" to keep the current description*"
+                try:
+                    await panel.edit(embed=panel_embed)
+                except (discord.NotFound, discord.Forbidden, discord.HTTPError):
+                    return await self.cancel(ctx, panel)
+
+                # User edits description
+                try:
+                    response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                except asyncio.TimeoutError:
+                    try:
+                        await preview.delete()
+                    except Exception:
+                        pass
+                    return await self.timeout(ctx, panel)
+                if response.content == "cancel":
+                    await response.delete()
+                    return await self.cancel(ctx, panel)
+                if not response.content == "skip":
+                    updateEmbed.description = response.content
+                    await preview.edit(embed=updateEmbed)
+                await response.delete()
+
+            elif response[0].emoji == '🛑':
+                await panel.delete()
+                return await self.cancel(ctx, preview)
 
     @commands.command()
     async def shard(self, ctx, option=None):
