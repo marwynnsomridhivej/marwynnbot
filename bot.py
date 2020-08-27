@@ -5,6 +5,7 @@ import os
 import random
 import socket
 import sys
+import re
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ from globalcommands import GlobalCMDS as gcmds
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
+token_rx = re.compile(r'[MN]\w{23}.\w{6}.\w{27}')
 
 
 async def get_prefix(client, message):
@@ -61,6 +63,19 @@ async def on_ready():
     ip = socket.gethostbyname(hostname)
     print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}')
     await status.start()
+
+
+@client.event
+async def on_message(message):
+    if re.search(token_rx, message.content) and message.guild:
+        await message.delete()
+        embed = discord.Embed(title="Token Found",
+                              description=f"{message.author.mention}, a Discord token was found in your message. It has "
+                              "automatically been deleted.",
+                              color=discord.Color.dark_red())
+        await message.channel.send(embed=embed, delete_after=10)
+    
+    await client.process_commands(message)
 
 
 @client.check
