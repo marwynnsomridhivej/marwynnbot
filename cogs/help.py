@@ -66,7 +66,7 @@ class Help(commands.Cog):
         if ctx.invoked_subcommand is None:
             timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
             helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
-                                      colour=discord.Color(0x3498db),
+                                      color=discord.Color.blue(),
                                       url="https://discord.gg/fYBTdUp",
                                       description="These are all the commands I currently support! Type"
                                                   f"\n```{gcmds.prefix(gcmds, ctx)}help [command]```\n to get help on "
@@ -74,7 +74,6 @@ class Help(commands.Cog):
             helpEmbed.set_thumbnail(
                 url="https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png")
             helpEmbed.set_author(name="MarwynnBot",
-                                 url="https://marwynn.gitbook.io/marwynnbot/commands/categories",
                                  icon_url=ctx.me.avatar_url)
             helpEmbed.set_footer(text=timestamp,
                                  icon_url=ctx.author.avatar_url)
@@ -619,6 +618,14 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                exampleUsage=exampleUsage,
                                specialCases=specialCases)
+        
+    @help.command()
+    async def invite(self, ctx):
+        commandName = "Invite"
+        syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}invite`"
+        await self.syntaxEmbed(ctx,
+                               commandName=commandName,
+                               syntaxMessage=syntaxMessage)
 
     @help.command()
     async def request(self, ctx):

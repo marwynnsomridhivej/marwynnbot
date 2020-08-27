@@ -113,6 +113,18 @@ class Utility(commands.Cog):
                                    color=discord.Color.dark_red())
         await ctx.channel.send(embed=errorEmbed)
 
+    @commands.command()
+    async def invite(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
+        embed = discord.Embed(title="MarwynnBot's Invite Link",
+                              description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
+                              " invite link that you can share:\n\n https://discord.com/oauth2/authorize?client_id"
+                              "=623317451811061763&scope=bot&permissions=2146958583",
+                              color=discord.Color.blue(),
+                              url="https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permiss"
+                              "ions=2146958583")
+        await ctx.channel.send(embed=embed)
+
     @commands.group()
     async def request(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
