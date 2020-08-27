@@ -4,6 +4,7 @@ import discord
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
+             "UPDATES_CHANNEL=CHANNEL_ID_HERE",
              "LAVALINK_IP=IP_ADDR",
              "LAVALINK_PORT=PORT",
              "LAVALINK_PASSWORD=DEFAULT_STRING",
@@ -15,6 +16,7 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "TENOR_API=API_KEY_FROM_TENOR"]
 default_env = ["YOUR_BOT_TOKEN",
                "YOUR_ID_HERE",
+               "CHANNEL_ID_HERE",
                "IP_ADDR",
                "PORT",
                "DEFAULT_STRING",

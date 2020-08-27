@@ -1,7 +1,11 @@
 import datetime
 import discord
+import dotenv
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
+import asyncio
+
+updates_reaction = ['✅', '📝', '🛑']
 
 
 class Debug(commands.Cog):
@@ -12,6 +16,24 @@ class Debug(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'Cog "{self.qualified_name}" has been loaded')
+
+    async def timeout(self, ctx, message: discord.Message) -> discord.Message:
+        embed = discord.Embed(title="Report Update Cancelled",
+                              description=f"{ctx.author.mention}, your report update request timed out",
+                              color=discord.Color.dark_red())
+        try:
+            return await message.edit(embed=embed, delete_after=10)
+        except (discord.NotFound, discord.HTTPError, discord.Forbidden):
+            return await ctx.author.send(embed=embed, delete_after=10)
+
+    async def cancel(self, ctx, message: discord.Message) -> discord.Message:
+        embed = discord.Embed(title="Report Update Cancelled",
+                              description=f"{ctx.author.mention}, your report update request was cancelled",
+                              color=discord.Color.blue())
+        try:
+            return await message.edit(embed=embed, delete_after=10)
+        except (discord.NotFound, discord.HTTPError, discord.Forbidden):
+            return await ctx.author.send(embed=embed, delete_after=10)
 
     @commands.command()
     async def ping(self, ctx):
@@ -70,11 +92,24 @@ class Debug(commands.Cog):
             insuf = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, you must be the bot owner to use this command",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
-            return
+            return await ctx.channel.send(embed=insuf, delete_after=10)
+
+        updates_channel_id = gcmds.env_check(gcmds, "UPDATES_CHANNEL")
+        if not updates_channel_id:
+            no_channel = discord.Embed(title="No Updates Channel Specified",
+                                       description=f"{ctx.author.mention}, you must specify the updates channel ID in"
+                                                   f"the `.env` file",
+                                       color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=no_channel, delete_after=10)
+
+        def confirm(reaction: discord.Reaction, user) -> bool:
+            if reaction.emoji in updates_reaction and user.id == ctx.author.id:
+                return True
+            else:
+                return False
 
         try:
-            marwynnbot_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
+            updates_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
 
         except discord.NotFound:
             invalid = discord.Embed(title="Logging Channel Does Not Exist",
@@ -82,22 +117,109 @@ class Debug(commands.Cog):
                                     color=discord.Color.dark_red())
             await ctx.channel.send(embed=invalid)
             return
+
+        timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.datetime.now())
+        update_string = str(update_message)
+        if update_string.splitlines()[0].startswith("**") and update_string.splitlines()[0].endswith("**"):
+            title = update_string.splitlines()[0]
+            description = update_string.replace(title, "")
         else:
-            timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.datetime.now())
-            update_string = str(update_message)
-            if update_string.splitlines()[0].startswith("**") and update_string.splitlines()[0].endswith("**"):
-                title = update_string.splitlines()[0]
-                description = update_string.replace(title, "")
+            title = "Bot Update"
+            description = update_string
+        updateEmbed = discord.Embed(title=title,
+                                    description=description,
+                                    color=discord.Color.blue())
+        updateEmbed.set_footer(text=timestamp,
+                               icon_url=ctx.author.avatar_url)
+        preview = await ctx.author.send(embed=updateEmbed)
+        for reaction in updates_reaction:
+            await preview.add_reaction(reaction)
+
+        # User confirms send, requests edit, or cancels send
+        while True:
+            try:
+                response = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=confirm, timeout=30)
+            except asyncio.TimeoutError:
+                return await self.timeout(ctx, preview)
             else:
-                title = "Bot Update"
-                description = update_string
-            updateEmbed = discord.Embed(title=title,
-                                        description=description,
-                                        color=discord.Color.blue())
-            updateEmbed.set_footer(text=timestamp,
-                                   icon_url=ctx.author.avatar_url)
-            message = await marwynnbot_channel.send(embed=updateEmbed)
+                if response[0].emoji in updates_reaction:
+                    await preview.clear_reactions()
+                    break
+                else:
+                    await preview.remove_reaction(response[0].emoji, ctx.author)
+                    continue
+
+        if response[0].emoji == "✅":
+            message = await updates_channel.send(embed=updateEmbed)
             await message.publish()
+            updateEmbed.set_footer(text="Successfully reported update to announcement channel",
+                                   icon_url=ctx.author.avatar_url)
+            return await preview.edit(embed=updateEmbed)
+
+        if response[0].emoji == '📝':
+            def from_user(message: discord.Message) -> bool:
+                if message.author.id == ctx.author.id:
+                    return True
+                else:
+                    return False
+
+            panel_embed = discord.Embed(title="Edit Title",
+                                        description=f"{ctx.author.mention}, please enter what you would like the update "
+                                              f"title to be or type *\"skip\"* to keep the current title",
+                                        color=discord.Color.blue())
+            panel_embed.set_footer(text="Type \"cancel\" to cancel at any time")
+            panel = await ctx.author.send(embed=panel_embed)
+
+            # User edits title
+            try:
+                response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+            except asyncio.TimeoutError:
+                try:
+                    await preview.delete()
+                except Exception:
+                    pass
+                return await self.timeout(ctx, panel)
+            if response.content == "cancel":
+                await response.delete()
+                return await self.cancel(ctx, panel)
+            if not response.content == "skip":
+                updateEmbed.title = response.content
+                await preview.edit(embed=updateEmbed)
+            await response.delete()
+            
+            panel_embed.title = "Edit Description"
+            panel_embed.description = f"{ctx.author.mention}, please enter what you would like the update description" \
+                f"to be or type *\"skip\" to keep the current title*"
+            try:
+                await panel.edit(embed=panel_embed)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPError):
+                return await self.cancel(ctx, panel)
+
+            # User edits description
+            try:
+                response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+            except asyncio.TimeoutError:
+                try:
+                    await preview.delete()
+                except Exception:
+                    pass
+                return await self.timeout(ctx, panel)
+            if response.content == "cancel":
+                await response.delete()
+                return await self.cancel(ctx, panel)
+            if not response.content == "skip":
+                updateEmbed.description = response.content
+                await preview.edit(embed=updateEmbed)
+            await response.delete()
+            
+            message = await updates_channel.send(embed=updateEmbed)
+            await message.publish()
+            updateEmbed.set_footer(text="Successfully reported update to announcement channel",
+                                   icon_url=ctx.author.avatar_url)
+            return await preview.edit(embed=updateEmbed)
+
+        if response[0].emoji == '🛑':
+            return await self.cancel(ctx, preview)
 
     @commands.command()
     async def shard(self, ctx, option=None):

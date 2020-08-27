@@ -249,14 +249,19 @@ class Reminders(commands.Cog):
             elif entry['type'] == "loop":
                 td = timedelta(seconds=entry['time'])
                 time_formatted = ""
+                skip = False
                 days = divmod(86400, td.seconds)
                 if days[0] != 0:
                     time_formatted += f"{days[0]} days, "
                 rem_sec = days[1]
+                if rem_sec == 0:
+                    return string
                 hours = divmod(3600, rem_sec)
                 if hours[0] != 0:
                     time_formatted += f"{hours[0]} hours, "
                 rem_sec = hours[1]
+                if rem_sec == 0:
+                    return string
                 minutes = divmod(60, rem_sec)
                 if minutes[0] != 0:
                     time_formatted += f"{minutes[0]} minutes, "
