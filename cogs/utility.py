@@ -271,8 +271,8 @@ class Utility(commands.Cog):
             await ctx.channel.send(embed=setPrefixError)
 
     @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
-    @commands.bot_has_permissions(administrator=True)
-    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @commands.has_permissions(manage_guild=True)
     async def serverStats(self, ctx, reset=None):
         await gcmds.invkDelete(gcmds, ctx)
 
@@ -384,19 +384,6 @@ class Utility(commands.Cog):
         await ctx.channel.send(embed=statsEmbed, delete_after=10)
         gcmds.incrCounter(gcmds, ctx, 'serverStats')
         serverstatsupdate.restart(ctx, names)
-
-    @serverStats.error
-    async def serverStats_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            name = "Insufficient User Permissions"
-            description = f"{ctx.author.mention}, you need the Administrator permission to use this command"
-        if isinstance(error, BotMissingPermissions):
-            name = "Insufficient Bot Permissions"
-            description = "I need the Administrator permission to use this command"
-        errorEmbed = discord.Embed(title=name,
-                                   description=description,
-                                   color=discord.Color.dark_red())
-        await ctx.channel.send(embed=errorEmbed, delete_after=5)
 
     @commands.command(aliases=['tz'])
     @commands.bot_has_permissions(administrator=True)
