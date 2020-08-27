@@ -100,6 +100,7 @@ class Help(commands.Cog):
             reactionCmds = f"`{'` `'.join(strings[10])}`"
             redditCmds = f"`{gcmds.prefix(gcmds, ctx)}reddit` *for a full list*"
             utilityCmds = f"`{'` `'.join(strings[12])}`"
+            welcomeCmds = f"`{gcmds.prefix(gcmds, ctx)}welcome` *for a full list*"
 
             helpEmbed.add_field(name="Help",
                                 value=helpCmds,
@@ -127,6 +128,9 @@ class Help(commands.Cog):
                                 inline=False)
             helpEmbed.add_field(name="Utility",
                                 value=utilityCmds,
+                                inline=False)
+            helpEmbed.add_field(name="Welcome",
+                                value=welcomeCmds,
                                 inline=False)
             helpEmbed.add_field(name="Pokedex",
                                 value=pokedexCmds,
@@ -677,7 +681,7 @@ class Help(commands.Cog):
     async def serverStats(self, ctx):
         commandName = "Server Stats"
         syntaxMessage = f"`{gcmds.prefix(gcmds, ctx)}serverstats [optional \"reset\"]`"
-        userPerms = '`Administrator`'
+        userPerms = '`Manage Server`'
         botPerms = userPerms
         specialCases = "If the `reset` argument is present, it will delete the currently active server stats channels" \
                        " and category\n\nYou will not be able to create another server stats panel if one" \
