@@ -1,6 +1,7 @@
 import json
 import os
 import discord
+from discord.ext import commands
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
@@ -88,6 +89,26 @@ class GlobalCMDS:
         if isinstance(message.channel, discord.TextChannel) and message.guild.me.guild_permissions.manage_messages:
             await message.delete()
 
+    async def timeout(self, ctx: commands.Context, title: str, timeout: int) -> discord.Message:
+        embed = discord.Embed(title=f"{title.title()} Timed Out",
+                              description=f"{ctx.author.mention}, your {title} timed out after {timeout} seconds"
+                              " due to inactivity",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+    
+    async def cancelled(self, ctx: commands.Context, title: str) -> discord.Message:
+        embed = discord.Embed(title=f"{title.title()} Cancelled",
+                              description=f"{ctx.author.mention}, your {title} was cancelled",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+    
+    async def panel_deleted(self, ctx:commands.Context, title: str) -> discord.Message:
+        embed = discord.Embed(title=f"{title.title()} Cancelled",
+                              description=f"{ctx.author.mention}, your {title} was cancelled because the panel was"
+                              "deleted or could not be found",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+    
     def isGuild(self, ctx):
         if ctx.guild:
             return True
