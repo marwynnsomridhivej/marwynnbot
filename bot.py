@@ -130,7 +130,12 @@ async def disable_dm_exec(ctx):
 
 @client.event
 async def on_command_error(ctx, error):
-    if isinstance(error, discord.ext.commands.MissingPermissions):
+    if isinstance(error, commands.MissingRequiredArgument):
+        req_arg = discord.Embed(title="Missing Required Argument",
+                                description=f"{ctx.author.mention}, `[{error.param.name}]` is a required argument",
+                                color=discord.Color.dark_red())
+        await ctx.channel.send(embed=req_arg, delete_after=10)
+    elif isinstance(error, discord.ext.commands.MissingPermissions):
         missing = discord.Embed(title="Insufficient User Permissions",
                                 description=f"{ctx.author.mention}, to execute this command, you need "
                                             f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
