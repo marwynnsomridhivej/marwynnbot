@@ -7,6 +7,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 
 from globalcommands import GlobalCMDS as gcmds
+import os
 
 
 class Utility(commands.Cog):
@@ -14,6 +15,43 @@ class Utility(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.messages = {}
+        self.update_server_stats.start()
+        
+    def cog_unload(self):
+        self.update_server_stats.cancel()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f'Cog "{self.qualified_name}" has been loaded')
+
+    @tasks.loop(minutes=15)
+    async def update_server_stats(self):
+        if not os.path.exists('serverstats.json'):
+            return
+
+        init = {"Active": {}}
+        gcmds.json_load(gcmds, 'serverstats.json', init)
+        with open('serverstats.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        guild_ids = list(file["Active"].keys())
+
+        for guild_id in guild_ids:
+            guild = self.client.get_guild(int(guild_id))
+            exists = False
+            for category in guild.categories:
+                if "server stats" in category.name.lower():
+                    names = await self.get_guild_info(guild)
+                    index = 0
+                    for voice_channel in category.voice_channels:
+                        if not str(voice_channel.name) == str(names[index]):
+                            await voice_channel.edit(name=names[index])
+                        index += 1
+                    exists = True
+                    break
+            if not exists:
+                await self.remove_ss_entry(int(guild_id))
 
     def load_messages(self):
         init = {}
@@ -37,9 +75,42 @@ class Utility(commands.Cog):
             json.dump(self.messages, f, indent=4)
             f.close()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
+    async def get_guild_info(self, guild: discord.Guild) -> list:
+        botCount = 0
+        for member in guild.members:
+            if member.bot:
+                botCount += 1
+            
+        totalMembers = f"👥Members: {guild.member_count - botCount}"
+        totalText = f"📑Text Channels: {int(len(guild.text_channels))}"
+        totalVoice = f"🎧Voice Channels: {int(len(guild.voice_channels))}"
+        totalChannels = f"📖Total Channels: {int(len(guild.text_channels)) + int(len(guild.voice_channels))}"
+        totalRole = f"📜Roles: {int(len(guild.roles))}"
+        totalEmoji = f"😄Custom Emotes: {int(len(guild.emojis))}"
+        return [totalMembers, totalChannels, totalText, totalVoice, totalRole, totalEmoji]
+
+    async def add_ss_entry(self, guild_id: int):
+        init = {"Active": {str(guild_id): 1}}
+        gcmds.json_load(gcmds, 'serverstats.json', init)
+        with open('serverstats.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        file['Active'].update({str(guild_id): 1})
+        with open('serverstats.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+    async def remove_ss_entry(self, guild_id: int):
+        init = {"Active": {str(guild_id): 1}}
+        gcmds.json_load(gcmds, 'serverstats.json', init)
+        with open('serverstats.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        try:
+            del file['Active'][str(guild_id)]
+        except KeyError:
+            pass
+        with open('serverstats.json', 'w') as g:
+            json.dump(file, g, indent=4)
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
@@ -261,132 +332,49 @@ class Utility(commands.Cog):
         await ctx.channel.send(embed=prefixEmbed)
         gcmds.incrCounter(gcmds, ctx, 'setPrefix')
 
-    @setPrefix.error
-    async def setPrefix_error(self, ctx, error):
-        if isinstance(error, MissingPermissions):
-            setPrefixError = discord.Embed(title="Error - Insufficient User Permissions",
-                                           description=f"{ctx.author.mention}, you need the `Manage Server` "
-                                                       f"permission to change the server prefix!",
-                                           color=discord.Color.dark_red())
-            await ctx.channel.send(embed=setPrefixError)
-
     @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
-    @commands.bot_has_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
+    @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
         await gcmds.invkDelete(gcmds, ctx)
 
-        @tasks.loop(minutes=10)
-        async def serverstatsupdate(ctx, names):
-            guildSearch = self.client.get_guild(ctx.guild.id)
-            for categorySearch in guildSearch.categories:
-                if "server stats" in categorySearch.name.lower():
-                    for vcs in categorySearch.voice_channels:
-                        for channelName in names:
-                            await vcs.edit(name=channelName)
-            await sleep(600)
-
-        serverstatsupdate.stop()
-
-        with open('prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-            serverPrefix = prefixes[str(ctx.guild.id)]
-
-        client = self.client
-        guild = client.get_guild(ctx.guild.id)
-
         confirm = False
 
-        if reset == "reset":
-            if guild == ctx.author.guild:
-                for category in guild.categories:
-                    if "server stats" in category.name.lower():
-                        confirm = True
-                if not confirm:
-                    resetEmbed = discord.Embed(title="📊Server Stats📊 Category does not exist",
-                                               description=f"{ctx.author.mention}, "
-                                                           f"do `{serverPrefix}serverstats` "
-                                                           "to create the category and stats channels",
-                                               color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=resetEmbed, delete_after=10)
-                    gcmds.incrCounter(gcmds, ctx, 'serverStats')
-
-                for category in guild.categories:
-                    if "server stats" in category.name.lower():
-                        resetEmbed = discord.Embed(title=f"{category.name} Reset",
-                                                   description=f"{int(len(category.voice_channels))} Channels to be "
-                                                               f"deleted",
-                                                   color=discord.Color.blue())
-                        for vcs in category.voice_channels:
-                            resetEmbed.add_field(name=vcs.name,
-                                                 value="Channel deleted",
-                                                 inline=False)
-                            await vcs.delete()
-                        resetEmbed.add_field(name=f"{category.name}",
-                                             value="Category deleted",
-                                             inline=False)
-                        await category.delete()
-                await ctx.channel.send(embed=resetEmbed, delete_after=10)
-                gcmds.incrCounter(gcmds, ctx, 'serverStats')
-
-            return
-
-        totalMembers = guild.member_count
-        totalMembersName = f"👥Members: {totalMembers}"
-
-        totalText = int(len(guild.text_channels))
-        totalTextName = f"📑Text Channels: {totalText}"
-
-        totalVoice = int(len(guild.voice_channels))
-        totalVoiceName = f"🎧Voice Channels: {totalVoice}"
-
-        totalChannels = totalText + totalVoice
-        totalChannelsName = f"📖Total Channels: {totalChannels}"
-
-        totalRole = int(len(guild.roles))
-        totalRoleName = f"📜Roles: {totalRole}"
-
-        totalEmoji = int(len(guild.emojis))
-        totalEmojiName = f"😄Custom Emotes: {totalEmoji}"
-
-        names = [totalMembersName, totalChannelsName, totalTextName, totalVoiceName, totalRoleName, totalEmojiName]
-
-        if guild == ctx.author.guild:
-            for category in guild.categories:
-                if "server stats" in category.name.lower():
-                    statsEmbed = discord.Embed(title="📊Server Stats📊 Channel Already Exists",
-                                               description=f"{ctx.author.mention}, there is no need for duplicate "
-                                                           f"channels",
-                                               color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=statsEmbed, delete_after=10)
-                    gcmds.incrCounter(gcmds, ctx, 'serverStats')
-                    serverstatsupdate.restart(ctx, names)
-                    return
-
-        overwrite = discord.PermissionOverwrite()
-        overwrite.connect = False
-
-        category = await guild.create_category(name="📊Server Stats📊")
-
-        await category.set_permissions(guild.default_role, overwrite=overwrite)
-        await category.edit(position=0)
-
-        statsEmbed = discord.Embed(title="Successfully Created Server Stats Channels",
-                                   description="They will be at the top of your discord server",
-                                   color=discord.Color.blue())
-
-        for name in names:
-            await category.create_voice_channel(name=name,
-                                                sync_permission=True)
-            statsEmbed.add_field(name=f"Channel: {name}",
-                                 value="Successfully created channel",
-                                 inline=False)
-        await ctx.channel.send(embed=statsEmbed, delete_after=10)
-        gcmds.incrCounter(gcmds, ctx, 'serverStats')
-        serverstatsupdate.restart(ctx, names)
+        for category in ctx.guild.categories:
+            if "server stats" in category.name.lower():
+                confirm = True
+                if reset == "reset":
+                    for channel in category.channels:
+                        await channel.delete()
+                    await category.delete()
+                    await self.remove_ss_entry(ctx.guild.id)
+                    reset_embed = discord.Embed(title="Server Stats Reset",
+                                                description=f"{ctx.author.mention}, your server stats panel for this "
+                                                "server has been deleted",
+                                                color=discord.Color.blue())
+                    return await ctx.channel.send(embed=reset_embed)
+                elif not reset:
+                    exists = discord.Embed(title="Server Stats Panel Exists",
+                                           description=f"{ctx.author.mention}, this server already has a server stats "
+                                           "panel set up!",
+                                           color=discord.Color.dark_red())
+                    return await ctx.channel.send(embed=exists, delete_after=10)
+            else:
+                category = await ctx.guild.create_category_channel("📊 Server Stats 📊")
+                await category.edit(position=0)
+                await category.set_permissions(ctx.guild.default_role, connect=False)
+                names = await self.get_guild_info(ctx.guild)
+                for name in names:
+                    await category.create_voice_channel(name)
+                await self.add_ss_entry(ctx.guild.id)
+                created_embed = discord.Embed(title="Server Stats Panel Created",
+                                              description=f"{ctx.author.mention}, I have created the server stats "
+                                              "panel for this server",
+                                              color=discord.Color.blue())
+                return await ctx.channel.send(embed=created_embed)
 
     @commands.command(aliases=['tz'])
-    @commands.bot_has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
         await gcmds.invkDelete(gcmds, ctx)
@@ -417,29 +405,6 @@ class Utility(commands.Cog):
                             description=description,
                             color=color)
         await ctx.channel.send(embed=gmt, delete_after=10)
-
-    @timezone.error
-    async def timezone_error(self, ctx, error):
-        async def sendEmbed(ctx, title, description):
-            errorEmbed = discord.Embed(title=title,
-                                       description=description,
-                                       color=discord.Color.dark_red())
-            await ctx.channel.send(embed=errorEmbed, delete_after=5)
-
-        if isinstance(error, MissingPermissions):
-            title = "Insufficient User Permissions"
-            description = "I need the Change Nickname permission to use this command"
-            await sendEmbed(ctx, title, description)
-        if isinstance(error, BotMissingPermissions):
-            title = "Insufficient Bot Permissions"
-            description = "I need the Administrator permission to use this command"
-            await sendEmbed(ctx, title, description)
-        if isinstance(error, discord.Permissions):
-            title = "403 Permissions Error"
-            description = "I can only change the timezone of a user that is a lower role than I am. " \
-                          "Please place my role higher than the highest user role assigned (or just put mine at the " \
-                          "top) "
-            await sendEmbed(ctx, title, description)
 
 
 def setup(client):
