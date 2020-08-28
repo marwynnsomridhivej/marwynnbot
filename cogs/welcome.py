@@ -23,7 +23,7 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        if os.path.exists('welcomers.json'):
+        if os.path.exists('welcomers.json') and not member.bot:
             with open('welcomers.json', 'r') as f:
                 file = json.load(f)
                 f.close()
@@ -32,11 +32,16 @@ class Welcome(commands.Cog):
                 channel_to_send = await self.client.fetch_channel(file[str(guild.id)]["channel_id"])
                 embed_title = file[str(guild.id)]['title']
                 edv = str(file[str(guild.id)]['description'])
+                bot_count = 0
+                for member in guild.members:
+                    if member.bot:
+                        bot_count += 1
                 embed_description = ((((edv.replace("{server_name}", member.guild.name)
                                         ).replace("{user_name}", member.display_name)
                                        ).replace("{user_mention}", member.mention)
-                                      ).replace("{member_count}", str(len(member.guild.members)))
-                                     ).replace("{member_count_ord}", num2words(len(member.guild.members), to="ordinal_num"))
+                                      ).replace("{member_count}", str(len(member.guild.members) - bot_count))
+                                     ).replace("{member_count_ord}", num2words((len(member.guild.members) - bot_count),
+                                                                               to="ordinal_num"))
                 welcome_embed = discord.Embed(title=embed_title,
                                               description=embed_description,
                                               color=discord.Color.blue())
@@ -230,6 +235,11 @@ class Welcome(commands.Cog):
         else:
             embed_title = result.content
         await result.delete()
+        
+        bot_count = 0
+        for member in ctx.guild.members:
+            if member.bot:
+                bot_count += 1
 
         description = f"{ctx.author.mention}, please enter the description of the welcome embed, {or_default}\n\n" \
         "Default Value: Welcome to {server_name}! {user_mention} is our {member_count_ord} member!\n\n" \
@@ -237,9 +247,9 @@ class Welcome(commands.Cog):
         "`{server_name}` ⟶ Your server's name ⟶ " + f"{ctx.guild.name}\n" \
         "`{user_name}` ⟶ The name of the user that just joined ⟶ " + f"{ctx.author.display_name}\n" \
         "`{user_mention}` ⟶ The mention for the user that just joined ⟶ " + f"{ctx.author.mention}\n" \
-        "`{member_count}` ⟶ The number of members in this server ⟶ " + f"{int(len(ctx.guild.members))}\n" \
+        "`{member_count}` ⟶ The number of members in this server ⟶ " + f"{int(len(ctx.guild.members) - bot_count)}\n" \
         "`{member_count_ord}` ⟶ The ordinal number of members in this server ⟶ " \
-        f"{num2words(len(ctx.guild.members), to='ordinal_num')}"
+        f"{num2words((len(ctx.guild.members) - bot_count), to='ordinal_num')}"
 
         # User provides welcome embed description
         try:
