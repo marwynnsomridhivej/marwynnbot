@@ -152,19 +152,23 @@ class Reminders(commands.Cog):
             return False
 
     async def edit_panel(self, panel_embed: discord.Embed, panel: discord.Message,
-                         title: str = None, description: str = None, ) -> bool:
+                         title: str = None, description: str = None, color: discord.Color = None) -> bool:
         panel_exists = await self.check_panel_exists(panel)
         if not panel_exists:
             return False
 
-        panel_embed = panel_embed
+        if not title:
+            title = panel_embed.title
+        if not description:
+            description = panel_embed.description
+        if not color:
+            color = discord.Color.blue()
+            
+        panel_embed_edited = discord.Embed(title=title,
+                                           description=description,
+                                           color=color)
 
-        if title:
-            panel_embed.title = title
-        if description:
-            panel_embed.description = description
-
-        await panel.edit(embed=panel_embed)
+        await panel.edit(embed=panel_embed_edited)
         return True
 
     async def no_panel(self, ctx) -> discord.Message:
@@ -249,29 +253,29 @@ class Reminders(commands.Cog):
                 string += f"**{index}:** {entry['type']}, fires in <#{entry['channel_id']}> at " \
                     f"{datetime.fromtimestamp(entry['time'])}, {message_content}\n\n"
             elif entry['type'] == "loop":
-                td = timedelta(seconds=entry['time'])
+                td = entry['time']
                 time_formatted = ""
                 skip = False
-                days = divmod(86400, td.seconds)
+                days = divmod(td, 86400)
                 if days[0] != 0:
                     time_formatted += f"{days[0]} days, "
                 rem_sec = days[1]
                 if rem_sec == 0:
                     return string
-                hours = divmod(3600, rem_sec)
+                hours = divmod(rem_sec, 3600)
                 if hours[0] != 0:
                     time_formatted += f"{hours[0]} hours, "
                 rem_sec = hours[1]
                 if rem_sec == 0:
                     return string
-                minutes = divmod(60, rem_sec)
+                minutes = divmod(rem_sec, 60)
                 if minutes[0] != 0:
                     time_formatted += f"{minutes[0]} minutes, "
                 seconds = rem_sec
                 if seconds != 0:
                     time_formatted += f"{seconds} seconds"
                 string += f"**{index}:** {entry['type']}, fires in <#{entry['channel_id']}> every {time_formatted}, " \
-                    "{message_content}\n\n"
+                    f"{message_content}\n\n"
             index += 1
         return string
 
@@ -354,16 +358,21 @@ class Reminders(commands.Cog):
         except KeyError:
             return False
 
-    async def delete_reminder(self, guild_id: int, user_id: int, index: int) -> bool:
+    async def delete_reminder(self, guild_id: int, user_id: int, index=None) -> bool:
         try:
             with open('reminders.json', 'r') as f:
                 file = json.load(f)
                 f.close()
-            del file[str(guild_id)][str(user_id)][index]
-            if len(file[str(guild_id)][str(user_id)]) == 0:
+            if index:
+                del file[str(guild_id)][str(user_id)][index]
+                if len(file[str(guild_id)][str(user_id)]) == 0:
+                    del file[str(guild_id)][str(user_id)]
+            else:
                 del file[str(guild_id)][str(user_id)]
+                    
             if len(file[str(guild_id)]) == 0:
-                del file[str(guild_id)]
+                    del file[str(guild_id)]
+                    
             with open('reminders.json', 'w') as g:
                 json.dump(file, g, indent=4)
             return True
@@ -383,9 +392,10 @@ class Reminders(commands.Cog):
             await ctx.invoke(self.delete)
             return
 
-        current_time = datetime.now().timestamp()
+        
         dates = search_dates(text=message_with_time, settings={
                              'PREFER_DATES_FROM': "future"})
+        current_time = datetime.now().timestamp()
         if not dates:
             return await self.not_valid_time(ctx)
         time_to_send = dates[0][1].timestamp()
@@ -588,7 +598,8 @@ class Reminders(commands.Cog):
             return await self.no_reminders(ctx)
         panel_embed = discord.Embed(title="Edit Reminders",
                                     description=f"{ctx.author.mention}, please type the number of the reminder that "
-                                    f"you would like to edit, or type *\"cancel\"* to cancel\n\n{reminders_list}",
+                                    f"you would like to delete, *\"all\"* to delete all reminders, or type *\"cancel\"*"
+                                    f" to cancel\n\n{reminders_list}",
                                     color=discord.Color.blue())
         panel = await ctx.channel.send(embed=panel_embed)
 
@@ -605,17 +616,23 @@ class Reminders(commands.Cog):
                 result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
+            if result.content == "cancel":
+                return await self.cancelled(ctx, panel)
+            elif result.content == "all":
+                index = None
+                break
             try:
                 index = int(result.content) - 1
                 break
-            except TypeError:
+            except ValueError:
                 continue
         await result.delete()
 
         succeeded = await self.delete_reminder(ctx.guild.id, ctx.author.id, index)
         if not succeeded:
             await self.edit_panel(panel_embed, panel, title="Reminder Delete Failed",
-                                  description=f"{ctx.author.mention}, your reminder could not be deleted")
+                                  description=f"{ctx.author.mention}, your reminder could not be deleted",
+                                  color=discord.Color.dark_red())
         else:
             await self.edit_panel(panel_embed, panel, title="Reminder Successfully Deleted",
                                   description=f"{ctx.author.mention}, your reminder was successfully deleted")
