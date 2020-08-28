@@ -19,10 +19,12 @@ class Reminders(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        if not self.check_single.is_running():
-            self.check_single.start()
-        if not self.check_loop.is_running():
-            self.check_loop.start()
+        self.check_single.start()
+        self.check_loop.start()
+
+    def cog_unload(self):
+        self.check_single.cancel()
+        self.check_loop.cancel()
 
     @commands.Cog.listener()
     async def on_ready(self):
