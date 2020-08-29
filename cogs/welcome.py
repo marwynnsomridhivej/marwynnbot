@@ -59,12 +59,12 @@ class Welcome(commands.Cog):
             " try to use this command when you already have a welcomer set up, it will automatically redirect you to " \
             "the interactive edit panel"
         edit = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcome edit`\n" \
-            "**Returns:** An interactive setup panel that will edit your current welcomer" \
+            "**Returns:** An interactive setup panel that will edit your current welcomer\n" \
             "**Aliases:** `adjust` `modify` `-e`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
         delete = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcome delete`\n" \
-            "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so" \
-            "**Aliases:** `trash` `cancel` `-rm`" \
+            "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
+            "**Aliases:** `trash` `cancel` `-rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
         fields = [("Create", create), ("Edit", edit), ("Delete", delete)]
 
@@ -169,10 +169,11 @@ class Welcome(commands.Cog):
             file = json.load(f)
             f.close()
 
-        if file[str(ctx.guild.id)]:
-            return True
-
-        return False
+        try:
+            if file[str(ctx.guild.id)]:
+                return True
+        except KeyError:
+            return False
 
     async def get_welcomer(self, ctx) -> list:
         if not await self.has_welcomer(ctx):
