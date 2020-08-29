@@ -68,7 +68,10 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if re.search(token_rx, message.content) and message.guild:
-        await gcmds.msgDelete(gcmds, message)
+        try:
+            await gcmds.msgDelete(gcmds, message)
+        except (discord.NotFound, discord.Forbidden):
+            pass
         embed = discord.Embed(title="Token Found",
                               description=f"{message.author.mention}, a Discord token was found in your message. It has "
                               "automatically been deleted.",
