@@ -422,7 +422,7 @@ class Reminders(commands.Cog):
                 return False
 
         try:
-            result = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reacted_user,
+            result = await self.client.wait_for("reaction_add", check=reacted_user,
                                                             timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx)
@@ -483,7 +483,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -512,7 +512,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -543,7 +543,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -564,7 +564,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                result = await self.client.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -613,7 +613,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                result = await self.client.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":

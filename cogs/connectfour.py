@@ -341,7 +341,7 @@ class ConnectFour(commands.Cog):
             confirm_turn = False
             while not confirm_turn:
                 try:
-                    choice = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=60.0,
+                    choice = await self.client.wait_for('reaction_add', timeout=60.0,
                                                                     check=check)
                 except asyncio.TimeoutError:
                     await message.clear_reactions()

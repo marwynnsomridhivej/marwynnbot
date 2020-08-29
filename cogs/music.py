@@ -915,7 +915,7 @@ class Music(commands.Cog):
                     panel_message = await ctx.channel.fetch_message(panel.id)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                choice = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check,
+                choice = await self.client.wait_for("reaction_add", check=reaction_check,
                                                                 timeout=30)
                 print(choice)
             except asyncio.TimeoutError:
@@ -957,7 +957,7 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                    reply = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
                                             description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -990,7 +990,7 @@ class Music(commands.Cog):
                 return await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                    reply = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
                                             description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -1014,7 +1014,7 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    name_reply = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                    name_reply = await self.client.wait_for("message", check=from_user,
                                                                         timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
@@ -1087,7 +1087,7 @@ class Music(commands.Cog):
 
         while True:
             try:
-                message = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                message = await self.client.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 try:
                     return await panel.edit(embed=timeout, delete_after=10)
@@ -1116,7 +1116,7 @@ class Music(commands.Cog):
             return await ctx.channel.send(embed=cancelled, delete_after=10)
 
         try:
-            message_link = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+            message_link = await self.client.wait_for("message", check=from_user, timeout=30)
         except asyncio.TimeoutError:
             try:
                 return await panel.edit(embed=timeout, delete_after=10)
@@ -1213,7 +1213,7 @@ class Music(commands.Cog):
                     panel_message = await ctx.channel.fetch_message(panel.id)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                choice = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                choice = await self.client.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Remove Request Timed Out",
                                         description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -1248,7 +1248,7 @@ class Music(commands.Cog):
                         await panel.add_reaction(reaction)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                reacted = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=reaction_check,
+                reacted = await self.client.wait_for("reaction_add", check=reaction_check,
                                                                  timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Remove Request Timed Out",

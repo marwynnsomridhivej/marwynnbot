@@ -151,7 +151,7 @@ class Debug(commands.Cog):
             # User confirms send, requests edit, or cancels send
             while True:
                 try:
-                    response = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=confirm, timeout=30)
+                    response = await self.client.wait_for("reaction_add", check=confirm, timeout=30)
                 except asyncio.TimeoutError:
                     await panel.delete()
                     return await self.timeout(ctx, preview)
@@ -186,7 +186,7 @@ class Debug(commands.Cog):
 
                 # User edits title
                 try:
-                    response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                    response = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     try:
                         await preview.delete()
@@ -211,7 +211,7 @@ class Debug(commands.Cog):
 
                 # User edits description
                 try:
-                    response = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=30)
+                    response = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     try:
                         await preview.delete()

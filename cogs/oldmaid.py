@@ -291,7 +291,7 @@ class OldMaid(commands.Cog):
                     return False
 
             try:
-                confirmed = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=60,
+                confirmed = await self.client.wait_for('reaction_add', timeout=60,
                                                                    check=confirmStart)
             except asyncio.TimeoutError:
                 await message.clear_reactions()

@@ -742,7 +742,7 @@ class UNO(commands.Cog):
 
                 while loop:
                     try:
-                        choice = await commands.AutoShardedBot.wait_for(self.client, 'message', timeout=60,
+                        choice = await self.client.wait_for('message', timeout=60,
                                                                         check=from_player)
                     except asyncio.TimeoutError:
                         played_card = gameMembers[index].auto_play(pile)
@@ -827,10 +827,9 @@ class UNO(commands.Cog):
 
                                     while not reaction_confirmed:
                                         try:
-                                            choice_check = await commands.AutoShardedBot.wait_for(self.client,
-                                                                                                  'reaction_add',
-                                                                                                  timeout=20.0,
-                                                                                                  check=check)
+                                            choice_check = await self.client.wait_for('reaction_add',
+                                                                                       timeout=20.0,
+                                                                                       check=check)
                                         except asyncio.TimeoutError:
                                             await color_choice.clear_reactions()
                                             color = random.choice(rlist)

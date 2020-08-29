@@ -371,7 +371,7 @@ class Reactions(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please tag the channel you would like the "
                                                   f"embed to be sent in (or type its ID)")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                result = await self.client.wait_for("message", check=from_user,
                                                                 timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -399,7 +399,7 @@ class Reactions(commands.Cog):
             await self.edit_panel(panel_embed, panel_message, title=None,
                                   description=f"{ctx.author.mention}, please enter the title of the embed that will "
                                               f"be sent")
-            result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -417,7 +417,7 @@ class Reactions(commands.Cog):
             await self.edit_panel(panel_embed, panel_message, title=None,
                                   description=f"{ctx.author.mention}, please enter the description of the embed that "
                                               f"will be sent")
-            result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -436,7 +436,7 @@ class Reactions(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please enter the hex color of the embed "
                                                   f"that will be sent")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                result = await self.client.wait_for("message", check=from_user,
                                                                 timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -462,7 +462,7 @@ class Reactions(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please tag the role you would like to be "
                                                       f"added into the reaction role or type *finish* to finish setup")
-                    result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                    result = await self.client.wait_for("message", check=from_user,
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -490,7 +490,7 @@ class Reactions(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
                                                       f" you want the user to react with to get the role {role}")
-                    result = await commands.AutoShardedBot.wait_for(self.client, "reaction_add", check=panel_react,
+                    result = await self.client.wait_for("reaction_add", check=panel_react,
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -521,7 +521,7 @@ class Reactions(commands.Cog):
                                                   f"**3:** Single Normal *(same as normal, except you can only have one"
                                                   f" role at a time)*\n\n"
                                                   f"*If I wanted to pick `Normal`, I would type \"1\" as the response*")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                result = await self.client.wait_for("message", check=from_user,
                                                                 timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -602,7 +602,7 @@ class Reactions(commands.Cog):
                                   description=f"{ctx.author.mention}, please enter the new title of the embed, "
                                               f"or enter *\"skip\"* to keep the current title\n\n**Current Title:**\n"
                                               f"{old_embed.title}")
-            result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user, timeout=timeout)
+            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -623,7 +623,7 @@ class Reactions(commands.Cog):
                                   description=f"{ctx.author.mention}, please enter the new description of the "
                                               f"embed, or enter *\"skip\"* to keep the current "
                                               f"description\n\n**Current Description:**\n{old_embed.description}")
-            result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+            result = await self.client.wait_for("message", check=from_user,
                                                             timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
@@ -646,7 +646,7 @@ class Reactions(commands.Cog):
                                       description=f"{ctx.author.mention}, please enter the new hex color of the "
                                                   f"embed, or enter *\"skip\"* to keep the current "
                                                   f"color\n\n**Current Color:**\n{str(old_embed.color)}")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                result = await self.client.wait_for("message", check=from_user,
                                                                 timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -676,7 +676,7 @@ class Reactions(commands.Cog):
                                           description=f"{ctx.author.mention}, please tag the role you would like to be "
                                                       f"added into the reaction role, type *finish* to finish setup, "
                                                       f"or type *skip* to keep the current roles and reactions")
-                    result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                    result = await self.client.wait_for("message", check=from_user,
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -706,7 +706,7 @@ class Reactions(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
                                                       f" you want the user to react with to get the role {role}")
-                    result = await commands.AutoShardedBot.wait_for(self.client, "reaction_add",
+                    result = await self.client.wait_for("reaction_add",
                                                                     check=panel_react,
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
@@ -744,7 +744,7 @@ class Reactions(commands.Cog):
                                                   f"**3:** Single Normal *(same as normal, except you can only have one"
                                                   f" role at a time)*\n\n"
                                                   f"*If I wanted to pick `Normal`, I would type \"1\" as the response*")
-                result = await commands.AutoShardedBot.wait_for(self.client, "message", check=from_user,
+                result = await self.client.wait_for("message", check=from_user,
                                                                 timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)

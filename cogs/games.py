@@ -245,7 +245,7 @@ class Games(commands.Cog):
                     return False
 
             try:
-                choice = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=60.0, check=check)
+                choice = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
                 for item in choice:
                     if str(item) == '✅':
                         choice = 'confirm'

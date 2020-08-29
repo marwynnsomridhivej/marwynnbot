@@ -561,7 +561,7 @@ class Blackjack(commands.Cog):
             await message.add_reaction(hitEmoji)
             await message.add_reaction(standEmoji)
             try:
-                choice = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=60.0, check=check)
+                choice = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
                 for item in choice:
                     if str(item) == '✅':
                         choice = 'hit'
@@ -695,7 +695,7 @@ class Blackjack(commands.Cog):
                             return False
 
                     try:
-                        pin_choice = await commands.AutoShardedBot.wait_for(self.client, 'reaction_add', timeout=20.0,
+                        pin_choice = await self.client.wait_for('reaction_add', timeout=20.0,
                                                                             check=check_pin)
                     except asyncio.TimeoutError:
                         await message.clear_reactions()
