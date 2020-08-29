@@ -2,14 +2,18 @@ import discord
 from discord.ext import commands
 from globalcommands import GlobalCMDS as gcmds
 import asyncio
+import aiohttp
 from num2words import num2words
 import re
+import mimetypes
 import json
 import os
+import random
 
 timeout = 30
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
+api_key = gcmds.env_check(gcmds, "TENOR_API")
 
 
 class Welcome(commands.Cog):
@@ -27,11 +31,13 @@ class Welcome(commands.Cog):
             with open('welcomers.json', 'r') as f:
                 file = json.load(f)
                 f.close()
+            member = member
             if str(member.guild.id) in file:
                 guild = member.guild
                 channel_to_send = await self.client.fetch_channel(file[str(guild.id)]["channel_id"])
                 embed_title = file[str(guild.id)]['title']
                 edv = str(file[str(guild.id)]['description'])
+                media = file[str(guild.id)]['media']
                 bot_count = 0
                 for member in guild.members:
                     if member.bot:
@@ -45,6 +51,23 @@ class Welcome(commands.Cog):
                 welcome_embed = discord.Embed(title=embed_title,
                                               description=embed_description,
                                               color=discord.Color.blue())
+                welcome_embed.set_thumbnail(url=member.avatar_url)
+                if isinstance(media, list):
+                    image_url = random.choice(media)
+                else:
+                    query = "anime wave"
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(
+                                "https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (query, api_key, 6)) as image:
+                            response = await image.json()
+                            getURL = []
+                            for i in range(len(response['results'])):
+                                for j in range(len(response['results'][i]['media'])):
+                                    getURL.append(response['results'][i]['media'][j]['gif']['url'])
+                            image_url = random.choice(getURL)
+                            await session.close()
+
+                welcome_embed.set_image(url=image_url)
                 return await channel_to_send.send(embed=welcome_embed)
 
     async def get_welcome_help(self, ctx) -> discord.Message:
@@ -125,12 +148,14 @@ class Welcome(commands.Cog):
         except Exception:
             return False
 
-    async def create_welcomer(self, ctx, channel_id: int, title: str = None, description: str = None) -> bool:
+    async def create_welcomer(self, ctx, channel_id: int, title: str = None, description: str = None,
+                              media: list = None) -> bool:
         init = {
             str(ctx.guild.id): {
                 "channel_id": channel_id,
                 "title": title,
-                "description": description
+                "description": description,
+                "media": media
             }
         }
         gcmds.json_load(gcmds, 'welcomers.json', init)
@@ -147,7 +172,8 @@ class Welcome(commands.Cog):
                 file[str(ctx.guild.id)] = {
                     "channel_id": channel_id,
                     "title": title,
-                    "description": description
+                    "description": description,
+                    "media": media
                 }
                 break
             except KeyError:
@@ -184,9 +210,9 @@ class Welcome(commands.Cog):
             f.close()
 
         info = file[str(ctx.guild.id)]
-        return [info['channel_id'], info['title'], info['description']]
+        return [info['channel_id'], info['title'], info['description'], info['media']]
 
-    async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str) -> bool:
+    async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media: list = None) -> bool:
         with open('welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
@@ -195,6 +221,11 @@ class Welcome(commands.Cog):
             file[str(ctx.guild.id)]['channel_id'] = channel_id
             file[str(ctx.guild.id)]['title'] = title
             file[str(ctx.guild.id)]['description'] = description
+            if media:
+                if "default" in media:
+                    file[str(ctx.guild.id)]['media'] = None
+                else:
+                    file[str(ctx.guild.id)]['media'] = media
         except KeyError:
             return False
 
@@ -327,7 +358,38 @@ class Welcome(commands.Cog):
             embed_description = result.content
         await result.delete()
 
-        succeeded = await self.create_welcomer(ctx, channel_id, embed_title, embed_description)
+        # User provides media links
+        url_list = []
+        while True:
+            if not url_list:
+                formatted_urls = ""
+            else:
+                formatted_urls = '\n==============\n'.join(url_list)
+            description = f"{ctx.author.mention}, you can set custom images or gifs to be sent in the welcomer message " \
+                f"when someone joins this server. Please enter a valid image URL *(.png, .jpg, .gif)*, {or_default}." \
+                f" Enter *\"finish\"* to finish adding URLs\n\nCurrent URLs:\n {formatted_urls}"
+            try:
+                edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
+                if not edit_success:
+                    return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
+                result = await self.client.wait_for("message", check=from_user, timeout=120)
+            except asyncio.TimeoutError:
+                return await gcmds.timeout(gcmds, ctx, cmd_title, 120)
+            if result.content == "cancel":
+                return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            elif result.content == "skip":
+                url_list = None
+                break
+            elif result.content == "finish":
+                break
+            else:
+                mimetype, encoding = mimetypes.guess_type(result.content)
+                if mimetype and mimetype in ["image/gif", "image/jpeg", "image/jpg", "image/png"]:
+                    url_list.append(result.content)
+                await result.delete()
+                continue
+
+        succeeded = await self.create_welcomer(ctx, channel_id, embed_title, embed_description, url_list)
         if succeeded:
             title = "Successfully Created Welcomer"
             description = f"{ctx.author.mention}, your welcomer will be fired at <#{channel_id}> every time a new " \
@@ -364,10 +426,15 @@ class Welcome(commands.Cog):
                 return True
             else:
                 return False
+        
+        if not info[3]:
+            media = "Current Images: Default"
+        else:
+            media = "Current Images:\n" + '\n==============\n'.join(info[3])
 
         # Display the current welcomer
         temp_welcomer_embed = discord.Embed(title=info[1],
-                                            description=info[2],
+                                            description=info[2] + "\n\n" + media,
                                             color=discord.Color.blue())
         temp_welcomer = await ctx.channel.send(embed=temp_welcomer_embed)
 
@@ -378,10 +445,40 @@ class Welcome(commands.Cog):
         panel_embed.set_footer(text="Type *\"cancel\"* to cancel at any time")
         panel = await ctx.channel.send(embed=panel_embed)
 
-        asyncio.sleep(5)
+        await asyncio.sleep(5)
 
-        description = f"{ctx.author.mention}, above is your current welcomer message that " \
-            f"is set for this server. Please enter the title of the welcomer you would like " \
+        description = "Please tag or enter the ID of the channel you would like MarwynnBot to send the welcomer" \
+            f" message, {or_default}\n\nCurrent Channel: <#{info[0]}>"
+
+        # Get channel ID from user
+        while True:
+            try:
+                edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
+                if not edit_success:
+                    return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
+                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+            if result.content == "cancel":
+                try:
+                    await temp_welcomer.delete()
+                except Exception:
+                    pass
+                return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            elif result.content == "skip":
+                new_channel_id = info[0]
+                break
+            elif re.match(result.content, channel_tag_rx):
+                new_channel_id = result.content[2:20]
+                break
+            elif re.match(result.content, channel_id_rx):
+                new_channel_id = result.content
+                break
+            else:
+                continue
+        await result.delete()
+
+        description = f"{ctx.author.mention}, please enter the title of the welcomer you would like " \
             f"MarwynnBot to display, {or_default}\n\nCurrent Title: {info[1]}"
 
         # Get title from user
@@ -392,7 +489,12 @@ class Welcome(commands.Cog):
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+        await result.delete()
         if result.content == "cancel":
+            try:
+                await temp_welcomer.delete()
+            except Exception:
+                pass
             return await gcmds.cancelled(gcmds, ctx, cmd_title)
         elif result.content == "skip":
             new_title = info[1]
@@ -432,40 +534,58 @@ class Welcome(commands.Cog):
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+        await result.delete()
         if result.content == "cancel":
+            try:
+                await temp_welcomer.delete()
+            except Exception:
+                pass
             return await gcmds.cancelled(gcmds, ctx, cmd_title)
         elif result.content == "skip":
             new_description = info[2]
         else:
             new_description = result.content
 
-        description = "Please tag or enter the ID of the channel you would like MarwynnBot to send the welcomer" \
-            f" message, {or_default}\n\nCurrent Channel: <#{info[0]}>"
-
-        # Get channel ID from user
+        # User provides media links
+        url_list = []
         while True:
+            if not url_list:
+                formatted_urls = ""
+            else:
+                formatted_urls = '\n==============\n'.join(url_list)
+            description = f"{ctx.author.mention}, you can set custom images or gifs to be sent in the welcomer message " \
+                f"when someone joins this server. Please enter a valid image URL *(.png, .jpg, .gif)*, *\"default\"* " \
+                f"to use the default gifs, {or_default}." \
+                f" Enter *\"finish\"* to finish adding URLs\n\nCurrent URLs:\n {formatted_urls}"
             try:
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
                 if not edit_success:
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.client.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+                return await gcmds.timeout(gcmds, ctx, cmd_title, 120)
+            await result.delete()
             if result.content == "cancel":
+                try:
+                    await temp_welcomer.delete()
+                except Exception:
+                    pass
                 return await gcmds.cancelled(gcmds, ctx, cmd_title)
             elif result.content == "skip":
-                new_channel_id = info[0]
+                url_list = None
                 break
-            elif re.match(result.content, channel_tag_rx):
-                new_channel_id = result.content[2:20]
+            elif result.content == "default":
+                url_list = ['default']
                 break
-            elif re.match(result.content, channel_id_rx):
-                new_channel_id = result.content
+            elif result.content == "finish":
                 break
             else:
+                mimetype, encoding = mimetypes.guess_type(result.content)
+                if mimetype and mimetype in ["image/gif", "image/jpeg", "image/jpg", "image/png"]:
+                    url_list.append(result.content)
                 continue
 
-        succeeded = await self.edit_welcomer(ctx, new_channel_id, new_title, new_description)
+        succeeded = await self.edit_welcomer(ctx, new_channel_id, new_title, new_description, url_list)
         await temp_welcomer.delete()
         if succeeded:
             title = "Successfully Edited Welcomer"
@@ -507,7 +627,7 @@ class Welcome(commands.Cog):
 
         def user_reacted(reaction: discord.Reaction, user: discord.User) -> bool:
             if reaction.emoji in reactions and user.id == ctx.author.id and \
-            reaction.message.id == panel.id and not user.bot:
+                    reaction.message.id == panel.id and not user.bot:
                 return True
             else:
                 return False
