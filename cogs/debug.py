@@ -132,10 +132,10 @@ class Debug(commands.Cog):
         updateEmbed.set_footer(text=timestamp,
                                icon_url=ctx.author.avatar_url)
         preview = await ctx.channel.send(embed=updateEmbed)
-        
+
         panel_embed_start = discord.Embed(title="Confirmation",
-                                        description=f"{ctx.author.mention}, react below for actions",
-                                        color=discord.Color.blue())
+                                          description=f"{ctx.author.mention}, react below for actions",
+                                          color=discord.Color.blue())
         panel = await ctx.channel.send(embed=panel_embed_start)
 
         while True:
@@ -143,7 +143,7 @@ class Debug(commands.Cog):
                 await panel.edit(embed=panel_embed_start)
             else:
                 panel = await ctx.channel.send(embed=panel_embed_start)
-            
+
             # Adds reaction controls
             for reaction in updates_reaction:
                 await panel.add_reaction(reaction)
