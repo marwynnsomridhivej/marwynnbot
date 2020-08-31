@@ -70,22 +70,39 @@ class Welcome(commands.Cog):
                 welcome_embed.set_image(url=image_url)
                 return await channel_to_send.send(embed=welcome_embed)
 
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        if os.path.exists('welcomers.json') and not member.bot:
+            with open('welcomers.json', 'r') as f:
+                file = json.load(f)
+                f.close()
+            member = member
+            if str(member.guild.id) in file:
+                guild = member.guild
+                channel_to_send = await self.client.fetch_channel(file[str(guild.id)]["channel_id"])
+                leave_embed = discord.Embed(title=f"{member.display_name} left {guild.name}",
+                                            description=f"{member.mention}, we're sad to see you go!",
+                                            color=discord.Color.dark_red())
+                leave_embed.set_image(url="https://media1.tenor.com/images/e69ebde3631408c200777ebe10f84367/tenor.gif?"
+                                      "itemid=5081296")
+                return await channel_to_send.send(embed=leave_embed)
+
     async def get_welcome_help(self, ctx) -> discord.Message:
         title = "Welcomer Help Menu"
         description = f"{ctx.author.mention}, the welcomer is used to greet new members of your server when they join. " \
-            f"The base command is `{gcmds.prefix(gcmds, ctx)}welcome [option]` *alias=welcomer*. Here are the valid " \
+            f"The base command is `{gcmds.prefix(gcmds, ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
             "options for `[option]`\n\n"
-        create = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcome create`\n" \
+        create = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer create`\n" \
             "**Returns:** An interactive setup panel that will create a working welcomer in your server\n" \
             "**Aliases:** `make` `start` `-c`\n" \
             "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you" \
             " try to use this command when you already have a welcomer set up, it will automatically redirect you to " \
             "the interactive edit panel"
-        edit = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcome edit`\n" \
+        edit = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer edit`\n" \
             "**Returns:** An interactive setup panel that will edit your current welcomer\n" \
             "**Aliases:** `adjust` `modify` `-e`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        delete = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcome delete`\n" \
+        delete = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer delete`\n" \
             "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
             "**Aliases:** `trash` `cancel` `-rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
@@ -155,7 +172,8 @@ class Welcome(commands.Cog):
                 "channel_id": channel_id,
                 "title": title,
                 "description": description,
-                "media": media
+                "media": media,
+                "leaver": False
             }
         }
         gcmds.json_load(gcmds, 'welcomers.json', init)
@@ -173,7 +191,8 @@ class Welcome(commands.Cog):
                     "channel_id": channel_id,
                     "title": title,
                     "description": description,
-                    "media": media
+                    "media": media,
+                    "leaver": False
                 }
                 break
             except KeyError:
@@ -248,6 +267,83 @@ class Welcome(commands.Cog):
             del file[str(ctx.guild.id)]
             if len(file) == 0:
                 file = {}
+        except KeyError:
+            return False
+
+        with open('welcomers.json', 'w') as g:
+            json.dump(file, g, indent=4)
+        return True
+
+    async def get_leaver_help(self, ctx) -> discord.Message:
+        title = "Leaver Help"
+        description = (f"{ctx.author.mention}, the leaver function will automatically send a goodbye message in the "
+                       f"welcomer's channel once a member leaves the server. The base command is "
+                       f"`{gcmds.prefix(gcmds, ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
+        create = (f"Usage: `{gcmds.prefix(gcmds, ctx)}leaver create`\n"
+                  "Returns: An embed that details the status of the leaver creation\n"
+                  "Aliases: `-c` `make` `start`\n"
+                  "Special Cases: Only works if there is a welcomer set up")
+        delete = (f"Usage: `{gcmds.prefix(gcmds, ctx)}leaver delete`\n"
+                  "Returns: An embed that details the status of the leaver deletion\n"
+                  "Aliases: `-rm` `trash` `cancel`\n"
+                  "Special Cases: Only works if there is a welcomer and leaver set up")
+        embed = discord.Embed(title=title,
+                              description=description,
+                              color=discord.Color.blue())
+        embed.add_field(name="Create",
+                        value=create,
+                        inline=False)
+        embed.add_field(name="Delete",
+                        value=delete,
+                        inline=False)
+        return await ctx.channel.send(embed=embed)
+
+    async def create_leaver(self, ctx) -> bool:
+        with open('welcomers.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        try:
+            file[str(ctx.guild.id)]['leaver'] = True
+        except KeyError:
+            return False
+
+        with open('welcomers.json', 'w') as g:
+            json.dump(file, g, indent=4)
+        return True
+
+    async def has_leaver(self, ctx) -> bool:
+        if not await self.has_welcomer(ctx):
+            return False
+
+        with open('welcomers.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        try:
+            if file[str(ctx.guild.id)]['leaver']:
+                return True
+            else:
+                return False
+        except KeyError:
+            return False
+
+    async def no_leaver(self, ctx) -> discord.Message:
+        embed = discord.Embed(title="No Leaver Set",
+                              description=f"{ctx.author.mention}, you don't have a leaver set up for this server yet",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+
+    async def delete_leaver(self, ctx) -> bool:
+        with open('welcomers.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        try:
+            if not file[str(ctx.guild.id)]['leaver']:
+                return False
+            else:
+                file[str(ctx.guild.id)]['leaver'] = False
         except KeyError:
             return False
 
@@ -426,7 +522,7 @@ class Welcome(commands.Cog):
                 return True
             else:
                 return False
-        
+
         if not info[3]:
             media = "Current Images: Default"
         else:
@@ -665,6 +761,60 @@ class Welcome(commands.Cog):
                                       description=description,
                                       color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
+
+    @commands.group()
+    @commands.has_permissions(manage_guild=True)
+    async def leaver(self, ctx):
+        if not ctx.invoked_subcommand:
+            return await self.get_leaver_help(ctx)
+
+    @leaver.command(aliases=['-c', 'make', 'start'])
+    async def create(self, ctx):
+        welcomer = await self.get_welcomer(ctx)
+        if not welcomer:
+            return await self.no_welcomer(ctx)
+
+        if await self.has_leaver(ctx):
+            embed = discord.Embed(title="Leaver Already Set",
+                                    description=f"{ctx.author.mention}, this server already has a leaver set up",
+                                    color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed, delete_after=10)
+
+        def from_user(message: discord.Message) -> bool:
+            if message.author.id == ctx.author.id and message.channel.id == ctx.channel.id:
+                return True
+            else:
+                return False
+
+        channel_id = welcomer[0]
+
+        succeeded = await self.create_leaver(ctx)
+        if succeeded:
+            embed = discord.Embed(title="Leaver Successfully Created",
+                                    description=f"{ctx.author.mention}, a leaver has been set for this server. It will "
+                                    "fire in the same channel as the welcomer",
+                                    color=discord.Color.blue())
+        else:
+            embed = discord.Embed(title="Leaver Creation Failed",
+                                    description=f"{ctx.author.mention}, the leaver could not be set for this server",
+                                    color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
+
+    @leaver.command(aliases=['-rm', 'cancel', 'trash'])
+    async def delete(self, ctx):
+        if not await self.has_leaver(ctx):
+            return await self.no_leaver(ctx)
+
+        succeeded = await self.delete_leaver(ctx)
+        if succeeded:
+            embed = discord.Embed(title="Leaver Successfully Deleteed",
+                                  description=f"{ctx.author.mention}, your leaver for this server has been deleted",
+                                  color=discord.Color.blue())
+        else:
+            embed = discord.Embed(title="Leaver Deletion Failed",
+                                  description=f"{ctx.author.mention}, the leaver for this server could not be deleted",
+                                  color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
 
 
 def setup(client):
