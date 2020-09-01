@@ -279,14 +279,14 @@ class Welcome(commands.Cog):
         description = (f"{ctx.author.mention}, the leaver function will automatically send a goodbye message in the "
                        f"welcomer's channel once a member leaves the server. The base command is "
                        f"`{gcmds.prefix(gcmds, ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
-        create = (f"Usage: `{gcmds.prefix(gcmds, ctx)}leaver create`\n"
-                  "Returns: An embed that details the status of the leaver creation\n"
-                  "Aliases: `-c` `make` `start`\n"
-                  "Special Cases: Only works if there is a welcomer set up")
-        delete = (f"Usage: `{gcmds.prefix(gcmds, ctx)}leaver delete`\n"
-                  "Returns: An embed that details the status of the leaver deletion\n"
-                  "Aliases: `-rm` `trash` `cancel`\n"
-                  "Special Cases: Only works if there is a welcomer and leaver set up")
+        create = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}leaver create`\n"
+                  "**Returns:** An embed that details the status of the leaver creation\n"
+                  "**Aliases:** `-c` `make` `start`\n"
+                  "**Special Cases:** Only works if there is a welcomer set up")
+        delete = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}leaver delete`\n"
+                  "**Returns:** An embed that details the status of the leaver deletion\n"
+                  "**Aliases:** `-rm` `trash` `cancel`\n"
+                  "**Special Cases:** Only works if there is a welcomer and leaver set up")
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
