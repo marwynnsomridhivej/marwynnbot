@@ -61,7 +61,8 @@ async def on_ready():
         print(f"Cog \"{cog}\" has been loaded")
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
-    print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}')
+    print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}\nServing '
+          f'{len(client.users)} users across {len(client.guilds)} servers')
     await status.start()
 
 

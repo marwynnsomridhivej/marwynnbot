@@ -351,14 +351,14 @@ class Welcome(commands.Cog):
             json.dump(file, g, indent=4)
         return True
 
-    @commands.group(aliases=['welcomer'])
-    async def welcome(self, ctx):
+    @commands.group(aliases=['welcome'])
+    async def welcomer(self, ctx):
         await gcmds.invkDelete(gcmds, ctx)
 
         if not ctx.invoked_subcommand:
             return await self.get_welcome_help(ctx)
 
-    @welcome.command(aliases=['make', 'start', '-c'])
+    @welcomer.command(aliases=['make', 'start', '-c'])
     @commands.has_permissions(manage_guild=True)
     async def create(self, ctx):
         if await self.has_welcomer(ctx):
@@ -507,7 +507,7 @@ class Welcome(commands.Cog):
                                       color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
 
-    @welcome.command(aliases=['adjust', 'modify', '-e'])
+    @welcomer.command(aliases=['adjust', 'modify', '-e'])
     @commands.has_permissions(manage_guild=True)
     async def edit(self, ctx):
         info = await self.get_welcomer(ctx)
@@ -704,7 +704,7 @@ class Welcome(commands.Cog):
                                       color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
 
-    @welcome.command(aliases=['-rm', 'trash', 'cancel'])
+    @welcomer.command(aliases=['-rm', 'trash', 'cancel'])
     async def delete(self, ctx):
         info = await self.get_welcomer(ctx)
         if not info:
