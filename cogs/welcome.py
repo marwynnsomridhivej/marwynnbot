@@ -765,6 +765,7 @@ class Welcome(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def leaver(self, ctx):
+        await gcmds.invkDelete(gcmds, ctx)
         if not ctx.invoked_subcommand:
             return await self.get_leaver_help(ctx)
 
