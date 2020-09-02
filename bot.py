@@ -17,6 +17,9 @@ DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Un
 DISABLED_COMMANDS = []
 token_rx = re.compile(r'[MN]\w{23}.\w{6}.\w{27}')
 
+if os.path.exists('discord.log'):
+    os.remove('discord.log')
+
 
 async def get_prefix(client, message):
     if isinstance(message.channel, discord.DMChannel) or isinstance(message.channel, discord.GroupChannel):
