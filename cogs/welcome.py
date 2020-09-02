@@ -769,8 +769,8 @@ class Welcome(commands.Cog):
         if not ctx.invoked_subcommand:
             return await self.get_leaver_help(ctx)
 
-    @leaver.command(aliases=['-c', 'make', 'start'])
-    async def create(self, ctx):
+    @leaver.command(aliases=['-c', 'make', 'start', 'create'])
+    async def _create(self, ctx):
         welcomer = await self.get_welcomer(ctx)
         if not welcomer:
             return await self.no_welcomer(ctx)
@@ -801,8 +801,8 @@ class Welcome(commands.Cog):
                                     color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
-    @leaver.command(aliases=['-rm', 'cancel', 'trash'])
-    async def delete(self, ctx):
+    @leaver.command(aliases=['-rm', 'cancel', 'trash', 'delete'])
+    async def _delete(self, ctx):
         if not await self.has_leaver(ctx):
             return await self.no_leaver(ctx)
 
