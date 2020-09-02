@@ -316,24 +316,24 @@ class Reactions(commands.Cog):
                                               f"Below is a list of all the valid options",
                                   color=discord.Color.blue())
             embed.add_field(name="Create",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}reactionrole create`\n"
-                                  f"Returns: Interactive reaction roles setup panel\n"
-                                  f"Aliases: `-c` `start` `make`")
+                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole create`\n"
+                                  f"**Returns:** Interactive reaction roles setup panel\n"
+                                  f"**Aliases:** `-c` `start` `make`")
             embed.add_field(name="Edit",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}reactionrole edit [messageID]`\n"
-                                  f"Returns: Interactive reaction roles edit panel\n"
-                                  f"Aliases: `-e` `adjust`\n"
-                                  f"Special Cases: {message_id_message}",
+                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole edit [messageID]`\n"
+                                  f"**Returns:** Interactive reaction roles edit panel\n"
+                                  f"**Aliases:** `-e` `adjust`\n"
+                                  f"**Special Cases:** {message_id_message}",
                             inline=False)
             embed.add_field(name="Delete",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}reactionrole delete [messageID]`\n"
-                                  f"Returns: Message that details status of the deletion\n"
-                                  f"Aliases: `-d` `-rm` `del`\n"
-                                  f"Special Cases: {message_id_message}. If the panel was manually deleted, "
+                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole delete [messageID]`\n"
+                                  f"**Returns:** Message that details status of the deletion\n"
+                                  f"**Aliases:** `-d` `-rm` `del`\n"
+                                  f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
                                   f"MarwynnBot will delete the panel's record from its database of reaction role panels",
                             inline=False)
             embed.add_field(name="Useful Resources",
-                            value="Hex Color Picker: https://www.google.com/search?q=color+picker",
+                            value="**Hex Color Picker:** https://www.google.com/search?q=color+picker",
                             inline=False)
             return await ctx.channel.send(embed=embed)
 
