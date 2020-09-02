@@ -102,7 +102,7 @@ class Disboard(commands.Cog):
         description = (f"{ctx.author.mention}, this is MarwynnBot's Disboard integration. MarwynnBot's many functions "
                        f"are listed here below. The base command is {gcmds.prefix(gcmds, ctx)}disboard [option]. "
                        "Here are all the valid options for the `[option]` argument")
-        create = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard set`\n"
+        create = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard create`\n"
                   "**Returns:** An interactive setup panel that will make your disboard bump reminder\n"
                   "**Aliases:** `-c` `make` `start`\n"
                   "**Special Cases:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
