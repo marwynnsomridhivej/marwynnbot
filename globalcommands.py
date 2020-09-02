@@ -95,20 +95,20 @@ class GlobalCMDS:
                               " due to inactivity",
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed, delete_after=10)
-    
+
     async def cancelled(self, ctx: commands.Context, title: str) -> discord.Message:
         embed = discord.Embed(title=f"{title.title()} Cancelled",
                               description=f"{ctx.author.mention}, your {title} was cancelled",
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed, delete_after=10)
-    
-    async def panel_deleted(self, ctx:commands.Context, title: str) -> discord.Message:
+
+    async def panel_deleted(self, ctx: commands.Context, title: str) -> discord.Message:
         embed = discord.Embed(title=f"{title.title()} Cancelled",
-                              description=f"{ctx.author.mention}, your {title} was cancelled because the panel was"
+                              description=f"{ctx.author.mention}, your {title} was cancelled because the panel was "
                               "deleted or could not be found",
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed, delete_after=10)
-    
+
     def isGuild(self, ctx):
         if ctx.guild:
             return True
