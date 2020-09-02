@@ -1,19 +1,102 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from globalcommands import GlobalCMDS as gcmds
 import json
+import os
+import asyncio
+import re
+from datetime import datetime
 
 disboard_bot_id = 302050872383242240
+channel_tag_rx = re.compile(r'<#[0-9]{18}>')
+channel_id_rx = re.compile(r'[0-9]{18}')
+timeout = 60
 
 
 class Disboard(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.check_unsent_reminder.start()
+    
+    def cog_unload(self):
+        if self.check_unsent_reminder.is_running():
+            self.check_unsent_reminder.cancel()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'Cog "{self.qualified_name}" has been loaded')
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.guild and message.author.id == disboard_bot_id and os.path.exists('disboard.json'):
+            message = message
+            disboard_embed = message.embeds[0]
+            if "bump done" in disboard_embed.description.lower():
+                current_timestamp = datetime.now().timestamp()
+                time_to_send = 7200 + int(current_timestamp)
+                sleep_time = time_to_send - current_timestamp
+                with open('disboard.json', 'r') as f:
+                    file = json.load(f)
+                    f.close()
+                try:
+                    channel = await self.client.fetch_channel(file[str(message.guild.id)]['channel_id'])
+                except KeyError:
+                    return
+                title = "Disboard Bump Available!"
+                message_content = file[str(message.guild.id)]['message_content']
+                if not message_content:
+                    description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
+                else:
+                    description = message_content
+                file[str(message.guild.id)].update({"time": time_to_send})
+                with open('disboard.json', 'w') as g:
+                    json.dump(file, g, indent=4)
+                    g.close()
+                asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+                print("Task Created")
+
+    @tasks.loop(seconds=1, count=1)
+    async def check_unsent_reminder(self):
+        if not os.path.exists('disboard.json'):
+            return
+        
+        with open('disboard.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        for guild in file:
+            try:
+                sleep_time = file[str(guild)]['time'] - int(datetime.now().timestamp())
+            except KeyError:
+                continue
+            title = "Disboard Bump Available!"
+            if not file[str(guild)]['message_content']:
+                description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
+            else:
+                description = file[str(guild)]['message_content']
+            channel = await self.client.fetch_channel(file[str(guild)]['channel_id'])
+            await asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+
+    async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
+        await asyncio.sleep(sleep_time)
+        embed = discord.Embed(title=title,
+                              description=description,
+                              color=discord.Color.blue())
+        try:
+            await channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
+        
+        with open('disboard.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+        try:
+            del file[str(channel.guild.id)]
+            with open('disboard.json', 'w') as g:
+                json.dump(file, g, indent=4)
+                g.close()
+        except KeyError:
+            pass
 
     async def get_disboard_help(self, ctx) -> discord.Message:
         title = "Disboard Commands"
@@ -56,25 +139,54 @@ class Disboard(commands.Cog):
         else:
             return True
 
-    async def set_bump_reminder(self, ctx, channel_id: int, message_content: str = None) -> bool:
-        if not self.disboard_joined(ctx):
+    async def no_disboard(self, ctx) -> discord.Message:
+        embed = discord.Embed(title="No Disboard Bot",
+                              description=f"{ctx.author.mention}, you must register this server to `Disboard` before "
+                              "you can use this command",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+
+    async def check_bump_reminder(self, ctx) -> bool:
+        if not os.path.exists("disboard.json"):
             return False
-        
-        if not ctx.guild.get_channel(channel_id):
+
+        with open('disboard.json', 'r') as f:
+            file = json.load(f)
+            f.close()
+
+        try:
+            if file[str(ctx.guild.id)]:
+                return True
+            else:
+                return False
+        except KeyError:
+            return False
+
+    async def has_bump_reminder(self, ctx) -> discord.Message:
+        embed = discord.Embed(title="Bump Message Already Set",
+                              description=f"{ctx.author.mention}, there is already a bump reminder set",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
+
+    async def set_bump_reminder(self, ctx, channel_id: int, message_content: str = None) -> bool:
+        if not await self.disboard_joined(ctx):
+            return False
+
+        if not await self.client.fetch_channel(channel_id):
             return False
 
         init = {
             str(ctx.guild.id): {
                 "channel_id": channel_id,
                 "message_content": message_content
-                }
             }
+        }
 
         gcmds.json_load(gcmds, 'disboard.json', init)
         with open('disboard.json', 'r') as f:
             file = json.load(f)
             f.close()
-        
+
         file[str(ctx.guild.id)] = {
             "channel_id": channel_id,
             "message_content": message_content
@@ -82,7 +194,39 @@ class Disboard(commands.Cog):
 
         with open('disboard.json', 'w') as g:
             json.dump(file, g, indent=4)
-        
+
+        return True
+
+    async def check_panel_exists(self, panel: discord.Message) -> bool:
+        try:
+            if panel.id:
+                return True
+            else:
+                return False
+        except (discord.NotFound, discord.Forbidden):
+            return False
+
+    async def edit_panel(self, ctx, panel: discord.Message, title: str = None, description: str = None,
+                         color: discord.Color = discord.Color.blue()) -> discord.Message:
+        if not await self.check_panel_exists(panel):
+            return None
+
+        orig_message = await ctx.channel.fetch_message(panel.id)
+        orig_embed = orig_message.embeds[0]
+        if title:
+            title = title
+        else:
+            title = orig_embed.title
+
+        if description:
+            description = description
+        else:
+            description = orig_embed.description
+
+        embed = discord.Embed(title=title,
+                              description=description,
+                              color=color)
+        await orig_message.edit(embed=embed)
         return True
 
     @commands.group()
@@ -91,6 +235,87 @@ class Disboard(commands.Cog):
         await gcmds.invkDelete(gcmds, ctx)
         if not ctx.invoked_subcommand:
             return await self.get_disboard_help(ctx)
+
+    @disboard.command()
+    async def create(self, ctx):
+        if not await self.disboard_joined(ctx):
+            return await self.no_disboard(ctx)
+
+        if await self.check_bump_reminder(ctx):
+            return await self.has_bump_reminder(ctx)
+
+        def from_user(message: discord.Message) -> bool:
+            if message.author.id == ctx.author.id and message.channel.id == ctx.channel.id:
+                return True
+            else:
+                return False
+
+        or_default = "or type \"skip\" to use the default value"
+
+        panel_embed = discord.Embed(title="Disboard Bump Reminder Setup",
+                                    description=f"{ctx.author.mention}, this interactive setup panel will guide you "
+                                    "through creating a fully functional `Disboard` bump reminder",
+                                    color=discord.Color.blue())
+        panel_embed.set_footer(text='Type "cancel" to cancel at any time')
+        panel = await ctx.channel.send(embed=panel_embed)
+
+        await asyncio.sleep(5.0)
+
+        cmd_name = "disboard bump reminder create"
+        description = f"{ctx.author.mention}, tag or type the ID of the channel that you would like the bump reminder" \
+            " to be sent in"
+
+        # Get channel tag from user
+        while True:
+            try:
+                if not await self.edit_panel(ctx, panel, None, description):
+                    return await gcmds.panel_deleted(gcmds, ctx, cmd_name)
+                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            except asyncio.TimeoutError:
+                return await gcmds.timeout(self, ctx, cmd_name, timeout)
+            if re.match(channel_tag_rx, result.content):
+                channel_id = result.content[2:20]
+                break
+            elif re.match(channel_id_rx, result.content):
+                channel_id = result.content
+                break
+            elif result.content == "cancel":
+                return await gcmds.cancelled(gcmds, ctx, cmd_name)
+            else:
+                continue
+        await result.delete()
+
+        description = f"{ctx.author.mention}, type what you would like the description of the reminder embed " \
+            f"to be, {or_default}"
+        
+        try:
+            if not await self.edit_panel(ctx, panel, None, description):
+                return await gcmds.panel_deleted(gcmds, ctx, cmd_name)
+            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(self, ctx, cmd_name, timeout)
+        if result.content == "cancel":
+            return await gcmds.cancelled(gcmds, ctx, cmd_name)
+        elif result.content == "skip":
+            message_content = None
+        else:
+            message_content = result.content
+        await result.delete()
+        
+        succeeded = await self.set_bump_reminder(ctx, channel_id, message_content)
+        if succeeded:
+            embed = discord.Embed(title="Successfully Created Disboard Bump Reminder",
+                                  description=f"{ctx.author.mention}, as long as the `Disboard` bot is registering "
+                                  f"bumps in <#{channel_id}>, this reminder should work",
+                                  color=discord.Color.blue())
+        else:
+            embed = discord.Embed(title="Disboard Bump Reminder Creation Failed",
+                                  description=f"{ctx.author.mention}, an error occurred during reminder creation",
+                                  color=discord.Color.dark_red())
+        try:
+            return await panel.edit(embed=embed)
+        except (discord.NotFound, discord.Forbidden):
+            return await ctx.channel.send(embed=embed)
 
     @disboard.command()
     async def invite(self, ctx):
