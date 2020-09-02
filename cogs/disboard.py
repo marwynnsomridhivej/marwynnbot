@@ -20,8 +20,7 @@ class Disboard(commands.Cog):
         self.check_unsent_reminder.start()
     
     def cog_unload(self):
-        if self.check_unsent_reminder.is_running():
-            self.check_unsent_reminder.cancel()
+        self.check_unsent_reminder.cancel()
 
     @commands.Cog.listener()
     async def on_ready(self):
