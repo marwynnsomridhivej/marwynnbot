@@ -54,7 +54,6 @@ class Disboard(commands.Cog):
                     json.dump(file, g, indent=4)
                     g.close()
                 asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
-                print("Task Created")
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
@@ -91,7 +90,7 @@ class Disboard(commands.Cog):
             file = json.load(f)
             f.close()
         try:
-            del file[str(channel.guild.id)]
+            del file[str(channel.guild.id)]['time']
             with open('disboard.json', 'w') as g:
                 json.dump(file, g, indent=4)
                 g.close()
