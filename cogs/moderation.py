@@ -146,8 +146,7 @@ class Moderation(commands.Cog):
         for user in users:
             try:
                 user = await commands.converter.UserConverter().convert(ctx, user)
-
-            except:
+            except commands.BadArgument:
                 error = discord.Embed(title='Error',
                                       description='User could not be found!',
                                       color=discord.Color.dark_red())
