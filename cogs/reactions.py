@@ -489,7 +489,7 @@ class Reactions(commands.Cog):
                         return await self.no_panel(ctx)
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
-                                                      f" you want the user to react with to get the role {role}")
+                                                      f" you want the user to react with to get the role <@&{role}>")
                     result = await self.client.wait_for("reaction_add", check=panel_react,
                                                                     timeout=timeout)
                 except asyncio.TimeoutError:
@@ -705,7 +705,7 @@ class Reactions(commands.Cog):
                         return await self.no_panel(ctx)
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
-                                                      f" you want the user to react with to get the role {role}")
+                                                      f" you want the user to react with to get the role <@&{role}>")
                     result = await self.client.wait_for("reaction_add",
                                                                     check=panel_react,
                                                                     timeout=timeout)
