@@ -65,6 +65,9 @@ class Disboard(commands.Cog):
         for guild in file:
             try:
                 sleep_time = file[str(guild)]['time'] - int(datetime.now().timestamp())
+                if sleep_time <= 0:
+                    del file[str(guild)]['time']
+                    continue
             except KeyError:
                 continue
             title = "Disboard Bump Available!"
