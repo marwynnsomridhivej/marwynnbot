@@ -2,9 +2,10 @@ import datetime
 import discord
 import dotenv
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import asyncio
 
+gcmds = GlobalCMDS()
 updates_reaction = ['✅', '📝', '🛑']
 
 
@@ -37,16 +38,16 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
         await ctx.send(embed=ping, delete_after=10)
-        gcmds.incrCounter(gcmds, ctx, 'ping')
+        gcmds.incrCounter(ctx, 'ping')
 
     @commands.group(aliases=['flag'])
     async def report(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Report Options",
                                  description=f"{ctx.author.mention}, here are the options for the report command:\n`["
@@ -57,7 +58,7 @@ class Debug(commands.Cog):
 
     @report.command(aliases=['issue'])
     async def bug(self, ctx, *, bug_message):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         try:
             marwynnbot_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
 
@@ -232,7 +233,7 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def shard(self, ctx, option=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if option != 'count':
             shardDesc = f"This server is running on shard: {ctx.guild.shard_id}"
         else:
@@ -241,7 +242,7 @@ class Debug(commands.Cog):
                                    description=shardDesc,
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=shardEmbed, delete_after=30)
-        gcmds.incrCounter(gcmds, ctx, 'shard')
+        gcmds.incrCounter(ctx, 'shard')
 
 
 def setup(client):

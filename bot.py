@@ -10,7 +10,9 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
@@ -26,7 +28,7 @@ async def get_prefix(client, message):
         extras = ('mb ', 'mB ', 'Mb ', 'MB ', 'm!', 'm! ')
         return commands.when_mentioned_or(*extras)(client, message)
     else:
-        with open('prefixes.json', 'r') as f:
+        with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
             extras = (
                 f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ',
@@ -73,7 +75,7 @@ async def on_ready():
 async def on_message(message):
     if re.search(token_rx, message.content) and message.guild:
         try:
-            await gcmds.msgDelete(gcmds, message)
+            await gcmds.msgDelete(message)
         except (discord.NotFound, discord.Forbidden):
             pass
         embed = discord.Embed(title="Token Found",
@@ -87,10 +89,10 @@ async def on_message(message):
 
 @client.check
 async def check_blacklist(ctx):
-    if not os.path.exists('blacklist.json'):
-        with open('blacklist.json', 'w') as f:
+    if not os.path.exists('db/blacklist.json'):
+        with open('db/blacklist.json', 'w') as f:
             json.dump({'Users': {}}, f, indent=4)
-    with open('blacklist.json', 'r') as f:
+    with open('db/blacklist.json', 'r') as f:
         blacklist = json.load(f)
         try:
             blacklist["Users"]
@@ -161,10 +163,10 @@ async def on_command_error(ctx, error):
                                   color=discord.Color.dark_red())
         await ctx.channel.send(embed=not_owner, delete_after=10)
     elif isinstance(error, commands.CommandNotFound):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         notFound = discord.Embed(title="Command Not Found",
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
-                                             f"does not exist\n\nDo `{gcmds.prefix(gcmds, ctx)}help` for help",
+                                             f"does not exist\n\nDo `{gcmds.prefix(ctx)}help` for help",
                                  color=discord.Color.dark_red())
         await ctx.channel.send(embed=notFound, delete_after=10)
     elif isinstance(error, commands.CommandOnCooldown):
@@ -191,10 +193,10 @@ def truncate(number: float, decimal_places: int):
 
 @client.event
 async def on_guild_join(guild):
-    if not os.path.exists('blacklist.json'):
-        with open('blacklist.json', 'w') as f:
+    if not os.path.exists('db/blacklist.json'):
+        with open('db/blacklist.json', 'w') as f:
             json.dump({'Guilds': {}}, f, indent=4)
-    with open('blacklist.json', 'r') as f:
+    with open('db/blacklist.json', 'r') as f:
         blacklist = json.load(f)
         try:
             blacklist["Guilds"]
@@ -203,25 +205,25 @@ async def on_guild_join(guild):
         if guild.id in blacklist["Guilds"]:
             to_leave = client.get_guild(guild.id)
             await to_leave.leave()
-    if not os.path.exists('prefixes.json'):
-        with open('prefixes.json', 'w') as f:
+    if not os.path.exists('db/prefixes.json'):
+        with open('db/prefixes.json', 'w') as f:
             f.write('{\n\n}')
-    with open('prefixes.json', 'r') as f:
+    with open('db/prefixes.json', 'r') as f:
         prefixes = json.load(f)
     prefixes[str(guild.id)] = 'm!'
 
-    with open('prefixes.json', 'w') as f:
+    with open('db/prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
 
 @client.event
 async def on_guild_remove(guild):
-    with open('prefixes.json', 'r') as f:
+    with open('db/prefixes.json', 'r') as f:
         prefixes = json.load(f)
 
     prefixes.pop(str(guild.id))
 
-    with open('prefixes.json', 'w') as f:
+    with open('db/prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
 

@@ -5,10 +5,10 @@ from datetime import datetime
 import discord
 import lavalink
 from discord.ext import commands, tasks
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 
+gcmds = GlobalCMDS()
 url_rx = re.compile(r'https?://(?:www\.)?.+')
-
 reactions = ["⏪", "⏯", "⏩", "⏹"]
 plist_reactions = ["💾", "📝"]
 plist_delete_reactions = ["✅", "🛑"]
@@ -142,18 +142,18 @@ class Music(commands.Cog):
 
     def init_playlist(self, ctx):
         init = {f"{ctx.author.id}": {None: {'urls': []}}}
-        gcmds.json_load(gcmds, 'playlists.json', init)
-        with open('playlists.json', 'r') as f:
+        gcmds.json_load('db/playlists.json', init)
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             if len(file[str(ctx.author.id)]) > 0:
                 return
             else:
                 file[str(ctx.author.id)] = {None: {'urls': []}}
-                with open('playlists.json', 'w') as g:
+                with open('db/playlists.json', 'w') as g:
                     json.dump(file, g, indent=4)
 
     def save_playlist(self, ctx, key: str, value: list):
-        with open('playlists.json', 'r') as f:
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -163,11 +163,11 @@ class Music(commands.Cog):
             prev = file[str(ctx.author.id)]
             prev.update({f"{str(key)}": {'urls': value}})
 
-        with open('playlists.json', 'w') as g:
+        with open('db/playlists.json', 'w') as g:
             json.dump(file, g, indent=4)
 
     def append_playlist(self, ctx, key: str, value):
-        with open('playlists.json', 'r') as f:
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -178,11 +178,11 @@ class Music(commands.Cog):
             for item in value:
                 current_urls.append(item)
 
-        with open('playlists.json', 'w') as g:
+        with open('db/playlists.json', 'w') as g:
             json.dump(file, g, indent=4)
 
     def get_playlist(self, ctx, key: str):
-        with open('playlists.json', 'r') as f:
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             if key is not None:
                 if key in file[str(ctx.author.id)]:
@@ -198,18 +198,18 @@ class Music(commands.Cog):
         return info
 
     def check_playlist(self, ctx, key: str):
-        with open('playlists.json', 'r') as f:
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             if not key in file[str(ctx.author.id)]:
                 return False
             return True
 
     def remove_playlist(self, ctx, key: str):
-        with open('playlists.json', 'r') as f:
+        with open('db/playlists.json', 'r') as f:
             file = json.load(f)
             try:
                 del file[str(ctx.author.id)][key]
-                with open('playlists.json', 'w') as g:
+                with open('db/playlists.json', 'w') as g:
                     json.dump(file, g, indent=4)
                 return True
             except KeyError:
@@ -353,7 +353,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def join(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
         if not player:
             player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -398,7 +398,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *, query: str = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not await self.ensure_voice(ctx):
             return
 
@@ -489,7 +489,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def queue(self, ctx, *, query: str = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
@@ -618,7 +618,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['clearqueue', 'qc'])
     async def queueclear(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -656,7 +656,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def stop(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -696,7 +696,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def leave(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
@@ -728,7 +728,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def volume(self, ctx, amount: int = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not await self.ensure_voice(ctx):
             return
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
@@ -766,7 +766,7 @@ class Music(commands.Cog):
 
     @commands.group(aliases=['playlists'])
     async def playlist(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         self.init_playlist(ctx)
 
         name = self.get_playlist(ctx, None)[0][0]
@@ -832,7 +832,7 @@ class Music(commands.Cog):
 
         if playlist_name is None:
             no_name = discord.Embed(title="Invalid Playlist Name",
-                                    description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{gcmds.prefix(gcmds, ctx)}playlist` to get a list of your currently saved playlists",
+                                    description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{gcmds.prefix(ctx)}playlist` to get a list of your currently saved playlists",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_name, delete_after=10)
 

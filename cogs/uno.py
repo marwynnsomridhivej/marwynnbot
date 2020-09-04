@@ -6,8 +6,9 @@ from discord.ext import commands
 import random
 from random import shuffle, randint
 import json
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 
+gcmds = GlobalCMDS()
 COLORS = ['red', 'yellow', 'green', 'blue']
 ALL_COLORS = COLORS + ['black']
 NUMBERS = list(range(10)) + list(range(1, 10))
@@ -455,8 +456,8 @@ def win(player: UnoPlayer):
     load = False
     success = False
     init = {'Uno': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -476,17 +477,17 @@ def win(player: UnoPlayer):
             else:
                 file['Uno'][str(player.member.id)]['win'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, player.member, 'gamestats.json', 'Uno')
+    gcmds.ratio(player.member, 'db/gamestats.json', 'Uno')
 
 
 def lose(player: UnoPlayer):
     load = False
     success = False
     init = {'Uno': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -506,9 +507,9 @@ def lose(player: UnoPlayer):
             else:
                 file['Uno'][str(player.member.id)]['lose'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, player.member, 'gamestats.json', 'Uno')
+    gcmds.ratio(player.member, 'db/gamestats.json', 'Uno')
 
 
 class UNO(commands.Cog):
@@ -522,7 +523,7 @@ class UNO(commands.Cog):
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",
@@ -912,8 +913,8 @@ class UNO(commands.Cog):
             return
 
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
 
             try:
@@ -923,7 +924,7 @@ class UNO(commands.Cog):
                 initEmbed = discord.Embed(title="Initialised Credit Balance",
                                           description=f"{ctx.author.mention}, you have been credited `1000` credits "
                                                       f"to start!\n\nCheck your current"
-                                                      f" balance using `{gcmds.prefix(gcmds, ctx)}balance`",
+                                                      f" balance using `{gcmds.prefix(ctx)}balance`",
                                           color=discord.Color.blue())
                 initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                             "/738390147514499163/chips.png")
@@ -937,7 +938,7 @@ class UNO(commands.Cog):
             else:
                 award_amount = int(math.floor(randint(1, 10) * turns_to_win / randint(2, 5)))
             balance += award_amount
-            with open('balance.json', 'w') as g:
+            with open('db/balance.json', 'w') as g:
                 json.dump(file, g, indent=4)
 
         rewardEmbed = discord.Embed(title="Winnings",
@@ -947,7 +948,7 @@ class UNO(commands.Cog):
 
         win(placement[0])
         lose(placement[-1])
-        gcmds.incrCounter(gcmds, ctx, 'uno')
+        gcmds.incrCounter(ctx, 'uno')
         return
 
 

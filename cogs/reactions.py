@@ -3,17 +3,17 @@ import json
 import re
 import discord
 from discord.ext import commands
+from globalcommands import GlobalCMDS
 
-from globalcommands import GlobalCMDS as gcmds
-
+gcmds = GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
 hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
 timeout = 60
 
-gcmds.json_load(gcmds, 'reactionroles.json', {})
-with open('reactionroles.json', 'r') as rr:
+gcmds.json_load('db/reactionroles.json', {})
+with open('db/reactionroles.json', 'r') as rr:
     rr_json = json.load(rr)
 
 
@@ -28,7 +28,7 @@ class Reactions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        with open('reactionroles.json', 'r') as f:
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         member = payload.member
@@ -72,7 +72,7 @@ class Reactions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        with open('reactionroles.json', 'r') as f:
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         guild_id = payload.guild_id
@@ -169,8 +169,8 @@ class Reactions(commands.Cog):
         for emoji in emoji_list:
             await rr_message.add_reaction(emoji)
         init = {str(ctx.guild.id): {str(rr_message.id): {"type": type_name, "details": []}}}
-        gcmds.json_load(gcmds, 'reactionroles.json', init)
-        with open('reactionroles.json', 'r') as f:
+        gcmds.json_load('db/reactionroles.json', init)
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         file.update({str(ctx.guild.id): {}})
@@ -179,7 +179,7 @@ class Reactions(commands.Cog):
                                                              "details": []}})
         for role, emoji in role_emoji:
             file[str(ctx.guild.id)][str(rr_message.id)]['details'].append({"role_id": str(role), "emoji": str(emoji)})
-        with open('reactionroles.json', 'w') as g:
+        with open('db/reactionroles.json', 'w') as g:
             json.dump(file, g, indent=4)
 
     async def edit_rr_message(self, ctx, message_id: int, guild_id: int, title: str, description: str, color: str,
@@ -200,7 +200,7 @@ class Reactions(commands.Cog):
             return await self.failure(ctx, "edit")
 
         if emoji_list or emoji_role_list or type_name:
-            with open('reactionroles.json', 'r') as f:
+            with open('db/reactionroles.json', 'r') as f:
                 file = json.load(f)
                 f.close()
 
@@ -215,7 +215,7 @@ class Reactions(commands.Cog):
             file[str(guild_id)][str(message_id)]['type'] = type_name
 
     async def check_rr_author(self, message_id: int, user_id: int, guild_id: int) -> bool:
-        with open('reactionroles.json', 'r') as f:
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         try:
@@ -227,7 +227,7 @@ class Reactions(commands.Cog):
             return False
 
     async def check_rr_exists(self, ctx, message_id: int, guild_id: int):
-        with open('reactionroles.json', 'r') as f:
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         try:
@@ -237,7 +237,7 @@ class Reactions(commands.Cog):
                 del file[str(guild_id)][str(message_id)]
                 if len(file[str(guild_id)]) == 0:
                     del file[str(guild_id)]
-                with open('reactionroles.json', 'w') as g:
+                with open('db/reactionroles.json', 'w') as g:
                     json.dump(file, g, indent=4)
         except KeyError:
             return False
@@ -278,14 +278,14 @@ class Reactions(commands.Cog):
                 description = f"{ctx.author}, I could not delete the reaction roles panel"
                 color = discord.Color.dark_red()
 
-            with open('reactionroles.json', 'r') as f:
+            with open('db/reactionroles.json', 'r') as f:
                 file = json.load(f)
                 f.close()
             try:
                 del file[str(guild_id)][str(message_id)]
                 if len(file[str(guild_id)]) == 0:
                     del file[str(guild_id)]
-                with open('reactionroles.json', 'w') as g:
+                with open('db/reactionroles.json', 'w') as g:
                     json.dump(file, g, indent=4)
             except KeyError:
                 pass
@@ -295,7 +295,7 @@ class Reactions(commands.Cog):
             return await ctx.channel.send(embed=embed)
 
     async def get_rr_type(self, message_id: int, guild_id: int) -> str:
-        with open('reactionroles.json', 'r') as f:
+        with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
         return file[str(guild_id)][str(message_id)]['type'].replace("_", " ").title()
@@ -304,7 +304,7 @@ class Reactions(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
     async def reactionrole(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not ctx.invoked_subcommand:
             message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
                                  f"roles panel that you have created. You will be unable to edit the panel if you " \
@@ -312,21 +312,21 @@ class Reactions(commands.Cog):
                                  f"not created by you"
             embed = discord.Embed(title="ReactionRoles Help Menu",
                                   description=f"All reaction roles commands can be accessed using "
-                                              f"`{gcmds.prefix(gcmds, ctx)}reactionrole [option]`. "
+                                              f"`{gcmds.prefix(ctx)}reactionrole [option]`. "
                                               f"Below is a list of all the valid options",
                                   color=discord.Color.blue())
             embed.add_field(name="Create",
-                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole create`\n"
+                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole create`\n"
                                   f"**Returns:** Interactive reaction roles setup panel\n"
                                   f"**Aliases:** `-c` `start` `make`")
             embed.add_field(name="Edit",
-                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole edit [messageID]`\n"
+                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
                                   f"**Returns:** Interactive reaction roles edit panel\n"
                                   f"**Aliases:** `-e` `adjust`\n"
                                   f"**Special Cases:** {message_id_message}",
                             inline=False)
             embed.add_field(name="Delete",
-                            value=f"**Usage:** `{gcmds.prefix(gcmds, ctx)}reactionrole delete [messageID]`\n"
+                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
                                   f"**Returns:** Message that details status of the deletion\n"
                                   f"**Aliases:** `-d` `-rm` `del`\n"
                                   f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "

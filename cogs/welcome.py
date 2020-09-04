@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import asyncio
 import aiohttp
 from num2words import num2words
@@ -10,6 +10,8 @@ import json
 import os
 import random
 
+
+gcmds = GlobalCMDS()
 timeout = 30
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
@@ -27,8 +29,8 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        if os.path.exists('welcomers.json') and not member.bot:
-            with open('welcomers.json', 'r') as f:
+        if os.path.exists('db/welcomers.json') and not member.bot:
+            with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
                 f.close()
             member = member
@@ -72,8 +74,8 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        if os.path.exists('welcomers.json') and not member.bot:
-            with open('welcomers.json', 'r') as f:
+        if os.path.exists('db/welcomers.json') and not member.bot:
+            with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
                 f.close()
             member = member
@@ -90,19 +92,19 @@ class Welcome(commands.Cog):
     async def get_welcome_help(self, ctx) -> discord.Message:
         title = "Welcomer Help Menu"
         description = f"{ctx.author.mention}, the welcomer is used to greet new members of your server when they join. " \
-            f"The base command is `{gcmds.prefix(gcmds, ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
+            f"The base command is `{gcmds.prefix(ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
             "options for `[option]`\n\n"
-        create = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer create`\n" \
+        create = f"**Usage:** `{gcmds.prefix(ctx)}welcomer create`\n" \
             "**Returns:** An interactive setup panel that will create a working welcomer in your server\n" \
             "**Aliases:** `make` `start` `-c`\n" \
             "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you" \
             " try to use this command when you already have a welcomer set up, it will automatically redirect you to " \
             "the interactive edit panel"
-        edit = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer edit`\n" \
+        edit = f"**Usage:** `{gcmds.prefix(ctx)}welcomer edit`\n" \
             "**Returns:** An interactive setup panel that will edit your current welcomer\n" \
             "**Aliases:** `adjust` `modify` `-e`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        delete = f"**Usage:** `{gcmds.prefix(gcmds, ctx)}welcomer delete`\n" \
+        delete = f"**Usage:** `{gcmds.prefix(ctx)}welcomer delete`\n" \
             "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
             "**Aliases:** `trash` `cancel` `-rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
@@ -176,8 +178,8 @@ class Welcome(commands.Cog):
                 "leaver": False
             }
         }
-        gcmds.json_load(gcmds, 'welcomers.json', init)
-        with open('welcomers.json', 'r') as f:
+        gcmds.json_load('db/welcomers.json', init)
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -201,16 +203,16 @@ class Welcome(commands.Cog):
             except Exception:
                 return False
 
-        with open('welcomers.json', 'w') as g:
+        with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
             g.close()
         return True
 
     async def has_welcomer(self, ctx) -> bool:
-        if not os.path.exists('welcomers.json'):
+        if not os.path.exists('db/welcomers.json'):
             return False
 
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -224,7 +226,7 @@ class Welcome(commands.Cog):
         if not await self.has_welcomer(ctx):
             return None
 
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -232,7 +234,7 @@ class Welcome(commands.Cog):
         return [info['channel_id'], info['title'], info['description'], info['media']]
 
     async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media: list = None) -> bool:
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -248,7 +250,7 @@ class Welcome(commands.Cog):
         except KeyError:
             return False
 
-        with open('welcomers.json', 'w') as g:
+        with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
         return True
 
@@ -259,7 +261,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed, delete_after=10)
 
     async def delete_welcomer(self, ctx) -> bool:
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -270,7 +272,7 @@ class Welcome(commands.Cog):
         except KeyError:
             return False
 
-        with open('welcomers.json', 'w') as g:
+        with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
         return True
 
@@ -278,12 +280,12 @@ class Welcome(commands.Cog):
         title = "Leaver Help"
         description = (f"{ctx.author.mention}, the leaver function will automatically send a goodbye message in the "
                        f"welcomer's channel once a member leaves the server. The base command is "
-                       f"`{gcmds.prefix(gcmds, ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
-        create = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}leaver create`\n"
+                       f"`{gcmds.prefix(ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
+        create = (f"**Usage:** `{gcmds.prefix(ctx)}leaver create`\n"
                   "**Returns:** An embed that details the status of the leaver creation\n"
                   "**Aliases:** `-c` `make` `start`\n"
                   "**Special Cases:** Only works if there is a welcomer set up")
-        delete = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}leaver delete`\n"
+        delete = (f"**Usage:** `{gcmds.prefix(ctx)}leaver delete`\n"
                   "**Returns:** An embed that details the status of the leaver deletion\n"
                   "**Aliases:** `-rm` `trash` `cancel`\n"
                   "**Special Cases:** Only works if there is a welcomer and leaver set up")
@@ -299,7 +301,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def create_leaver(self, ctx) -> bool:
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -308,7 +310,7 @@ class Welcome(commands.Cog):
         except KeyError:
             return False
 
-        with open('welcomers.json', 'w') as g:
+        with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
         return True
 
@@ -316,7 +318,7 @@ class Welcome(commands.Cog):
         if not await self.has_welcomer(ctx):
             return False
 
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -335,7 +337,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed, delete_after=10)
 
     async def delete_leaver(self, ctx) -> bool:
-        with open('welcomers.json', 'r') as f:
+        with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -347,13 +349,13 @@ class Welcome(commands.Cog):
         except KeyError:
             return False
 
-        with open('welcomers.json', 'w') as g:
+        with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
         return True
 
     @commands.group(aliases=['welcome'])
     async def welcomer(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if not ctx.invoked_subcommand:
             return await self.get_welcome_help(ctx)
@@ -393,7 +395,7 @@ class Welcome(commands.Cog):
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
                 result = await self.client.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+                return await gcmds.timeout(ctx, cmd_title, timeout)
             if re.match(channel_tag_rx, result.content):
                 channel_id = result.content[2:20]
                 break
@@ -414,9 +416,9 @@ class Welcome(commands.Cog):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
-            return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+            return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
-            return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             embed_title = None
         else:
@@ -445,9 +447,9 @@ class Welcome(commands.Cog):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
-            return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+            return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
-            return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             embed_description = None
         else:
@@ -470,9 +472,9 @@ class Welcome(commands.Cog):
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
                 result = await self.client.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, 120)
+                return await gcmds.timeout(ctx, cmd_title, 120)
             if result.content == "cancel":
-                return await gcmds.cancelled(gcmds, ctx, cmd_title)
+                return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip":
                 url_list = None
                 break
@@ -554,13 +556,13 @@ class Welcome(commands.Cog):
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
                 result = await self.client.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+                return await gcmds.timeout(ctx, cmd_title, timeout)
             if result.content == "cancel":
                 try:
                     await temp_welcomer.delete()
                 except Exception:
                     pass
-                return await gcmds.cancelled(gcmds, ctx, cmd_title)
+                return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip":
                 new_channel_id = info[0]
                 break
@@ -584,14 +586,14 @@ class Welcome(commands.Cog):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
-            return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+            return await gcmds.timeout(ctx, cmd_title, timeout)
         await result.delete()
         if result.content == "cancel":
             try:
                 await temp_welcomer.delete()
             except Exception:
                 pass
-            return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             new_title = info[1]
         else:
@@ -603,7 +605,7 @@ class Welcome(commands.Cog):
             temp_welcomer_embed.title = new_title
             await temp_welcomer.edit(embed=temp_welcomer_embed)
         except (discord.NotFound, discord.HTTPException, discord.Forbidden):
-            return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            return await gcmds.cancelled(ctx, cmd_title)
 
         # Edit panel description
         bot_count = 0
@@ -629,14 +631,14 @@ class Welcome(commands.Cog):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
-            return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+            return await gcmds.timeout(ctx, cmd_title, timeout)
         await result.delete()
         if result.content == "cancel":
             try:
                 await temp_welcomer.delete()
             except Exception:
                 pass
-            return await gcmds.cancelled(gcmds, ctx, cmd_title)
+            return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             new_description = info[2]
         else:
@@ -659,14 +661,14 @@ class Welcome(commands.Cog):
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
                 result = await self.client.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, 120)
+                return await gcmds.timeout(ctx, cmd_title, 120)
             await result.delete()
             if result.content == "cancel":
                 try:
                     await temp_welcomer.delete()
                 except Exception:
                     pass
-                return await gcmds.cancelled(gcmds, ctx, cmd_title)
+                return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip":
                 url_list = None
                 break
@@ -733,7 +735,7 @@ class Welcome(commands.Cog):
             try:
                 result = await self.client.wait_for("reaction_add", check=user_reacted, timeout=timeout)
             except asyncio.TimeoutError:
-                return await gcmds.timeout(gcmds, ctx, cmd_title, timeout)
+                return await gcmds.timeout(ctx, cmd_title, timeout)
             if result[0].emoji in reactions:
                 break
             else:
@@ -765,7 +767,7 @@ class Welcome(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def leaver(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not ctx.invoked_subcommand:
             return await self.get_leaver_help(ctx)
 

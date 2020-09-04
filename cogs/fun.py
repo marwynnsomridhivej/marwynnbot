@@ -10,7 +10,9 @@ import requests
 import yaml
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 class Fun(commands.Cog):
@@ -23,12 +25,12 @@ class Fun(commands.Cog):
         print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         path = path
         sleepTime = 1.0
 
         def incr(cmdName):
-            gcmds.incrCounter(gcmds, ctx, cmdName)
+            gcmds.incrCounter(ctx, cmdName)
 
         if "imgur" in path:
             local = False
@@ -144,7 +146,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['8ball', '8b'])
     async def eightball(self, ctx, *, question):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         file = open('responses', 'r')
         responses = file.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
@@ -152,11 +154,11 @@ class Fun(commands.Cog):
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
-        gcmds.incrCounter(gcmds, ctx, '8ball')
+        gcmds.incrCounter(ctx, '8ball')
 
     @commands.command()
     async def choose(self, ctx, *, choices):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)
@@ -165,7 +167,7 @@ class Fun(commands.Cog):
         chooseEmbed.add_field(name=f'{ctx.author} asked: {choices}',
                               value=answer)
         await ctx.channel.send(embed=chooseEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'choose')
+        gcmds.incrCounter(ctx, 'choose')
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
@@ -186,7 +188,7 @@ class Fun(commands.Cog):
             else:
                 title = "No Search Term Specified"
                 description = f"{ctx.author.mention}, you must specify at least one search term. " \
-                              f"`Do {gcmds.prefix(gcmds, ctx)}help gifsearch` for command info"
+                              f"`Do {gcmds.prefix(ctx)}help gifsearch` for command info"
                 color = discord.Color.dark_red()
                 bool_check = False
         else:
@@ -230,7 +232,7 @@ class Fun(commands.Cog):
         embed = discord.Embed(title=title,
                               description=description,
                               color=color)
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['imgur', 'imgursearch'])
@@ -348,11 +350,11 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *, args):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'say')
+        gcmds.incrCounter(ctx, 'say')
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx, toSend: typing.Optional[int] = None):

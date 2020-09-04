@@ -1,10 +1,11 @@
 import asyncio
 import json
-
 import discord
 import typing
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 class Games(commands.Cog):
@@ -18,10 +19,10 @@ class Games(commands.Cog):
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             if member is None:
                 try:
@@ -49,7 +50,7 @@ class Games(commands.Cog):
                         if balance == 0:
                             color += 1
                         description += f"{user.mention} has ```{balance} {spelling}```\n"
-        with open('balance.json', 'w') as f:
+        with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
             f.close()
 
@@ -70,7 +71,7 @@ class Games(commands.Cog):
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed, delete_after=30)
-            gcmds.incrCounter(gcmds, ctx, 'balance')
+            gcmds.incrCounter(ctx, 'balance')
         else:
             if color == len(member):
                 color = discord.Color.dark_red()
@@ -83,12 +84,12 @@ class Games(commands.Cog):
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed, delete_after=30)
-            gcmds.incrCounter(gcmds, ctx, 'balance')
+            gcmds.incrCounter(ctx, 'balance')
 
     @commands.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
                         member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if gameName is not None:
             if "<@!" in gameName:
                 userid = gameName[3:-1]
@@ -113,7 +114,7 @@ class Games(commands.Cog):
 
         for user in userlist:
             person_name = await commands.AutoShardedBot.fetch_user(self.client, user_id=user.id)
-            with open('gamestats.json', 'r') as f:
+            with open('db/gamestats.json', 'r') as f:
                 file = json.load(f)
                 if gameName is not None:
                     try:
@@ -144,7 +145,7 @@ class Games(commands.Cog):
                                              inline=False)
 
                         await ctx.channel.send(embed=statsEmbed)
-                        gcmds.incrCounter(gcmds, ctx, 'gameStats')
+                        gcmds.incrCounter(ctx, 'gameStats')
                 else:
                     statsEmbed = discord.Embed(title=f"{person_name.display_name}'s Stats for All Games",
                                                color=discord.Color.blue())
@@ -169,11 +170,11 @@ class Games(commands.Cog):
                             statsEmbed.add_field(name=game,
                                                  value=value)
                     await ctx.channel.send(embed=statsEmbed)
-                    gcmds.incrCounter(gcmds, ctx, 'gameStats')
+                    gcmds.incrCounter(ctx, 'gameStats')
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         cmdExit = False
         if amount is None:
@@ -198,8 +199,8 @@ class Games(commands.Cog):
             userlist.append(members.id)
 
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             for user in userlist:
                 try:
@@ -207,7 +208,7 @@ class Games(commands.Cog):
                 except KeyError:
                     file['Balance'][str(user)] = 1000
                     f.close()
-        with open('balance.json', 'w') as f:
+        with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
             f.close()
         if (int(file['Balance'][str(ctx.author.id)])) < (amount * (int(len(userlist)) - 1)):
@@ -256,19 +257,19 @@ class Games(commands.Cog):
                 if choice == 'confirm':
                     await message.clear_reactions()
                     description = "Successfully transferred:\n"
-                    with open('balance.json', 'r') as f:
+                    with open('db/balance.json', 'r') as f:
                         file = json.load(f)
                         for members in member:
                             file['Balance'][str(members.id)] += amount
                             file['Balance'][str(ctx.author.id)] -= amount
                             description += f"```{amount}``` ➡ {members.mention}\n"
-                        with open('balance.json', 'w') as f:
+                        with open('db/balance.json', 'w') as f:
                             json.dump(file, f, indent=4)
                     confirmEmbed = discord.Embed(title="Credits Transfer Successful",
                                                  description=description,
                                                  color=discord.Color.blue())
                     await message.edit(embed=confirmEmbed)
-                    gcmds.incrCounter(gcmds, ctx, 'transfer')
+                    gcmds.incrCounter(ctx, 'transfer')
                     return
                 if choice == 'cancel':
                     await message.clear_reactions()

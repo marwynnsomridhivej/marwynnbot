@@ -2,10 +2,12 @@ import asyncio
 import random
 import discord
 import json
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import typing
 from discord.ext import commands
 
+
+gcmds = GlobalCMDS()
 suits = {'Hearts', 'Diamonds', 'Spades', 'Clubs'}
 ranks = {'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace'}
 
@@ -204,7 +206,7 @@ class OldMaid(commands.Cog):
 
     @commands.command(aliases=['oldmaid', 'om', 'maid'])
     async def oldMaid(self, ctx, bet: typing.Optional[int] = 1, members: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if members is None:
             errorEmbed = discord.Embed(title="No Opponents Specified",
@@ -236,8 +238,8 @@ class OldMaid(commands.Cog):
         else:
             spell = "credit"
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             insufMembers = []
             description = f"Confirm bet amount: ```{bet} {spell}```\nConfirm: ✅  | Cancel: ❌"

@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 from mcstatus import MinecraftServer
+
+gcmds = GlobalCMDS()
 
 
 class Minecraft(commands.Cog):
@@ -72,20 +74,20 @@ class Minecraft(commands.Cog):
     @commands.group(aliases=['mc'])
     @commands.cooldown(1, 10, commands.BucketType.member)
     async def minecraft(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not ctx.invoked_subcommand:
             embed = discord.Embed(title="Minecraft Commands Help",
                                   description=f"Access MarwynnBot's Minecraft commands using "
-                                              f"`{gcmds.prefix(gcmds, ctx)}minecraft [option]`. Here is a list of all "
+                                              f"`{gcmds.prefix(ctx)}minecraft [option]`. Here is a list of all "
                                               f"the available options",
                                   color=discord.Color.blue())
             embed.add_field(name="Ping",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}minecraft ping [serverIP]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}minecraft ping [serverIP]`\n"
                                   f"Returns: The ping of the specified minecraft server\n"
                                   f"Aliases: `-p`",
                             inline=False)
             embed.add_field(name="Details",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}minecraft details [serverIP]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}minecraft details [serverIP]`\n"
                                   f"Returns: Details about the specified minecraft server\n"
                                   f"Aliases: `-d` `-q` `query`",
                             inline=False)

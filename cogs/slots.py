@@ -3,8 +3,9 @@ import discord
 from discord.ext import commands
 import numpy.random as np
 import json
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 
+gcmds = GlobalCMDS()
 emojis = [":apple:", ":green_apple:", ":pineapple:", ":cherries:", ":grapes:", ":strawberry:", ":lemon:", ":pear:",
           ":moneybag:", ":gem:", ":trophy:", ":violin:", ":musical_keyboard:", ":dragon:", ":free:", ":pirate_flag:"]
 weights = [0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375,
@@ -116,14 +117,14 @@ def rewards(slot_selection, bet):
 def win(ctx, reward):
     load = False
     success = False
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         file['Balance'][str(ctx.author.id)] += reward
-        with open('balance.json', 'w') as k:
+        with open('db/balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Slots': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -143,22 +144,22 @@ def win(ctx, reward):
             else:
                 file['Slots'][str(ctx.author.id)]['win'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Slots')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Slots')
 
 
 def lose(ctx, reward):
     load = False
     success = False
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         file['Balance'][str(ctx.author.id)] -= reward
-        with open('balance.json', 'w') as k:
+        with open('db/balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Slots': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -178,22 +179,22 @@ def lose(ctx, reward):
             else:
                 file['Slots'][str(ctx.author.id)]['lose'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Slots')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Slots')
 
 
 def jackpot(ctx, reward):
     load = False
     success = False
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         file['Balance'][str(ctx.author.id)] += reward
-        with open('balance.json', 'w') as k:
+        with open('db/balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Slots': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -211,9 +212,9 @@ def jackpot(ctx, reward):
                     except KeyError:
                         file['Slots'][str(ctx.author.id)] = {}
                         success = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Slots')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Slots')
 
 
 class Slots(commands.Cog):
@@ -227,7 +228,7 @@ class Slots(commands.Cog):
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if betAmount is None:
             betAmount = 1
@@ -261,8 +262,8 @@ class Slots(commands.Cog):
             return
 
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             try:
                 file['Balance'][str(ctx.author.id)]
@@ -272,7 +273,7 @@ class Slots(commands.Cog):
                 initEmbed = discord.Embed(title="Initialised Credit Balance",
                                           description=f"{ctx.author.mention}, you have been credited `1000` credits "
                                                       f"to start!\n\nCheck your current"
-                                                      f" balance using `{gcmds.prefix(gcmds, ctx)}balance`",
+                                                      f" balance using `{gcmds.prefix(ctx)}balance`",
                                           color=discord.Color.blue())
                 initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                             "/738390147514499163/chips.png")
@@ -281,7 +282,7 @@ class Slots(commands.Cog):
             else:
                 balance = file['Balance'][str(ctx.author.id)]
                 f.close()
-        with open('balance.json', 'w') as f:
+        with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
             f.close()
 
@@ -342,7 +343,7 @@ class Slots(commands.Cog):
         if reward >= 1000:
             await message.pin()
 
-        gcmds.incrCounter(gcmds, ctx, "slots")
+        gcmds.incrCounter(ctx, "slots")
 
 
 def setup(client):

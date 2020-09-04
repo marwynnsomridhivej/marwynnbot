@@ -3,7 +3,9 @@ import os
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 class Owner(commands.Cog):
@@ -18,7 +20,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
     async def load(self, ctx, extension):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         try:
             self.client.load_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -38,7 +40,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['ul', 'uld'])
     @commands.is_owner()
     async def unload(self, ctx, extension):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         try:
             self.client.unload_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -58,7 +60,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['r', 'rl'])
     @commands.is_owner()
     async def reload(self, ctx, *, extension=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if extension is None:
             print("==========================")
             for filenameReload in os.listdir('./cogs'):
@@ -83,7 +85,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['taskkill'])
     @commands.is_owner()
     async def shutdown(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
                                       description="Bot is logging out",
                                       color=discord.Color.blue())
@@ -93,9 +95,9 @@ class Owner(commands.Cog):
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     @commands.is_owner()
     async def balanceAdmin(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
+        gcmds.json_load('db/balance.json', init)
 
     @balanceAdmin.command()
     async def set(self, ctx, user: discord.Member, amount):
@@ -117,7 +119,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('balance.json', 'r') as f:
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             try:
                 file['Balance'][str(user.id)]
@@ -126,7 +128,7 @@ class Owner(commands.Cog):
             else:
                 file['Balance'][str(user.id)] = amount
             balance = amount
-            with open('balance.json', 'w') as g:
+            with open('db/balance.json', 'w') as g:
                 json.dump(file, g, indent=4)
 
         if balance != 1:
@@ -159,7 +161,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('balance.json', 'r') as f:
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             try:
                 file['Balance'][str(user.id)]
@@ -168,7 +170,7 @@ class Owner(commands.Cog):
             else:
                 file['Balance'][str(user.id)] += amount
             balance = file['Balance'][str(user.id)]
-            with open('balance.json', 'w') as g:
+            with open('db/balance.json', 'w') as g:
                 json.dump(file, g, indent=4)
 
         if balance != 1:
@@ -207,7 +209,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('balance.json', 'r') as f:
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             try:
                 file['Balance'][str(user.id)]
@@ -216,7 +218,7 @@ class Owner(commands.Cog):
             else:
                 file['Balance'][str(user.id)] -= amount
             balance = file['Balance'][str(user.id)]
-            with open('balance.json', 'w') as g:
+            with open('db/balance.json', 'w') as g:
                 json.dump(file, g, indent=4)
 
         if balance != 1:
@@ -238,7 +240,7 @@ class Owner(commands.Cog):
     @commands.group(aliases=['blist'])
     @commands.is_owner()
     async def blacklist(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
     @blacklist.command(aliases=['member'])
     async def user(self, ctx, operation, user: discord.Member = None):
@@ -260,14 +262,14 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid, delete_after=10)
             return
         if operation == "add":
-            with open('blacklist.json', 'r') as f:
+            with open('db/blacklist.json', 'r') as f:
                 blacklist = json.load(f)
                 try:
                     blacklist["Users"]
                 except KeyError:
                     blacklist["Users"] = {}
                 blacklist["Users"][str(user_id)] = 0
-                with open('blacklist.json', 'w') as g:
+                with open('db/blacklist.json', 'w') as g:
                     json.dump(blacklist, g, indent=4)
 
             b_add = discord.Embed(title="Blacklist Entry Added",
@@ -276,10 +278,10 @@ class Owner(commands.Cog):
                                   color=discord.Color.blue())
             await ctx.channel.send(embed=b_add)
         elif operation == "remove":
-            with open('blacklist.json', 'r') as f:
+            with open('db/blacklist.json', 'r') as f:
                 blacklist = json.load(f)
                 del blacklist["Users"][str(user_id)]
-                with open('blacklist.json', 'w') as g:
+                with open('db/blacklist.json', 'w') as g:
                     json.dump(blacklist, g, indent=4)
 
             b_remove = discord.Embed(title="Blacklist Entry Removed",
@@ -313,14 +315,14 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
         if operation == "add":
-            with open('blacklist.json', 'r') as f:
+            with open('db/blacklist.json', 'r') as f:
                 blacklist = json.load(f)
                 try:
                     blacklist["Guild"]
                 except KeyError:
                     blacklist["Guild"] = {}
                 blacklist["Guild"][str(guild_id)] = 0
-                with open('blacklist.json', 'w') as g:
+                with open('db/blacklist.json', 'w') as g:
                     json.dump(blacklist, g, indent=4)
 
             b_add = discord.Embed(title="Blacklist Entry Added",
@@ -329,10 +331,10 @@ class Owner(commands.Cog):
                                   color=discord.Color.blue())
             await ctx.channel.send(embed=b_add)
         elif operation == "remove":
-            with open('blacklist.json', 'r') as f:
+            with open('db/blacklist.json', 'r') as f:
                 blacklist = json.load(f)
                 del blacklist["Guild"][str(guild_id)]
-                with open('blacklist.json', 'w') as g:
+                with open('db/blacklist.json', 'w') as g:
                     json.dump(blacklist, g, indent=4)
 
             b_remove = discord.Embed(title="Blacklist Entry Removed",
@@ -349,7 +351,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['fleave'])
     @commands.is_owner()
     async def forceleave(self, ctx, guild_id=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if guild_id is None:
             guild_id = ctx.guild.id
         await self.client.get_guild(guild_id).leave()
@@ -361,7 +363,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['dm', 'privatemessage'])
     @commands.is_owner()
     async def privateMessage(self, ctx, userID: int = None, *, message):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if userID is None:
             no_id = discord.Embed(title="No User ID Specified",

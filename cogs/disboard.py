@@ -1,12 +1,14 @@
 import discord
 from discord.ext import commands, tasks
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import json
 import os
 import asyncio
 import re
 from datetime import datetime
 
+
+gcmds = GlobalCMDS()
 disboard_bot_id = 302050872383242240
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
@@ -28,14 +30,14 @@ class Disboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.guild and message.author.id == disboard_bot_id and os.path.exists('disboard.json'):
+        if message.guild and message.author.id == disboard_bot_id and os.path.exists('db/disboard.json'):
             message = message
             disboard_embed = message.embeds[0]
             if "bump done" in disboard_embed.description.lower():
                 current_timestamp = datetime.now().timestamp()
                 time_to_send = 7200 + int(current_timestamp)
                 sleep_time = time_to_send - current_timestamp
-                with open('disboard.json', 'r') as f:
+                with open('db/disboard.json', 'r') as f:
                     file = json.load(f)
                     f.close()
                 try:
@@ -49,17 +51,17 @@ class Disboard(commands.Cog):
                 else:
                     description = message_content
                 file[str(message.guild.id)].update({"time": time_to_send})
-                with open('disboard.json', 'w') as g:
+                with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
                     g.close()
                 asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
-        if not os.path.exists('disboard.json'):
+        if not os.path.exists('db/disboard.json'):
             return
         
-        with open('disboard.json', 'r') as f:
+        with open('db/disboard.json', 'r') as f:
             file = json.load(f)
             f.close()
         for guild in file:
@@ -88,12 +90,12 @@ class Disboard(commands.Cog):
         except discord.Forbidden:
             pass
         
-        with open('disboard.json', 'r') as f:
+        with open('db/disboard.json', 'r') as f:
             file = json.load(f)
             f.close()
         try:
             del file[str(channel.guild.id)]['time']
-            with open('disboard.json', 'w') as g:
+            with open('db/disboard.json', 'w') as g:
                 json.dump(file, g, indent=4)
                 g.close()
         except KeyError:
@@ -102,24 +104,24 @@ class Disboard(commands.Cog):
     async def get_disboard_help(self, ctx) -> discord.Message:
         title = "Disboard Commands"
         description = (f"{ctx.author.mention}, this is MarwynnBot's Disboard integration. MarwynnBot's many functions "
-                       f"are listed here below. The base command is {gcmds.prefix(gcmds, ctx)}disboard [option]. "
+                       f"are listed here below. The base command is {gcmds.prefix(ctx)}disboard [option]. "
                        "Here are all the valid options for the `[option]` argument")
-        create = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard create`\n"
+        create = (f"**Usage:** `{gcmds.prefix(ctx)}disboard create`\n"
                   "**Returns:** An interactive setup panel that will make your disboard bump reminder\n"
                   "**Aliases:** `-c` `make` `start`\n"
                   "**Special Cases:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
-        edit = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard edit`\n"
+        edit = (f"**Usage:** `{gcmds.prefix(ctx)}disboard edit`\n"
                 "**Returns:** An interactive setup panel that will edit your current disboard bump reminder\n"
                 "**Aliases:** `-e` `adjust`\n"
                 "**Special Cases:** You must satisfy the special case for `create` and currently have a working bump "
                 "reminder set")
-        delete = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard delete`\n"
+        delete = (f"**Usage:** `{gcmds.prefix(ctx)}disboard delete`\n"
                   "**Returns:** A confirmation panel that will delete your current disboard bump reminder\n"
                   "**Aliases:** `-rm` `trash` `cancel`\n"
                   "**Special Cases:** You must satisfy the special case for `edit`")
-        invite = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard invite`\n"
+        invite = (f"**Usage:** `{gcmds.prefix(ctx)}disboard invite`\n"
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
-        kick = (f"**Usage:** `{gcmds.prefix(gcmds, ctx)}disboard kick`\n"
+        kick = (f"**Usage:** `{gcmds.prefix(ctx)}disboard kick`\n"
                 "**Returns:** An embed that confirms if `Disboard` bot was successfully kicked from the server\n"
                 "**Aliases:** `leave`\n"
                 "**Special Cases:** You must satisfy the special case for `create`\nIt is recommended that you kick "
@@ -148,10 +150,10 @@ class Disboard(commands.Cog):
         return await ctx.channel.send(embed=embed, delete_after=10)
 
     async def check_bump_reminder(self, ctx) -> bool:
-        if not os.path.exists("disboard.json"):
+        if not os.path.exists("db/disboard.json"):
             return False
 
-        with open('disboard.json', 'r') as f:
+        with open('db/disboard.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -183,8 +185,8 @@ class Disboard(commands.Cog):
             }
         }
 
-        gcmds.json_load(gcmds, 'disboard.json', init)
-        with open('disboard.json', 'r') as f:
+        gcmds.json_load('db/disboard.json', init)
+        with open('db/disboard.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -193,7 +195,7 @@ class Disboard(commands.Cog):
             "message_content": message_content
         }
 
-        with open('disboard.json', 'w') as g:
+        with open('db/disboard.json', 'w') as g:
             json.dump(file, g, indent=4)
 
         return True
@@ -233,7 +235,7 @@ class Disboard(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def disboard(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         if not ctx.invoked_subcommand:
             return await self.get_disboard_help(ctx)
 
@@ -281,7 +283,7 @@ class Disboard(commands.Cog):
                 channel_id = result.content
                 break
             elif result.content == "cancel":
-                return await gcmds.cancelled(gcmds, ctx, cmd_name)
+                return await gcmds.cancelled(ctx, cmd_name)
             else:
                 continue
         await result.delete()
@@ -296,7 +298,7 @@ class Disboard(commands.Cog):
         except asyncio.TimeoutError:
             return await gcmds.timeout(self, ctx, cmd_name, timeout)
         if result.content == "cancel":
-            return await gcmds.cancelled(gcmds, ctx, cmd_name)
+            return await gcmds.cancelled(ctx, cmd_name)
         elif result.content == "skip":
             message_content = None
         else:

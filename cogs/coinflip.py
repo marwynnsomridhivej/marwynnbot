@@ -4,20 +4,22 @@ import typing
 from discord.ext import commands
 import json
 import numpy as np
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 def win(ctx, betAmount):
     load = False
     success = False
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         file['Balance'][str(ctx.author.id)] += betAmount
-        with open('balance.json', 'w') as k:
+        with open('db/balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Coinflip': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -35,22 +37,22 @@ def win(ctx, betAmount):
                     except KeyError:
                         file['Coinflip'][str(ctx.author.id)] = {}
                         success = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Coinflip')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
 
 
 def lose(ctx, betAmount):
     load = False
     success = False
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         file['Balance'][str(ctx.author.id)] -= betAmount
-        with open('balance.json', 'w') as k:
+        with open('db/balance.json', 'w') as k:
             json.dump(file, k, indent=4)
     init = {'Coinflip': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -68,9 +70,9 @@ def lose(ctx, betAmount):
                     except KeyError:
                         file['Coinflip'][str(ctx.author.id)] = {}
                         success = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Coinflip')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
 
 
 class Coinflip(commands.Cog):
@@ -84,11 +86,11 @@ class Coinflip(commands.Cog):
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         init = {'Balance': {}}
-        gcmds.json_load(gcmds, 'balance.json', init)
-        with open('balance.json', 'r') as f:
+        gcmds.json_load('db/balance.json', init)
+        with open('db/balance.json', 'r') as f:
             file = json.load(f)
             try:
                 file['Balance'][str(ctx.author.id)]
@@ -98,7 +100,7 @@ class Coinflip(commands.Cog):
                 initEmbed = discord.Embed(title="Initialised Credit Balance",
                                           description=f"{ctx.author.mention}, you have been credited `1000` credits "
                                                       f"to start!\n\nCheck your current"
-                                                      f" balance using `{gcmds.prefix(gcmds, ctx)}balance`",
+                                                      f" balance using `{gcmds.prefix(ctx)}balance`",
                                           color=discord.Color.blue())
                 initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                             "/738390147514499163/chips.png")
@@ -107,7 +109,7 @@ class Coinflip(commands.Cog):
             else:
                 balance = file['Balance'][str(ctx.author.id)]
                 f.close()
-        with open('balance.json', 'w') as f:
+        with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
             f.close()
 
@@ -170,10 +172,10 @@ class Coinflip(commands.Cog):
                                      description="The original coinflip message was deleted",
                                      color=discord.Color.dark_red())
             await ctx.channel.send(embed=notFound, delete_after=10)
-            with open('balance.json', 'r') as f:
+            with open('db/balance.json', 'r') as f:
                 file = json.load(f)
 
-                with open('gamestats.json', 'r') as g:
+                with open('db/gamestats.json', 'r') as g:
                     stats = json.load(g)
 
                     if picked_side == side:
@@ -183,18 +185,18 @@ class Coinflip(commands.Cog):
                         file["Balance"][str(ctx.author.id)] += betAmount
                         stats["Coinflip"][str(ctx.author.id)]["lose"] -= 1
 
-                with open('gamestats.json', 'w') as g:
+                with open('db/gamestats.json', 'w') as g:
                     json.dump(stats, g, indent=4)
-            with open('balance.json', 'w') as f:
+            with open('db/balance.json', 'w') as f:
                 json.dump(file, f, indent=4)
 
-            gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'Coinflip')
+            gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
             return
 
         if betAmount > 1000 and picked_side == side:
             await message.pin()
 
-        gcmds.incrCounter(gcmds, ctx, 'coinflip')
+        gcmds.incrCounter(ctx, 'coinflip')
 
 
 def setup(client):

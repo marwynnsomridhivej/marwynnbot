@@ -1,11 +1,12 @@
 import asyncio
 import json
 import random
-
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import numpy as np
+
+gcmds = GlobalCMDS()
 
 ROW_COUNT = 6
 COLUMN_COUNT = 7
@@ -116,8 +117,8 @@ async def win(ctx, member: discord.Member):
     load = False
     success = False
     init = {'ConnectFour': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -137,12 +138,12 @@ async def win(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['win'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, ctx.author, 'gamestats.json', 'ConnectFour')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'ConnectFour')
 
     initBal = {'Balance': {}}
-    gcmds.json_load(gcmds, 'balance.json', initBal)
+    gcmds.json_load('db/balance.json', initBal)
     spell = "credits"
     random_number = random.randint(1, 100001)
     if 1 <= random_number <= 10000:
@@ -159,7 +160,7 @@ async def win(ctx, member: discord.Member):
     elif random_number == 100001:
         award_amount = 1000000
 
-    with open('balance.json', 'r') as f:
+    with open('db/balance.json', 'r') as f:
         file = json.load(f)
         try:
             file['Balance'][str(member.id)]
@@ -169,14 +170,14 @@ async def win(ctx, member: discord.Member):
             initEmbed = discord.Embed(title="Initialised Credit Balance",
                                       description=f"{member.mention}, you have been credited `{balance}` credits "
                                                   f"to start!\n\nCheck your current"
-                                                  f" balance using `{gcmds.prefix(gcmds, ctx)}balance`",
+                                                  f" balance using `{gcmds.prefix(ctx)}balance`",
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
             await ctx.channel.send(embed=initEmbed, delete_after=10)
         else:
             file['Balance'][str(member.id)] += award_amount
-    with open('balance.json', 'w') as f:
+    with open('db/balance.json', 'w') as f:
         json.dump(file, f, indent=4)
         f.close()
 
@@ -197,8 +198,8 @@ def lose(ctx, member: discord.Member):
     load = False
     success = False
     init = {'ConnectFour': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -218,17 +219,17 @@ def lose(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['lose'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(gcmds, member, 'gamestats.json', 'ConnectFour')
+    gcmds.ratio(member, 'db/gamestats.json', 'ConnectFour')
 
 
 def draw(ctx, member: discord.Member):
     load = False
     success = False
     init = {'ConnectFour': {}}
-    gcmds.json_load(gcmds, 'gamestats.json', init)
-    with open('gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -248,9 +249,9 @@ def draw(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(ctx.author.id)]['tie'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    with open('gamestats.json', 'r') as f:
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -266,7 +267,7 @@ def draw(ctx, member: discord.Member):
             else:
                 file['ConnectFour'][str(member.id)]['tie'] += 1
                 load = True
-        with open('gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
 
@@ -281,7 +282,7 @@ class ConnectFour(commands.Cog):
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if member is None:
             error = discord.Embed(title="No Opponent Selected",
@@ -416,7 +417,7 @@ class ConnectFour(commands.Cog):
                                 await message.edit(embed=c4)
                                 await win(ctx, ctx.author)
                                 lose(ctx, opponent)
-                                gcmds.incrCounter(gcmds, ctx, 'connectFour')
+                                gcmds.incrCounter(ctx, 'connectFour')
                                 return
 
                     if turn == 1 and player == member:
@@ -448,7 +449,7 @@ class ConnectFour(commands.Cog):
                                 await message.edit(embed=c4)
                                 await win(ctx, opponent)
                                 lose(ctx, ctx.author)
-                                gcmds.incrCounter(gcmds, ctx, 'connectFour')
+                                gcmds.incrCounter(ctx, 'connectFour')
                                 return
 
             c4 = discord.Embed(title="Connect Four",
@@ -481,7 +482,7 @@ class ConnectFour(commands.Cog):
                              "/DanYr4AVMAABJ_K.png")
         await message.edit(embed=c4)
         draw(ctx, member)
-        gcmds.incrCounter(gcmds, ctx, 'connectFour')
+        gcmds.incrCounter(ctx, 'connectFour')
 
 
 def setup(client):

@@ -4,7 +4,9 @@ import yaml
 import random
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 class Reddit(commands.Cog):
@@ -73,12 +75,12 @@ class Reddit(commands.Cog):
 
     @commands.command(aliases=['reddithelp'])
     async def reddit(self, ctx, cmdName=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
-        description = f"Do `{gcmds.prefix(gcmds, ctx)}reddit [cmdName]` to get the usage of that particular " \
+        description = f"Do `{gcmds.prefix(ctx)}reddit [cmdName]` to get the usage of that particular " \
                       f"command.\n\n**List of all {len(CMDLIST)} reddit commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
         if cmdName is None or cmdName == "reddit":
             helpEmbed = discord.Embed(title="Reddit Commands Help",
@@ -91,7 +93,7 @@ class Reddit(commands.Cog):
                                           description=f"Returns a randomly selected image from the subreddit r/{cmdName}",
                                           color=discord.Color.blue())
                 helpEmbed.add_field(name="Usage",
-                                    value=f"`{gcmds.prefix(gcmds, ctx)}{cmdName}`",
+                                    value=f"`{gcmds.prefix(ctx)}{cmdName}`",
                                     inline=False)
                 pot_alias = self.client.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]
@@ -108,121 +110,121 @@ class Reddit(commands.Cog):
 
     @commands.command(aliases=['abj', 'meananimals'])
     async def animalsbeingjerks(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['anime'])
     async def awwnime(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['car', 'cars', 'carpics'])
     async def carporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def cosplay(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['earth', 'earthpics'])
     async def earthporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['food', 'foodpics'])
     async def foodporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['animemes'])
     async def goodanimemes(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['history', 'historypics'])
     async def historyporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['pic', 'itap'])
     async def itookapicture(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['map', 'maps', 'mappics'])
     async def mapporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['interesting', 'mi'])
     async def mildlyinteresting(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def pareidolia(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['ptiming'])
     async def perfecttiming(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['psbattle'])
     async def photoshopbattles(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['quotes'])
     async def quotesporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['room', 'rooms', 'roompics'])
     async def roomporn(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def tumblr(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def unexpected(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['wallpaper'])
     async def wallpapers(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['woah'])
     async def woahdude(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         await self.embed_template(ctx)
         return
 

@@ -1,13 +1,14 @@
 import json
 from asyncio import sleep
 from datetime import datetime
-
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
-
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 import os
+
+
+gcmds = GlobalCMDS()
 
 
 class Utility(commands.Cog):
@@ -26,12 +27,12 @@ class Utility(commands.Cog):
 
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
-        if not os.path.exists('serverstats.json'):
+        if not os.path.exists('db/serverstats.json'):
             return
 
         init = {"Active": {}}
-        gcmds.json_load(gcmds, 'serverstats.json', init)
-        with open('serverstats.json', 'r') as f:
+        gcmds.json_load('db/serverstats.json', init)
+        with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
             f.close()
 
@@ -55,14 +56,14 @@ class Utility(commands.Cog):
 
     def load_messages(self):
         init = {}
-        gcmds.json_load(gcmds, 'requests.json', init)
-        with open('requests.json', 'r') as f:
+        gcmds.json_load('db/requests.json', init)
+        with open('db/requests.json', 'r') as f:
             self.messages = json.load(f)
             f.close()
 
     def add_entry(self, ctx, message_id: int):
         self.messages[str(message_id)] = str(ctx.author.id)
-        with open('requests.json', 'w') as f:
+        with open('db/requests.json', 'w') as f:
             json.dump(self.messages, f, indent=4)
             f.close()
 
@@ -71,7 +72,7 @@ class Utility(commands.Cog):
 
     def remove_entry(self, message_id: int):
         del self.messages[str(message_id)]
-        with open('requests.json', 'w') as f:
+        with open('db/requests.json', 'w') as f:
             json.dump(self.messages, f, indent=4)
             f.close()
 
@@ -91,42 +92,42 @@ class Utility(commands.Cog):
 
     async def add_ss_entry(self, guild_id: int):
         init = {"Active": {str(guild_id): 1}}
-        gcmds.json_load(gcmds, 'serverstats.json', init)
-        with open('serverstats.json', 'r') as f:
+        gcmds.json_load('db/serverstats.json', init)
+        with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
             f.close()
         file['Active'].update({str(guild_id): 1})
-        with open('serverstats.json', 'w') as g:
+        with open('db/serverstats.json', 'w') as g:
             json.dump(file, g, indent=4)
 
     async def remove_ss_entry(self, guild_id: int):
         init = {"Active": {str(guild_id): 1}}
-        gcmds.json_load(gcmds, 'serverstats.json', init)
-        with open('serverstats.json', 'r') as f:
+        gcmds.json_load('db/serverstats.json', init)
+        with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
             f.close()
         try:
             del file['Active'][str(guild_id)]
         except KeyError:
             pass
-        with open('serverstats.json', 'w') as g:
+        with open('db/serverstats.json', 'w') as g:
             json.dump(file, g, indent=4)
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
-        gcmds.file_check(gcmds, "counters.json", '{\n\n}')
+        gcmds.file_check(gcmds, "db/counters.json", '{\n\n}')
 
         if commandName == 'global':
             mode = commandName
             commandName = None
 
-        with open('prefixes.json', 'r') as f:
+        with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
             serverPrefix = prefixes[str(ctx.guild.id)]
 
-        with open('counters.json', 'r') as f:
+        with open('db/counters.json', 'r') as f:
             values = json.load(f)
             if commandName is None:
                 if mode == 'server':
@@ -169,7 +170,7 @@ class Utility(commands.Cog):
                                            value=value)
 
         await ctx.channel.send(embed=counterEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'counter')
+        gcmds.incrCounter(ctx, 'counter')
 
     @counter.error
     async def counter_error(self, ctx, error):
@@ -186,7 +187,7 @@ class Utility(commands.Cog):
 
     @commands.command()
     async def invite(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
                               " invite link that you can share:\n\n https://discord.com/oauth2/authorize?client_id"
@@ -198,11 +199,11 @@ class Utility(commands.Cog):
 
     @commands.group()
     async def request(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         self.load_messages()
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Request Options",
-                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(gcmds, ctx)}request feature` "
+                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(ctx)}request feature` "
                                              f"to submit a feature request with a 60 second cooldown",
                                  color=discord.Color.blue())
             await ctx.channel.send(embed=menu)
@@ -212,7 +213,7 @@ class Utility(commands.Cog):
     async def feature(self, ctx, *, feature_message: str = None):
         if not feature_message:
             menu = discord.Embed(title="Request Options",
-                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(gcmds, ctx)}request feature` "
+                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(ctx)}request feature` "
                                              f"to submit a feature request",
                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=menu)
@@ -271,7 +272,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         description = []
         for emoji in ctx.guild.emojis:
             if search is not None:
@@ -291,8 +292,8 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
-        with open('prefixes.json', 'r') as f:
+        await gcmds.invkDelete(ctx)
+        with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
         serverPrefix = prefixes[str(ctx.guild.id)]
@@ -305,19 +306,19 @@ class Utility(commands.Cog):
                               value=f"{self.client.user.mention} or `mb ` - *ignorecase*",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'prefix')
+        gcmds.incrCounter(ctx, 'prefix')
 
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
-        await gcmds.invkDelete(gcmds, ctx)
-        with open('prefixes.json', 'r') as f:
+        await gcmds.invkDelete(ctx)
+        with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
             if prefix != 'reset':
                 prefixes[str(ctx.guild.id)] = prefix
             else:
                 prefixes[str(ctx.guild.id)] = 'm!'
-        with open('prefixes.json', 'w') as f:
+        with open('db/prefixes.json', 'w') as f:
             json.dump(prefixes, f, indent=4)
         if prefix != 'reset':
             prefixEmbed = discord.Embed(title='Server Prefix Set',
@@ -330,13 +331,13 @@ class Utility(commands.Cog):
                                         description=f"Server prefix has been reset to `m!`",
                                         color=discord.Color.blue())
         await ctx.channel.send(embed=prefixEmbed)
-        gcmds.incrCounter(gcmds, ctx, 'setPrefix')
+        gcmds.incrCounter(ctx, 'setPrefix')
 
     @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
     @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         confirm = False
 
@@ -377,7 +378,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
         nameSpace = str(timezoneInput)
         name = nameSpace.replace(" ", "")
         if name == 'reset' or name == 'r':
@@ -392,7 +393,7 @@ class Utility(commands.Cog):
                 title = "Timezone Update Success"
                 description = f"{ctx.author.mention}'s timezone has been added to their nickname"
                 color = discord.Color.blue()
-                gcmds.incrCounter(gcmds, ctx, 'timezone')
+                gcmds.incrCounter(ctx, 'timezone')
             else:
                 title = "Invalid Timezone Format"
                 description = "Please put your timezone in `GMT+` or `GMT-` format"

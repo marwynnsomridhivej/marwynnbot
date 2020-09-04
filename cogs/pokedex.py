@@ -2,8 +2,9 @@ import math
 import discord
 from discord.ext import commands
 import pokepy
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 
+gcmds = GlobalCMDS()
 poke_client = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
 move_status_icon_urls = ["https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/e/ef/Physical.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/2/24/Special.png?width=325",
@@ -231,38 +232,38 @@ class Pokedex(commands.Cog):
 
     @commands.group(aliases=['dex'])
     async def pokedex(self, ctx):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         if not ctx.invoked_subcommand:
             panel = discord.Embed(title="Pokedex Commands",
-                                  description=f"Access MarwynnBot's Pokédex using `{gcmds.prefix(gcmds, ctx)}pokedex "
+                                  description=f"Access MarwynnBot's Pokédex using `{gcmds.prefix(ctx)}pokedex "
                                               f"[option]`. Please note that in order to avoid discrepancies in "
                                               f"versions, I have not included many of the game specific data.\n Here "
                                               f"is a list of all available `pokedex` options",
                                   color=discord.Color.blue())
             panel.add_field(name="Pokémon",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex pokemon [name]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}pokedex pokemon [name]`\n"
                                   f"Returns: Details about the specified Pokémon\n"
                                   f"Aliases: `-p`",
                             inline=False)
             panel.add_field(name="Move",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex move [name]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}pokedex move [name]`\n"
                                   f"Returns: Details about the move\n"
                                   f"Aliases: `moves` `-m`",
                             inline=False)
             panel.add_field(name="Ability",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex ability [name] [optional flag]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}pokedex ability [name] [optional flag]`\n"
                                   f"Returns: Details about the specified ability\n"
                                   f"Flag: `-de` `-en` or blank *(defaults to english)*\n"
                                   f"Aliases: `-a`",
                             inline=False)
             panel.add_field(name="Item",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)} pokedex item [name]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)} pokedex item [name]`\n"
                                   f"Returns: Details about the item"
                                   f"Aliases: `-i`",
                             inline=False)
             panel.add_field(name="Type",
-                            value=f"Usage: `{gcmds.prefix(gcmds, ctx)}pokedex type [name]`\n"
+                            value=f"Usage: `{gcmds.prefix(ctx)}pokedex type [name]`\n"
                                   f"Returns: Details about that type"
                                   f"Flag: `-p` `-m` or blank *(defaults to none)*"
                                   f"Aliases: `-t`",

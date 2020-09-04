@@ -30,6 +30,9 @@ default_env = ["YOUR_BOT_TOKEN",
 
 
 class GlobalCMDS:
+    
+    def __init__(self):
+        pass
 
     def init_env(self):
         if not os.path.exists('.env'):
@@ -39,7 +42,7 @@ class GlobalCMDS:
         return True
 
     def env_check(self, key: str):
-        if not self.init_env(self) or os.getenv(key) in default_env:
+        if not self.init_env() or os.getenv(key) in default_env:
             return False
         return os.getenv(key)
 
@@ -53,8 +56,8 @@ class GlobalCMDS:
 
         init = {'Server': {}, 'Global': {}}
 
-        self.json_load(self, 'counters.json', init)
-        with open('counters.json', 'r') as f:
+        self.json_load('db/counters.json', init)
+        with open('db/counters.json', 'r') as f:
             values = json.load(f)
 
             try:
@@ -64,7 +67,7 @@ class GlobalCMDS:
             else:
                 values['Global'][str(cmdName)] += 1
 
-            if not self.isGuild(self, ctx):
+            if not self.isGuild(ctx):
                 pass
             else:
                 try:
@@ -78,15 +81,15 @@ class GlobalCMDS:
                 else:
                     values['Server'][str(ctx.guild.id)][str(cmdName)] += 1
 
-        with open('counters.json', 'w') as f:
+        with open('db/counters.json', 'w') as f:
             json.dump(values, f, indent=4)
 
     async def invkDelete(self, ctx):
-        if isinstance(ctx.channel, discord.TextChannel) and ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.guild and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
     async def msgDelete(self, message: discord.Message):
-        if isinstance(message.channel, discord.TextChannel) and message.guild.me.guild_permissions.manage_messages:
+        if message.guild and message.guild.me.guild_permissions.manage_messages:
             await message.delete()
 
     async def timeout(self, ctx: commands.Context, title: str, timeout: int) -> discord.Message:
@@ -121,10 +124,10 @@ class GlobalCMDS:
                 json.dump(init, f, indent=4)
 
     def prefix(self, ctx):
-        if not self.isGuild(self, ctx):
+        if not self.isGuild(ctx):
             return "m!"
 
-        with open('prefixes.json', 'r') as f:
+        with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
         return prefixes[str(ctx.guild.id)]

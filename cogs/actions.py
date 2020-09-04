@@ -3,10 +3,10 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-
-from globalcommands import GlobalCMDS as gcmds
+from globalcommands import GlobalCMDS
 
 converter = commands.MemberConverter()
+gcmds = GlobalCMDS()
 
 
 class Actions(commands.Cog):
@@ -32,8 +32,8 @@ class Actions(commands.Cog):
         cmdNameQuery = ctx.command.name
 
         init = {f"{cmdNameQuery}": {'give': {}, 'receive': {}}}
-        gcmds.json_load(gcmds, 'actionstats.json', init)
-        with open('actionstats.json', 'r') as f:
+        gcmds.json_load('db/actionstats.json', init)
+        with open('db/actionstats.json', 'r') as f:
             file = json.load(f)
 
             try:
@@ -57,7 +57,7 @@ class Actions(commands.Cog):
                 except KeyError:
                     file[str(cmdNameQuery)]['receive'][str(user.id)] = 1
                 receive_exec_count = file[str(cmdNameQuery)]['receive'][str(user.id)]
-                with open('actionstats.json', 'w') as g:
+                with open('db/actionstats.json', 'w') as g:
                     json.dump(file, g, indent=4)
                     
             else:
@@ -76,14 +76,14 @@ class Actions(commands.Cog):
                 except KeyError:
                     file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] = 1
                 receive_exec_count = file[str(cmdNameQuery)]['receive'][str(ctx.author.id)]
-                with open('actionstats.json', 'w') as g:
+                with open('db/actionstats.json', 'w') as g:
                     json.dump(file, g, indent=4)
 
             return [give_exec_count, receive_exec_count, user, user_specified]
 
     async def embed_template(self, ctx, title: str, footer: str):
-        await gcmds.invkDelete(gcmds, ctx)
-        api_key = gcmds.env_check(gcmds, "TENOR_API")
+        await gcmds.invkDelete(ctx)
+        api_key = gcmds.env_check("TENOR_API")
         if not api_key:
             no_api = discord.Embed(title="Missing API Key",
                                    description="Insert your Tenor API Key in the `.env` file",
@@ -108,16 +108,16 @@ class Actions(commands.Cog):
         embed.set_footer(text=footer)
 
         await ctx.channel.send(embed=embed)
-        gcmds.incrCounter(gcmds, ctx, cmdNameQuery)
+        gcmds.incrCounter(ctx, cmdNameQuery)
 
     @commands.command(aliases=['action'])
     async def actions(self, ctx, cmdName=None):
-        await gcmds.invkDelete(gcmds, ctx)
+        await gcmds.invkDelete(ctx)
 
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
-        description = f"Do `{gcmds.prefix(gcmds, ctx)}actions [cmdName]` to get the usage of that particular " \
+        description = f"Do `{gcmds.prefix(ctx)}actions [cmdName]` to get the usage of that particular " \
                       f"command.\n\n**List of all {len(CMDLIST)} actions:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
         if cmdName is None or cmdName == "actions":
             helpEmbed = discord.Embed(title="Actions Help",
@@ -129,7 +129,7 @@ class Actions(commands.Cog):
                 helpEmbed = discord.Embed(title=f"Action - {action}",
                                           color=discord.Color.blue())
                 helpEmbed.add_field(name="Usage",
-                                    value=f"`{gcmds.prefix(gcmds, ctx)}{cmdName} [optional user @mention]`",
+                                    value=f"`{gcmds.prefix(ctx)}{cmdName} [optional user @mention]`",
                                     inline=False)
                 pot_alias = self.client.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]
