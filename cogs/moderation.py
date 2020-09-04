@@ -444,6 +444,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def warn(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
+        await gcmds.invkDelete(ctx)
         timestamp = datetime.now().timestamp()
         warned_by = ctx.author
         warns = await self.get_warns(ctx, members)
@@ -453,6 +454,7 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=['offenses'])
     async def offense(self, ctx, member: discord.Member = None):
+        await gcmds.invkDelete(ctx)
         if not os.path.exists('db/warns.json'):
             embed = discord.Embed(title="No Warning History",
                                   description=f"{ctx.author.mention}, no warnings have been issued on this server",
@@ -502,6 +504,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def expunge(self, ctx, member: discord.Member = None):
+        await gcmds.invkDelete(ctx)
         if not member:
             embed = discord.Embed(title="No Member Specified",
                                   description=f"{ctx.author.mention}, please specify the member you want to expunge "
