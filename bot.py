@@ -9,11 +9,10 @@ import re
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-
 from globalcommands import GlobalCMDS
 
-gcmds = GlobalCMDS()
 
+gcmds = GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
@@ -227,7 +226,7 @@ async def on_guild_remove(guild):
         json.dump(prefixes, f, indent=4)
 
 
-if not gcmds.init_env(gcmds):
+if not gcmds.init_env():
     sys.exit("Please put your bot's token inside the created .env file")
 load_dotenv()
 token = os.getenv('TOKEN')
