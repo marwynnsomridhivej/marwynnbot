@@ -4,8 +4,9 @@ venv
 logs
 __pycache__
 pokepy_cache
-*.pyc
+/db
 .env
+*.pyc
 *.json
 *.log
 *.jar
