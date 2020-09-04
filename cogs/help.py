@@ -26,33 +26,33 @@ class Help(commands.Cog):
                               color=discord.Color.blue())
         embed.add_field(name="Command Syntax",
                         value=f'{syntaxMessage}')
-        if exampleUsage is not None:
+        if exampleUsage:
             embed.add_field(name="Example Usage",
                             value=exampleUsage,
                             inline=False)
-        if exampleOutput is not None:
+        if exampleOutput:
             embed.add_field(name="Output",
                             value=exampleOutput,
                             inline=False)
         cmdName = self.client.get_command(ctx.command.name)
         aliases = cmdName.aliases
-        if aliases is not None:
+        if aliases:
             embed.add_field(name="Aliases",
                             value=f"`{'` `'.join(aliases)}`",
                             inline=False)
-        if userPerms is not None:
+        if userPerms:
             embed.add_field(name="User Permissions Required",
                             value=userPerms,
                             inline=False)
-        if botPerms is not None:
+        if botPerms:
             embed.add_field(name="Bot Permissions Required",
                             value=botPerms,
                             inline=False)
-        if specialCases is not None:
+        if specialCases:
             embed.add_field(name="Special Cases",
                             value=specialCases,
                             inline=False)
-        if thumbnailURL is not None:
+        if thumbnailURL:
             embed.set_thumbnail(url=thumbnailURL)
 
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
