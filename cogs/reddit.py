@@ -19,9 +19,9 @@ class Reddit(commands.Cog):
         print(f'Cog "{self.qualified_name}" has been loaded')
 
     async def get_id_secret(self, ctx):
-        client_id = gcmds.env_check(gcmds, "REDDIT_CLIENT_ID")
-        client_secret = gcmds.env_check(gcmds, "REDDIT_CLIENT_SECRET")
-        user_agent = gcmds.env_check(gcmds, "USER_AGENT")
+        client_id = gcmds.env_check("REDDIT_CLIENT_ID")
+        client_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")
+        user_agent = gcmds.env_check("USER_AGENT")
         if not client_id or not client_secret or not user_agent:
             title = "Missing Reddit Client ID or Client Secret or User Agent"
             description = "Insert your Reddit Client ID, Client Secret, and User Agent in the `.env` file"

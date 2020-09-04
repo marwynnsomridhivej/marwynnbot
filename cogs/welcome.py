@@ -15,7 +15,7 @@ gcmds = GlobalCMDS()
 timeout = 30
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
-api_key = gcmds.env_check(gcmds, "TENOR_API")
+api_key = gcmds.env_check("TENOR_API")
 
 
 class Welcome(commands.Cog):

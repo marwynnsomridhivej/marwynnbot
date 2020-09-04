@@ -171,7 +171,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
-        api_key = gcmds.env_check(gcmds, "TENOR_API")
+        api_key = gcmds.env_check("TENOR_API")
         if not api_key:
             title = "Missing API Key"
             description = "Insert your Tenor API Key in the `.env` file"
@@ -237,7 +237,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['imgur', 'imgursearch'])
     async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query):
-        client_id = gcmds.env_check(gcmds, "IMGUR_API")
+        client_id = gcmds.env_check("IMGUR_API")
         if not client_id:
             title = "Missing Client ID"
             description = "Insert your Imgur Client ID in the `.env` file"
@@ -295,7 +295,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['randomcat', 'cat'])
     async def randomCat(self, ctx, toSend: typing.Optional[int] = None):
-        api_key = gcmds.env_check(gcmds, "CAT_API")
+        api_key = gcmds.env_check("CAT_API")
         if not api_key:
             title = "Missing API Key"
             description = "Insert your TheCatAPI Key in the `.env` file"

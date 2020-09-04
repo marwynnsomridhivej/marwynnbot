@@ -224,7 +224,7 @@ class Utility(commands.Cog):
                                       description=feature_message,
                                       color=discord.Color.blue())
         feature_embed.set_footer(text=timestamp)
-        owner_id = gcmds.env_check(gcmds, "OWNER_ID")
+        owner_id = gcmds.env_check("OWNER_ID")
         if not owner_id:
             no_api = discord.Embed(title="Missing Owner ID",
                                    description="This command is disabled",

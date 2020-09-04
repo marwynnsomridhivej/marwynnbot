@@ -20,9 +20,9 @@ class Music(commands.Cog):
         self.info = {}
 
         if not hasattr(client, 'lavalink'):
-            ip = gcmds.env_check(gcmds, "LAVALINK_IP")
-            port = gcmds.env_check(gcmds, "LAVALINK_PORT")
-            password = gcmds.env_check(gcmds, "LAVALINK_PASSWORD")
+            ip = gcmds.env_check("LAVALINK_IP")
+            port = gcmds.env_check("LAVALINK_PORT")
+            password = gcmds.env_check("LAVALINK_PASSWORD")
             if not ip or not port or not password:
                 print("Make sure your server IP, port, and password are in the .env file")
             else:

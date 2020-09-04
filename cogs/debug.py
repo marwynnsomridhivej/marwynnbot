@@ -95,7 +95,7 @@ class Debug(commands.Cog):
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=insuf, delete_after=10)
 
-        updates_channel_id = gcmds.env_check(gcmds, "UPDATES_CHANNEL")
+        updates_channel_id = gcmds.env_check("UPDATES_CHANNEL")
         if not updates_channel_id:
             no_channel = discord.Embed(title="No Updates Channel Specified",
                                        description=f"{ctx.author.mention}, you must specify the updates channel ID in"
