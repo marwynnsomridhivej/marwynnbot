@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import os
 import discord
 from discord.ext import commands
 from globalcommands import GlobalCMDS
@@ -28,6 +29,8 @@ class Reactions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if not os.path.exists('db/reactionroles.json'):
+            return
         with open('db/reactionroles.json', 'r') as f:
             file = json.load(f)
             f.close()
