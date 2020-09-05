@@ -1,7 +1,9 @@
 import json
 import os
 import discord
+import aiohttp
 from discord.ext import commands
+import asyncio
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
@@ -14,7 +16,8 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "REDDIT_CLIENT_ID=CLIENT_ID_FROM_REDDIT_API",
              "REDDIT_CLIENT_SECRET=CLIENT_SECRET_FROM_REDDIT_API",
              "USER_AGENT=YOUR_USER_AGENT",
-             "TENOR_API=API_KEY_FROM_TENOR"]
+             "TENOR_API=API_KEY_FROM_TENOR",
+             "GITHUB_TOKEN=PERSONAL_ACCESS_TOKEN"]
 default_env = ["YOUR_BOT_TOKEN",
                "YOUR_ID_HERE",
                "CHANNEL_ID_HERE",
@@ -26,11 +29,12 @@ default_env = ["YOUR_BOT_TOKEN",
                "CLIENT_ID_FROM_REDDIT_API",
                "CLIENT_SECRET_FROM_REDDIT_API",
                "YOUR_USER_AGENT",
-               "API_KEY_FROM_TENOR"]
+               "API_KEY_FROM_TENOR",
+               "PERSONAL_ACCESS_TOKEN"]
 
 
 class GlobalCMDS:
-    
+
     def __init__(self):
         pass
 
@@ -148,3 +152,51 @@ class GlobalCMDS:
                     file[str(gameName)][str(user.id)]['ratio'] = round((wins / losses), 3)
         with open(filenamepath, 'w') as f:
             json.dump(file, f, indent=4)
+
+    async def github_request(self, method, url, *, params=None, data=None, headers=None):
+        hdrs = {
+            'Accept': 'application/vnd.github.inertia-preview+json',
+            'User-Agent': 'MarwynnBot Discord Token Invalidator',
+            'Authorization': f"token {self.env_check('GITHUB_TOKEN')}"
+        }
+
+        req_url = f"https://api.github.com/{url}"
+
+        if isinstance(headers, dict):
+            hdrs.update(headers)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.request(method, req_url, params=params, json=data, headers=hdrs) as response:
+                ratelimit_remaining = response.headers.get('X-Ratelimit-Remaining')
+                js = await response.json()
+                if response.status == 429 or ratelimit_remaining == '0':
+                    sleep_time = discord.utils._parse_ratelimit_header(response)
+                    await asyncio.sleep(sleep_time)
+                    return await self.github_request(method, url, params=params, data=data, headers=headers)
+                elif 300 > response.status >= 200:
+                    return js
+                else:
+                    raise GithubError(js['message'])
+
+    async def create_gist(self, content, *, description):
+        headers = {
+            'Accept': 'application/vnd.github.v3+json',
+        }
+
+        filename = 'tokens.txt'
+        data = {
+            'public': True,
+            'files': {
+                filename: {
+                    'content': content
+                }
+            },
+            'description': description
+        }
+
+        response = await self.github_request('POST', 'gists', data=data, headers=headers)
+        return response['html_url']
+
+
+class GithubError(commands.CommandError):
+    pass
