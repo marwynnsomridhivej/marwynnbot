@@ -474,11 +474,14 @@ class Welcome(commands.Cog):
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, 120)
             if result.content == "cancel":
+                await result.delete()
                 return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip":
+                await result.delete()
                 url_list = None
                 break
             elif result.content == "finish":
+                await result.delete()
                 break
             else:
                 mimetype, encoding = mimetypes.guess_type(result.content)
