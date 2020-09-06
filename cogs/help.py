@@ -156,7 +156,7 @@ class Help(commands.Cog):
 
     @help.command(aliases=['h', 'help'])
     async def _help(self, ctx):
-        commandName = 'Command Specific Help'
+        commandName = 'Command Specific'
         syntaxMessage = f"`{gcmds.prefix(ctx)}help [commandName]`"
         exampleUsage = f"`{gcmds.prefix(ctx)}help ping`"
         await self.syntaxEmbed(ctx,
@@ -418,7 +418,7 @@ class Help(commands.Cog):
 
     @help.command(aliases=['mc'])
     async def minecraft(self, ctx):
-        commandName = "MinecraftHelp"
+        commandName = "Minecraft"
         syntaxMessage = f"`{gcmds.prefix(ctx)}minecraft`"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
@@ -778,7 +778,7 @@ class Help(commands.Cog):
 
     @help.command(aliases=['reddithelp'])
     async def reddit(self, ctx):
-        commandName = "RedditHelp"
+        commandName = "Reddit"
         syntaxMessage = f"{gcmds.prefix(ctx)}reddit"
         specialCases = "This command will bring up the reddit help panel where all the reddit commands are documented." \
                        "Please note that the name of the commands corresponds to the name of the subreddit the images " \
@@ -796,7 +796,7 @@ class Help(commands.Cog):
 
     @help.command(aliases=['dex'])
     async def pokedex(self, ctx):
-        commandName = "PokedexHelp"
+        commandName = "Pokedex"
         syntaxMessage = f"`{gcmds.prefix(ctx)}pokedex`"
         specialCases = "This command will bring up the pokedex help panel that will detail all pokedex commands" \
                        "documented. "
@@ -811,7 +811,7 @@ class Help(commands.Cog):
 
     @help.command(aliases=['welcome'])
     async def welcomer(self, ctx):
-        commandName = "Welcomer Help"
+        commandName = "Welcomer"
         syntaxMessage = f"`{gcmds.prefix(ctx)}welcomer`"
         specialCases = "This command will bring up the welcomer help panel that will detail all welcomer commands"
         await self.syntaxEmbed(ctx,
@@ -821,7 +821,7 @@ class Help(commands.Cog):
 
     @help.command()
     async def leaver(self, ctx):
-        commandName = "Leaver Help"
+        commandName = "Leaver"
         syntaxMessage = f"`{gcmds.prefix(ctx)}leaver`"
         specialCases = "This command will bring up the leaver help panel that will detail all leaver commands"
         await self.syntaxEmbed(ctx,
