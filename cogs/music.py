@@ -307,7 +307,10 @@ class Music(commands.Cog):
             self.info[str(guild_id)][key] = value
 
     async def del_temp_msgs(self, guild_id: int):
-        message = self.info[str(guild_id)]['message']
+        try:
+            message = self.info[str(guild_id)]['message']
+        except KeyError:
+            return
         paused = self.info[str(guild_id)]['paused']
         paused_message = self.info[str(guild_id)]['paused_message']
         queue = self.info[str(guild_id)]['queue']
