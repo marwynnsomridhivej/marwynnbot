@@ -2,8 +2,10 @@ import json
 import os
 import discord
 import aiohttp
-from discord.ext import commands
 import asyncio
+from dotenv import load_dotenv
+from discord.ext import commands
+
 
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
@@ -36,7 +38,7 @@ default_env = ["YOUR_BOT_TOKEN",
 class GlobalCMDS:
 
     def __init__(self):
-        pass
+        self.version = "v1.0.0a"
 
     def init_env(self):
         if not os.path.exists('.env'):
@@ -134,7 +136,7 @@ class GlobalCMDS:
         with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
-        return prefixes[str(ctx.guild.id)]
+        return prefixes.get(str(ctx.guild.id), 'm!')
 
     def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:
