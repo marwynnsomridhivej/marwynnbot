@@ -18,7 +18,7 @@ with open('db/reactionroles.json', 'r') as rr:
     rr_json = json.load(rr)
 
 
-class Reactions(commands.Cog):
+class Roles(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -796,4 +796,4 @@ class Reactions(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(Reactions(client))
+    client.add_cog(Roles(client))
