@@ -73,7 +73,7 @@ class GlobalCMDS:
             else:
                 values['Global'][str(cmdName)] += 1
 
-            if not self.isGuild(ctx):
+            if not ctx.guild:
                 pass
             else:
                 try:
@@ -118,19 +118,13 @@ class GlobalCMDS:
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed, delete_after=10)
 
-    def isGuild(self, ctx):
-        if ctx.guild:
-            return True
-        else:
-            return False
-
     def json_load(self, filenamepath: str, init: dict):
         if not os.path.exists(filenamepath):
             with open(filenamepath, 'w') as f:
                 json.dump(init, f, indent=4)
 
     def prefix(self, ctx):
-        if not self.isGuild(ctx):
+        if not ctx.guild:
             return "m!"
 
         with open('db/prefixes.json', 'r') as f:
