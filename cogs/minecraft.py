@@ -11,10 +11,6 @@ class Minecraft(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     async def get_server(self, host: str) -> MinecraftServer:
         try:
             return MinecraftServer.lookup(host)

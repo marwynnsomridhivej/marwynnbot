@@ -200,10 +200,6 @@ class OldMaid(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     @commands.command(aliases=['oldmaid', 'om', 'maid'])
     async def oldMaid(self, ctx, bet: typing.Optional[int] = 1, members: commands.Greedy[discord.Member] = None):
         await gcmds.invkDelete(ctx)

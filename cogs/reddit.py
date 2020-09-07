@@ -14,10 +14,6 @@ class Reddit(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     async def get_id_secret(self, ctx):
         client_id = gcmds.env_check("REDDIT_CLIENT_ID")
         client_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")

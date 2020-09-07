@@ -25,10 +25,6 @@ class Disboard(commands.Cog):
         self.check_unsent_reminder.cancel()
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
-    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.guild and message.author.id == disboard_bot_id and os.path.exists('db/disboard.json'):
             message = message
@@ -54,10 +50,11 @@ class Disboard(commands.Cog):
                 with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
                     g.close()
-                asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+                self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
+        await self.client.wait_until_ready()
         if not os.path.exists('db/disboard.json'):
             return
         
@@ -78,7 +75,7 @@ class Disboard(commands.Cog):
             else:
                 description = file[str(guild)]['message_content']
             channel = await self.client.fetch_channel(file[str(guild)]['channel_id'])
-            await asyncio.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+            self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
 
     async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
         await asyncio.sleep(sleep_time)

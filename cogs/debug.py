@@ -14,10 +14,6 @@ class Debug(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     async def timeout(self, ctx, message: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Report Update Cancelled",
                               description=f"{ctx.author.mention}, your report update request timed out",

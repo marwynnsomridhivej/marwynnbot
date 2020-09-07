@@ -21,12 +21,9 @@ class Utility(commands.Cog):
     def cog_unload(self):
         self.update_server_stats.cancel()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
+        await self.client.wait_until_ready()
         if not os.path.exists('db/serverstats.json'):
             return
 

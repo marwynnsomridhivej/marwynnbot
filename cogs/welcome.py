@@ -24,10 +24,6 @@ class Welcome(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
-    @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:

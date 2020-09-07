@@ -517,10 +517,6 @@ class UNO(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
         await gcmds.invkDelete(ctx)

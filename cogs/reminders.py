@@ -28,12 +28,9 @@ class Reminders(commands.Cog):
         self.check_single.cancel()
         self.check_loop.cancel()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     @tasks.loop(seconds=15)
     async def check_single(self):
+        await self.client.wait_until_ready()
         with open('db/reminders.json', 'r') as f:
             file = json.load(f)
             f.close()
@@ -52,7 +49,7 @@ class Reminders(commands.Cog):
                                 datetime.now().timestamp()
                             if sleep_time <= 0:
                                 sleep_time = 0
-                            await asyncio.create_task(self.send_single(sleep_time, user_id, reminder['channel_id'],
+                            self.client.loop.create_task(self.send_single(sleep_time, user_id, reminder['channel_id'],
                                                                        message_content, int(guild), index))
                     index += 1
 
@@ -84,6 +81,7 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=1, count=1)
     async def check_loop(self):
+        await self.client.wait_until_ready()
         with open('db/reminders.json', 'r') as f:
             file = json.load(f)
             f.close()
@@ -94,7 +92,7 @@ class Reminders(commands.Cog):
                         message_content_ascii = base64.urlsafe_b64decode(
                             str.encode(reminder['message_content']))
                         message_content = message_content_ascii.decode("ascii")
-                        await asyncio.create_task(self.send_loop(reminder['time'], int(user), reminder['channel_id'],
+                        self.client.loop.create_task(self.send_loop(reminder['time'], int(user), reminder['channel_id'],
                                                                  message_content, int(guild)))
 
     async def send_loop(self, loop_interval: int, user_id: int, channel_id: int, message_content: str, guild_id: int):
@@ -223,7 +221,7 @@ class Reminders(commands.Cog):
         with open('db/reminders.json', 'w') as g:
             json.dump(file, g, indent=4)
 
-        await asyncio.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
+        self.client.loop.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
 
     async def get_reminders(self, guild_id: int, user_id: int) -> str:
         if not os.path.exists('db/reminders.json'):

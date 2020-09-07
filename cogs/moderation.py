@@ -25,12 +25,9 @@ class Moderation(commands.Cog):
     def cog_unload(self):
         self.check_mute_expire.cancel()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     @tasks.loop(seconds=60)
     async def check_mute_expire(self):
+        await self.client.wait_until_ready()
         current_time = int(datetime.now().timestamp())
         if not os.path.exists('db/mutes.json'):
             return
@@ -48,7 +45,7 @@ class Moderation(commands.Cog):
                 sleep_time = int(time - current_time)
                 if sleep_time > 60:
                     continue
-                await asyncio.create_task(self.unmute_user(int(guild_id), int(user_id), sleep_time))
+                self.client.loop.create_task(self.unmute_user(int(guild_id), int(user_id), sleep_time))
 
     async def check_panel(self, panel: discord.Message) -> bool:
         try:

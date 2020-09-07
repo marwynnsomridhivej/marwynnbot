@@ -20,10 +20,6 @@ class Fun(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Cog "{self.qualified_name}" has been loaded')
-
     async def imageSend(self, ctx, path, url=None, toSend=None):
         await gcmds.invkDelete(ctx)
         path = path
