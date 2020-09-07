@@ -97,7 +97,7 @@ class Help(commands.Cog):
             musicCmds = f"`{'` `'.join(strings['music'])}`"
             ownerCmds = f"`{'` `'.join(strings['owner'])}`"
             pokedexCmds = f"`{gcmds.prefix(ctx)}pokedex` *for a full list*"
-            reactionCmds = f"`{'` `'.join(strings['reactions'])}`"
+            roleCmds = f"`{'` `'.join(strings['reactions'])}`"
             redditCmds = f"`{gcmds.prefix(ctx)}reddit` *for a full list*"
             utilityCmds = f"`{'` `'.join(strings['utility'])}`"
             welcomeCmds = f"`{'` `'.join(strings['welcome'])}`"
@@ -129,8 +129,8 @@ class Help(commands.Cog):
             helpEmbed.add_field(name="Pokedex",
                                 value=pokedexCmds,
                                 inline=False)
-            helpEmbed.add_field(name="Reactions",
-                                value=reactionCmds,
+            helpEmbed.add_field(name="Roles",
+                                value=roleCmds,
                                 inline=False)
             helpEmbed.add_field(name="Reddit",
                                 value=redditCmds,
@@ -755,7 +755,7 @@ class Help(commands.Cog):
                                specialCases=specialCases)
 
     # =================================================
-    # Reactions
+    # Roles
     # =================================================
 
     @help.command()
