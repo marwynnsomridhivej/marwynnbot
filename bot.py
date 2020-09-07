@@ -9,6 +9,7 @@ import re
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+import customerrors
 from globalcommands import GlobalCMDS
 
 
@@ -17,6 +18,7 @@ DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Un
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
 token_rx = re.compile(r'[MN]\w{23}.[\w-]{6}.[\w-]{27}')
+version = f"Running MarwynnBot {gcmds.version}"
 
 if os.path.exists('discord.log'):
     os.remove('discord.log')
@@ -46,6 +48,7 @@ logger.addHandler(handler)
 
 @tasks.loop(seconds=120)
 async def status():
+    await client.wait_until_ready()
     activity1 = discord.Activity(name="m!h for help!", type=discord.ActivityType.listening)
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
@@ -57,17 +60,13 @@ async def status():
     await client.change_presence(status=discord.Status.online, activity=activity)
 
 
-@client.event
-async def on_ready():
-    cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
-    for cog in sorted(cogs):
-        client.load_extension(f'cogs.{cog}')
-        print(f"Cog \"{cog}\" has been loaded")
+async def client_loaded():
+    await client.wait_until_ready()
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}\nServing '
-          f'{len(client.users)} users across {len(client.guilds)} servers')
-    await status.start()
+          f'{len(client.users)} users across {len(client.guilds)} servers\n{version}')
+    status.start()
 
 
 @client.event
@@ -145,32 +144,32 @@ async def on_command_error(ctx, error):
         req_arg = discord.Embed(title="Missing Required Argument",
                                 description=f"{ctx.author.mention}, `[{error.param.name}]` is a required argument",
                                 color=discord.Color.dark_red())
-        await ctx.channel.send(embed=req_arg, delete_after=10)
+        return await ctx.channel.send(embed=req_arg, delete_after=10)
     elif isinstance(error, discord.ext.commands.MissingPermissions):
         missing = discord.Embed(title="Insufficient User Permissions",
                                 description=f"{ctx.author.mention}, to execute this command, you need "
                                             f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                 color=discord.Color.dark_red())
-        await ctx.channel.send(embed=missing, delete_after=10)
+        return await ctx.channel.send(embed=missing, delete_after=10)
     elif isinstance(error, discord.ext.commands.BotMissingPermissions):
         missing = discord.Embed(title="Insufficient Bot Permissions",
                                 description=f"{ctx.author.mention}, to execute this command, I need "
                                             f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                 color=discord.Color.dark_red())
-        await ctx.channel.send(embed=missing, delete_after=10)
+        return await ctx.channel.send(embed=missing, delete_after=10)
     elif isinstance(error, commands.NotOwner):
         not_owner = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, only the bot owner is authorised to use this "
                                               f"command",
                                   color=discord.Color.dark_red())
-        await ctx.channel.send(embed=not_owner, delete_after=10)
+        return await ctx.channel.send(embed=not_owner, delete_after=10)
     elif isinstance(error, commands.CommandNotFound):
         await gcmds.invkDelete(ctx)
         notFound = discord.Embed(title="Command Not Found",
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                              f"does not exist\n\nDo `{gcmds.prefix(ctx)}help` for help",
                                  color=discord.Color.dark_red())
-        await ctx.channel.send(embed=notFound, delete_after=10)
+        return await ctx.channel.send(embed=notFound, delete_after=10)
     elif isinstance(error, commands.CommandOnCooldown):
         cooldown_time_truncated = truncate(error.retry_after, 3)
         if cooldown_time_truncated < 1:
@@ -182,6 +181,12 @@ async def on_command_error(ctx, error):
                                  description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                  color=discord.Color.dark_red())
         await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
+    elif isinstance(error, customerrors.TagNotFound):
+        embed = discord.Embed(title="Tag Not Found",
+                              description=f"{ctx.author.mention}, the tag `{error.tag}` does not exist. You can create "
+                              f"it by doing `{gcmds.prefix(ctx)}tag create {error.tag}`",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=10)
     elif isinstance(error, commands.CheckFailure):
         pass
     else:
@@ -228,21 +233,15 @@ async def on_guild_remove(guild):
     with open('db/prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
+cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
+for cog in sorted(cogs):
+    client.load_extension(f'cogs.{cog}')
+    print(f"Cog \"{cog}\" has been loaded")
+
 
 if not gcmds.init_env():
     sys.exit("Please put your bot's token inside the created .env file")
 load_dotenv()
 token = os.getenv('TOKEN')
+client.loop.create_task(client_loaded())
 client.run(token)
-
-# TODO: Add server info command
-# TODO: Add user info command
-# TODO: Add reaction roles setup and relevant commands
-# TODO: Add server and user abuse subcommands for report
-# TODO: Add bot info command
-# TODO: Add case specific titles and footers for all actions
-# TODO: Add complete music functionality
-# TODO: Add cooldowns for commands that require it
-# TODO: Add OS info command
-# TODO: Integrate URLShortener API, Translate API, PokeAPI, FortniteStatsAPI, AmiiboAPI, MerrianWebsterAPI
-# TODO: Allow modsonline to select the mod role by @mention or ID
