@@ -3,9 +3,9 @@ import os
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Owner(commands.Cog):

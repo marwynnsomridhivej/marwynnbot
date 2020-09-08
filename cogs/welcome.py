@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import asyncio
 import aiohttp
 from num2words import num2words
@@ -11,7 +11,7 @@ import os
 import random
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 timeout = 30
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')

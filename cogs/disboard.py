@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands, tasks
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import json
 import os
 import asyncio
@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 disboard_bot_id = 302050872383242240
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')

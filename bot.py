@@ -9,11 +9,10 @@ import re
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-import customerrors
-from globalcommands import GlobalCMDS
+from utils import customerrors, globalcommands
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []

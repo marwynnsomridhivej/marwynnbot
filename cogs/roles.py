@@ -4,9 +4,9 @@ import re
 import os
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')

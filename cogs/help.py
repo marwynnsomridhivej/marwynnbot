@@ -2,9 +2,9 @@ import random
 from datetime import datetime
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Help(commands.Cog):

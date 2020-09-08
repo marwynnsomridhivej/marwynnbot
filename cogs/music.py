@@ -5,9 +5,9 @@ from datetime import datetime
 import discord
 import lavalink
 from discord.ext import commands, tasks
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 reactions = ["⏪", "⏯", "⏩", "⏹"]
 plist_reactions = ["💾", "📝"]

@@ -10,9 +10,9 @@ import requests
 import yaml
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Fun(commands.Cog):

@@ -3,9 +3,9 @@ import discord
 from discord.ext import commands
 import numpy.random as np
 import json
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 emojis = [":apple:", ":green_apple:", ":pineapple:", ":cherries:", ":grapes:", ":strawberry:", ":lemon:", ":pear:",
           ":moneybag:", ":gem:", ":trophy:", ":violin:", ":musical_keyboard:", ":dragon:", ":free:", ":pirate_flag:"]
 weights = [0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375,

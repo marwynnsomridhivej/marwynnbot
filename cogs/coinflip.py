@@ -4,9 +4,9 @@ import typing
 from discord.ext import commands
 import json
 import numpy as np
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 def win(ctx, betAmount):

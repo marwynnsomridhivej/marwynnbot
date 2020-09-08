@@ -3,10 +3,10 @@ import json
 import random
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import numpy as np
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 ROW_COUNT = 6
 COLUMN_COUNT = 7

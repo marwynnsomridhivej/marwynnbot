@@ -2,12 +2,12 @@ import asyncio
 import random
 import discord
 import json
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import typing
 from discord.ext import commands
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 suits = {'Hearts', 'Diamonds', 'Spades', 'Clubs'}
 ranks = {'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace'}
 

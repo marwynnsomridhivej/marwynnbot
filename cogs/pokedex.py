@@ -2,9 +2,9 @@ import math
 import discord
 from discord.ext import commands
 import pokepy
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 poke_client = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
 move_status_icon_urls = ["https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/e/ef/Physical.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/2/24/Special.png?width=325",

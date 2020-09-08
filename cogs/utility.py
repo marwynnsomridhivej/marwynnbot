@@ -4,11 +4,11 @@ from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import os
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Utility(commands.Cog):

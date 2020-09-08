@@ -1,7 +1,7 @@
 import discord
 import typing
 from discord.ext import commands, tasks
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import os
 import json
 import asyncio
@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 import base64
 from num2words import num2words
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 auto_mute_duration = 600
 auto_warn_actions = [None, None, "mute", "kick", "ban"]
 

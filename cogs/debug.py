@@ -2,10 +2,10 @@ import datetime
 import discord
 import dotenv
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import asyncio
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 updates_reaction = ['✅', '📝', '🛑']
 
 

@@ -3,10 +3,10 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
 converter = commands.MemberConverter()
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Actions(commands.Cog):

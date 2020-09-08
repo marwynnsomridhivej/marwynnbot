@@ -6,11 +6,11 @@ import discord
 from discord.ext import commands, tasks
 from datetime import datetime, timezone, timedelta
 from dateparser.search import search_dates
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 import re
 
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 timeout = 30
 reactions = ["🔁", "✅", "🛑"]
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')

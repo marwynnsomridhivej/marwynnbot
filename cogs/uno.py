@@ -6,9 +6,9 @@ from discord.ext import commands
 import random
 from random import shuffle, randint
 import json
-from globalcommands import GlobalCMDS
+from utils import globalcommands
 
-gcmds = GlobalCMDS()
+gcmds = globalcommands.GlobalCMDS()
 COLORS = ['red', 'yellow', 'green', 'blue']
 ALL_COLORS = COLORS + ['black']
 NUMBERS = list(range(10)) + list(range(1, 10))
