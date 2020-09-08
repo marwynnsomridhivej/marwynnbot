@@ -1,9 +1,10 @@
 import discord
 import json
 import os
+import asyncio
 from datetime import datetime
 from discord.ext import commands
-from utils import globalcommands, customerrors
+from utils import globalcommands, customerrors, paginator
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -14,6 +15,9 @@ class Tags(commands.Cog):
     
     def __init__(self, client):
         self.client = client
+
+    async def cog_before_invoke(self, ctx):
+        await gcmds.invkDelete(ctx)
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
@@ -52,7 +56,7 @@ class Tags(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def check_tag(self, ctx, name) -> bool:
-        if not os.path.exists('db/tags.json'):
+        if not os.path.exists('db/tags.json') or not name:
             return False
 
         with open('db/tags.json', 'r') as f:
@@ -63,14 +67,28 @@ class Tags(commands.Cog):
 
         return True
 
-    @commands.group(aliases=['tags'])
+    async def create_tag(self, ctx, name, content):
+        gcmds.json_load('db/tags.json', {})
+        with open('db/tags.json', 'r') as f:
+            file = json.load(f)
+        if not str(ctx.guild.id) in file:
+            file.update({str(ctx.guild.id): {}})
+        file[str(ctx.guild.id)].update({
+            name: {
+                'author_id': ctx.author.id,
+                'content': content,
+                'created_at': int(datetime.now().timestamp())
+            }
+        })
+        with open('db/tags.json', 'w') as g:
+            json.dump(file, g, indent=4)
+
+    @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
-        await gcmds.invkDelete(ctx)
-        if not ctx.invoked_subcommand:
-            if not tag:
-                return await self.tag_help(ctx)
-            if not await self.check_tag(ctx, tag):
-                raise customerrors.TagNotFound(tag)
+        if not tag:
+            return await self.tag_help(ctx)
+        if not await self.check_tag(ctx, tag):
+            raise customerrors.TagNotFound(tag)
 
     @tag.command()
     async def list(self, ctx):
@@ -81,15 +99,32 @@ class Tags(commands.Cog):
         return
 
     @tag.command(aliases=['make'])
-    async def create(self, ctx, *, name):
-        return
+    async def create(self, ctx, *, tag):
+        if await self.check_tag(ctx, tag):
+            raise customerrors.TagAlreadyExists(tag)
+        embed = discord.Embed(title=f"Create Tag \"{tag}\"",
+                              description=f"{ctx.author.mention}, within 2 minutes, please enter what you would like the tag to return\n\n"
+                              f"ex. *If you enter \"test\", doing `{gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
+                              color=discord.Color.blue())
+        embed.set_footer(text="Enter \"cancel\" to cancel this setup")
+        panel = await ctx.channel.send(embed=embed)
+
+        def from_user(message: discord.Message) -> bool:
+            return message.author.id == ctx.author.id and message.channel == ctx.channel
+
+        try:
+            result = await self.client.wait_for("message", check=from_user, timeout=120)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "tag creation", 120)
+
+        await self.create_tag(ctx, tag, result.content)
 
     @tag.command()
-    async def edit(self, ctx, *, name):
+    async def edit(self, ctx, *, tag):
         return
 
     @tag.command(aliaes=['remove'])
-    async def delete(self, ctx, *, name):
+    async def delete(self, ctx, *, tag):
         return
 
 
