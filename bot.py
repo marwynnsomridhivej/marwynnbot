@@ -64,8 +64,8 @@ async def client_loaded():
     await client.wait_until_ready()
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
-    print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}\nServing '
-          f'{len(client.users)} users across {len(client.guilds)} servers\n{version}')
+    print(f'Successfully logged in as {client.user}\n{version}\nIP: {ip}\nHost: {str(hostname)}\nServing '
+          f'{len(client.users)} users across {len(client.guilds)} servers')
     status.start()
 
 
@@ -183,10 +183,14 @@ async def on_command_error(ctx, error):
         await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
     elif isinstance(error, customerrors.TagNotFound):
         embed = discord.Embed(title="Tag Not Found",
-                              description=f"{ctx.author.mention}, the tag `{error.tag}` does not exist. You can create "
-                              f"it by doing `{gcmds.prefix(ctx)}tag create {error.tag}`",
+                              description=f"{ctx.author.mention}, the tag `{error.tag}` does not exist in this server. "
+                              f"You can create it by doing `{gcmds.prefix(ctx)}tag create {error.tag}`",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed, delete_after=15)
+    elif isinstance(error, customerrors.TagAlreadyExists):
+        embed = discord.Embed(title="Tag Already Exists",
+                              description=f"{ctx.author.mention}, the tag `{error.tag}` already exists in this server",
+                              color=discord.Color.dark_red())
     elif isinstance(error, commands.CheckFailure):
         pass
     else:
