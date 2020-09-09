@@ -36,7 +36,7 @@ async def get_prefix(client, message):
             return commands.when_mentioned_or(*extras)(client, message)
 
 
-client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1)
+client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1, fetch_offline_members=True)
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -52,9 +52,8 @@ async def status():
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
     activity4 = discord.Activity(name=f"MarwynnBot {gcmds.version}", type=discord.ActivityType.playing)
-    activity5 = discord.Activity(name="MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
-    activity6 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
-    activityList = [activity1, activity2, activity3, activity4, activity5, activity6]
+    activity5 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
+    activityList = [activity1, activity2, activity3, activity4, activity5]
     activity = random.choice(activityList)
     await client.change_presence(status=discord.Status.online, activity=activity)
 
