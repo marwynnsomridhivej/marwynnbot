@@ -51,7 +51,7 @@ async def status():
     activity1 = discord.Activity(name="m!h for help!", type=discord.ActivityType.listening)
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
-    activity4 = discord.Activity(name="Under development [WIP]", type=discord.ActivityType.playing)
+    activity4 = discord.Activity(name=f"MarwynnBot {gcmds.version}", type=discord.ActivityType.playing)
     activity5 = discord.Activity(name="MS Arranges#3060 for source code info", type=discord.ActivityType.watching)
     activity6 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
     activityList = [activity1, activity2, activity3, activity4, activity5, activity6]
