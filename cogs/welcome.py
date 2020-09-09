@@ -28,7 +28,7 @@ class Welcome(commands.Cog):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
-                f.close()
+
             member = member
             if str(member.guild.id) in file:
                 guild = member.guild
@@ -73,7 +73,7 @@ class Welcome(commands.Cog):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
-                f.close()
+
             member = member
             if str(member.guild.id) in file:
                 guild = member.guild
@@ -177,7 +177,6 @@ class Welcome(commands.Cog):
         gcmds.json_load('db/welcomers.json', init)
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         while True:
             try:
@@ -201,7 +200,7 @@ class Welcome(commands.Cog):
 
         with open('db/welcomers.json', 'w') as g:
             json.dump(file, g, indent=4)
-            g.close()
+
         return True
 
     async def has_welcomer(self, ctx) -> bool:
@@ -210,7 +209,6 @@ class Welcome(commands.Cog):
 
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             if file[str(ctx.guild.id)]:
@@ -224,7 +222,6 @@ class Welcome(commands.Cog):
 
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         info = file[str(ctx.guild.id)]
         return [info['channel_id'], info['title'], info['description'], info['media']]
@@ -232,7 +229,6 @@ class Welcome(commands.Cog):
     async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media: list = None) -> bool:
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             file[str(ctx.guild.id)]['channel_id'] = channel_id
@@ -259,7 +255,6 @@ class Welcome(commands.Cog):
     async def delete_welcomer(self, ctx) -> bool:
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             del file[str(ctx.guild.id)]
@@ -299,7 +294,6 @@ class Welcome(commands.Cog):
     async def create_leaver(self, ctx) -> bool:
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             file[str(ctx.guild.id)]['leaver'] = True
@@ -316,7 +310,6 @@ class Welcome(commands.Cog):
 
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             if file[str(ctx.guild.id)]['leaver']:
@@ -335,7 +328,6 @@ class Welcome(commands.Cog):
     async def delete_leaver(self, ctx) -> bool:
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             if not file[str(ctx.guild.id)]['leaver']:
@@ -778,8 +770,8 @@ class Welcome(commands.Cog):
 
         if await self.has_leaver(ctx):
             embed = discord.Embed(title="Leaver Already Set",
-                                    description=f"{ctx.author.mention}, this server already has a leaver set up",
-                                    color=discord.Color.dark_red())
+                                  description=f"{ctx.author.mention}, this server already has a leaver set up",
+                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed, delete_after=10)
 
         def from_user(message: discord.Message) -> bool:
@@ -793,13 +785,13 @@ class Welcome(commands.Cog):
         succeeded = await self.create_leaver(ctx)
         if succeeded:
             embed = discord.Embed(title="Leaver Successfully Created",
-                                    description=f"{ctx.author.mention}, a leaver has been set for this server. It will "
-                                    "fire in the same channel as the welcomer",
-                                    color=discord.Color.blue())
+                                  description=f"{ctx.author.mention}, a leaver has been set for this server. It will "
+                                  "fire in the same channel as the welcomer",
+                                  color=discord.Color.blue())
         else:
             embed = discord.Embed(title="Leaver Creation Failed",
-                                    description=f"{ctx.author.mention}, the leaver could not be set for this server",
-                                    color=discord.Color.dark_red())
+                                  description=f"{ctx.author.mention}, the leaver could not be set for this server",
+                                  color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
     @leaver.command(aliases=['-rm', 'cancel', 'trash', 'delete'])

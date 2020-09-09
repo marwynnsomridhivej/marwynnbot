@@ -17,7 +17,7 @@ class Utility(commands.Cog):
         self.client = client
         self.messages = {}
         self.update_server_stats.start()
-        
+
     def cog_unload(self):
         self.update_server_stats.cancel()
 
@@ -31,7 +31,6 @@ class Utility(commands.Cog):
         gcmds.json_load('db/serverstats.json', init)
         with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         guild_ids = list(file["Active"].keys())
 
@@ -56,13 +55,11 @@ class Utility(commands.Cog):
         gcmds.json_load('db/requests.json', init)
         with open('db/requests.json', 'r') as f:
             self.messages = json.load(f)
-            f.close()
 
     def add_entry(self, ctx, message_id: int):
         self.messages[str(message_id)] = str(ctx.author.id)
         with open('db/requests.json', 'w') as f:
             json.dump(self.messages, f, indent=4)
-            f.close()
 
     def get_entry(self, message_id: int):
         return self.messages[str(message_id)]
@@ -71,14 +68,13 @@ class Utility(commands.Cog):
         del self.messages[str(message_id)]
         with open('db/requests.json', 'w') as f:
             json.dump(self.messages, f, indent=4)
-            f.close()
 
     async def get_guild_info(self, guild: discord.Guild) -> list:
         botCount = 0
         for member in guild.members:
             if member.bot:
                 botCount += 1
-            
+
         totalMembers = f"👥Members: {guild.member_count - botCount}"
         totalText = f"📑Text Channels: {int(len(guild.text_channels))}"
         totalVoice = f"🎧Voice Channels: {int(len(guild.voice_channels))}"
@@ -92,7 +88,7 @@ class Utility(commands.Cog):
         gcmds.json_load('db/serverstats.json', init)
         with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
-            f.close()
+
         file['Active'].update({str(guild_id): 1})
         with open('db/serverstats.json', 'w') as g:
             json.dump(file, g, indent=4)
@@ -102,7 +98,7 @@ class Utility(commands.Cog):
         gcmds.json_load('db/serverstats.json', init)
         with open('db/serverstats.json', 'r') as f:
             file = json.load(f)
-            f.close()
+
         try:
             del file['Active'][str(guild_id)]
         except KeyError:

@@ -20,7 +20,7 @@ class Disboard(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.check_unsent_reminder.start()
-    
+
     def cog_unload(self):
         self.check_unsent_reminder.cancel()
 
@@ -35,7 +35,7 @@ class Disboard(commands.Cog):
                 sleep_time = time_to_send - current_timestamp
                 with open('db/disboard.json', 'r') as f:
                     file = json.load(f)
-                    f.close()
+
                 try:
                     channel = await self.client.fetch_channel(file[str(message.guild.id)]['channel_id'])
                 except KeyError:
@@ -49,7 +49,7 @@ class Disboard(commands.Cog):
                 file[str(message.guild.id)].update({"time": time_to_send})
                 with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
-                    g.close()
+
                 self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
 
     @tasks.loop(seconds=1, count=1)
@@ -57,10 +57,10 @@ class Disboard(commands.Cog):
         await self.client.wait_until_ready()
         if not os.path.exists('db/disboard.json'):
             return
-        
+
         with open('db/disboard.json', 'r') as f:
             file = json.load(f)
-            f.close()
+
         for guild in file:
             try:
                 sleep_time = file[str(guild)]['time'] - int(datetime.now().timestamp())
@@ -86,15 +86,15 @@ class Disboard(commands.Cog):
             await channel.send(embed=embed)
         except discord.Forbidden:
             pass
-        
+
         with open('db/disboard.json', 'r') as f:
             file = json.load(f)
-            f.close()
+
         try:
             del file[str(channel.guild.id)]['time']
             with open('db/disboard.json', 'w') as g:
                 json.dump(file, g, indent=4)
-                g.close()
+
         except KeyError:
             pass
 
@@ -152,7 +152,6 @@ class Disboard(commands.Cog):
 
         with open('db/disboard.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         try:
             if file[str(ctx.guild.id)]:
@@ -185,7 +184,6 @@ class Disboard(commands.Cog):
         gcmds.json_load('db/disboard.json', init)
         with open('db/disboard.json', 'r') as f:
             file = json.load(f)
-            f.close()
 
         file[str(ctx.guild.id)] = {
             "channel_id": channel_id,
@@ -287,7 +285,7 @@ class Disboard(commands.Cog):
 
         description = f"{ctx.author.mention}, type what you would like the description of the reminder embed " \
             f"to be, {or_default}"
-        
+
         try:
             if not await self.edit_panel(ctx, panel, None, description):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_name)
@@ -301,7 +299,7 @@ class Disboard(commands.Cog):
         else:
             message_content = result.content
         await result.delete()
-        
+
         succeeded = await self.set_bump_reminder(ctx, channel_id, message_content)
         if succeeded:
             embed = discord.Embed(title="Successfully Created Disboard Bump Reminder",

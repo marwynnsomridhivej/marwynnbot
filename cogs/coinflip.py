@@ -101,13 +101,12 @@ class Coinflip(commands.Cog):
                 initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                             "/738390147514499163/chips.png")
                 await ctx.channel.send(embed=initEmbed, delete_after=10)
-                f.close()
+
             else:
                 balance = file['Balance'][str(ctx.author.id)]
-                f.close()
+
         with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
-            f.close()
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",

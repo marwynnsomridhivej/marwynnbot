@@ -239,11 +239,11 @@ class Slots(commands.Cog):
                                   color=discord.Color.blue())
             rates.add_field(name="Matching 3 of the Same Icons",
                             value="Matching 3 of the same icons will yield the `jackpot` reward as follows (latter "
-                                  "value applies if former is less than latter)" \
-                                  "\nFruit Jackpot: `5x bet` or `500 credits`" \
-                                  "\nMusic Jackpot: `10x bet` or `5000 credits`" \
-                                  "\nTrophy Jackpot: `10x bet` or `10000 credits`" \
-                                  "\nMoneybag Jackpot: `100x bet` or `100000 credits`" \
+                                  "value applies if former is less than latter)"
+                                  "\nFruit Jackpot: `5x bet` or `500 credits`"
+                                  "\nMusic Jackpot: `10x bet` or `5000 credits`"
+                                  "\nTrophy Jackpot: `10x bet` or `10000 credits`"
+                                  "\nMoneybag Jackpot: `100x bet` or `100000 credits`"
                                   "\nDiamond Jackpot: `1000x bet` or `1000000 credits`",
                             inline=False)
             rates.add_field(name="Matching 3 Icons from the Same Category",
@@ -251,7 +251,7 @@ class Slots(commands.Cog):
                                   "however, it will not reward higher than `200 credits`",
                             inline=False)
             rates.add_field(name="Wildcards",
-                            value=":free: - can substitute any category\n" \
+                            value=":free: - can substitute any category\n"
                                   ":pirate_flag: - will immediately cause you to lose your bet",
                             inline=False)
             await ctx.channel.send(embed=rates)
@@ -274,13 +274,12 @@ class Slots(commands.Cog):
                 initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                             "/738390147514499163/chips.png")
                 await ctx.channel.send(embed=initEmbed, delete_after=10)
-                f.close()
+
             else:
                 balance = file['Balance'][str(ctx.author.id)]
-                f.close()
+
         with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
-            f.close()
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",

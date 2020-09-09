@@ -179,7 +179,6 @@ async def win(ctx, member: discord.Member):
             file['Balance'][str(member.id)] += award_amount
     with open('db/balance.json', 'w') as f:
         json.dump(file, f, indent=4)
-        f.close()
 
     if award_amount == 1000000:
         title = "JACKPOT!!!"
@@ -339,11 +338,11 @@ class ConnectFour(commands.Cog):
             while not confirm_turn:
                 try:
                     choice = await self.client.wait_for('reaction_add', timeout=60.0,
-                                                                    check=check)
+                                                        check=check)
                 except asyncio.TimeoutError:
                     await message.clear_reactions()
                     canceled = discord.Embed(title="Game Timeout",
-                                             description="ConnectFour game canceled due to inactivity, " \
+                                             description="ConnectFour game canceled due to inactivity, "
                                                          "create a new game",
                                              color=discord.Color.dark_red())
                     canceled.set_thumbnail(url='https://cdn.discordapp.com/attachments/734962101432615006'

@@ -55,7 +55,7 @@ class Actions(commands.Cog):
                 receive_exec_count = file[str(cmdNameQuery)]['receive'][str(user.id)]
                 with open('db/actionstats.json', 'w') as g:
                     json.dump(file, g, indent=4)
-                    
+
             else:
                 try:
                     file[str(cmdNameQuery)]['give'][str(self.client.user.id)] += 1

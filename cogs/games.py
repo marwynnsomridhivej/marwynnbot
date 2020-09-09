@@ -48,7 +48,6 @@ class Games(commands.Cog):
                         description += f"{user.mention} has ```{balance} {spelling}```\n"
         with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
-            f.close()
 
         if member is None:
             if balance != 1:
@@ -203,10 +202,10 @@ class Games(commands.Cog):
                     file['Balance'][str(user)]
                 except KeyError:
                     file['Balance'][str(user)] = 1000
-                    f.close()
+
         with open('db/balance.json', 'w') as f:
             json.dump(file, f, indent=4)
-            f.close()
+
         if (int(file['Balance'][str(ctx.author.id)])) < (amount * (int(len(userlist)) - 1)):
             if amount != 1:
                 spell = "credits"
