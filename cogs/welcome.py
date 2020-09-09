@@ -226,7 +226,7 @@ class Welcome(commands.Cog):
         info = file[str(ctx.guild.id)]
         return [info['channel_id'], info['title'], info['description'], info['media']]
 
-    async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media: list = None) -> bool:
+    async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media=None) -> bool:
         with open('db/welcomers.json', 'r') as f:
             file = json.load(f)
 
@@ -235,7 +235,7 @@ class Welcome(commands.Cog):
             file[str(ctx.guild.id)]['title'] = title
             file[str(ctx.guild.id)]['description'] = description
             if media:
-                if "default" in media:
+                if media == "default":
                     file[str(ctx.guild.id)]['media'] = None
                 else:
                     file[str(ctx.guild.id)]['media'] = media
@@ -664,7 +664,7 @@ class Welcome(commands.Cog):
                 url_list = None
                 break
             elif result.content == "default":
-                url_list = ['default']
+                url_list = "default"
                 break
             elif result.content == "finish":
                 break
