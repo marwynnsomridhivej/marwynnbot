@@ -12,7 +12,7 @@ import random
 
 
 gcmds = globalcommands.GlobalCMDS()
-timeout = 30
+timeout = 120
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 api_key = gcmds.env_check("TENOR_API")
