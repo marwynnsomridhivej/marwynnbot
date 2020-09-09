@@ -6,7 +6,7 @@ import asyncio
 from dotenv import load_dotenv
 from discord.ext import commands
 
-
+load_dotenv()
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
              "UPDATES_CHANNEL=CHANNEL_ID_HERE",
