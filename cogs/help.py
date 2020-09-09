@@ -97,7 +97,7 @@ class Help(commands.Cog):
             musicCmds = f"`{'` `'.join(strings['music'])}`"
             ownerCmds = f"`{'` `'.join(strings['owner'])}`"
             pokedexCmds = f"`{gcmds.prefix(ctx)}pokedex` *for a full list*"
-            roleCmds = f"`{'` `'.join(strings['reactions'])}`"
+            roleCmds = f"`{'` `'.join(strings['roles'])}`"
             redditCmds = f"`{gcmds.prefix(ctx)}reddit` *for a full list*"
             utilityCmds = f"`{'` `'.join(strings['utility'])}`"
             welcomeCmds = f"`{'` `'.join(strings['welcome'])}`"
