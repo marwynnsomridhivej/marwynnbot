@@ -25,6 +25,9 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
+        await self.send_welcomer(member)
+
+    async def send_welcomer(self, member: discord.Member):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
@@ -70,6 +73,9 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
+        await self.send_leaver(member)
+
+    async def send_leaver(self, member: discord.Member):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
                 file = json.load(f)
@@ -104,7 +110,9 @@ class Welcome(commands.Cog):
             "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
             "**Aliases:** `trash` `cancel` `-rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        fields = [("Create", create), ("Edit", edit), ("Delete", delete)]
+        test = (f"**Usage:** `{gcmds.prefix(ctx)}welcomer test`\n"
+                "**Returns:** A test welcomer in your currently set welcome channel")
+        fields = [("Create", create), ("Edit", edit), ("Delete", delete), ("Test", test)]
 
         embed = discord.Embed(title=title,
                               description=description,
@@ -280,15 +288,16 @@ class Welcome(commands.Cog):
                   "**Returns:** An embed that details the status of the leaver deletion\n"
                   "**Aliases:** `-rm` `trash` `cancel`\n"
                   "**Special Cases:** Only works if there is a welcomer and leaver set up")
+        test = (f"**Usage:** `{gcmds.prefix(ctx)}leaver test`\n"
+                "**Returns:** A test leaver in your currently set welcome channel")
+        fields = [("Create", create), ("Delete", delete), ("Test", test)]
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
-        embed.add_field(name="Create",
-                        value=create,
-                        inline=False)
-        embed.add_field(name="Delete",
-                        value=delete,
-                        inline=False)
+        for name, value in fields:
+            embed.add_field(name=name,
+                            value=value,
+                            inline=False)
         return await ctx.channel.send(embed=embed)
 
     async def create_leaver(self, ctx) -> bool:
@@ -755,6 +764,10 @@ class Welcome(commands.Cog):
                                       color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
 
+    @welcomer.command()
+    async def test(self, ctx):
+        await self.send_welcomer(ctx.author)
+
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def leaver(self, ctx):
@@ -809,6 +822,10 @@ class Welcome(commands.Cog):
                                   description=f"{ctx.author.mention}, the leaver for this server could not be deleted",
                                   color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
+
+    @leaver.command(aliases=['test'])
+    async def _test(self, ctx):
+        await self.send_leaver(ctx.author)
 
 
 def setup(client):
