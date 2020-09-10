@@ -27,6 +27,10 @@ class Welcome(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         await self.send_welcomer(member)
 
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        await self.send_leaver(member)
+
     async def send_welcomer(self, member: discord.Member):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
@@ -40,8 +44,8 @@ class Welcome(commands.Cog):
                 edv = str(file[str(guild.id)]['description'])
                 media = file[str(guild.id)]['media']
                 bot_count = 0
-                for member in guild.members:
-                    if member.bot:
+                for members in guild.members:
+                    if members.bot:
                         bot_count += 1
                 embed_description = ((((edv.replace("{server_name}", member.guild.name)
                                         ).replace("{user_name}", member.display_name)
@@ -71,10 +75,6 @@ class Welcome(commands.Cog):
                 welcome_embed.set_image(url=image_url)
                 return await channel_to_send.send(embed=welcome_embed)
 
-    @commands.Cog.listener()
-    async def on_member_remove(self, member: discord.Member):
-        await self.send_leaver(member)
-
     async def send_leaver(self, member: discord.Member):
         if os.path.exists('db/welcomers.json') and not member.bot:
             with open('db/welcomers.json', 'r') as f:
@@ -87,6 +87,7 @@ class Welcome(commands.Cog):
                 leave_embed = discord.Embed(title=f"{member.display_name} left {guild.name}",
                                             description=f"{member.mention}, we're sad to see you go!",
                                             color=discord.Color.dark_red())
+                leave_embed.set_thumbnail(url=member.avatar_url)
                 leave_embed.set_image(url="https://media1.tenor.com/images/e69ebde3631408c200777ebe10f84367/tenor.gif?"
                                       "itemid=5081296")
                 return await channel_to_send.send(embed=leave_embed)
