@@ -101,8 +101,34 @@ class Tags(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author.display_name} at {timestamp}")
         await ctx.channel.send(embed=embed)
 
-    async def list_user_tags(self, ctx) -> discord.Message:
-        return
+    async def list_user_tags(self, ctx) -> list:
+        if not os.path.exists('db/tags.json'):
+            return None
+
+        with open('db/tags.json', 'r') as f:
+            file = json.load(f)
+
+        if not str(ctx.guild.id) in file:
+            return None
+
+        desc_list = [f"{tag}\nCreated at {datetime.fromtimestamp(int(file[str(ctx.guild.id)][tag]['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}\n"
+            for tag in file[str(ctx.guild.id)] if file[str(ctx.guild.id)][tag]['author_id'] == ctx.author.id]
+        if len(desc_list) != 0:
+            return desc_list
+        else:
+            raise customerrors.UserNoTags(ctx.author)
+
+    async def search_tags(self, ctx) -> list:
+        if not os.path.exists('db/tags.json'):
+            return None
+
+        with open('db/tags.json', 'r') as f:
+            file = json.load(f)
+
+        if not str(ctx.guild.id) in file:
+            return None
+
+        
 
     @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
@@ -114,7 +140,10 @@ class Tags(commands.Cog):
 
     @tag.command()
     async def list(self, ctx):
-        return
+        desc_list = await self.list_user_tags(ctx)
+        pag = paginator.EmbedPaginator(ctx, entries=desc_list, per_page=10)
+        pag.embed.title = "Your Tags"
+        return await pag.paginate()
 
     @tag.command()
     async def search(self, ctx, *, keyword):
