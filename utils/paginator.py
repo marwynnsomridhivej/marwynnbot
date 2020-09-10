@@ -17,6 +17,7 @@ class EmbedPaginator:
         pages, left_over = divmod(len(self.entries), self.per_page)
         if left_over:
             pages += 1
+        self.maximum_pages = pages
         self.embed = discord.Embed(color=discord.Color.blue())
         self.paginating = len(entries) > per_page
         self.show_entry_count = show_entry_count
@@ -29,6 +30,7 @@ class EmbedPaginator:
             ('⏹️', self.stop_pages),
             ('ℹ️', self.show_help)
         ]
+        self.in_help = False
 
         if ctx.guild:
             self.permissions = self.channel.permissions_for(ctx.guild.me)
@@ -49,7 +51,7 @@ class EmbedPaginator:
 
     def get_page(self, page):
         base = (page - 1) * self.per_page
-        return self.entries[base:base + self.per.page]
+        return self.entries[base:base + self.per_page]
 
     def get_content(self, entries, page, *, first=False):
         return None
@@ -59,7 +61,7 @@ class EmbedPaginator:
         return self.embed
 
     def prepare_embed(self, entries, page, *, first=False):
-        desc_list = [f'{index}. {entry}' for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
+        desc_list = [f'**{index}.** {entry}' for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
         if self.maximum_pages > 1:
             if self.show_entry_count:
                 text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
@@ -166,23 +168,33 @@ class EmbedPaginator:
         )
         embed = self.embed.copy()
         embed.clear_fields()
+        embed.title = "Paginator Help"
         embed.description = (f"{self.author.mention}, here are the controls for the paginator:\n\n"
                              '\n'.join(desc))
         embed.set_footer(
             text=f"Original paginator left on page {self.current_page}. Press ⏹️ to return to original paginator")
         await self.message.edit(embed=embed)
-
-        async def go_back_to_current_page():
-            await asyncio.sleep(60)
-            await self.show_current_page()
-
-        self.bot.loop.create_tasl(go_back_to_current_page())
+        self.in_help = True
 
     async def stop_pages(self):
         await self.message.delete()
         self.paginating = False
 
+    async def rem_reaction(self, payload):
+        if not self.message.id == payload.message_id:
+            return
+        member_converter = commands.MemberConverter()
+        member_converted = await member_converter.convert(self.ctx, str(payload.user_id))
+        if member_converted.bot:
+            return
+
+        try:
+            await self.message.remove_reaction(payload.emoji, member_converted)
+        except:
+            pass
+
     def react_check(self, payload):
+        self.bot.loop.create_task(self.rem_reaction(payload))
         if payload.user_id != self.author.id:
             return False
 
@@ -190,8 +202,13 @@ class EmbedPaginator:
             return False
 
         reacted_emoji = str(payload.emoji)
-        for (emoji, func) in self.reaction_emojis:
-            if reacted_emoji == emoji:
+        if reacted_emoji == "⏹️" and self.in_help:
+            self.match = self.show_current_page
+            self.in_help = False
+            return True
+
+        for (emoji, func) in self.emojis:
+            if reacted_emoji == emoji and not self.in_help:
                 self.match = func
                 return True
         return False
@@ -214,14 +231,6 @@ class EmbedPaginator:
                     pass
                 finally:
                     break
-
-            member_converter = commands.MemberConverter()
-            member_converted = await member_converter.convert(self.ctx, payload.user_id)
-
-            try:
-                await self.message.remove_reaction(payload.emoji, member_converted)
-            except:
-                pass
 
             await self.match()
 
