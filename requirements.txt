@@ -10,3 +10,4 @@ PyYAML~=5.3.1
 pokepy~=0.6.1
 mcstatus~=4.0.0
 dateparser~=0.7.6
+fuzzywuzzy==0.18.0
