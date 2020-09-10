@@ -11,7 +11,7 @@ channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
 hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
-timeout = 60
+timeout = 180
 
 gcmds.json_load('db/reactionroles.json', {})
 with open('db/reactionroles.json', 'r') as rr:
