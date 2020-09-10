@@ -35,8 +35,8 @@ async def get_prefix(client, message):
                 'm!')
             return commands.when_mentioned_or(*extras)(client, message)
 
-
-client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1, fetch_offline_members=True)
+startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
+client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1, fetch_offline_members=True, status=discord.Status.online, activity=startup)
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
