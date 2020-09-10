@@ -90,13 +90,19 @@ class GlobalCMDS:
         with open('db/counters.json', 'w') as f:
             json.dump(values, f, indent=4)
 
-    async def invkDelete(self, ctx):
+    async def invkDelete(self, ctx: commands.Context):
         if ctx.guild and ctx.guild.me.guild_permissions.manage_messages:
-            await ctx.message.delete()
+            try:
+                await ctx.message.delete()
+            except Exception:
+                pass
 
     async def msgDelete(self, message: discord.Message):
         if message.guild and message.guild.me.guild_permissions.manage_messages:
-            await message.delete()
+            try:
+                await message.delete()
+            except Exception:
+                pass
 
     async def timeout(self, ctx: commands.Context, title: str, timeout: int) -> discord.Message:
         embed = discord.Embed(title=f"{title.title()} Timed Out",
