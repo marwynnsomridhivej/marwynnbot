@@ -7,15 +7,12 @@ from discord.ext import commands
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
+gcmds.json_load('db/reactionroles.json', {})
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
 hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
 timeout = 180
-
-gcmds.json_load('db/reactionroles.json', {})
-with open('db/reactionroles.json', 'r') as rr:
-    rr_json = json.load(rr)
 
 
 class Roles(commands.Cog):
@@ -46,7 +43,7 @@ class Roles(commands.Cog):
             guild = await commands.AutoShardedBot.fetch_guild(self.client, guild_id)
             try:
                 users = [(reaction.emoji, await reaction.users().flatten()) for reaction in reactions]
-                role_emoji = rr_json[str(guild_id)][str(message_id)]
+                role_emoji = file[str(guild_id)][str(message_id)]
                 type_name = role_emoji['type']
                 for item in role_emoji['details']:
                     role = guild.get_role(int(item['role_id']))
@@ -83,7 +80,7 @@ class Roles(commands.Cog):
             reacted_emoji = payload.emoji
             message_id = payload.message_id
             try:
-                role_emoji = rr_json[str(guild_id)][str(message_id)]
+                role_emoji = file[str(guild_id)][str(message_id)]
                 type_name = role_emoji['type']
                 for item in role_emoji['details']:
                     role = guild.get_role(int(item['role_id']))
