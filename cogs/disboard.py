@@ -24,7 +24,6 @@ class Disboard(commands.Cog):
 
     def cog_unload(self):
         for task in self.tasks:
-            print("Task destroyed")
             task.cancel()
         self.check_unsent_reminder.cancel()
 
