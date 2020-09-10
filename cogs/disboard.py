@@ -19,9 +19,13 @@ class Disboard(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.tasks = []
         self.check_unsent_reminder.start()
 
     def cog_unload(self):
+        for task in self.tasks:
+            print("Task destroyed")
+            task.cancel()
         self.check_unsent_reminder.cancel()
 
     @commands.Cog.listener()
@@ -50,7 +54,7 @@ class Disboard(commands.Cog):
                 with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
 
-                self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+                self.tasks.append(self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time)))
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
@@ -75,7 +79,7 @@ class Disboard(commands.Cog):
             else:
                 description = file[str(guild)]['message_content']
             channel = await self.client.fetch_channel(file[str(guild)]['channel_id'])
-            self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+            self.tasks.append(self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time)))
 
     async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
         await asyncio.sleep(sleep_time)
