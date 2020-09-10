@@ -189,6 +189,13 @@ async def on_command_error(ctx, error):
         embed = discord.Embed(title="Tag Already Exists",
                               description=f"{ctx.author.mention}, the tag `{error.tag}` already exists in this server",
                               color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=15)
+    elif isinstance(error, customerrors.UserNoTags):
+        embed = discord.Embed(title="No Tags",
+                              description=f"{ctx.author.mention}, you do not own any tags in this server. Create one by"
+                              f" doing `{gcmds.prefix(ctx)}tag create [tag_name]`",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed, delete_after=15)
     elif isinstance(error, commands.CheckFailure):
         pass
     else:
