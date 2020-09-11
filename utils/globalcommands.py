@@ -4,6 +4,7 @@ import discord
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
+from datetime import datetime
 from discord.ext import commands
 
 load_dotenv()
@@ -33,6 +34,7 @@ default_env = ["YOUR_BOT_TOKEN",
                "YOUR_USER_AGENT",
                "API_KEY_FROM_TENOR",
                "PERSONAL_ACCESS_TOKEN"]
+start_time = int(datetime.now().timestamp())
 
 
 class GlobalCMDS:

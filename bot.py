@@ -7,6 +7,7 @@ import socket
 import sys
 import re
 import discord
+from datetime import datetime
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from utils import customerrors, globalcommands
@@ -62,6 +63,7 @@ async def status():
 
 async def client_loaded():
     await client.wait_until_ready()
+    globalcommands.start_time = int(datetime.now().timestamp())
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     users = len(client.users)
