@@ -49,11 +49,12 @@ logger.addHandler(handler)
 @tasks.loop(seconds=120)
 async def status():
     await client.wait_until_ready()
+    at = await get_aliases()
     activity1 = discord.Activity(name="m!h for help!", type=discord.ActivityType.listening)
     activity2 = discord.Activity(name=f"{len(client.users)} users!", type=discord.ActivityType.watching)
     activity3 = discord.Activity(name=f"{len(client.guilds)} servers!", type=discord.ActivityType.watching)
     activity4 = discord.Activity(name=f"MarwynnBot {gcmds.version}", type=discord.ActivityType.playing)
-    activity5 = discord.Activity(name=f"{len(client.commands)} commands", type=discord.ActivityType.listening)
+    activity5 = discord.Activity(name=f"{len(client.commands)} commands {at} aliases", type=discord.ActivityType.listening)
     activityList = [activity1, activity2, activity3, activity4, activity5]
     activity = random.choice(activityList)
     await client.change_presence(status=discord.Status.online, activity=activity)
@@ -63,9 +64,22 @@ async def client_loaded():
     await client.wait_until_ready()
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
-    print(f'Successfully logged in as {client.user}\n{version}\nIP: {ip}\nHost: {str(hostname)}\nServing '
-          f'{len(client.users)} users across {len(client.guilds)} servers')
+    users = len(client.users)
+    guilds = len(client.guilds)
+    ct = len(client.commands)
+    at = await get_aliases()
+    print(f'Successfully logged in as {client.user}\nIP: {ip}\nHost: {str(hostname)}\nServing '
+          f'{users} users across {guilds} servers\nCommands: {ct}\nAliases: {at}\n{version}')
     status.start()
+
+
+async def get_aliases():
+    at = 0
+    for command in client.commands:
+        if command.aliases:
+            for alias in command.aliases:
+                at += 1
+    return at
 
 
 @client.event
