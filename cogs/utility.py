@@ -1,11 +1,11 @@
 import json
-from asyncio import sleep
-from datetime import datetime
 import discord
+import os
+from asyncio import sleep
+from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 from utils import globalcommands
-import os
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -399,6 +399,15 @@ class Utility(commands.Cog):
                             description=description,
                             color=color)
         await ctx.channel.send(embed=gmt, delete_after=10)
+
+    @commands.command()
+    async def uptime(self, ctx):
+        time_now = int(datetime.now().timestamp())
+        td = timedelta(seconds=time_now - globalcommands.start_time)
+        embed = discord.Embed(title="Uptime",
+                              description=f"MarwynnBot has been up and running for\n```\n{str(td)}\n```",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
 
 def setup(client):
