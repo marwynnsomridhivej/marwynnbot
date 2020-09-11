@@ -57,94 +57,59 @@ class Help(commands.Cog):
 
         await ctx.channel.send(embed=embed, delete_after=delete_after)
 
-    @commands.group(aliases=['h'])
+    @commands.group(invoke_without_subcommand=True, aliases=['h'])
     async def help(self, ctx):
-        await gcmds.invkDelete(ctx)
         gcmds.incrCounter(ctx, 'help')
-        if ctx.invoked_subcommand is None:
-            timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
-            helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
-                                      color=discord.Color.blue(),
-                                      url="https://discord.gg/fYBTdUp",
-                                      description="These are all the commands I currently support! Type"
-                                                  f"\n```{gcmds.prefix(ctx)}help [command]```\n to get help on "
-                                                  f"that specific command")
-            helpEmbed.set_thumbnail(
-                url="https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png")
-            helpEmbed.set_author(name="MarwynnBot",
-                                 icon_url=ctx.me.avatar_url)
-            helpEmbed.set_footer(text=timestamp,
-                                 icon_url=ctx.author.avatar_url)
+        timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
+                                  color=discord.Color.blue(),
+                                  url="https://discord.gg/fYBTdUp",
+                                  description="These are all the commands I currently support! Type"
+                                  f"\n```{gcmds.prefix(ctx)}help [command]```\n to get help on "
+                                  f"that specific command")
+        helpEmbed.set_thumbnail(
+            url="https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png")
+        helpEmbed.set_author(name="MarwynnBot",
+                             icon_url=ctx.me.avatar_url)
+        helpEmbed.set_footer(text=timestamp,
+                             icon_url=ctx.author.avatar_url)
 
-            cogNames = [i for i in self.client.cogs]
-            gameNames = ['Blackjack', 'Coinflip', 'ConnectFour', 'OldMaid', 'Slots', 'UNO']
-            for name in gameNames:
-                cogNames.remove(name)
-            cogs = [self.client.get_cog(j) for j in cogNames]
-            strings = {}
-            for name in cogNames:
-                cog_commands = self.client.get_cog(name).get_commands()
-                strings.update({name.lower(): [command.name.lower() for command in cog_commands]})
+        cogNames = [i for i in self.client.cogs]
+        gameNames = ['Blackjack', 'Coinflip', 'ConnectFour', 'OldMaid', 'Slots', 'UNO']
+        for name in gameNames:
+            cogNames.remove(name)
+        cogs = [self.client.get_cog(j) for j in cogNames]
+        strings = {}
+        for name in cogNames:
+            cog_commands = self.client.get_cog(name).get_commands()
+            strings.update({name.lower(): [command.name.lower() for command in cog_commands]})
 
-            actionCmds = f"`{gcmds.prefix(ctx)}actions` *for a full list*"
-            debugCmds = f"`{'` `'.join(strings['debug'])}`"
-            funCmds = f"`{'` `'.join(strings['fun'])}`"
-            gamesCmds = f"`{'` `'.join(strings['games'])}` `blackjack` `coinflip` `connectfour` " \
-                f"`oldmaid (under development)` `slots` `uno`"
-            helpCmds = f"`{'` `'.join(strings['help'])}`"
-            minecraftCmds = f"`{gcmds.prefix(ctx)}minecraft` *for a full list*"
-            moderationCmds = f"`{'` `'.join(strings['moderation'])}`"
-            musicCmds = f"`{'` `'.join(strings['music'])}`"
-            ownerCmds = f"`{'` `'.join(strings['owner'])}`"
-            pokedexCmds = f"`{gcmds.prefix(ctx)}pokedex` *for a full list*"
-            roleCmds = f"`{'` `'.join(strings['roles'])}`"
-            redditCmds = f"`{gcmds.prefix(ctx)}reddit` *for a full list*"
-            utilityCmds = f"`{'` `'.join(strings['utility'])}`"
-            welcomeCmds = f"`{'` `'.join(strings['welcome'])}`"
+        actionCmds = f"`{gcmds.prefix(ctx)}actions` *for a full list*"
+        debugCmds = f"`{'` `'.join(strings['debug'])}`"
+        funCmds = f"`{'` `'.join(strings['fun'])}`"
+        gamesCmds = f"`{'` `'.join(strings['games'])}` `blackjack` `coinflip` `connectfour` " \
+            f"`slots` `uno`"
+        helpCmds = f"`{'` `'.join(strings['help'])}`"
+        minecraftCmds = f"`{gcmds.prefix(ctx)}minecraft` *for a full list*"
+        moderationCmds = f"`{'` `'.join(strings['moderation'])}`"
+        musicCmds = f"`{'` `'.join(strings['music'])}`"
+        ownerCmds = f"`{'` `'.join(strings['owner'])}`"
+        pokedexCmds = f"`{gcmds.prefix(ctx)}pokedex` *for a full list*"
+        roleCmds = f"`{'` `'.join(strings['roles'])}`"
+        redditCmds = f"`{gcmds.prefix(ctx)}reddit` *for a full list*"
+        utilityCmds = f"`{'` `'.join(strings['utility'])}`"
+        welcomeCmds = f"`{'` `'.join(strings['welcome'])}`"
 
-            helpEmbed.add_field(name="Help",
-                                value=helpCmds,
+        cmd_list = [("Help", helpCmds), ("Actions", actionCmds), ("Debug", debugCmds), ("Fun", funCmds), ("Games", gamesCmds),
+                    ("Minecraft", minecraftCmds), ("Moderation", moderationCmds), ("Music", musicCmds), ("Pokedex", pokedexCmds),
+                    ("Roles", roleCmds), ("Reddit", redditCmds), ("Utility", utilityCmds), ("Welcome", welcomeCmds),
+                    ("Owner Only", ownerCmds)]
+
+        for name, value in cmd_list:
+            helpEmbed.add_field(name=name,
+                                value=value,
                                 inline=False)
-            helpEmbed.add_field(name="Actions",
-                                value=actionCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Debug",
-                                value=debugCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Fun",
-                                value=funCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Games",
-                                value=gamesCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Minecraft",
-                                value=minecraftCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Moderation",
-                                value=moderationCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Music",
-                                value=musicCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Pokedex",
-                                value=pokedexCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Roles",
-                                value=roleCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Reddit",
-                                value=redditCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Utility",
-                                value=utilityCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Welcome",
-                                value=welcomeCmds,
-                                inline=False)
-            helpEmbed.add_field(name="Owner Only",
-                                value=ownerCmds,
-                                inline=False)
-            await ctx.send(embed=helpEmbed)
+        await ctx.send(embed=helpEmbed)
 
     # =================================================
     # Help
@@ -522,7 +487,7 @@ class Help(commands.Cog):
         commandName = "Offense"
         syntaxMessage = f"`{gcmds.prefix(ctx)}offense [@mention]`"
         specialCases = ("This command searches for all warnings that you have given. If you haven't given that user any "
-                "warnings, offense will return nothing, even if that user has warnings from other moderators")
+                        "warnings, offense will return nothing, even if that user has warnings from other moderators")
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
