@@ -519,7 +519,7 @@ class UNO(commands.Cog):
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(ctx)
+        
 
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",
@@ -717,7 +717,7 @@ class UNO(commands.Cog):
                         await asyncio.sleep(3.0)
                         continue
                     else:
-                        await dm_message.delete()
+                        await gcmds.smart_delete(dm_message)
 
                 DM = discord.Embed(title=user.display_name,
                                    description=f"*to pick a card, type in the number the card is in the order of cards "
@@ -761,7 +761,6 @@ class UNO(commands.Cog):
                     else:
                         try:
                             if choice.content == "cancel":
-                                await choice.delete()
                                 cancelEmbed = discord.Embed(title="Uno Game Canceled",
                                                             description=f"The current uno game was canceled by {user.mention}",
                                                             color=discord.Color.dark_red())
@@ -774,7 +773,7 @@ class UNO(commands.Cog):
                             pass
                         else:
                             if 0 < int_choice <= (int(len(gameMembers[index].hand))):
-                                await choice.delete()
+                                await gcmds.smart_delete(choice)
                                 hand = gameMembers[index].get_hand()
 
                                 try:
@@ -880,7 +879,7 @@ class UNO(commands.Cog):
                                     special_count = 0
 
                                     try:
-                                        await color_choice.delete()
+                                        await gcmds.smart_delete(color_choice)
                                     except (UnboundLocalError, discord.NotFound):
                                         pass
 
@@ -895,7 +894,7 @@ class UNO(commands.Cog):
                                     loop = False
 
                             else:
-                                await choice.delete()
+                                await gcmds.smart_delete(choice)
                                 not_int = discord.Embed(title="Not a Valid Selection",
                                                         description=f"{user.mention}, {choice.content} is not a "
                                                                     f"valid selection. Please try again.",

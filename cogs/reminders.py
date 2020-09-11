@@ -55,8 +55,8 @@ class Reminders(commands.Cog):
                             self.tasks.append(
                                 self.client.loop.create_task(
                                     self.send_single(sleep_time, user_id, reminder['channel_id'],
-                                                                          message_content, int(guild), index))
-                                )
+                                                     message_content, int(guild), index))
+                            )
                     index += 1
 
     async def send_single(self, sleep_time: float, user_id: int, channel_id: int, message_content: str, guild_id: int,
@@ -101,9 +101,9 @@ class Reminders(commands.Cog):
                         self.tasks.append(
                             self.client.loop.create_task(
                                 self.send_loop(reminder['time'], int(user), reminder['channel_id'],
-                                                                    message_content, int(guild))
-                                )
+                                               message_content, int(guild))
                             )
+                        )
 
     async def send_loop(self, loop_interval: int, user_id: int, channel_id: int, message_content: str, guild_id: int):
         while True:
@@ -233,7 +233,7 @@ class Reminders(commands.Cog):
 
         self.tasks.append(
             self.client.loop.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
-            )
+        )
 
     async def get_reminders(self, guild_id: int, user_id: int) -> str:
         if not os.path.exists('db/reminders.json'):
@@ -379,7 +379,7 @@ class Reminders(commands.Cog):
 
     @commands.group(aliases=['reminder'])
     async def remind(self, ctx, *, message_with_time: str = None):
-        await gcmds.invkDelete(ctx)
+
         if not message_with_time:
             return await self.send_remind_help(ctx)
 
@@ -490,7 +490,7 @@ class Reminders(commands.Cog):
                 break
             except (ValueError, TypeError):
                 continue
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         reminder_type = await self.get_reminder_type(ctx.guild.id, ctx.author.id, index)
         if reminder_type == "single":
@@ -528,7 +528,7 @@ class Reminders(commands.Cog):
             elif reminder_type == "loop":
                 time_to_send = dates[0][1].timestamp() - current_time
             break
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         description = f"{ctx.author.mention}, please type what you would like the reminder content to be if you would "\
             "like to change it, otherwise, type *\"skip\"* to keep the current content or type *\"cancel\"* to cancel" \
@@ -550,7 +550,7 @@ class Reminders(commands.Cog):
             else:
                 edited_content = result.content
             break
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         description = f"{ctx.author.mention}, please tag or enter the ID of the channel you would like this reminder " \
             f"to fire in\n\nCurrent channel: <#{await self.get_reminder_channel(ctx.guild.id, ctx.author.id, index)}>"
@@ -577,7 +577,7 @@ class Reminders(commands.Cog):
                 break
             else:
                 continue
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         succeeded = await self.edit_reminder(ctx.guild.id, ctx.author.id, index, channel_id, time_to_send, edited_content)
         if succeeded:
@@ -623,7 +623,7 @@ class Reminders(commands.Cog):
                 break
             except ValueError:
                 continue
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         succeeded = await self.delete_reminder(ctx.guild.id, ctx.author.id, index)
         if not succeeded:

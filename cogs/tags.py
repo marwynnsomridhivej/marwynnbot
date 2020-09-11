@@ -13,12 +13,9 @@ timeout = 600
 
 
 class Tags(commands.Cog):
-    
+
     def __init__(self, client):
         self.client = client
-
-    async def cog_before_invoke(self, ctx):
-        await gcmds.invkDelete(ctx)
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
@@ -43,7 +40,8 @@ class Tags(commands.Cog):
                   "**Returns:** A tag delete confirmation panel\n"
                   "**Aliases:** `remove`\n"
                   "**Special Cases:** The tag must exist and you must own the tag in order to delete it")
-        cmds = [("Help", tag), ("List", list), ("Search", search), ("Create", create), ("Edit", edit), ("Delete", delete)]
+        cmds = [("Help", tag), ("List", list), ("Search", search),
+                ("Create", create), ("Edit", edit), ("Delete", delete)]
 
         embed = discord.Embed(title="Tag Commands",
                               description=f"{ctx.author.mention}, tags are an easy way to create your own custom "
@@ -112,7 +110,7 @@ class Tags(commands.Cog):
             return None
 
         desc_list = [f"{tag}\nCreated at {datetime.fromtimestamp(int(file[str(ctx.guild.id)][tag]['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}\n"
-            for tag in file[str(ctx.guild.id)] if file[str(ctx.guild.id)][tag]['author_id'] == ctx.author.id]
+                     for tag in file[str(ctx.guild.id)] if file[str(ctx.guild.id)][tag]['author_id'] == ctx.author.id]
         if len(desc_list) != 0:
             return desc_list
         else:
@@ -127,8 +125,6 @@ class Tags(commands.Cog):
 
         if not str(ctx.guild.id) in file:
             return None
-
-        
 
     @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
@@ -169,7 +165,7 @@ class Tags(commands.Cog):
             return await gcmds.timeout(ctx, "tag creation", timeout)
         if result.content == "cancel":
             return gcmds.cancelled(ctx, "tag creation")
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         return await self.create_tag(ctx, tag, result.content)
 

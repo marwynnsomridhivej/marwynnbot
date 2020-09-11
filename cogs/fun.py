@@ -21,7 +21,7 @@ class Fun(commands.Cog):
         self.client = client
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
-        await gcmds.invkDelete(ctx)
+
         path = path
         sleepTime = 1.0
 
@@ -142,7 +142,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['8ball', '8b'])
     async def eightball(self, ctx, *, question):
-        await gcmds.invkDelete(ctx)
+
         file = open('responses', 'r')
         responses = file.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
@@ -154,7 +154,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def choose(self, ctx, *, choices):
-        await gcmds.invkDelete(ctx)
+
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)
@@ -228,7 +228,7 @@ class Fun(commands.Cog):
         embed = discord.Embed(title=title,
                               description=description,
                               color=color)
-        await gcmds.invkDelete(ctx)
+
         await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['imgur', 'imgursearch'])
@@ -346,7 +346,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *, args):
-        await gcmds.invkDelete(ctx)
+
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)

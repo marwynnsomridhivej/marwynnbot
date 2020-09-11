@@ -82,7 +82,6 @@ class Coinflip(commands.Cog):
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
-        await gcmds.invkDelete(ctx)
 
         init = {'Balance': {}}
         gcmds.json_load('db/balance.json', init)

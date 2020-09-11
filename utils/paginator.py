@@ -2,7 +2,9 @@
 import asyncio
 import discord
 from discord.ext import commands
-from utils import customerrors
+from utils import customerrors, globalcommands
+
+gcmds = globalcommands.GlobalCMDS()
 
 
 class EmbedPaginator:
@@ -151,10 +153,7 @@ class EmbedPaginator:
                 await asyncio.sleep(5)
 
         for message in del_msgs:
-            try:
-                await message.delete()
-            except Exception:
-                continue
+            await gcmds.smart_delete(message)
 
     async def show_help(self):
         desc = (

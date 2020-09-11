@@ -228,7 +228,6 @@ class Pokedex(commands.Cog):
 
     @commands.group(aliases=['dex'])
     async def pokedex(self, ctx):
-        await gcmds.invkDelete(ctx)
 
         if not ctx.invoked_subcommand:
             panel = discord.Embed(title="Pokedex Commands",

@@ -15,7 +15,7 @@ class Games(commands.Cog):
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(ctx)
+
         init = {'Balance': {}}
         gcmds.json_load('db/balance.json', init)
         with open('db/balance.json', 'r') as f:
@@ -84,7 +84,7 @@ class Games(commands.Cog):
     @commands.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
                         member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(ctx)
+
         if gameName is not None:
             if "<@!" in gameName:
                 userid = gameName[3:-1]
@@ -169,7 +169,6 @@ class Games(commands.Cog):
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
-        await gcmds.invkDelete(ctx)
 
         cmdExit = False
         if amount is None:

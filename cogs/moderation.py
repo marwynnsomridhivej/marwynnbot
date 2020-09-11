@@ -48,7 +48,8 @@ class Moderation(commands.Cog):
                 sleep_time = int(time - current_time)
                 if sleep_time > 60:
                     continue
-                self.tasks.append(self.client.loop.create_task(self.unmute_user(int(guild_id), int(user_id), sleep_time)))
+                self.tasks.append(self.client.loop.create_task(
+                    self.unmute_user(int(guild_id), int(user_id), sleep_time)))
 
     async def check_panel(self, panel: discord.Message) -> bool:
         try:
@@ -281,7 +282,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
-        await gcmds.invkDelete(ctx)
 
         def from_user(message):
             return member is None or message.author == member
@@ -303,7 +303,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-        await gcmds.invkDelete(ctx)
+
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             role = await ctx.guild.create_role(name="Muted",
@@ -349,7 +349,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-        await gcmds.invkDelete(ctx)
+
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         for member in members:
             if not role:
@@ -374,7 +374,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason='Unspecified'):
-        await gcmds.invkDelete(ctx)
+
         for member in members:
             await member.kick(reason=reason)
             kickEmbed = discord.Embed(title="Kicked User",
@@ -391,7 +391,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, members: commands.Greedy[discord.Member], days: typing.Optional[int] = 0, *,
                   reason='Unspecified'):
-        await gcmds.invkDelete(ctx)
+
         for member in members:
             await member.ban(delete_message_days=days, reason=reason)
             if days != 0:
@@ -412,7 +412,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, users: commands.Greedy[discord.User]):
-        await gcmds.invkDelete(ctx)
+
         for user in users:
             try:
                 user = await commands.converter.UserConverter().convert(ctx, user)
@@ -448,7 +448,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def warn(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-        await gcmds.invkDelete(ctx)
+
         timestamp = datetime.now().timestamp()
         warned_by = ctx.author
         warns = await self.get_warns(ctx, members)
@@ -458,7 +458,7 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=['offenses'])
     async def offense(self, ctx, member: discord.Member = None):
-        await gcmds.invkDelete(ctx)
+
         if not os.path.exists('db/warns.json'):
             embed = discord.Embed(title="No Warning History",
                                   description=f"{ctx.author.mention}, no warnings have been issued on this server",
@@ -508,7 +508,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def expunge(self, ctx, member: discord.Member = None):
-        await gcmds.invkDelete(ctx)
+
         if not member:
             embed = discord.Embed(title="No Member Specified",
                                   description=f"{ctx.author.mention}, please specify the member you want to expunge "
@@ -574,6 +574,7 @@ class Moderation(commands.Cog):
                 break
             except TypeError:
                 continue
+        await gcmds.smart_delete(result)
 
         description = "This action is irreversible. React with ✅ to confirm or 🛑 to cancel"
         try:
@@ -595,7 +596,6 @@ class Moderation(commands.Cog):
             elif result[0].emoji == "🛑":
                 return await self.end_setup(ctx, cmd_name, "cancel")
             continue
-        await result[0].message.delete()
 
         succeeded = await self.remove_warn(ctx, member, index)
         if succeeded:
@@ -610,7 +610,7 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
     async def modsOnline(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         modsList = []
         for member in ctx.guild.members:
             if member.status is not discord.Status.offline:

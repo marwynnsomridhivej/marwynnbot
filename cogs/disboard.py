@@ -53,7 +53,8 @@ class Disboard(commands.Cog):
                 with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
 
-                self.tasks.append(self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time)))
+                self.tasks.append(self.client.loop.create_task(
+                    self.send_bump_reminder(channel, title, description, sleep_time)))
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
@@ -78,7 +79,8 @@ class Disboard(commands.Cog):
             else:
                 description = file[str(guild)]['message_content']
             channel = await self.client.fetch_channel(file[str(guild)]['channel_id'])
-            self.tasks.append(self.client.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time)))
+            self.tasks.append(self.client.loop.create_task(
+                self.send_bump_reminder(channel, title, description, sleep_time)))
 
     async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
         await asyncio.sleep(sleep_time)
@@ -233,7 +235,7 @@ class Disboard(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def disboard(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         if not ctx.invoked_subcommand:
             return await self.get_disboard_help(ctx)
 
@@ -284,7 +286,8 @@ class Disboard(commands.Cog):
                 return await gcmds.cancelled(ctx, cmd_name)
             else:
                 continue
-        await result.delete()
+
+        await gcmds.smart_delete(result)
 
         description = f"{ctx.author.mention}, type what you would like the description of the reminder embed " \
             f"to be, {or_default}"
@@ -295,13 +298,14 @@ class Disboard(commands.Cog):
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(self, ctx, cmd_name, timeout)
+        await gcmds.smart_delete(result)
         if result.content == "cancel":
             return await gcmds.cancelled(ctx, cmd_name)
         elif result.content == "skip":
             message_content = None
         else:
             message_content = result.content
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         succeeded = await self.set_bump_reminder(ctx, channel_id, message_content)
         if succeeded:

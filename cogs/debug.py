@@ -34,7 +34,7 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
@@ -43,7 +43,7 @@ class Debug(commands.Cog):
 
     @commands.group(aliases=['flag'])
     async def report(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Report Options",
                                  description=f"{ctx.author.mention}, here are the options for the report command:\n`["
@@ -54,7 +54,7 @@ class Debug(commands.Cog):
 
     @report.command(aliases=['issue'])
     async def bug(self, ctx, *, bug_message):
-        await gcmds.invkDelete(ctx)
+
         try:
             marwynnbot_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
 
@@ -166,7 +166,6 @@ class Debug(commands.Cog):
                 updateEmbed.set_footer(text="Successfully reported update to announcement channel",
                                        icon_url=ctx.author.avatar_url)
                 return await preview.edit(embed=updateEmbed)
-
             elif response[0].emoji == '📝':
                 def from_user(message: discord.Message) -> bool:
                     if message.author.id == ctx.author.id:
@@ -185,18 +184,14 @@ class Debug(commands.Cog):
                 try:
                     response = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
-                    try:
-                        await preview.delete()
-                    except Exception:
-                        pass
+                    await gcmds.smart_delete(preview)
                     return await self.timeout(ctx, panel)
                 if response.content == "cancel":
-                    await response.delete()
                     return await self.cancel(ctx, panel)
                 if not response.content == "skip":
                     updateEmbed.title = response.content
                     await preview.edit(embed=updateEmbed)
-                await response.delete()
+                await gcmds.smart_delete(response)
 
                 panel_embed.title = "Edit Description"
                 panel_embed.description = f"{ctx.author.mention}, please enter what you would like the update description" \
@@ -210,26 +205,21 @@ class Debug(commands.Cog):
                 try:
                     response = await self.client.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
-                    try:
-                        await preview.delete()
-                    except Exception:
-                        pass
+                    await gcmds.smart_delete(preview)
                     return await self.timeout(ctx, panel)
                 if response.content == "cancel":
-                    await response.delete()
                     return await self.cancel(ctx, panel)
                 if not response.content == "skip":
                     updateEmbed.description = response.content
                     await preview.edit(embed=updateEmbed)
-                await response.delete()
-
+                await gcmds.smart_delete(response)
             elif response[0].emoji == '🛑':
-                await panel.delete()
+                await gcmds.smart_delete(panel)
                 return await self.cancel(ctx, preview)
 
     @commands.command()
     async def shard(self, ctx, option=None):
-        await gcmds.invkDelete(ctx)
+
         if option != 'count':
             shardDesc = f"This server is running on shard: {ctx.guild.shard_id}"
         else:

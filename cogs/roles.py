@@ -201,10 +201,11 @@ class Roles(commands.Cog):
 
         if emoji_role_list:
             await message.clear_reactions()
-            file[str(ctx.guild.id)][str(message_id)]['details'] = [{"role_id": str(role), "emoji": str(emoji)} for role, emoji in emoji_role_list]
+            file[str(ctx.guild.id)][str(message_id)]['details'] = [
+                {"role_id": str(role), "emoji": str(emoji)} for role, emoji in emoji_role_list]
             for role, emoji in emoji_role_list:
                 await message.add_reaction(emoji)
-                
+
         if type_name:
             file[str(guild_id)][str(message_id)]['type'] = type_name
 
@@ -269,7 +270,7 @@ class Roles(commands.Cog):
                           f"my database "
             color = discord.Color.blue()
             try:
-                await message.delete()
+                await gcmds.smart_delete(message)
             except discord.Forbidden:
                 title = "404 Forbidden"
                 description = f"{ctx.author}, I could not delete the reaction roles panel"
@@ -301,7 +302,7 @@ class Roles(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
     async def reactionrole(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         if not ctx.invoked_subcommand:
             message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
                                  f"roles panel that you have created. You will be unable to edit the panel if you " \
@@ -375,7 +376,6 @@ class Roles(commands.Cog):
             if not re.match(channel_tag_rx, result.content):
                 if re.match(channel_id_rx, result.content):
                     channel_id = result.content
-                    await result.delete()
                     break
                 else:
                     if result.content == "cancel":
@@ -383,8 +383,8 @@ class Roles(commands.Cog):
                     continue
             else:
                 channel_id = result.content[2:20]
-            await result.delete()
             break
+        await gcmds.smart_delete(result)
 
         channel = await commands.AutoShardedBot.fetch_channel(self.client, channel_id)
 
@@ -402,9 +402,9 @@ class Roles(commands.Cog):
         else:
             if result.content == "cancel":
                 return await self.user_cancelled(ctx, panel_message)
+        await gcmds.smart_delete(result)
 
         title = result.content
-        await result.delete()
 
         # User will input the embed description
         try:
@@ -420,9 +420,9 @@ class Roles(commands.Cog):
         else:
             if result.content == "cancel":
                 return await self.user_cancelled(ctx, panel_message)
+        await gcmds.smart_delete(result)
 
         description = result.content
-        await result.delete()
 
         # User will input the embed color
         while True:
@@ -443,9 +443,9 @@ class Roles(commands.Cog):
                 else:
                     continue
             break
+        await gcmds.smart_delete(result)
 
         color = int(result.content[1:], 16)
-        await result.delete()
 
         # User will tag the role, then react with the corresponding emoji
         emoji_role_list = []
@@ -473,11 +473,10 @@ class Roles(commands.Cog):
                 else:
                     break
             if result.content == "finish":
-                await result.delete()
+                await gcmds.smart_delete(result)
                 break
 
             role = result.content[3:21]
-            await result.delete()
 
             while True:
                 try:
@@ -535,9 +534,10 @@ class Roles(commands.Cog):
                     type_name = "single_normal"
                     break
                 continue
+        await gcmds.smart_delete(result)
 
         type_name = type_name
-        await result.delete()
+
         await panel.delete()
 
         await self.success(ctx, "created")
@@ -609,7 +609,7 @@ class Roles(commands.Cog):
                 title = old_embed.title
             else:
                 title = result.content
-            await result.delete()
+        await gcmds.smart_delete(result)
 
         # User provides the panel's new description
         try:
@@ -631,7 +631,7 @@ class Roles(commands.Cog):
                 description = old_embed.description
             else:
                 description = result.content
-            await result.delete()
+        await gcmds.smart_delete(result)
 
         # User will input the embed color
         while True:
@@ -658,8 +658,8 @@ class Roles(commands.Cog):
             else:
                 color = int(result.content[1:], 16)
                 break
-        await result.delete()
-        
+        await gcmds.smart_delete(result)
+
         # User will tag the role, then react with the corresponding emoji
         emoji_role_list = []
         emoji_list = []
@@ -691,11 +691,10 @@ class Roles(commands.Cog):
                 else:
                     break
             if result.content == "finish" or result.content == "skip":
-                await result.delete()
+                await gcmds.smart_delete(result)
                 break
 
             role = result.content[3:21]
-            await result.delete()
 
             while True:
                 try:
@@ -714,6 +713,7 @@ class Roles(commands.Cog):
                     continue
                 else:
                     break
+            await gcmds.smart_delete(result)
 
             emoji = result[0].emoji
             emoji_list.append(emoji)
@@ -762,12 +762,13 @@ class Roles(commands.Cog):
                     type_name = "single_normal"
                     break
                 continue
+        await gcmds.smart_delete(result)
 
         if result.content == "skip":
             type_name = None
         else:
             type_name = type_name
-        await result.delete()
+
         await panel.delete()
 
         await self.success(ctx, "edited")

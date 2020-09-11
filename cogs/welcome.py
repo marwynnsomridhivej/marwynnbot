@@ -353,7 +353,7 @@ class Welcome(commands.Cog):
 
     @commands.group(aliases=['welcome'])
     async def welcomer(self, ctx):
-        await gcmds.invkDelete(ctx)
+        
 
         if not ctx.invoked_subcommand:
             return await self.get_welcome_help(ctx)
@@ -400,9 +400,11 @@ class Welcome(commands.Cog):
             elif re.match(channel_id_rx, result.content):
                 channel_id = result.content
                 break
+            elif result.content == "cancel":
+                return await gcmds.cancelled(ctx, cmd_title)
             else:
                 continue
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         description = f"{ctx.author.mention}, please enter the title of the welcome embed, {or_default}\n\n" \
             "Default Value: New Member Joined!"
@@ -421,7 +423,7 @@ class Welcome(commands.Cog):
             embed_title = None
         else:
             embed_title = result.content
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         bot_count = 0
         for member in ctx.guild.members:
@@ -452,7 +454,7 @@ class Welcome(commands.Cog):
             embed_description = None
         else:
             embed_description = result.content
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         # User provides media links
         url_list = []
@@ -472,21 +474,19 @@ class Welcome(commands.Cog):
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, 120)
             if result.content == "cancel":
-                await result.delete()
                 return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip":
-                await result.delete()
                 url_list = None
                 break
             elif result.content == "finish":
-                await result.delete()
                 break
             else:
                 mimetype, encoding = mimetypes.guess_type(result.content)
                 if mimetype and mimetype in ["image/gif", "image/jpeg", "image/jpg", "image/png"]:
                     url_list.append(result.content)
-                await result.delete()
+                    await gcmds.smart_delete(result)
                 continue
+        await gcmds.smart_delete(result)
 
         succeeded = await self.create_welcomer(ctx, channel_id, embed_title, embed_description, url_list)
         if succeeded:
@@ -575,7 +575,7 @@ class Welcome(commands.Cog):
                 break
             else:
                 continue
-        await result.delete()
+        await gcmds.smart_delete(result)
 
         description = f"{ctx.author.mention}, please enter the title of the welcomer you would like " \
             f"MarwynnBot to display, {or_default}\n\nCurrent Title: {info[1]}"
@@ -588,7 +588,6 @@ class Welcome(commands.Cog):
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
-        await result.delete()
         if result.content == "cancel":
             try:
                 await temp_welcomer.delete()
@@ -599,6 +598,7 @@ class Welcome(commands.Cog):
             new_title = info[1]
         else:
             new_title = result.content
+        await gcmds.smart_delete(result)
 
         # Update temp_welcomer
 
@@ -633,7 +633,6 @@ class Welcome(commands.Cog):
             result = await self.client.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
-        await result.delete()
         if result.content == "cancel":
             try:
                 await temp_welcomer.delete()
@@ -644,6 +643,7 @@ class Welcome(commands.Cog):
             new_description = info[2]
         else:
             new_description = result.content
+        await gcmds.smart_delete(result)
 
         # User provides media links
         url_list = []
@@ -663,7 +663,6 @@ class Welcome(commands.Cog):
                 result = await self.client.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, 120)
-            await result.delete()
             if result.content == "cancel":
                 try:
                     await temp_welcomer.delete()
@@ -683,6 +682,7 @@ class Welcome(commands.Cog):
                 if mimetype and mimetype in ["image/gif", "image/jpeg", "image/jpg", "image/png"]:
                     url_list.append(result.content)
                 continue
+        await gcmds.smart_delete(result)
 
         succeeded = await self.edit_welcomer(ctx, new_channel_id, new_title, new_description, url_list)
         await temp_welcomer.delete()
@@ -772,7 +772,7 @@ class Welcome(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_guild=True)
     async def leaver(self, ctx):
-        await gcmds.invkDelete(ctx)
+        
         if not ctx.invoked_subcommand:
             return await self.get_leaver_help(ctx)
 

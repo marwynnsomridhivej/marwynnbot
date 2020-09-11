@@ -78,7 +78,7 @@ class Actions(commands.Cog):
             return [give_exec_count, receive_exec_count, user, user_specified]
 
     async def embed_template(self, ctx, title: str, footer: str):
-        await gcmds.invkDelete(ctx)
+
         api_key = gcmds.env_check("TENOR_API")
         if not api_key:
             no_api = discord.Embed(title="Missing API Key",
@@ -108,7 +108,6 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['action'])
     async def actions(self, ctx, cmdName=None):
-        await gcmds.invkDelete(ctx)
 
         CMDLIST = self.get_commands()
         del CMDLIST[0]

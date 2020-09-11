@@ -36,7 +36,8 @@ async def get_prefix(client, message):
             return commands.when_mentioned_or(*extras)(client, message)
 
 startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
-client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1, fetch_offline_members=True, status=discord.Status.online, activity=startup)
+client = commands.AutoShardedBot(command_prefix=get_prefix, help_command=None, shard_count=1,
+                                 fetch_offline_members=True, status=discord.Status.online, activity=startup)
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -71,10 +72,7 @@ async def client_loaded():
 async def on_message(message):
     tokens = token_rx.findall(message.content)
     if tokens and message.guild:
-        try:
-            await gcmds.msgDelete(message)
-        except (discord.NotFound, discord.Forbidden):
-            pass
+        await gcmds.smart_delete(message)
         if gcmds.env_check('GITHUB_TOKEN'):
             url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for invalidation")
         embed = discord.Embed(title="Token Found",
@@ -162,7 +160,6 @@ async def on_command_error(ctx, error):
                                   color=discord.Color.dark_red())
         return await ctx.channel.send(embed=not_owner, delete_after=10)
     elif isinstance(error, commands.CommandNotFound):
-        await gcmds.invkDelete(ctx)
         notFound = discord.Embed(title="Command Not Found",
                                  description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                              f"does not exist\n\nDo `{gcmds.prefix(ctx)}help` for help",

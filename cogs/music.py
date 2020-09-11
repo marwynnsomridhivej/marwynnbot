@@ -315,43 +315,28 @@ class Music(commands.Cog):
         queue_message = self.info[str(guild_id)]['queue_message']
         volume_message = self.info[str(guild_id)]['volume_message']
         if message:
-            try:
-                await message.delete()
-            except (discord.NotFound, AttributeError, KeyError):
-                pass
+            await gcmds.smart_delete(message)
             await self.set_value(guild_id, 'message', None)
         if paused:
             await self.set_value(guild_id, 'paused', False)
         if paused_message:
-            try:
-                await paused_message.delete()
-            except (discord.NotFound, AttributeError, KeyError):
-                pass
+            await gcmds.smart_delete(paused_message)
             await self.set_value(guild_id, 'paused_message', None)
         if queue:
             await self.set_value(guild_id, 'queue', [])
         if rewind_message:
-            try:
-                await rewind_message.delete()
-            except (discord.NotFound, AttributeError, KeyError):
-                pass
+            await gcmds.smart_delete(rewind_message)
             await self.set_value(guild_id, 'rewind_message', None)
         if queue_message:
-            try:
-                await queue_message.delete()
-            except (discord.NotFound, AttributeError, KeyError):
-                pass
+            await gcmds.smart_delete(queue_message)
             await self.set_value(guild_id, 'queue_message', None)
         if volume_message:
-            try:
-                await volume_message.delete()
-            except (discord.NotFound, AttributeError, KeyError):
-                pass
+            await gcmds.smart_delete(volume_message)
             await self.set_value(guild_id, 'volume_message', None)
 
     @commands.command()
     async def join(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
         if not player:
             player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -396,7 +381,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *, query: str = None):
-        await gcmds.invkDelete(ctx)
+
         if not await self.ensure_voice(ctx):
             return
 
@@ -487,7 +472,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def queue(self, ctx, *, query: str = None):
-        await gcmds.invkDelete(ctx)
+
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
@@ -616,7 +601,6 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['clearqueue', 'qc'])
     async def queueclear(self, ctx):
-        await gcmds.invkDelete(ctx)
 
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -654,7 +638,6 @@ class Music(commands.Cog):
 
     @commands.command()
     async def stop(self, ctx):
-        await gcmds.invkDelete(ctx)
 
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -694,7 +677,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def leave(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
@@ -726,7 +709,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def volume(self, ctx, amount: int = None):
-        await gcmds.invkDelete(ctx)
+
         if not await self.ensure_voice(ctx):
             return
         player = self.client.lavalink.player_manager.get(ctx.guild.id)
@@ -764,7 +747,7 @@ class Music(commands.Cog):
 
     @commands.group(aliases=['playlists'])
     async def playlist(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         self.init_playlist(ctx)
 
         name = self.get_playlist(ctx, None)[0][0]
@@ -961,6 +944,7 @@ class Music(commands.Cog):
                     return await panel.edit(embed=timeout, delete_after=10)
                 else:
                     break
+            await gcmds.smart_delete(reply)
 
             saveEmbed = discord.Embed(color=discord.Color.blue())
             plist_name = reply.content
@@ -973,7 +957,6 @@ class Music(commands.Cog):
             self.save_playlist(ctx, plist_name, urls)
             if name == "null":
                 self.remove_playlist(ctx, 'null')
-            await reply.delete()
         else:
             try:
                 getName = discord.Embed(title="Specify the Playlist Index",
@@ -994,10 +977,10 @@ class Music(commands.Cog):
                     return await panel.edit(embed=timeout, delete_after=10)
                 else:
                     name = reply.content
-                    await reply.delete()
                     if not self.check_playlist(ctx, name):
                         continue
                     break
+            await gcmds.smart_delete(reply)
             try:
                 getName = discord.Embed(title="Change Playlist Name",
                                         description=f"{ctx.author.mention}, please specify what the playlist name "
@@ -1019,6 +1002,7 @@ class Music(commands.Cog):
                     return await panel.edit(embed=timeout, delete_after=10)
                 else:
                     break
+            await gcmds.smart_delete(name_reply)
             if name_reply.content != "skip":
                 plist_name = name_reply.content
                 self.save_playlist(ctx, plist_name, self.get_playlist(ctx, name)[1])
@@ -1026,7 +1010,6 @@ class Music(commands.Cog):
 
             else:
                 plist_name = name
-            await name_reply.delete()
 
             info = self.get_playlist(ctx, plist_name)
 
@@ -1090,18 +1073,16 @@ class Music(commands.Cog):
                     return await ctx.channel.send(embed=timeout, delete_after=10)
             else:
                 if message.content == "cancel":
-                    await message.delete()
                     try:
                         return await panel.edit(embed=cancelled, delete_after=10)
                     except discord.NotFound:
                         return await ctx.channel.send(embed=cancelled, delete_after=10)
                 elif not self.check_playlist(ctx, message.content):
-                    await message.delete()
                     continue
                 else:
                     name = message.content
-                    await message.delete()
                     break
+        await gcmds.smart_delete(message)
 
         try:
             panel_embed.description = f"{ctx.author.mention}, please enter a YouTube video link or a YouTube playlist " \
@@ -1119,7 +1100,7 @@ class Music(commands.Cog):
                 return await ctx.channel.send(embed=timeout, delete_after=10)
         else:
             yt_link = message_link.content
-            await message_link.delete()
+            await gcmds.smart_delete(message_link)
 
         if not url_rx.match(yt_link) or "youtube.com" not in yt_link:
             try:
@@ -1227,10 +1208,10 @@ class Music(commands.Cog):
                         name = choice.content
                         valid = True
                         break
-                await choice.delete()
                 if valid:
                     break
                 continue
+        await gcmds.smart_delete(choice)
 
         embed.description = "React with ✅ to confirm or 🛑 to cancel playlist deletion"
 

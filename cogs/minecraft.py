@@ -70,7 +70,7 @@ class Minecraft(commands.Cog):
     @commands.group(aliases=['mc'])
     @commands.cooldown(1, 10, commands.BucketType.member)
     async def minecraft(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         if not ctx.invoked_subcommand:
             embed = discord.Embed(title="Minecraft Commands Help",
                                   description=f"Access MarwynnBot's Minecraft commands using "

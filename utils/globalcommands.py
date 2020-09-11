@@ -90,14 +90,7 @@ class GlobalCMDS:
         with open('db/counters.json', 'w') as f:
             json.dump(values, f, indent=4)
 
-    async def invkDelete(self, ctx: commands.Context):
-        if ctx.guild and ctx.guild.me.guild_permissions.manage_messages:
-            try:
-                await ctx.message.delete()
-            except Exception:
-                pass
-
-    async def msgDelete(self, message: discord.Message):
+    async def smart_delete(self, message: discord.Message):
         if message.guild and message.guild.me.guild_permissions.manage_messages:
             try:
                 await message.delete()

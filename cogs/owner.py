@@ -16,7 +16,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
     async def load(self, ctx, extension):
-        await gcmds.invkDelete(ctx)
+
         try:
             self.client.load_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -36,7 +36,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['ul', 'uld'])
     @commands.is_owner()
     async def unload(self, ctx, extension):
-        await gcmds.invkDelete(ctx)
+
         try:
             self.client.unload_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -56,7 +56,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['r', 'rl'])
     @commands.is_owner()
     async def reload(self, ctx, *, extension=None):
-        await gcmds.invkDelete(ctx)
+
         if extension is None:
             print("==========================")
             for filenameReload in os.listdir('./cogs'):
@@ -81,7 +81,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=['taskkill'])
     @commands.is_owner()
     async def shutdown(self, ctx):
-        await gcmds.invkDelete(ctx)
+
         shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
                                       description="Bot is logging out",
                                       color=discord.Color.blue())
@@ -91,7 +91,6 @@ class Owner(commands.Cog):
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     @commands.is_owner()
     async def balanceAdmin(self, ctx):
-        await gcmds.invkDelete(ctx)
         init = {'Balance': {}}
         gcmds.json_load('db/balance.json', init)
 
@@ -236,8 +235,7 @@ class Owner(commands.Cog):
     @commands.group(aliases=['blist'])
     @commands.is_owner()
     async def blacklist(self, ctx):
-        await gcmds.invkDelete(ctx)
-
+        return
     @blacklist.command(aliases=['member'])
     async def user(self, ctx, operation, user: discord.Member = None):
 
@@ -347,7 +345,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['fleave'])
     @commands.is_owner()
     async def forceleave(self, ctx, guild_id=None):
-        await gcmds.invkDelete(ctx)
         if guild_id is None:
             guild_id = ctx.guild.id
         await self.client.get_guild(guild_id).leave()
@@ -359,7 +356,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['dm', 'privatemessage'])
     @commands.is_owner()
     async def privateMessage(self, ctx, userID: int = None, *, message):
-        await gcmds.invkDelete(ctx)
 
         if userID is None:
             no_id = discord.Embed(title="No User ID Specified",

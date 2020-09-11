@@ -108,7 +108,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
-        await gcmds.invkDelete(ctx)
+        
 
         gcmds.file_check(gcmds, "db/counters.json", '{\n\n}')
 
@@ -180,7 +180,7 @@ class Utility(commands.Cog):
 
     @commands.command()
     async def invite(self, ctx):
-        await gcmds.invkDelete(ctx)
+        
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
                               " invite link that you can share:\n\n https://discord.com/oauth2/authorize?client_id"
@@ -192,7 +192,7 @@ class Utility(commands.Cog):
 
     @commands.group()
     async def request(self, ctx):
-        await gcmds.invkDelete(ctx)
+        
         self.load_messages()
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Request Options",
@@ -265,7 +265,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
-        await gcmds.invkDelete(ctx)
+        
         description = []
         for emoji in ctx.guild.emojis:
             if search is not None:
@@ -285,7 +285,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
-        await gcmds.invkDelete(ctx)
+        
         with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
@@ -304,7 +304,7 @@ class Utility(commands.Cog):
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
-        await gcmds.invkDelete(ctx)
+        
         with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
             if prefix != 'reset':
@@ -330,7 +330,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
     @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
-        await gcmds.invkDelete(ctx)
+        
 
         confirm = False
 
@@ -371,7 +371,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
-        await gcmds.invkDelete(ctx)
+        
         nameSpace = str(timezoneInput)
         name = nameSpace.replace(" ", "")
         if name == 'reset' or name == 'r':
