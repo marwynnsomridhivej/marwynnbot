@@ -75,7 +75,7 @@ class Help(commands.Cog):
                              icon_url=ctx.author.avatar_url)
 
         cogNames = [i for i in self.client.cogs]
-        gameNames = ['Blackjack', 'Coinflip', 'ConnectFour', 'OldMaid', 'Slots', 'UNO']
+        gameNames = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
         for name in gameNames:
             cogNames.remove(name)
         cogs = [self.client.get_cog(j) for j in cogNames]
