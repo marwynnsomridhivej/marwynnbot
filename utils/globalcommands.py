@@ -38,7 +38,7 @@ default_env = ["YOUR_BOT_TOKEN",
 class GlobalCMDS:
 
     def __init__(self):
-        self.version = "v0.1.0-alpha.1"
+        self.version = "v0.2.0-alpha.1"
 
     def init_env(self):
         if not os.path.exists('.env'):
