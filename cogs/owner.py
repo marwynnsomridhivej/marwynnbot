@@ -236,6 +236,7 @@ class Owner(commands.Cog):
     @commands.is_owner()
     async def blacklist(self, ctx):
         return
+
     @blacklist.command(aliases=['member'])
     async def user(self, ctx, operation, user: discord.Member = None):
 
