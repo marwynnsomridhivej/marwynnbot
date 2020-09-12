@@ -143,6 +143,10 @@ class GlobalCMDS:
             prefix = await con.fetch(f"SELECT custom_prefix FROM prefix WHERE guild_id = {ctx.guild.id}")
             return (prefix[0][0])
 
+    async def blacklist_db(self, execute):
+        async with self.db.acquire() as con:
+            result = await con.execute(execute)
+
     def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:
             file = json.load(f)
