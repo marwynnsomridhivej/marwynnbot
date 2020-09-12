@@ -690,8 +690,9 @@ class Roles(commands.Cog):
                         continue
                 else:
                     break
+
+            await gcmds.smart_delete(result)
             if result.content == "finish" or result.content == "skip":
-                await gcmds.smart_delete(result)
                 break
 
             role = result.content[3:21]
