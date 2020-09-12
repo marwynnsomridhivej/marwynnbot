@@ -5,18 +5,29 @@ from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
 from utils import globalcommands
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = None
 
 
 class Owner(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_blacklist())
+        self.bot.loop.create_task(self.init_balance())
+
+    async def init_blacklist(self):
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS blacklist (type text, id bigint PRIMARY KEY)")
+
+    async def init_balance(self):
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS balance (user_id bigint PRIMARY KEY, amount bigint)")
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
     async def load(self, ctx, extension):
-
         try:
             self.bot.load_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -36,7 +47,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['ul', 'uld'])
     @commands.is_owner()
     async def unload(self, ctx, extension):
-
         try:
             self.bot.unload_extension(f'cogs.{extension}')
         except CommandInvokeError:
@@ -56,7 +66,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['r', 'rl'])
     @commands.is_owner()
     async def reload(self, ctx, *, extension=None):
-
         if extension is None:
             print("==========================")
             for filenameReload in os.listdir('./cogs'):
@@ -81,7 +90,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['taskkill'])
     @commands.is_owner()
     async def shutdown(self, ctx):
-
         shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
                                       description="Bot is logging out",
                                       color=discord.Color.blue())
@@ -91,8 +99,7 @@ class Owner(commands.Cog):
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     @commands.is_owner()
     async def balanceAdmin(self, ctx):
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
+        return
 
     @balanceAdmin.command()
     async def set(self, ctx, user: discord.Member, amount):
@@ -114,25 +121,17 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(user.id)]
-            except KeyError:
-                file['Balance'][str(user.id)] = amount
-            else:
-                file['Balance'][str(user.id)] = amount
-            balance = amount
-            with open('db/balance.json', 'w') as g:
-                json.dump(file, g, indent=4)
+        op = (f"INSERT INTO balance(user_id, amount) VALUES ({user.id}, {amount}) ON CONFLICT (user_id) "
+              f"DO UPDATE SET amount = {amount} WHERE balance.user_id = {user.id}")
+        await gcmds.balance_db(op)
 
-        if balance != 1:
+        if amount != 1:
             spell = "credits"
         else:
             spell = "credit"
 
         setEmbed = discord.Embed(title="Balance Set",
-                                 description=f"The balance for {user.mention} is now set to ```{balance} {spell}```",
+                                 description=f"The balance for {user.mention} is now set to ```{amount} {spell}```",
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=setEmbed, delete_after=60)
 
@@ -156,17 +155,9 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(user.id)]
-            except KeyError:
-                file['Balance'][str(user.id)] += amount
-            else:
-                file['Balance'][str(user.id)] += amount
-            balance = file['Balance'][str(user.id)]
-            with open('db/balance.json', 'w') as g:
-                json.dump(file, g, indent=4)
+        op = (f"UPDATE balance SET amount = amount + {amount} WHERE user_id = {user.id}")
+        await gcmds.balance_db(op)
+        balance = await gcmds.balance_db(f"SELECT amount FROM balance WHERE user_id = {user.id}", ret_val=True)
 
         if balance != 1:
             spell = "credits"
@@ -204,17 +195,12 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(user.id)]
-            except KeyError:
-                file['Balance'][str(user.id)] -= amount
-            else:
-                file['Balance'][str(user.id)] -= amount
-            balance = file['Balance'][str(user.id)]
-            with open('db/balance.json', 'w') as g:
-                json.dump(file, g, indent=4)
+        op = (f"UPDATE balance SET amount = amount - {amount} WHERE user_id = {user.id}")
+        await gcmds.balance_db(op)
+        balance = await gcmds.balance_db(f"SELECT amount FROM balance WHERE user_id = {user.id}", ret_val=True)
+        if balance < 0:
+            await gcmds.balance_db(f"UPDATE balance set amount = 0 WHERE user_id = {user.id}")
+            balance = 0
 
         if balance != 1:
             spell = "credits"
@@ -239,8 +225,7 @@ class Owner(commands.Cog):
 
     @blacklist.command(aliases=['member'])
     async def user(self, ctx, operation, user: discord.Member = None):
-
-        if user is None:
+        if not user:
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
@@ -249,7 +234,6 @@ class Owner(commands.Cog):
 
         try:
             user_id = user.id
-            user_mention = commands.AutoShardedBot.get_user(self.bot, int(user_id))
         except (TypeError, AttributeError):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
@@ -257,30 +241,18 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid, delete_after=10)
             return
         if operation == "add":
-            with open('db/blacklist.json', 'r') as f:
-                blacklist = json.load(f)
-                try:
-                    blacklist["Users"]
-                except KeyError:
-                    blacklist["Users"] = {}
-                blacklist["Users"][str(user_id)] = 0
-                with open('db/blacklist.json', 'w') as g:
-                    json.dump(blacklist, g, indent=4)
-
+            op = f"INSERT INTO blacklist(type, id) VALUES('user', {user.id})"
+            await gcmds.blacklist_db(op)
             b_add = discord.Embed(title="Blacklist Entry Added",
-                                  description=f"{ctx.author.mention}, {user_mention.mention} has been added to the "
+                                  description=f"{ctx.author.mention}, {user.mention} has been added to the "
                                               f"blacklist",
                                   color=discord.Color.blue())
             await ctx.channel.send(embed=b_add)
         elif operation == "remove":
-            with open('db/blacklist.json', 'r') as f:
-                blacklist = json.load(f)
-                del blacklist["Users"][str(user_id)]
-                with open('db/blacklist.json', 'w') as g:
-                    json.dump(blacklist, g, indent=4)
-
+            op = f"DELETE FROM blacklist WHERE type = 'user' AND id = {user.id}"
+            await gcmds.blacklist_db(op)
             b_remove = discord.Embed(title="Blacklist Entry Removed",
-                                     description=f"{ctx.author.mention}, {user_mention.mention} has been removed from "
+                                     description=f"{ctx.author.mention}, {user.mention} has been removed from "
                                                  f"the blacklist",
                                      color=discord.Color.blue())
             await ctx.channel.send(embed=b_remove)
@@ -291,8 +263,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid, delete_after=10)
 
     @blacklist.command(aliases=['server'])
-    async def guild(self, ctx, operation, server_id=None):
-
+    async def guild(self, ctx, operation, *, server_id: int = None):
         if server_id is None:
             invalid = discord.Embed(title="Invalid Guild ID",
                                     description=f"{ctx.author.mention}, please provide a valid guild ID",
@@ -301,8 +272,7 @@ class Owner(commands.Cog):
             return
 
         try:
-            guild = commands.AutoShardedBot.get_guild(self.bot, int(server_id))
-            guild_id = guild.id
+            guild = await self.bot.fetch_guild(int(server_id))
         except (TypeError, AttributeError):
             invalid = discord.Embed(title="Invalid Guild ID",
                                     description=f"{ctx.author.mention}, please specify a valid guild ID",
@@ -310,30 +280,18 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
         if operation == "add":
-            with open('db/blacklist.json', 'r') as f:
-                blacklist = json.load(f)
-                try:
-                    blacklist["Guild"]
-                except KeyError:
-                    blacklist["Guild"] = {}
-                blacklist["Guild"][str(guild_id)] = 0
-                with open('db/blacklist.json', 'w') as g:
-                    json.dump(blacklist, g, indent=4)
-
+            op = f"INSERT INTO blacklist(type, id) VALUES('guild', {guild.id})"
+            await gcmds.blacklist_db(op)
             b_add = discord.Embed(title="Blacklist Entry Added",
-                                  description=f"{ctx.author.mention}, {guild.name} `ID:{guild_id}` has been added "
+                                  description=f"{ctx.author.mention}, {guild.name} `ID:{guild.id}` has been added "
                                               f"to the blacklist",
                                   color=discord.Color.blue())
             await ctx.channel.send(embed=b_add)
         elif operation == "remove":
-            with open('db/blacklist.json', 'r') as f:
-                blacklist = json.load(f)
-                del blacklist["Guild"][str(guild_id)]
-                with open('db/blacklist.json', 'w') as g:
-                    json.dump(blacklist, g, indent=4)
-
+            op = f"DELETE FROM blacklist WHERE id = {guild.id} AND type = 'guild'"
+            await gcmds.blacklist_db(op)
             b_remove = discord.Embed(title="Blacklist Entry Removed",
-                                     description=f"{ctx.author.mention}, {guild.name} `ID:{guild_id}` has been "
+                                     description=f"{ctx.author.mention}, {guild.name} `ID:{guild.id}` has been "
                                                  f"removed from the blacklist",
                                      color=discord.Color.blue())
             await ctx.channel.send(embed=b_remove)
@@ -357,7 +315,6 @@ class Owner(commands.Cog):
     @commands.command(aliases=['dm', 'privatemessage'])
     @commands.is_owner()
     async def privateMessage(self, ctx, userID: int = None, *, message):
-
         if userID is None:
             no_id = discord.Embed(title="No User ID Specified",
                                   description=f"{ctx.author.mention}, you did not specify a user ID",
