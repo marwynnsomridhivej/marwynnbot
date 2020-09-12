@@ -32,17 +32,16 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
-async def get_prefix(self, message):
-    if isinstance(message.channel, discord.DMChannel) or isinstance(message.channel, discord.GroupChannel):
+async def get_prefix(self: commands.AutoShardedBot, message):
+    if not message.guild:
         extras = ('mb ', 'mB ', 'Mb ', 'MB ', 'm!', 'm! ')
-        return commands.when_mentioned_or(*extras)(self, message)
     else:
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-            extras = (
-                f'{prefixes[str(message.guild.id)]}', f'{prefixes[str(message.guild.id)]} ', 'mb ', 'mB ', 'Mb ', 'MB ',
-                'm!')
-            return commands.when_mentioned_or(*extras)(self, message)
+        async with self.db.acquire() as con:
+            prefix = await con.fetch(f"SELECT custom_prefix from PREFIX WHERE guild_id = {message.guild.id}")
+        extras = (
+            f'{prefix[0]}', 'mb ', 'mB ', 'Mb ', 'MB ',
+            'm!')
+    return commands.when_mentioned_or(*extras)(self, message)
 
 
 async def run():
@@ -64,11 +63,12 @@ async def run():
         await bot.start(gcmds.env_check("TOKEN"))
     except KeyboardInterrupt:
         await db.close()
-        await bot.logout()
+        await bot.close()
 
 
 class Bot(commands.AutoShardedBot):
     def __init__(self, **kwargs):
+        global gcmds
         super().__init__(
             command_prefix=kwargs['command_prefix'],
             help_command=kwargs["help_command"],
@@ -79,6 +79,7 @@ class Bot(commands.AutoShardedBot):
             activity=kwargs['activity']
         )
         self.db = kwargs.pop("db")
+        gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec)
         func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove)
         for func in func_checks:
@@ -120,37 +121,26 @@ class Bot(commands.AutoShardedBot):
         await self.process_commands(message)
 
     async def check_blacklist(self, ctx):
-        if not os.path.exists('db/blacklist.json'):
-            with open('db/blacklist.json', 'w') as f:
-                json.dump({'Users': {}}, f, indent=4)
-        with open('db/blacklist.json', 'r') as f:
-            blacklist = json.load(f)
-            try:
-                blacklist["Users"]
-                blacklist["Guilds"]
-            except KeyError:
-                blacklist["Users"] = {}
-                blacklist["Guilds"] = {}
-
-            try:
-                if blacklist["Users"][str(ctx.author.id)]:
+        async with self.db.acquire() as con:
+            blist = await con.fetch(f"SELECT type FROM blacklist WHERE id = {ctx.author.id} OR id = {ctx.guild.id}")
+        if blist:
+            for item in blist:
+                if 'user' == item['type']:
                     blacklisted = discord.Embed(title="You Are Blacklisted",
                                                 description=f"{ctx.author.mention}, you are blacklisted from using this bot. "
                                                             f"Please contact `MS Arranges#3060` if you believe this is a mistake",
                                                 color=discord.Color.dark_red())
                     await ctx.channel.send(embed=blacklisted, delete_after=10)
-                    return False
-                elif blacklist["Guilds"][str(ctx.guild.id)]:
+                if 'guild' == item['type']:
                     blacklisted = discord.Embed(title="Guild is Blacklisted",
                                                 description=f"{ctx.guild.name} is blacklisted from using this bot. "
                                                             f"Please contact `MS Arranges#3060` if you believe this is a mistake",
                                                 color=discord.Color.dark_red())
                     await ctx.channel.send(embed=blacklisted, delete_after=10)
+                    await ctx.guild.leave()
                     return False
-                else:
-                    return True
-            except KeyError:
-                return True
+
+        return False if blist else True
 
     async def disable_dm_exec(self, ctx):
         if not ctx.guild and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
@@ -190,7 +180,7 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandNotFound):
             notFound = discord.Embed(title="Command Not Found",
                                      description=f"{ctx.author.mention}, `{ctx.message.content}` "
-                                     f"does not exist\n\nDo `{gcmds.prefix(ctx)}help` for help",
+                                     f"does not exist\n\nDo `{await gcmds.prefix(ctx)}help` for help",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=notFound, delete_after=10)
         elif isinstance(error, commands.CommandOnCooldown):
@@ -207,7 +197,7 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, customerrors.TagNotFound):
             embed = discord.Embed(title="Tag Not Found",
                                   description=f"{ctx.author.mention}, the tag `{error.tag}` does not exist in this server. "
-                                  f"You can create it by doing `{gcmds.prefix(ctx)}tag create {error.tag}`",
+                                  f"You can create it by doing `{await gcmds.prefix(ctx)}tag create {error.tag}`",
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed, delete_after=15)
         elif isinstance(error, customerrors.TagAlreadyExists):
@@ -218,7 +208,7 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, customerrors.UserNoTags):
             embed = discord.Embed(title="No Tags",
                                   description=f"{ctx.author.mention}, you do not own any tags in this server. Create one by"
-                                  f" doing `{gcmds.prefix(ctx)}tag create [tag_name]`",
+                                  f" doing `{await gcmds.prefix(ctx)}tag create [tag_name]`",
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed, delete_after=15)
         elif isinstance(error, customerrors.NoSimilarTags):
@@ -232,40 +222,16 @@ class Bot(commands.AutoShardedBot):
             raise error
 
     async def on_guild_join(self, guild):
-        if not os.path.exists('db/blacklist.json'):
-            with open('db/blacklist.json', 'w') as f:
-                json.dump({'Guilds': {}}, f, indent=4)
-        with open('db/blacklist.json', 'r') as f:
-            blacklist = json.load(f)
-            try:
-                blacklist["Guilds"]
-            except KeyError:
-                blacklist["Guilds"] = {}
-            if guild.id in blacklist["Guilds"]:
-                to_leave = self.get_guild(guild.id)
-                await to_leave.leave()
-        if not os.path.exists('db/prefixes.json'):
-            with open('db/prefixes.json', 'w') as f:
-                f.write('{\n\n}')
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-        prefixes[str(guild.id)] = 'm!'
-
-        with open('db/prefixes.json', 'w') as f:
-            json.dump(prefixes, f, indent=4)
-
-        await self.db.execute(f"INSERT INTO prefix (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')")
+        async with self.db.acquire() as con:
+            result = await con.fetch(f"SELECT id FROM blacklist WHERE id = {guild.id}")
+            if result:
+                await guild.leave()
+            else:
+                await con.execute(f"INSERT INTO prefix (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')")
 
     async def on_guild_remove(self, guild):
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-
-        prefixes.pop(str(guild.id))
-
-        with open('db/prefixes.json', 'w') as f:
-            json.dump(prefixes, f, indent=4)
-
-        await self.db.execute(f"DELETE FROM prefix WHERE guild_id = {guild.id}")
+        async with self.db.acquire() as con:
+            await con.execute(f"DELETE FROM prefix WHERE guild_id = {guild.id}")
 
     async def all_loaded(self):
         await self.wait_until_ready()
