@@ -33,28 +33,36 @@ class FuzzySearch:
         return cls(query, pool, limit=limit, threshold=threshold)
 
     async def over_threshold(self):
-        return [(name, confidence) for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence >= threshold]
+        result = [name for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence >= self.threshold]
+        return result if result else None
 
     async def under_threshold(self):
-        return [(name, confidence) for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence <= threshold]
+        result = [name for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence <= self.threshold]
+        return result if result else None
 
     async def exact_threshold(self):
-        return [(name, confidence) for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence == threshold]
+        result = [name for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence == self.threshold]
+        return result if result else None
 
     async def not_threshold(self):
-        return [(name, confidence) for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence != threshold]
+        result = [name for name, confidence in process.extract(self.query, self.pool, limit=self.limit) if confidence != self.threshold]
+        return result if result else None
 
     async def random_over_threshold(self):
-        return random.choice(await self.over_threshold())
+        choices = await self.over_threshold()
+        return random.choice(choices) if choices else None
 
     async def random_under_threshold(self):
-        return random.chocie(await self.under_threshold())
+        choices = await self.under_threshold()
+        return random.choice(choices) if choices else None
 
     async def random_exact_threshold(self):
-        return random.choice(await self.exact_threshold())
+        choices = await self.exact_threshold()
+        return random.choice(choices) if choices else None
 
     async def random_not_threshold(self):
-        return random.choice(await self.not_threshold)
+        choices = await self.not_threshold()
+        return random.choice(choices) if choices else None
 
 class TagFuzzy(FuzzySearch):
     def __init__(self, query: str, pool, limit=10, threshold=70):
