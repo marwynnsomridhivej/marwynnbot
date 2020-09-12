@@ -42,7 +42,6 @@ default_env = ["YOUR_BOT_TOKEN",
                "YOUR_USER_AGENT",
                "API_KEY_FROM_TENOR",
                "PERSONAL_ACCESS_TOKEN"]
-start_time = int(datetime.now().timestamp())
 
 
 class GlobalCMDS:
@@ -146,6 +145,14 @@ class GlobalCMDS:
     async def blacklist_db(self, execute):
         async with self.db.acquire() as con:
             result = await con.execute(execute)
+
+    async def balance_db(self, execute: str, ret_val: bool = False):
+        async with self.db.acquire() as con:
+            if ret_val:
+                val = await con.fetch(execute)
+                return val[0]['amount']
+            else:
+                await con.execute(execute)
 
     def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:
