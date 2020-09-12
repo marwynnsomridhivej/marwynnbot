@@ -713,7 +713,6 @@ class Roles(commands.Cog):
                     continue
                 else:
                     break
-            await gcmds.smart_delete(result)
 
             emoji = result[0].emoji
             emoji_list.append(emoji)
