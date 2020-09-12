@@ -388,7 +388,7 @@ class Utility(commands.Cog):
     @commands.command()
     async def uptime(self, ctx):
         time_now = int(datetime.now().timestamp())
-        td = timedelta(seconds=time_now - globalcommands.start_time)
+        td = timedelta(seconds=time_now - self.bot.uptime)
         embed = discord.Embed(title="Uptime",
                               description=f"MarwynnBot has been up and running for\n```\n{str(td)}\n```",
                               color=discord.Color.blue())

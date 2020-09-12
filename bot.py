@@ -78,6 +78,7 @@ class Bot(commands.AutoShardedBot):
             status=kwargs['status'],
             activity=kwargs['activity']
         )
+        self.uptime = int(datetime.now().timestamp())
         self.db = kwargs.pop("db")
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec)
