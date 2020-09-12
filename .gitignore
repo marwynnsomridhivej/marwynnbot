@@ -11,3 +11,4 @@ pokepy_cache
 *.log
 *.jar
 *.yml
+backup.pgsql
