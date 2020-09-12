@@ -4,7 +4,7 @@ import os
 import asyncio
 from datetime import datetime
 from discord.ext import commands
-from utils import globalcommands, customerrors, paginator
+from utils import globalcommands, customerrors, paginator, fuzzysearch
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -56,13 +56,23 @@ class Tags(commands.Cog):
 
     async def check_tag(self, ctx, name) -> bool:
         if not os.path.exists('db/tags.json') or not name:
-            return False
+            raise customerrors.TagNotFound(name)
 
         with open('db/tags.json', 'r') as f:
             file = json.load(f)
 
         if not str(ctx.guild.id) in file or not name in file[str(ctx.guild.id)]:
-            return False
+            raise customerrors.TagNotFound(name)
+
+        return True
+
+    async def check_tag_owner(self, ctx, tag) -> bool:
+        await self.check_tag(ctx, tag)
+        with open('db/tags.json', 'r') as f:
+            file = json.load(f)
+
+        if not ctx.author.id == file[str(ctx.guild.id)][tag]['author_id']:
+            raise customerrors.NotTagOwner(tag)
 
         return True
 
@@ -101,13 +111,13 @@ class Tags(commands.Cog):
 
     async def list_user_tags(self, ctx) -> list:
         if not os.path.exists('db/tags.json'):
-            return None
+            raise customerrors.UserNoTags(ctx.author)
 
         with open('db/tags.json', 'r') as f:
             file = json.load(f)
 
         if not str(ctx.guild.id) in file:
-            return None
+            raise customerrors.UserNoTags(ctx.author)
 
         desc_list = [f"{tag}\nCreated at {datetime.fromtimestamp(int(file[str(ctx.guild.id)][tag]['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}\n"
                      for tag in file[str(ctx.guild.id)] if file[str(ctx.guild.id)][tag]['author_id'] == ctx.author.id]
@@ -116,23 +126,30 @@ class Tags(commands.Cog):
         else:
             raise customerrors.UserNoTags(ctx.author)
 
-    async def search_tags(self, ctx) -> list:
+    async def search_tags(self, ctx, keyword) -> list:
         if not os.path.exists('db/tags.json'):
-            return None
+            raise customerrors.NoSimilarTags(keyword)
 
         with open('db/tags.json', 'r') as f:
             file = json.load(f)
 
         if not str(ctx.guild.id) in file:
-            return None
+            raise customerrors.NoSimilarTags(keyword)
+
+        pool = [item for item in file[str(ctx.guild.id)]]
+        return await fuzzysearch.TagFuzzy(query=keyword, pool=pool, threshold=60).over_threshold()
+
+    async def check_tag_name_taken(self, ctx, tag) -> bool:
+        with open('db/tags.json', 'r') as f:
+            file = json.load(f)
+        return True if tag in file[str(ctx.guild.id)] else False
 
     @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
         if not tag:
             return await self.tag_help(ctx)
-        if not await self.check_tag(ctx, tag):
-            raise customerrors.TagNotFound(tag)
-        return await self.send_tag(ctx, tag)
+        if await self.check_tag(ctx, tag):
+            return await self.send_tag(ctx, tag)
 
     @tag.command()
     async def list(self, ctx):
@@ -143,12 +160,18 @@ class Tags(commands.Cog):
 
     @tag.command()
     async def search(self, ctx, *, keyword):
-        return
+        result = await self.search_tags(ctx, keyword)
+        if not result:
+            raise customerrors.NoSimilarTags(keyword)
+
+        embed = discord.Embed(title="Search Results",
+                              description="```\n" + '\n```\n```\n'.join(result) + "\n```",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @tag.command(aliases=['make'])
     async def create(self, ctx, *, tag):
-        if await self.check_tag(ctx, tag):
-            raise customerrors.TagAlreadyExists(tag)
+        await self.check_tag(ctx, tag)
         embed = discord.Embed(title=f"Create Tag \"{tag}\"",
                               description=f"{ctx.author.mention}, within 2 minutes, please enter what you would like the tag to return\n\n"
                               f"ex. *If you enter \"test\", doing `{gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
@@ -171,11 +194,17 @@ class Tags(commands.Cog):
 
     @tag.command()
     async def edit(self, ctx, *, tag):
-        return
+        await self.check_tag_owner(ctx, tag)
+
+        async def from_user(message: discord.Message):
+            return message.author.id == ctx.author.id and not await self.check_tag_name_taken(ctx, message.content)
+
+        # User can edit tag name
 
     @tag.command(aliaes=['remove'])
     async def delete(self, ctx, *, tag):
-        return
+        await self.check_tag_owner(ctx, tag)
+
 
 
 def setup(client):
