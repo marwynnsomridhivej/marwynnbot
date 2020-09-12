@@ -80,11 +80,12 @@ class Bot(commands.AutoShardedBot):
         )
         self.db = kwargs.pop("db")
         func_checks = (self.check_blacklist, self.disable_dm_exec)
-        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove)
+        func_listen = (self.on_command_error, self.on_guild_join, self.on_guild_remove)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
             self.add_listener(func)
+        self.event(self.on_message)
         cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
         for cog in sorted(cogs):
             self.load_extension(f'cogs.{cog}')
@@ -254,6 +255,8 @@ class Bot(commands.AutoShardedBot):
         with open('db/prefixes.json', 'w') as f:
             json.dump(prefixes, f, indent=4)
 
+        await self.db.execute(f"INSERT INTO prefix (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')")
+
     async def on_guild_remove(self, guild):
         with open('db/prefixes.json', 'r') as f:
             prefixes = json.load(f)
@@ -262,6 +265,8 @@ class Bot(commands.AutoShardedBot):
 
         with open('db/prefixes.json', 'w') as f:
             json.dump(prefixes, f, indent=4)
+
+        await self.db.execute(f"DELETE FROM prefix WHERE guild_id = {guild.id}")
 
     async def all_loaded(self):
         await self.wait_until_ready()
