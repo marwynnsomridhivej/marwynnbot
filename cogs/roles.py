@@ -17,8 +17,8 @@ timeout = 180
 
 class Roles(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -37,10 +37,10 @@ class Roles(commands.Cog):
             reacted_emoji = payload.emoji
             message_id = payload.message_id
             channel_id = payload.channel_id
-            channel = await self.client.fetch_channel(channel_id)
+            channel = await self.bot.fetch_channel(channel_id)
             message = await channel.fetch_message(message_id)
             reactions = message.reactions
-            guild = await commands.AutoShardedBot.fetch_guild(self.client, guild_id)
+            guild = await commands.AutoShardedBot.fetch_guild(self.bot, guild_id)
             try:
                 users = [(reaction.emoji, await reaction.users().flatten()) for reaction in reactions]
                 role_emoji = file[str(guild_id)][str(message_id)]
@@ -72,7 +72,7 @@ class Roles(commands.Cog):
             file = json.load(f)
 
         guild_id = payload.guild_id
-        guild = await commands.AutoShardedBot.fetch_guild(self.client, guild_id)
+        guild = await commands.AutoShardedBot.fetch_guild(self.bot, guild_id)
         member_id = payload.user_id
         member = await guild.fetch_member(member_id)
         event_type = payload.event_type
@@ -369,7 +369,7 @@ class Roles(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please tag the channel you would like the "
                                                   f"embed to be sent in (or type its ID)")
-                result = await self.client.wait_for("message", check=from_user,
+                result = await self.bot.wait_for("message", check=from_user,
                                                     timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -386,7 +386,7 @@ class Roles(commands.Cog):
             break
         await gcmds.smart_delete(result)
 
-        channel = await commands.AutoShardedBot.fetch_channel(self.client, channel_id)
+        channel = await commands.AutoShardedBot.fetch_channel(self.bot, channel_id)
 
         # User will input the embed title
         try:
@@ -396,7 +396,7 @@ class Roles(commands.Cog):
             await self.edit_panel(panel_embed, panel_message, title=None,
                                   description=f"{ctx.author.mention}, please enter the title of the embed that will "
                                               f"be sent")
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -414,7 +414,7 @@ class Roles(commands.Cog):
             await self.edit_panel(panel_embed, panel_message, title=None,
                                   description=f"{ctx.author.mention}, please enter the description of the embed that "
                                               f"will be sent")
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -433,7 +433,7 @@ class Roles(commands.Cog):
                 await self.edit_panel(panel_embed, panel_message, title=None,
                                       description=f"{ctx.author.mention}, please enter the hex color of the embed "
                                                   f"that will be sent")
-                result = await self.client.wait_for("message", check=from_user,
+                result = await self.bot.wait_for("message", check=from_user,
                                                     timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -459,7 +459,7 @@ class Roles(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please tag the role you would like to be "
                                                       f"added into the reaction role or type *finish* to finish setup")
-                    result = await self.client.wait_for("message", check=from_user,
+                    result = await self.bot.wait_for("message", check=from_user,
                                                         timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -486,7 +486,7 @@ class Roles(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
                                                       f" you want the user to react with to get the role <@&{role}>")
-                    result = await self.client.wait_for("reaction_add", check=panel_react,
+                    result = await self.bot.wait_for("reaction_add", check=panel_react,
                                                         timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -517,7 +517,7 @@ class Roles(commands.Cog):
                                                   f"**3:** Single Normal *(same as normal, except you can only have one"
                                                   f" role at a time)*\n\n"
                                                   f"*If I wanted to pick `Normal`, I would type \"1\" as the response*")
-                result = await self.client.wait_for("message", check=from_user,
+                result = await self.bot.wait_for("message", check=from_user,
                                                     timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -599,7 +599,7 @@ class Roles(commands.Cog):
                                   description=f"{ctx.author.mention}, please enter the new title of the embed, "
                                               f"or enter *\"skip\"* to keep the current title\n\n**Current Title:**\n"
                                               f"{old_embed.title}")
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
         else:
@@ -620,7 +620,7 @@ class Roles(commands.Cog):
                                   description=f"{ctx.author.mention}, please enter the new description of the "
                                               f"embed, or enter *\"skip\"* to keep the current "
                                               f"description\n\n**Current Description:**\n{old_embed.description}")
-            result = await self.client.wait_for("message", check=from_user,
+            result = await self.bot.wait_for("message", check=from_user,
                                                 timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx, timeout, panel)
@@ -643,7 +643,7 @@ class Roles(commands.Cog):
                                       description=f"{ctx.author.mention}, please enter the new hex color of the "
                                                   f"embed, or enter *\"skip\"* to keep the current "
                                                   f"color\n\n**Current Color:**\n{str(old_embed.color)}")
-                result = await self.client.wait_for("message", check=from_user,
+                result = await self.bot.wait_for("message", check=from_user,
                                                     timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -675,7 +675,7 @@ class Roles(commands.Cog):
                                           "or type *skip* to keep the current roles and reactions\n\n**Specifying a "
                                           "role will not add it to the current list. You must specify all the roles "
                                           "that this panel should have (including already added roles)**")
-                    result = await self.client.wait_for("message", check=from_user,
+                    result = await self.bot.wait_for("message", check=from_user,
                                                         timeout=timeout)
                 except asyncio.TimeoutError:
                     return await self.timeout(ctx, timeout, panel)
@@ -704,7 +704,7 @@ class Roles(commands.Cog):
                     await self.edit_panel(panel_embed, panel_message, title=None,
                                           description=f"{ctx.author.mention}, please react to this panel with the emoji"
                                                       f" you want the user to react with to get the role <@&{role}>")
-                    result = await self.client.wait_for("reaction_add",
+                    result = await self.bot.wait_for("reaction_add",
                                                         check=panel_react,
                                                         timeout=timeout)
                 except asyncio.TimeoutError:
@@ -743,7 +743,7 @@ class Roles(commands.Cog):
                                                   f"**3:** Single Normal *(same as normal, except you can only have one"
                                                   f" role at a time)*\n\n"
                                                   f"*If I wanted to pick `Normal`, I would type \"1\" as the response*")
-                result = await self.client.wait_for("message", check=from_user,
+                result = await self.bot.wait_for("message", check=from_user,
                                                     timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, timeout, panel)
@@ -796,5 +796,5 @@ class Roles(commands.Cog):
         return await self.delete_rr_message(ctx, message_id, ctx.guild.id)
 
 
-def setup(client):
-    client.add_cog(Roles(client))
+def setup(bot):
+    bot.add_cog(Roles(bot))

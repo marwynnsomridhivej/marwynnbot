@@ -10,8 +10,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Games(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
@@ -89,14 +89,14 @@ class Games(commands.Cog):
             if "<@!" in gameName:
                 userid = gameName[3:-1]
                 if member is None:
-                    member = [await commands.AutoShardedBot.fetch_user(self.client, user_id=int(userid))]
+                    member = [await commands.AutoShardedBot.fetch_user(self.bot, user_id=int(userid))]
                 else:
                     member.append(userid)
                 gameName = None
             elif "<@" in gameName:
                 userid = gameName[2:-1]
                 if member is None:
-                    member = [await commands.AutoShardedBot.fetch_user(self.client, user_id=int(userid))]
+                    member = [await commands.AutoShardedBot.fetch_user(self.bot, user_id=int(userid))]
                 else:
                     member.append(userid)
                 gameName = None
@@ -108,7 +108,7 @@ class Games(commands.Cog):
                 userlist.append(user)
 
         for user in userlist:
-            person_name = await commands.AutoShardedBot.fetch_user(self.client, user_id=user.id)
+            person_name = await commands.AutoShardedBot.fetch_user(self.bot, user_id=user.id)
             with open('db/gamestats.json', 'r') as f:
                 file = json.load(f)
                 if gameName is not None:
@@ -240,7 +240,7 @@ class Games(commands.Cog):
                     return False
 
             try:
-                choice = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
+                choice = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
                 for item in choice:
                     if str(item) == '✅':
                         choice = 'confirm'
@@ -284,5 +284,5 @@ class Games(commands.Cog):
                 return
 
 
-def setup(client):
-    client.add_cog(Games(client))
+def setup(bot):
+    bot.add_cog(Games(bot))

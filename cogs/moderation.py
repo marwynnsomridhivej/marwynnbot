@@ -18,8 +18,8 @@ auto_warn_actions = [None, None, "mute", "kick", "ban"]
 
 class Moderation(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
         self.tasks = []
         self.check_mute_expire.start()
 
@@ -30,7 +30,7 @@ class Moderation(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def check_mute_expire(self):
-        await self.client.wait_until_ready()
+        await self.bot.wait_until_ready()
         current_time = int(datetime.now().timestamp())
         if not os.path.exists('db/mutes.json'):
             return
@@ -48,7 +48,7 @@ class Moderation(commands.Cog):
                 sleep_time = int(time - current_time)
                 if sleep_time > 60:
                     continue
-                self.tasks.append(self.client.loop.create_task(
+                self.tasks.append(self.bot.loop.create_task(
                     self.unmute_user(int(guild_id), int(user_id), sleep_time)))
 
     async def check_panel(self, panel: discord.Message) -> bool:
@@ -98,7 +98,7 @@ class Moderation(commands.Cog):
 
     async def unmute_user(self, guild_id: int, user_id: int, sleep_time: int):
         await asyncio.sleep(sleep_time)
-        guild = self.client.get_guild(guild_id)
+        guild = self.bot.get_guild(guild_id)
         role = discord.utils.get(guild.roles, name="Muted")
         if not role:
             return
@@ -561,7 +561,7 @@ class Moderation(commands.Cog):
             try:
                 if not await self.check_panel(panel):
                     return await self.end_setup(ctx, cmd_name, "no_panel")
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, cmd_name, timeout)
             if result.content == "cancel":
@@ -588,7 +588,7 @@ class Moderation(commands.Cog):
             try:
                 if not await self.edit_panel(ctx, panel, None, description, None):
                     return await self.end_setup(ctx, cmd_name, "no_panel")
-                result = await self.client.wait_for("reaction_add", check=user_reacted, timeout=timeout)
+                result = await self.bot.wait_for("reaction_add", check=user_reacted, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx, cmd_name, timeout)
             if result[0].emoji == "✅":
@@ -635,5 +635,5 @@ class Moderation(commands.Cog):
         await ctx.channel.send(embed=modsEmbed, delete_after=60)
 
 
-def setup(client):
-    client.add_cog(Moderation(client))
+def setup(bot):
+    bot.add_cog(Moderation(bot))

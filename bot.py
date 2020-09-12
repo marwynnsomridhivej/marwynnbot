@@ -54,7 +54,7 @@ async def run():
     }
 
     db = await asyncpg.create_pool(**credentials)
-    await db.execute("CREATE TABLE IF NOT EXISTS users(id bigint PRIMARY KEY, data text)")
+    await db.execute("CREATE TABLE IF NOT EXISTS prefix(guild_id bigint PRIMARY KEY, custom_prefix text)")
 
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
@@ -79,9 +79,12 @@ class Bot(commands.AutoShardedBot):
             activity=kwargs['activity']
         )
         self.db = kwargs.pop("db")
-        funcs = (self.check_blacklist, self.disable_dm_exec)
-        for func in funcs:
+        func_checks = (self.check_blacklist, self.disable_dm_exec)
+        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove)
+        for func in func_checks:
             self.add_check(func)
+        for func in func_listen:
+            self.add_listener(func)
         cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
         for cog in sorted(cogs):
             self.load_extension(f'cogs.{cog}')

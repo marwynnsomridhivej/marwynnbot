@@ -10,15 +10,15 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Owner(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
     async def load(self, ctx, extension):
 
         try:
-            self.client.load_extension(f'cogs.{extension}')
+            self.bot.load_extension(f'cogs.{extension}')
         except CommandInvokeError:
             title = "Cog Load Fail"
             description = f"Failed to load cog {extension}, it is already loaded"
@@ -38,7 +38,7 @@ class Owner(commands.Cog):
     async def unload(self, ctx, extension):
 
         try:
-            self.client.unload_extension(f'cogs.{extension}')
+            self.bot.unload_extension(f'cogs.{extension}')
         except CommandInvokeError:
             title = "Cog Unoad Fail"
             description = f"Failed to unload cog {extension}, it is already unloaded"
@@ -61,7 +61,7 @@ class Owner(commands.Cog):
             print("==========================")
             for filenameReload in os.listdir('./cogs'):
                 if filenameReload.endswith('.py'):
-                    self.client.reload_extension(f'cogs.{filenameReload[:-3]}')
+                    self.bot.reload_extension(f'cogs.{filenameReload[:-3]}')
                     print(f'Cog "{filenameReload[:-3].capitalize()}" has been reloaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description="Successfully reloaded all cogs",
@@ -70,7 +70,7 @@ class Owner(commands.Cog):
             print("==========================")
         else:
             print("==========================")
-            self.client.reload_extension(f'cogs.{extension}')
+            self.bot.reload_extension(f'cogs.{extension}')
             print(f'Cog "{extension}" has been reloaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description=f"Successfully reloaded cog `{extension}`",
@@ -86,7 +86,7 @@ class Owner(commands.Cog):
                                       description="Bot is logging out",
                                       color=discord.Color.blue())
         await ctx.channel.send(embed=shutdownEmbed)
-        await self.client.close()
+        await self.bot.close()
 
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
     @commands.is_owner()
@@ -249,7 +249,7 @@ class Owner(commands.Cog):
 
         try:
             user_id = user.id
-            user_mention = commands.AutoShardedBot.get_user(self.client, int(user_id))
+            user_mention = commands.AutoShardedBot.get_user(self.bot, int(user_id))
         except (TypeError, AttributeError):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
@@ -301,7 +301,7 @@ class Owner(commands.Cog):
             return
 
         try:
-            guild = commands.AutoShardedBot.get_guild(self.client, int(server_id))
+            guild = commands.AutoShardedBot.get_guild(self.bot, int(server_id))
             guild_id = guild.id
         except (TypeError, AttributeError):
             invalid = discord.Embed(title="Invalid Guild ID",
@@ -348,7 +348,7 @@ class Owner(commands.Cog):
     async def forceleave(self, ctx, guild_id=None):
         if guild_id is None:
             guild_id = ctx.guild.id
-        await self.client.get_guild(guild_id).leave()
+        await self.bot.get_guild(guild_id).leave()
         leaveEmbed = discord.Embed(title="Successfully Left Server",
                                    description=f"Left guild id: {id}",
                                    color=discord.Color.blue())
@@ -365,7 +365,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=no_id, delete_after=10)
 
         try:
-            user = commands.AutoShardedBot.get_user(self.client, id=userID)
+            user = commands.AutoShardedBot.get_user(self.bot, id=userID)
         except commands.BadArgument:
             bad_id = discord.Embed(title="Invalid User ID Specified",
                                    description=f"{ctx.author.mention}, please specify a valid user ID",
@@ -379,5 +379,5 @@ class Owner(commands.Cog):
         await ctx.author.send(embed=dmEmbed)
 
 
-def setup(client):
-    client.add_cog(Owner(client))
+def setup(bot):
+    bot.add_cog(Owner(bot))

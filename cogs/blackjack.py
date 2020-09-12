@@ -464,8 +464,8 @@ def emoji(card):
 
 class Blackjack(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
@@ -556,7 +556,7 @@ class Blackjack(commands.Cog):
             await message.add_reaction(hitEmoji)
             await message.add_reaction(standEmoji)
             try:
-                choice = await self.client.wait_for('reaction_add', timeout=60.0, check=check)
+                choice = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
                 for item in choice:
                     if str(item) == '✅':
                         choice = 'hit'
@@ -690,7 +690,7 @@ class Blackjack(commands.Cog):
                             return False
 
                     try:
-                        pin_choice = await self.client.wait_for('reaction_add', timeout=20.0,
+                        pin_choice = await self.bot.wait_for('reaction_add', timeout=20.0,
                                                                 check=check_pin)
                     except asyncio.TimeoutError:
                         await message.clear_reactions()
@@ -715,5 +715,5 @@ class Blackjack(commands.Cog):
                 return
 
 
-def setup(client):
-    client.add_cog(Blackjack(client))
+def setup(bot):
+    bot.add_cog(Blackjack(bot))

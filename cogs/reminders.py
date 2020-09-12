@@ -19,8 +19,8 @@ channel_id_rx = re.compile(r'[0-9]{18}')
 
 class Reminders(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
         self.tasks = []
         self.check_single.start()
         self.check_loop.start()
@@ -33,7 +33,7 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=15)
     async def check_single(self):
-        await self.client.wait_until_ready()
+        await self.bot.wait_until_ready()
         with open('db/reminders.json', 'r') as f:
             file = json.load(f)
 
@@ -53,7 +53,7 @@ class Reminders(commands.Cog):
                             if sleep_time <= 0:
                                 sleep_time = 0
                             self.tasks.append(
-                                self.client.loop.create_task(
+                                self.bot.loop.create_task(
                                     self.send_single(sleep_time, user_id, reminder['channel_id'],
                                                      message_content, int(guild), index))
                             )
@@ -64,7 +64,7 @@ class Reminders(commands.Cog):
         if sleep_time > 0:
             await asyncio.sleep(sleep_time)
         try:
-            channel = await commands.AutoShardedBot.fetch_channel(self.client, channel_id)
+            channel = await commands.AutoShardedBot.fetch_channel(self.bot, channel_id)
             user = await channel.guild.fetch_member(user_id)
             embed = discord.Embed(title=f"Reminder for {user.display_name}",
                                   description=message_content,
@@ -87,7 +87,7 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=1, count=1)
     async def check_loop(self):
-        await self.client.wait_until_ready()
+        await self.bot.wait_until_ready()
         with open('db/reminders.json', 'r') as f:
             file = json.load(f)
 
@@ -99,7 +99,7 @@ class Reminders(commands.Cog):
                             str.encode(reminder['message_content']))
                         message_content = message_content_ascii.decode("ascii")
                         self.tasks.append(
-                            self.client.loop.create_task(
+                            self.bot.loop.create_task(
                                 self.send_loop(reminder['time'], int(user), reminder['channel_id'],
                                                message_content, int(guild))
                             )
@@ -110,7 +110,7 @@ class Reminders(commands.Cog):
             await asyncio.sleep(1.0)
             if int(datetime.now().timestamp()) % int(loop_interval) == 0:
                 try:
-                    channel = await commands.AutoShardedBot.fetch_channel(self.client, channel_id)
+                    channel = await commands.AutoShardedBot.fetch_channel(self.bot, channel_id)
                     user = await channel.guild.fetch_member(user_id)
                     embed = discord.Embed(title=f"Reminder for {user.display_name}",
                                           description=message_content,
@@ -232,7 +232,7 @@ class Reminders(commands.Cog):
             json.dump(file, g, indent=4)
 
         self.tasks.append(
-            self.client.loop.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
+            self.bot.loop.create_task(self.send_loop(send_time, user_id, channel_id, message_content, guild_id))
         )
 
     async def get_reminders(self, guild_id: int, user_id: int) -> str:
@@ -419,7 +419,7 @@ class Reminders(commands.Cog):
                 return False
 
         try:
-            result = await self.client.wait_for("reaction_add", check=reacted_user,
+            result = await self.bot.wait_for("reaction_add", check=reacted_user,
                                                 timeout=timeout)
         except asyncio.TimeoutError:
             return await self.timeout(ctx)
@@ -480,7 +480,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -509,7 +509,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -540,7 +540,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -561,7 +561,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await self.client.wait_for("message", check=from_user, timeout=30)
+                result = await self.bot.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -610,7 +610,7 @@ class Reminders(commands.Cog):
             try:
                 if not await self.check_panel_exists(panel):
                     return await self.cancelled(ctx, panel)
-                result = await self.client.wait_for("message", check=from_user, timeout=30)
+                result = await self.bot.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 return await self.timeout(ctx)
             if result.content == "cancel":
@@ -637,5 +637,5 @@ class Reminders(commands.Cog):
         return
 
 
-def setup(client):
-    client.add_cog(Reminders(client))
+def setup(bot):
+    bot.add_cog(Reminders(bot))

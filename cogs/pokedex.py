@@ -5,7 +5,7 @@ import pokepy
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
-poke_client = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
+poke_bot = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
 move_status_icon_urls = ["https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/e/ef/Physical.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/2/24/Special.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/d/d0/Status.png?width=325"]
@@ -18,8 +18,8 @@ high quality translations that are actually grammatically correct.
 
 class Pokedex(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     def truncate(self, number: float, decimal_places: int) -> float:
         stepper = 10.0 ** decimal_places
@@ -27,7 +27,7 @@ class Pokedex(commands.Cog):
 
     async def check_pokemon(self, name: str) -> pokepy.api.rv2.PokemonResource:
         try:
-            return poke_client.get_pokemon(name)
+            return poke_bot.get_pokemon(name)
         except Exception:
             return None
 
@@ -70,7 +70,7 @@ class Pokedex(commands.Cog):
 
     async def check_move(self, name: str) -> pokepy.api.rv2.MoveResource:
         try:
-            return poke_client.get_move(name)
+            return poke_bot.get_move(name)
         except Exception:
             return None
 
@@ -108,7 +108,7 @@ class Pokedex(commands.Cog):
 
     async def check_ability(self, name: str) -> pokepy.api.rv2.AbilityResource:
         try:
-            return poke_client.get_ability(name)
+            return poke_bot.get_ability(name)
         except Exception:
             return None
 
@@ -132,7 +132,7 @@ class Pokedex(commands.Cog):
 
     async def check_item(self, name) -> pokepy.api.rv2.ItemResource:
         try:
-            return poke_client.get_item(name)
+            return poke_bot.get_item(name)
         except Exception:
             return None
 
@@ -173,7 +173,7 @@ class Pokedex(commands.Cog):
 
     async def check_type(self, name: str) -> pokepy.api.rv2.TypeResource:
         try:
-            return poke_client.get_type(name)
+            return poke_bot.get_type(name)
         except Exception:
             return None
 
@@ -391,5 +391,5 @@ class Pokedex(commands.Cog):
             return await ctx.channel.send(embed=invalid, delete_after=5)
 
 
-def setup(client):
-    client.add_cog(Pokedex(client))
+def setup(bot):
+    bot.add_cog(Pokedex(bot))

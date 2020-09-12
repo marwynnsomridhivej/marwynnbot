@@ -77,8 +77,8 @@ def lose(ctx, betAmount):
 
 class Coinflip(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
@@ -193,5 +193,5 @@ class Coinflip(commands.Cog):
         gcmds.incrCounter(ctx, 'coinflip')
 
 
-def setup(client):
-    client.add_cog(Coinflip(client))
+def setup(bot):
+    bot.add_cog(Coinflip(bot))

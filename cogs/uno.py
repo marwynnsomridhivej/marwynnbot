@@ -514,8 +514,8 @@ def lose(player: UnoPlayer):
 
 class UNO(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
@@ -739,7 +739,7 @@ class UNO(commands.Cog):
 
                 while loop:
                     try:
-                        choice = await self.client.wait_for('message', timeout=60,
+                        choice = await self.bot.wait_for('message', timeout=60,
                                                                         check=from_player)
                     except asyncio.TimeoutError:
                         played_card = gameMembers[index].auto_play(pile)
@@ -823,7 +823,7 @@ class UNO(commands.Cog):
 
                                     while not reaction_confirmed:
                                         try:
-                                            choice_check = await self.client.wait_for('reaction_add',
+                                            choice_check = await self.bot.wait_for('reaction_add',
                                                                                        timeout=20.0,
                                                                                        check=check)
                                         except asyncio.TimeoutError:
@@ -947,5 +947,5 @@ class UNO(commands.Cog):
         return
 
 
-def setup(client):
-    client.add_cog(UNO(client))
+def setup(bot):
+    bot.add_cog(UNO(bot))

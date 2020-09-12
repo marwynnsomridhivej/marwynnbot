@@ -13,8 +13,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Utility(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
         self.messages = {}
         self.update_server_stats.start()
 
@@ -23,7 +23,7 @@ class Utility(commands.Cog):
 
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
-        await self.client.wait_until_ready()
+        await self.bot.wait_until_ready()
         if not os.path.exists('db/serverstats.json'):
             return
 
@@ -35,7 +35,7 @@ class Utility(commands.Cog):
         guild_ids = list(file["Active"].keys())
 
         for guild_id in guild_ids:
-            guild = self.client.get_guild(int(guild_id))
+            guild = self.bot.get_guild(int(guild_id))
             exists = False
             for category in guild.categories:
                 if "server stats" in category.name.lower():
@@ -183,10 +183,10 @@ class Utility(commands.Cog):
         
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
-                              " invite link that you can share:\n\n https://discord.com/oauth2/authorize?client_id"
+                              " invite link that you can share:\n\n https://discord.com/oauth2/authorize?bot_id"
                               "=623317451811061763&scope=bot&permissions=2146958583",
                               color=discord.Color.blue(),
-                              url="https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permiss"
+                              url="https://discord.com/oauth2/authorize?bot_id=623317451811061763&scope=bot&permiss"
                               "ions=2146958583")
         await ctx.channel.send(embed=embed)
 
@@ -223,7 +223,7 @@ class Utility(commands.Cog):
                                    description="This command is disabled",
                                    color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_api, delete_after=10)
-        owner = self.client.get_user(int(owner_id))
+        owner = self.bot.get_user(int(owner_id))
         message = await owner.send(embed=feature_embed)
         feature_embed.set_footer(text=f"{timestamp}\nMessage ID: {message.id}")
         await message.edit(embed=feature_embed)
@@ -241,7 +241,7 @@ class Utility(commands.Cog):
                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=menu)
         user_id = self.get_entry(message_id)
-        user = await self.client.fetch_user(user_id)
+        user = await self.bot.fetch_user(user_id)
         raw_reply = reply_message
         if reply_message == "spam":
             reply_message = f"{user.mention}, your request was either not related to a feature, or was categorised as " \
@@ -296,7 +296,7 @@ class Utility(commands.Cog):
                               value=f"The current server prefix is: `{serverPrefix}`",
                               inline=False)
         prefixEmbed.add_field(name="Global Prefixes",
-                              value=f"{self.client.user.mention} or `mb ` - *ignorecase*",
+                              value=f"{self.bot.user.mention} or `mb ` - *ignorecase*",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
         gcmds.incrCounter(ctx, 'prefix')
@@ -316,7 +316,7 @@ class Utility(commands.Cog):
         if prefix != 'reset':
             prefixEmbed = discord.Embed(title='Server Prefix Set',
                                         description=f"Server prefix is now set to `{prefix}` \n\n"
-                                                    f"You will still be able to use {self.client.user.mention} "
+                                                    f"You will still be able to use {self.bot.user.mention} "
                                                     f"and `mb ` as prefixes",
                                         color=discord.Color.blue())
         else:
@@ -410,5 +410,5 @@ class Utility(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
 
-def setup(client):
-    client.add_cog(Utility(client))
+def setup(bot):
+    bot.add_cog(Utility(bot))

@@ -17,8 +17,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Fun(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
 
@@ -233,8 +233,8 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['imgur', 'imgursearch'])
     async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query):
-        client_id = gcmds.env_check("IMGUR_API")
-        if not client_id:
+        bot_id = gcmds.env_check("IMGUR_API")
+        if not bot_id:
             title = "Missing Client ID"
             description = "Insert your Imgur Client ID in the `.env` file"
             color = discord.Color.red()
@@ -246,7 +246,7 @@ class Fun(commands.Cog):
         path = f"imgur{str(query)}"
         query = str(query)
         reqURL = f"https://api.imgur.com/3/gallery/search/?q_all={query}"
-        headers = {'Authorization': f'Client-ID {client_id}'}
+        headers = {'Authorization': f'Client-ID {bot_id}'}
         r = requests.request("GET", reqURL, headers=headers)
         results = json.loads(r.content)
 
@@ -358,5 +358,5 @@ class Fun(commands.Cog):
         await self.imageSend(ctx, path, toSend=toSend)
 
 
-def setup(client):
-    client.add_cog(Fun(client))
+def setup(bot):
+    bot.add_cog(Fun(bot))

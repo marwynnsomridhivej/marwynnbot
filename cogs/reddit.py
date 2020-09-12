@@ -11,21 +11,21 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Reddit(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def get_id_secret(self, ctx):
-        client_id = gcmds.env_check("REDDIT_CLIENT_ID")
-        client_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")
+        bot_id = gcmds.env_check("REDDIT_CLIENT_ID")
+        bot_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")
         user_agent = gcmds.env_check("USER_AGENT")
-        if not client_id or not client_secret or not user_agent:
+        if not bot_id or not bot_secret or not user_agent:
             title = "Missing Reddit Client ID or Client Secret or User Agent"
             description = "Insert your Reddit Client ID, Client Secret, and User Agent in the `.env` file"
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed, delete_after=10)
-        return [client_id, client_secret, user_agent]
+        return [bot_id, bot_secret, user_agent]
 
     async def embed_template(self, ctx):
         info = await self.get_id_secret(ctx)
@@ -33,8 +33,8 @@ class Reddit(commands.Cog):
         if not info:
             return
 
-        reddit = praw.Reddit(client_id=info[0],
-                             client_secret=info[1],
+        reddit = praw.Reddit(bot_id=info[0],
+                             bot_secret=info[1],
                              user_agent=info[2])
         picture_search = reddit.subreddit(ctx.command.name).hot()
 
@@ -91,7 +91,7 @@ class Reddit(commands.Cog):
                 helpEmbed.add_field(name="Usage",
                                     value=f"`{gcmds.prefix(ctx)}{cmdName}`",
                                     inline=False)
-                pot_alias = self.client.get_command(name=cmdName)
+                pot_alias = self.bot.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]
                 if aliases:
                     value = "`" + "` `".join(sorted(aliases)) + "`"
@@ -225,5 +225,5 @@ class Reddit(commands.Cog):
         return
 
 
-def setup(client):
-    client.add_cog(Reddit(client))
+def setup(bot):
+    bot.add_cog(Reddit(bot))

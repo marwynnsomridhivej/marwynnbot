@@ -219,8 +219,8 @@ def jackpot(ctx, reward):
 
 class Slots(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
@@ -341,5 +341,5 @@ class Slots(commands.Cog):
         gcmds.incrCounter(ctx, "slots")
 
 
-def setup(client):
-    client.add_cog(Slots(client))
+def setup(bot):
+    bot.add_cog(Slots(bot))

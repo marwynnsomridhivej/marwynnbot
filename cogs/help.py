@@ -9,8 +9,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Help(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
@@ -30,7 +30,7 @@ class Help(commands.Cog):
             embed.add_field(name="Output",
                             value=exampleOutput,
                             inline=False)
-        cmdName = self.client.get_command(ctx.command.name)
+        cmdName = self.bot.get_command(ctx.command.name)
         aliases = cmdName.aliases
         if aliases:
             embed.add_field(name="Aliases",
@@ -74,14 +74,14 @@ class Help(commands.Cog):
         helpEmbed.set_footer(text=timestamp,
                              icon_url=ctx.author.avatar_url)
 
-        cogNames = [i for i in self.client.cogs]
+        cogNames = [i for i in self.bot.cogs]
         gameNames = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
         for name in gameNames:
             cogNames.remove(name)
-        cogs = [self.client.get_cog(j) for j in cogNames]
+        cogs = [self.bot.get_cog(j) for j in cogNames]
         strings = {}
         for name in cogNames:
-            cog_commands = self.client.get_cog(name).get_commands()
+            cog_commands = self.bot.get_cog(name).get_commands()
             strings.update({name.lower(): [command.name.lower() for command in cog_commands]})
 
         actionCmds = f"`{gcmds.prefix(ctx)}actions` *for a full list*"
@@ -212,7 +212,7 @@ class Help(commands.Cog):
         exampleUsage = f"{gcmds.prefix(ctx)}imgursearch Toad"
         specialCases = "If the `[optional amount]` argument is specified, Imgur will return that amount of images" \
                        "\n\nIf the `imgur_api.yaml` file is not present, it will be created and contents initialised " \
-                       "as:\n```yaml\nClient-ID: CLIENT_ID_FROM_IMGUR\n```\nGet a client ID from Imgur and replace " \
+                       "as:\n```yaml\nClient-ID: CLIENT_ID_FROM_IMGUR\n```\nGet a bot ID from Imgur and replace " \
                        "`CLIENT_ID_FROM_IMGUR` with it"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
@@ -652,7 +652,7 @@ class Help(commands.Cog):
         syntaxMessage = f"`{gcmds.prefix(ctx)}prefix`"
         exampleUsage = f"`{gcmds.prefix(ctx)}prefix`"
         exampleOutput = f"`This server's prefix is: {gcmds.prefix(ctx)}`\n\n`The global prefixes are:" \
-                        f"`{self.client.user.mention} or `mb `"
+                        f"`{self.bot.user.mention} or `mb `"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
@@ -889,5 +889,5 @@ class Help(commands.Cog):
                                userPerms=userPerms)
 
 
-def setup(client):
-    client.add_cog(Help(client))
+def setup(bot):
+    bot.add_cog(Help(bot))

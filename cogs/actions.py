@@ -11,8 +11,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Actions(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def get_count_user(self, ctx, user):
         try:
@@ -58,9 +58,9 @@ class Actions(commands.Cog):
 
             else:
                 try:
-                    file[str(cmdNameQuery)]['give'][str(self.client.user.id)] += 1
+                    file[str(cmdNameQuery)]['give'][str(self.bot.user.id)] += 1
                 except KeyError:
-                    file[str(cmdNameQuery)]['give'][str(self.client.user.id)] = 1
+                    file[str(cmdNameQuery)]['give'][str(self.bot.user.id)] = 1
 
                 try:
                     give_exec_count = file[str(cmdNameQuery)]['give'][str(ctx.author.id)]
@@ -126,7 +126,7 @@ class Actions(commands.Cog):
                 helpEmbed.add_field(name="Usage",
                                     value=f"`{gcmds.prefix(ctx)}{cmdName} [optional user @mention]`",
                                     inline=False)
-                pot_alias = self.client.get_command(name=cmdName)
+                pot_alias = self.bot.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]
                 if aliases:
                     value = "`" + "` `".join(sorted(aliases)) + "`"
@@ -2056,5 +2056,5 @@ class Actions(commands.Cog):
         return
 
 
-def setup(client):
-    client.add_cog(Actions(client))
+def setup(bot):
+    bot.add_cog(Actions(bot))

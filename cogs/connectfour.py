@@ -272,8 +272,8 @@ def draw(ctx, member: discord.Member):
 
 class ConnectFour(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):
@@ -336,7 +336,7 @@ class ConnectFour(commands.Cog):
             confirm_turn = False
             while not confirm_turn:
                 try:
-                    choice = await self.client.wait_for('reaction_add', timeout=60.0,
+                    choice = await self.bot.wait_for('reaction_add', timeout=60.0,
                                                         check=check)
                 except asyncio.TimeoutError:
                     await message.clear_reactions()
@@ -479,5 +479,5 @@ class ConnectFour(commands.Cog):
         gcmds.incrCounter(ctx, 'connectFour')
 
 
-def setup(client):
-    client.add_cog(ConnectFour(client))
+def setup(bot):
+    bot.add_cog(ConnectFour(bot))

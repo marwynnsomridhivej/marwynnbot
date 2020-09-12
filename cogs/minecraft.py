@@ -8,8 +8,8 @@ gcmds = globalcommands.GlobalCMDS()
 
 class Minecraft(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def get_server(self, host: str) -> MinecraftServer:
         try:
@@ -110,5 +110,5 @@ class Minecraft(commands.Cog):
             return await self.invalid(ctx, host)
 
 
-def setup(client):
-    client.add_cog(Minecraft(client))
+def setup(bot):
+    bot.add_cog(Minecraft(bot))

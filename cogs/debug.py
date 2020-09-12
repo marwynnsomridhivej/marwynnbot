@@ -11,8 +11,8 @@ updates_reaction = ['✅', '📝', '🛑']
 
 class Debug(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def timeout(self, ctx, message: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Report Update Cancelled",
@@ -37,7 +37,7 @@ class Debug(commands.Cog):
 
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
-        ping.add_field(name="MarwynnBot", value=f'{round(self.client.latency * 1000)}ms')
+        ping.add_field(name="MarwynnBot", value=f'{round(self.bot.latency * 1000)}ms')
         await ctx.send(embed=ping, delete_after=10)
         gcmds.incrCounter(ctx, 'ping')
 
@@ -56,7 +56,7 @@ class Debug(commands.Cog):
     async def bug(self, ctx, *, bug_message):
 
         try:
-            marwynnbot_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
+            marwynnbot_channel = commands.AutoShardedBot.get_channel(self.bot, 742899140320821367)
 
         except discord.NotFound:
             invalid = discord.Embed(title="Logging Channel Does Not Exist",
@@ -85,7 +85,7 @@ class Debug(commands.Cog):
 
     @report.command(aliases=['fix', 'patch'])
     async def update(self, ctx, *, update_message=None):
-        if not await self.client.is_owner(ctx.author):
+        if not await self.bot.is_owner(ctx.author):
             insuf = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, you must be the bot owner to use this command",
                                   color=discord.Color.dark_red())
@@ -106,7 +106,7 @@ class Debug(commands.Cog):
                 return False
 
         try:
-            updates_channel = commands.AutoShardedBot.get_channel(self.client, 742899140320821367)
+            updates_channel = commands.AutoShardedBot.get_channel(self.bot, 742899140320821367)
 
         except discord.NotFound:
             invalid = discord.Embed(title="Logging Channel Does Not Exist",
@@ -148,7 +148,7 @@ class Debug(commands.Cog):
             # User confirms send, requests edit, or cancels send
             while True:
                 try:
-                    response = await self.client.wait_for("reaction_add", check=confirm, timeout=30)
+                    response = await self.bot.wait_for("reaction_add", check=confirm, timeout=30)
                 except asyncio.TimeoutError:
                     await panel.delete()
                     return await self.timeout(ctx, preview)
@@ -182,7 +182,7 @@ class Debug(commands.Cog):
 
                 # User edits title
                 try:
-                    response = await self.client.wait_for("message", check=from_user, timeout=30)
+                    response = await self.bot.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     await gcmds.smart_delete(preview)
                     return await self.timeout(ctx, panel)
@@ -203,7 +203,7 @@ class Debug(commands.Cog):
 
                 # User edits description
                 try:
-                    response = await self.client.wait_for("message", check=from_user, timeout=30)
+                    response = await self.bot.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     await gcmds.smart_delete(preview)
                     return await self.timeout(ctx, panel)
@@ -223,7 +223,7 @@ class Debug(commands.Cog):
         if option != 'count':
             shardDesc = f"This server is running on shard: {ctx.guild.shard_id}"
         else:
-            shardDesc = f"**Shards:** {self.client.shard_count}"
+            shardDesc = f"**Shards:** {self.bot.shard_count}"
         shardEmbed = discord.Embed(title="Shard Info",
                                    description=shardDesc,
                                    color=discord.Color.blue())
@@ -231,5 +231,5 @@ class Debug(commands.Cog):
         gcmds.incrCounter(ctx, 'shard')
 
 
-def setup(client):
-    client.add_cog(Debug(client))
+def setup(bot):
+    bot.add_cog(Debug(bot))

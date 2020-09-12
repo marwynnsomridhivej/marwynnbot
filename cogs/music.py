@@ -15,23 +15,23 @@ plist_delete_reactions = ["✅", "🛑"]
 
 
 class Music(commands.Cog):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
         self.info = {}
-        self.client.loop.create_task(self.lavalink_setup())
+        self.bot.loop.create_task(self.lavalink_setup())
 
     async def lavalink_setup(self):
-        await self.client.wait_until_ready()
-        if not hasattr(self.client, 'lavalink'):
+        await self.bot.wait_until_ready()
+        if not hasattr(self.bot, 'lavalink'):
             ip = gcmds.env_check("LAVALINK_IP")
             port = gcmds.env_check("LAVALINK_PORT")
             password = gcmds.env_check("LAVALINK_PASSWORD")
             if not ip or not port or not password:
                 print("Make sure your server IP, port, and password are in the .env file")
             else:
-                self.client.lavalink = lavalink.Client(self.client.user.id)
-                self.client.lavalink.add_node(ip, port, password, 'na', 'default-node', name="lavalink")
-                self.client.add_listener(self.client.lavalink.voice_update_handler, 'on_socket_response')
+                self.bot.lavalink = lavalink.Client(self.bot.user.id)
+                self.bot.lavalink.add_node(ip, port, password, 'na', 'default-node', name="lavalink")
+                self.bot.add_listener(self.bot.lavalink.voice_update_handler, 'on_socket_response')
 
         lavalink.add_event_hook(self.track_hook)
         lavalink.add_event_hook(self.update_play)
@@ -40,7 +40,7 @@ class Music(commands.Cog):
     async def on_reaction_add(self, reaction, user):
         if not reaction.message.guild or not user.voice or reaction.emoji not in reactions:
             return
-        player = self.client.lavalink.player_manager.get(reaction.message.guild.id)
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
         if not user.bot and player and user.voice.channel.id == int(player.fetch('channel')):
             guild_id = reaction.message.guild.id
             message = self.info[str(guild_id)]['message']
@@ -134,7 +134,7 @@ class Music(commands.Cog):
                         await reaction.message.channel.send(embed=skipped, delete_after=5)
 
     def cog_unload(self):
-        self.client.lavalink._event_hooks.clear()
+        self.bot.lavalink._event_hooks.clear()
         self.info = {}
 
     def init_playlist(self, ctx):
@@ -211,7 +211,7 @@ class Music(commands.Cog):
                 return False
 
     async def ensure_voice(self, ctx):
-        player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+        player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
         should_connect = ctx.command.name == "play"
 
         if not ctx.author.voice or not ctx.author.voice.channel:
@@ -275,7 +275,7 @@ class Music(commands.Cog):
             await self.del_temp_msgs(event.player.guild_id)
 
     async def connect_to(self, guild_id: int, channel_id: str):
-        ws = self.client._connection._get_websocket(guild_id)
+        ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
     async def add_reaction_panel(self, message):
@@ -337,9 +337,9 @@ class Music(commands.Cog):
     @commands.command()
     async def join(self, ctx):
 
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
-            player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+            player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
         if ctx.author.voice:
             player.store("channel", ctx.author.voice.channel.id)
             if not player.is_connected:
@@ -386,7 +386,7 @@ class Music(commands.Cog):
             return
 
         await self.set_value(ctx.guild.id, "context", ctx)
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if ctx.author.voice:
             if not player.is_connected:
@@ -473,7 +473,7 @@ class Music(commands.Cog):
     @commands.command()
     async def queue(self, ctx, *, query: str = None):
 
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -605,7 +605,7 @@ class Music(commands.Cog):
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
 
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -642,7 +642,7 @@ class Music(commands.Cog):
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
 
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -678,7 +678,7 @@ class Music(commands.Cog):
     @commands.command()
     async def leave(self, ctx):
 
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -712,7 +712,7 @@ class Music(commands.Cog):
 
         if not await self.ensure_voice(ctx):
             return
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -787,7 +787,7 @@ class Music(commands.Cog):
     @playlist.command()
     async def load(self, ctx, *, playlist_name: str = None):
         await self.set_value(ctx.guild.id, 'queue', [])
-        player = self.client.lavalink.player_manager.get(ctx.guild.id)
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return await self.no_player(ctx)
@@ -894,7 +894,7 @@ class Music(commands.Cog):
                     panel_message = await ctx.channel.fetch_message(panel.id)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                choice = await self.client.wait_for("reaction_add", check=reaction_check,
+                choice = await self.bot.wait_for("reaction_add", check=reaction_check,
                                                     timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Save Request Timed Out",
@@ -935,7 +935,7 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    reply = await self.client.wait_for("message", check=from_user, timeout=30)
+                    reply = await self.bot.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
                                             description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -968,7 +968,7 @@ class Music(commands.Cog):
                 return await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    reply = await self.client.wait_for("message", check=from_user, timeout=30)
+                    reply = await self.bot.wait_for("message", check=from_user, timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
                                             description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -992,7 +992,7 @@ class Music(commands.Cog):
                 await ctx.channel.send(embed=no_panel, delete_after=5)
             while True:
                 try:
-                    name_reply = await self.client.wait_for("message", check=from_user,
+                    name_reply = await self.bot.wait_for("message", check=from_user,
                                                             timeout=30)
                 except asyncio.TimeoutError:
                     timeout = discord.Embed(title="Save Request Timed Out",
@@ -1065,7 +1065,7 @@ class Music(commands.Cog):
 
         while True:
             try:
-                message = await self.client.wait_for("message", check=from_user, timeout=30)
+                message = await self.bot.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 try:
                     return await panel.edit(embed=timeout, delete_after=10)
@@ -1092,7 +1092,7 @@ class Music(commands.Cog):
             return await ctx.channel.send(embed=cancelled, delete_after=10)
 
         try:
-            message_link = await self.client.wait_for("message", check=from_user, timeout=30)
+            message_link = await self.bot.wait_for("message", check=from_user, timeout=30)
         except asyncio.TimeoutError:
             try:
                 return await panel.edit(embed=timeout, delete_after=10)
@@ -1108,9 +1108,9 @@ class Music(commands.Cog):
             except discord.NotFound:
                 return await ctx.channel.send(embed=invalid, delete_after=10)
         else:
-            player = self.client.lavalink.player_manager.get(ctx.guild.id)
+            player = self.bot.lavalink.player_manager.get(ctx.guild.id)
             if not player:
-                player = self.client.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+                player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
             results = await player.node.get_tracks(yt_link)
             tracks = results['tracks']
             if results['loadType'] == 'PLAYLIST_LOADED':
@@ -1189,7 +1189,7 @@ class Music(commands.Cog):
                     panel_message = await ctx.channel.fetch_message(panel.id)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                choice = await self.client.wait_for("message", check=from_user, timeout=30)
+                choice = await self.bot.wait_for("message", check=from_user, timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Remove Request Timed Out",
                                         description=f"{ctx.author.mention}, you did not specify a name within the "
@@ -1224,7 +1224,7 @@ class Music(commands.Cog):
                         await panel.add_reaction(reaction)
                 except discord.NotFound:
                     return await ctx.channel.send(embed=no_panel, delete_after=5)
-                reacted = await self.client.wait_for("reaction_add", check=reaction_check,
+                reacted = await self.bot.wait_for("reaction_add", check=reaction_check,
                                                      timeout=30)
             except asyncio.TimeoutError:
                 timeout = discord.Embed(title="Remove Request Timed Out",
@@ -1258,5 +1258,5 @@ class Music(commands.Cog):
             await ctx.channel.send(embed=no_panel, delete_after=5)
 
 
-def setup(client):
-    client.add_cog(Music(client))
+def setup(bot):
+    bot.add_cog(Music(bot))

@@ -17,8 +17,8 @@ timeout = 60
 
 class Disboard(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
         self.tasks = []
         self.check_unsent_reminder.start()
 
@@ -40,7 +40,7 @@ class Disboard(commands.Cog):
                     file = json.load(f)
 
                 try:
-                    channel = await self.client.fetch_channel(file[str(message.guild.id)]['channel_id'])
+                    channel = await self.bot.fetch_channel(file[str(message.guild.id)]['channel_id'])
                 except KeyError:
                     return
                 title = "Disboard Bump Available!"
@@ -53,12 +53,12 @@ class Disboard(commands.Cog):
                 with open('db/disboard.json', 'w') as g:
                     json.dump(file, g, indent=4)
 
-                self.tasks.append(self.client.loop.create_task(
+                self.tasks.append(self.bot.loop.create_task(
                     self.send_bump_reminder(channel, title, description, sleep_time)))
 
     @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
-        await self.client.wait_until_ready()
+        await self.bot.wait_until_ready()
         if not os.path.exists('db/disboard.json'):
             return
 
@@ -78,8 +78,8 @@ class Disboard(commands.Cog):
                 description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
             else:
                 description = file[str(guild)]['message_content']
-            channel = await self.client.fetch_channel(file[str(guild)]['channel_id'])
-            self.tasks.append(self.client.loop.create_task(
+            channel = await self.bot.fetch_channel(file[str(guild)]['channel_id'])
+            self.tasks.append(self.bot.loop.create_task(
                 self.send_bump_reminder(channel, title, description, sleep_time)))
 
     async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
@@ -176,7 +176,7 @@ class Disboard(commands.Cog):
         if not await self.disboard_joined(ctx):
             return False
 
-        if not await self.client.fetch_channel(channel_id):
+        if not await self.bot.fetch_channel(channel_id):
             return False
 
         init = {
@@ -273,7 +273,7 @@ class Disboard(commands.Cog):
             try:
                 if not await self.edit_panel(ctx, panel, None, description):
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_name)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(self, ctx, cmd_name, timeout)
             if re.match(channel_tag_rx, result.content):
@@ -295,7 +295,7 @@ class Disboard(commands.Cog):
         try:
             if not await self.edit_panel(ctx, panel, None, description):
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_name)
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(self, ctx, cmd_name, timeout)
         await gcmds.smart_delete(result)
@@ -346,5 +346,5 @@ class Disboard(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
 
-def setup(client):
-    client.add_cog(Disboard(client))
+def setup(bot):
+    bot.add_cog(Disboard(bot))

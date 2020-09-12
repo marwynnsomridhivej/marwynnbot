@@ -14,8 +14,8 @@ timeout = 600
 
 class Tags(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
@@ -183,7 +183,7 @@ class Tags(commands.Cog):
             return message.author.id == ctx.author.id and message.channel == ctx.channel
 
         try:
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, "tag creation", timeout)
         if result.content == "cancel":
@@ -207,5 +207,5 @@ class Tags(commands.Cog):
 
 
 
-def setup(client):
-    client.add_cog(Tags(client))
+def setup(bot):
+    bot.add_cog(Tags(bot))

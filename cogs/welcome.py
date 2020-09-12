@@ -20,8 +20,8 @@ api_key = gcmds.env_check("TENOR_API")
 
 class Welcome(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -39,7 +39,7 @@ class Welcome(commands.Cog):
             member = member
             if str(member.guild.id) in file:
                 guild = member.guild
-                channel_to_send = await self.client.fetch_channel(file[str(guild.id)]["channel_id"])
+                channel_to_send = await self.bot.fetch_channel(file[str(guild.id)]["channel_id"])
                 embed_title = file[str(guild.id)]['title']
                 edv = str(file[str(guild.id)]['description'])
                 media = file[str(guild.id)]['media']
@@ -83,7 +83,7 @@ class Welcome(commands.Cog):
             member = member
             if str(member.guild.id) in file:
                 guild = member.guild
-                channel_to_send = await self.client.fetch_channel(file[str(guild.id)]["channel_id"])
+                channel_to_send = await self.bot.fetch_channel(file[str(guild.id)]["channel_id"])
                 leave_embed = discord.Embed(title=f"{member.display_name} left {guild.name}",
                                             description=f"{member.mention}, we're sad to see you go!",
                                             color=discord.Color.dark_red())
@@ -391,7 +391,7 @@ class Welcome(commands.Cog):
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
                 if not edit_success:
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, timeout)
             if re.match(channel_tag_rx, result.content):
@@ -414,7 +414,7 @@ class Welcome(commands.Cog):
             edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
             if not edit_success:
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
@@ -445,7 +445,7 @@ class Welcome(commands.Cog):
             edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
             if not edit_success:
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
@@ -470,7 +470,7 @@ class Welcome(commands.Cog):
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
                 if not edit_success:
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-                result = await self.client.wait_for("message", check=from_user, timeout=120)
+                result = await self.bot.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, 120)
             if result.content == "cancel":
@@ -555,7 +555,7 @@ class Welcome(commands.Cog):
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
                 if not edit_success:
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-                result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+                result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, timeout)
             if result.content == "cancel":
@@ -585,7 +585,7 @@ class Welcome(commands.Cog):
             edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
             if not edit_success:
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
@@ -630,7 +630,7 @@ class Welcome(commands.Cog):
             edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
             if not edit_success:
                 return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-            result = await self.client.wait_for("message", check=from_user, timeout=timeout)
+            result = await self.bot.wait_for("message", check=from_user, timeout=timeout)
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
@@ -660,7 +660,7 @@ class Welcome(commands.Cog):
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
                 if not edit_success:
                     return await gcmds.panel_deleted(gcmds, ctx, cmd_title)
-                result = await self.client.wait_for("message", check=from_user, timeout=120)
+                result = await self.bot.wait_for("message", check=from_user, timeout=120)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, 120)
             if result.content == "cancel":
@@ -734,7 +734,7 @@ class Welcome(commands.Cog):
         # Get confirmation from user
         while True:
             try:
-                result = await self.client.wait_for("reaction_add", check=user_reacted, timeout=timeout)
+                result = await self.bot.wait_for("reaction_add", check=user_reacted, timeout=timeout)
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, timeout)
             if result[0].emoji in reactions:
@@ -829,5 +829,5 @@ class Welcome(commands.Cog):
         await self.send_leaver(ctx.author)
 
 
-def setup(client):
-    client.add_cog(Welcome(client))
+def setup(bot):
+    bot.add_cog(Welcome(bot))
