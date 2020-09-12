@@ -80,12 +80,11 @@ class Bot(commands.AutoShardedBot):
         )
         self.db = kwargs.pop("db")
         func_checks = (self.check_blacklist, self.disable_dm_exec)
-        func_listen = (self.on_command_error, self.on_guild_join, self.on_guild_remove)
+        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
-            self.add_listener(func)
-        self.event(self.on_message)
+            self.event(func)
         cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
         for cog in sorted(cogs):
             self.load_extension(f'cogs.{cog}')
