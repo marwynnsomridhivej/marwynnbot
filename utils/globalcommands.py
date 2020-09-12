@@ -10,6 +10,10 @@ from discord.ext import commands
 load_dotenv()
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
+             "PG_USER=POSTGRES_USERNAME",
+             "PG_PASSWORD=POSTGRES_PASSWORD",
+             "PG_DATABASE=POSTGRES_DATABASE",
+             "PG_HOST=POSTGRES_HOST"
              "UPDATES_CHANNEL=CHANNEL_ID_HERE",
              "LAVALINK_IP=IP_ADDR",
              "LAVALINK_PORT=PORT",
@@ -23,6 +27,10 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "GITHUB_TOKEN=PERSONAL_ACCESS_TOKEN"]
 default_env = ["YOUR_BOT_TOKEN",
                "YOUR_ID_HERE",
+               "POSTGRES_USERNAME",
+               "POSTGRES_PASSWORD",
+               "POSTGRES_DATABASE",
+               "POSTGRES_HOST"
                "CHANNEL_ID_HERE",
                "IP_ADDR",
                "PORT",
