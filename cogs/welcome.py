@@ -95,23 +95,23 @@ class Welcome(commands.Cog):
     async def get_welcome_help(self, ctx) -> discord.Message:
         title = "Welcomer Help Menu"
         description = f"{ctx.author.mention}, the welcomer is used to greet new members of your server when they join. " \
-            f"The base command is `{gcmds.prefix(ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
+            f"The base command is `{await gcmds.prefix(ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
             "options for `[option]`\n\n"
-        create = f"**Usage:** `{gcmds.prefix(ctx)}welcomer create`\n" \
+        create = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer create`\n" \
             "**Returns:** An interactive setup panel that will create a working welcomer in your server\n" \
             "**Aliases:** `make` `start` `-c`\n" \
             "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you" \
             " try to use this command when you already have a welcomer set up, it will automatically redirect you to " \
             "the interactive edit panel"
-        edit = f"**Usage:** `{gcmds.prefix(ctx)}welcomer edit`\n" \
+        edit = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer edit`\n" \
             "**Returns:** An interactive setup panel that will edit your current welcomer\n" \
             "**Aliases:** `adjust` `modify` `-e`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        delete = f"**Usage:** `{gcmds.prefix(ctx)}welcomer delete`\n" \
+        delete = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer delete`\n" \
             "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
             "**Aliases:** `trash` `cancel` `-rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        test = (f"**Usage:** `{gcmds.prefix(ctx)}welcomer test`\n"
+        test = (f"**Usage:** `{await gcmds.prefix(ctx)}welcomer test`\n"
                 "**Returns:** A test welcomer in your currently set welcome channel")
         fields = [("Create", create), ("Edit", edit), ("Delete", delete), ("Test", test)]
 
@@ -280,16 +280,16 @@ class Welcome(commands.Cog):
         title = "Leaver Help"
         description = (f"{ctx.author.mention}, the leaver function will automatically send a goodbye message in the "
                        f"welcomer's channel once a member leaves the server. The base command is "
-                       f"`{gcmds.prefix(ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
-        create = (f"**Usage:** `{gcmds.prefix(ctx)}leaver create`\n"
+                       f"`{await gcmds.prefix(ctx)}leaver [option]`. Here are the valid options for `[option]`\n\n")
+        create = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver create`\n"
                   "**Returns:** An embed that details the status of the leaver creation\n"
                   "**Aliases:** `-c` `make` `start`\n"
                   "**Special Cases:** Only works if there is a welcomer set up")
-        delete = (f"**Usage:** `{gcmds.prefix(ctx)}leaver delete`\n"
+        delete = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver delete`\n"
                   "**Returns:** An embed that details the status of the leaver deletion\n"
                   "**Aliases:** `-rm` `trash` `cancel`\n"
                   "**Special Cases:** Only works if there is a welcomer and leaver set up")
-        test = (f"**Usage:** `{gcmds.prefix(ctx)}leaver test`\n"
+        test = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver test`\n"
                 "**Returns:** A test leaver in your currently set welcome channel")
         fields = [("Create", create), ("Delete", delete), ("Test", test)]
         embed = discord.Embed(title=title,

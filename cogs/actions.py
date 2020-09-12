@@ -112,7 +112,7 @@ class Actions(commands.Cog):
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
-        description = f"Do `{gcmds.prefix(ctx)}actions [cmdName]` to get the usage of that particular " \
+        description = f"Do `{await gcmds.prefix(ctx)}actions [cmdName]` to get the usage of that particular " \
                       f"command.\n\n**List of all {len(CMDLIST)} actions:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
         if cmdName is None or cmdName == "actions":
             helpEmbed = discord.Embed(title="Actions Help",
@@ -124,7 +124,7 @@ class Actions(commands.Cog):
                 helpEmbed = discord.Embed(title=f"Action - {action}",
                                           color=discord.Color.blue())
                 helpEmbed.add_field(name="Usage",
-                                    value=f"`{gcmds.prefix(ctx)}{cmdName} [optional user @mention]`",
+                                    value=f"`{await gcmds.prefix(ctx)}{cmdName} [optional user @mention]`",
                                     inline=False)
                 pot_alias = self.bot.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]

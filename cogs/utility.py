@@ -8,15 +8,16 @@ from discord.ext.commands import MissingPermissions, BotMissingPermissions, Comm
 from utils import globalcommands
 
 
-gcmds = globalcommands.GlobalCMDS()
-
+gcmds = None
 
 class Utility(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
         self.messages = {}
         self.update_server_stats.start()
+        gcmds = globalcommands.GlobalCMDS(bot=self.bot)
 
     def cog_unload(self):
         self.update_server_stats.cancel()
@@ -108,7 +109,6 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
-        
 
         gcmds.file_check(gcmds, "db/counters.json", '{\n\n}')
 
@@ -116,9 +116,7 @@ class Utility(commands.Cog):
             mode = commandName
             commandName = None
 
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-            serverPrefix = prefixes[str(ctx.guild.id)]
+        serverPrefix = await gcmds.prefix(ctx)
 
         with open('db/counters.json', 'r') as f:
             values = json.load(f)
@@ -180,7 +178,7 @@ class Utility(commands.Cog):
 
     @commands.command()
     async def invite(self, ctx):
-        
+
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
                               " invite link that you can share:\n\n https://discord.com/oauth2/authorize?bot_id"
@@ -192,11 +190,11 @@ class Utility(commands.Cog):
 
     @commands.group()
     async def request(self, ctx):
-        
+
         self.load_messages()
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Request Options",
-                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(ctx)}request feature` "
+                                 description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
                                              f"to submit a feature request with a 60 second cooldown",
                                  color=discord.Color.blue())
             await ctx.channel.send(embed=menu)
@@ -206,7 +204,7 @@ class Utility(commands.Cog):
     async def feature(self, ctx, *, feature_message: str = None):
         if not feature_message:
             menu = discord.Embed(title="Request Options",
-                                 description=f"{ctx.author.mention}, do `{gcmds.prefix(ctx)}request feature` "
+                                 description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
                                              f"to submit a feature request",
                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=menu)
@@ -265,7 +263,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
-        
+
         description = []
         for emoji in ctx.guild.emojis:
             if search is not None:
@@ -285,11 +283,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
-        
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-
-        serverPrefix = prefixes[str(ctx.guild.id)]
+        serverPrefix = await gcmds.prefix(ctx)
         prefixEmbed = discord.Embed(title='Prefixes',
                                     color=discord.Color.blue())
         prefixEmbed.add_field(name="Current Server Prefix",
@@ -304,36 +298,27 @@ class Utility(commands.Cog):
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
-        
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
+        async with self.db.acquire() as con:
             if prefix != 'reset':
-                prefixes[str(ctx.guild.id)] = prefix
+                await con.execute(f"UPDATE prefix SET guild_id = {ctx.guild.id}, custom_prefix = {prefix} WHERE guild_id = {ctx.guild.id}")
+                prefixEmbed = discord.Embed(title='Server Prefix Set',
+                                            description=f"Server prefix is now set to `{prefix}` \n\n"
+                                                        f"You will still be able to use {self.bot.user.mention} "
+                                                        f"and `mb ` as prefixes",
+                                            color=discord.Color.blue())
             else:
-                prefixes[str(ctx.guild.id)] = 'm!'
-        with open('db/prefixes.json', 'w') as f:
-            json.dump(prefixes, f, indent=4)
-        if prefix != 'reset':
-            prefixEmbed = discord.Embed(title='Server Prefix Set',
-                                        description=f"Server prefix is now set to `{prefix}` \n\n"
-                                                    f"You will still be able to use {self.bot.user.mention} "
-                                                    f"and `mb ` as prefixes",
-                                        color=discord.Color.blue())
-        else:
-            prefixEmbed = discord.Embed(title='Server Prefix Set',
-                                        description=f"Server prefix has been reset to `m!`",
-                                        color=discord.Color.blue())
-        await ctx.channel.send(embed=prefixEmbed)
-        gcmds.incrCounter(ctx, 'setPrefix')
+                await con.execute(f"UPDATE prefix SET guild_id = {ctx.guild.id}, custom_prefix = 'm!' WHERE guild_id = {ctx.guild.id}")
+                prefixEmbed = discord.Embed(title='Server Prefix Set',
+                                            description=f"Server prefix has been reset to `m!`",
+                                            color=discord.Color.blue())
+            await ctx.channel.send(embed=prefixEmbed)
+            gcmds.incrCounter(ctx, 'setPrefix')
 
     @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
     @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
-        
-
         confirm = False
-
         for category in ctx.guild.categories:
             if "server stats" in category.name.lower():
                 confirm = True
@@ -371,7 +356,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
-        
+
         nameSpace = str(timezoneInput)
         name = nameSpace.replace(" ", "")
         if name == 'reset' or name == 'r':

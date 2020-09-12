@@ -19,7 +19,7 @@ class Tags(commands.Cog):
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
-        pfx = gcmds.prefix(ctx)
+        pfx = await gcmds.prefix(ctx)
         tag = (f"**Usage:** `{pfx}tag`\n"
                "**Returns:** This help menu\n"
                "**Aliases:** `tags`")
@@ -94,7 +94,7 @@ class Tags(commands.Cog):
 
         embed = discord.Embed(title="Tag Created",
                               description=f"{ctx.author.mention}, your tag `{name}` was created and can be accessed "
-                              f"using `{gcmds.prefix(ctx)}tag {name}`",
+                              f"using `{await gcmds.prefix(ctx)}tag {name}`",
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
@@ -174,7 +174,7 @@ class Tags(commands.Cog):
         await self.check_tag(ctx, tag)
         embed = discord.Embed(title=f"Create Tag \"{tag}\"",
                               description=f"{ctx.author.mention}, within 2 minutes, please enter what you would like the tag to return\n\n"
-                              f"ex. *If you enter \"test\", doing `{gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
+                              f"ex. *If you enter \"test\", doing `{await gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
                               color=discord.Color.blue())
         embed.set_footer(text="Enter \"cancel\" to cancel this setup")
         panel = await ctx.channel.send(embed=embed)

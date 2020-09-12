@@ -76,7 +76,7 @@ class Reddit(commands.Cog):
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
-        description = f"Do `{gcmds.prefix(ctx)}reddit [cmdName]` to get the usage of that particular " \
+        description = f"Do `{await gcmds.prefix(ctx)}reddit [cmdName]` to get the usage of that particular " \
                       f"command.\n\n**List of all {len(CMDLIST)} reddit commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
         if cmdName is None or cmdName == "reddit":
             helpEmbed = discord.Embed(title="Reddit Commands Help",
@@ -89,7 +89,7 @@ class Reddit(commands.Cog):
                                           description=f"Returns a randomly selected image from the subreddit r/{cmdName}",
                                           color=discord.Color.blue())
                 helpEmbed.add_field(name="Usage",
-                                    value=f"`{gcmds.prefix(ctx)}{cmdName}`",
+                                    value=f"`{await gcmds.prefix(ctx)}{cmdName}`",
                                     inline=False)
                 pot_alias = self.bot.get_command(name=cmdName)
                 aliases = [g for g in pot_alias.aliases]

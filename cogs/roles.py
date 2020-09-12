@@ -310,21 +310,21 @@ class Roles(commands.Cog):
                                  f"not created by you"
             embed = discord.Embed(title="ReactionRoles Help Menu",
                                   description=f"All reaction roles commands can be accessed using "
-                                              f"`{gcmds.prefix(ctx)}reactionrole [option]`. "
+                                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
                                               f"Below is a list of all the valid options",
                                   color=discord.Color.blue())
             embed.add_field(name="Create",
-                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole create`\n"
+                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`\n"
                                   f"**Returns:** Interactive reaction roles setup panel\n"
                                   f"**Aliases:** `-c` `start` `make`")
             embed.add_field(name="Edit",
-                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
+                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
                                   f"**Returns:** Interactive reaction roles edit panel\n"
                                   f"**Aliases:** `-e` `adjust`\n"
                                   f"**Special Cases:** {message_id_message}",
                             inline=False)
             embed.add_field(name="Delete",
-                            value=f"**Usage:** `{gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
+                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
                                   f"**Returns:** Message that details status of the deletion\n"
                                   f"**Aliases:** `-d` `-rm` `del`\n"
                                   f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "

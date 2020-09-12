@@ -74,16 +74,16 @@ class Minecraft(commands.Cog):
         if not ctx.invoked_subcommand:
             embed = discord.Embed(title="Minecraft Commands Help",
                                   description=f"Access MarwynnBot's Minecraft commands using "
-                                              f"`{gcmds.prefix(ctx)}minecraft [option]`. Here is a list of all "
+                                              f"`{await gcmds.prefix(ctx)}minecraft [option]`. Here is a list of all "
                                               f"the available options",
                                   color=discord.Color.blue())
             embed.add_field(name="Ping",
-                            value=f"Usage: `{gcmds.prefix(ctx)}minecraft ping [serverIP]`\n"
+                            value=f"Usage: `{await gcmds.prefix(ctx)}minecraft ping [serverIP]`\n"
                                   f"Returns: The ping of the specified minecraft server\n"
                                   f"Aliases: `-p`",
                             inline=False)
             embed.add_field(name="Details",
-                            value=f"Usage: `{gcmds.prefix(ctx)}minecraft details [serverIP]`\n"
+                            value=f"Usage: `{await gcmds.prefix(ctx)}minecraft details [serverIP]`\n"
                                   f"Returns: Details about the specified minecraft server\n"
                                   f"Aliases: `-d` `-q` `query`",
                             inline=False)

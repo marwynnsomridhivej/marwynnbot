@@ -170,7 +170,7 @@ async def win(ctx, member: discord.Member):
             initEmbed = discord.Embed(title="Initialised Credit Balance",
                                       description=f"{member.mention}, you have been credited `{balance}` credits "
                                                   f"to start!\n\nCheck your current"
-                                                  f" balance using `{gcmds.prefix(ctx)}balance`",
+                                                  f" balance using `{await gcmds.prefix(ctx)}balance`",
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")

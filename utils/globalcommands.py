@@ -47,8 +47,11 @@ start_time = int(datetime.now().timestamp())
 
 class GlobalCMDS:
 
-    def __init__(self):
+    def __init__(self, bot: commands.AutoShardedBot = None):
         self.version = "v0.2.0-alpha.1"
+        self.bot = bot
+        if bot:
+            self.db = self.bot.db
 
     def init_env(self):
         if not os.path.exists('.env'):
@@ -132,14 +135,13 @@ class GlobalCMDS:
             with open(filenamepath, 'w') as f:
                 json.dump(init, f, indent=4)
 
-    def prefix(self, ctx):
+    async def prefix(self, ctx):
         if not ctx.guild:
             return "m!"
 
-        with open('db/prefixes.json', 'r') as f:
-            prefixes = json.load(f)
-
-        return prefixes.get(str(ctx.guild.id), 'm!')
+        async with self.db.acquire() as con:
+            prefix = await con.fetch(f"SELECT custom_prefix FROM prefix WHERE guild_id = {ctx.guild.id}")
+            return (prefix[0][0])
 
     def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:

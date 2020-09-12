@@ -184,7 +184,7 @@ class Fun(commands.Cog):
             else:
                 title = "No Search Term Specified"
                 description = f"{ctx.author.mention}, you must specify at least one search term. " \
-                              f"`Do {gcmds.prefix(ctx)}help gifsearch` for command info"
+                              f"`Do {await gcmds.prefix(ctx)}help gifsearch` for command info"
                 color = discord.Color.dark_red()
                 bool_check = False
         else:

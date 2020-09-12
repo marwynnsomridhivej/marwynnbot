@@ -813,7 +813,7 @@ class Music(commands.Cog):
 
         if playlist_name is None:
             no_name = discord.Embed(title="Invalid Playlist Name",
-                                    description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{gcmds.prefix(ctx)}playlist` to get a list of your currently saved playlists",
+                                    description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{await gcmds.prefix(ctx)}playlist` to get a list of your currently saved playlists",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_name, delete_after=10)
 
