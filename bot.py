@@ -122,6 +122,9 @@ class Bot(commands.AutoShardedBot):
         await self.process_commands(message)
 
     async def check_blacklist(self, ctx):
+        if not ctx.guild:
+            return True
+
         async with self.db.acquire() as con:
             blist = await con.fetch(f"SELECT type FROM blacklist WHERE id = {ctx.author.id} OR id = {ctx.guild.id}")
         if blist:
