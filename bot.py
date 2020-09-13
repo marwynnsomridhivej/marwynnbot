@@ -112,7 +112,8 @@ class Bot(commands.AutoShardedBot):
         if tokens and message.guild:
             await gcmds.smart_delete(message)
             if gcmds.env_check('GITHUB_TOKEN'):
-                url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for invalidation")
+                url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for "
+                                              f"invalidation. Server: {message.guild.name}")
             embed = discord.Embed(title="Token Found",
                                   description=f"{message.author.mention}, a Discord token was found in your message. It has"
                                   f" been sent to {url} to be invalidated",
