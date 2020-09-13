@@ -70,38 +70,6 @@ class GlobalCMDS:
                 for string in init:
                     f.write(string)
 
-    def incrCounter(self, ctx, cmdName: str):
-
-        init = {'Server': {}, 'Global': {}}
-
-        self.json_load('db/counters.json', init)
-        with open('db/counters.json', 'r') as f:
-            values = json.load(f)
-
-            try:
-                values['Global'][str(cmdName)]
-            except KeyError:
-                values['Global'][str(cmdName)] = 1
-            else:
-                values['Global'][str(cmdName)] += 1
-
-            if not ctx.guild:
-                pass
-            else:
-                try:
-                    values['Server'][str(ctx.guild.id)]
-                except KeyError:
-                    values['Server'][str(ctx.guild.id)] = {}
-                try:
-                    values['Server'][str(ctx.guild.id)][str(cmdName)]
-                except KeyError:
-                    values['Server'][str(ctx.guild.id)][str(cmdName)] = 1
-                else:
-                    values['Server'][str(ctx.guild.id)][str(cmdName)] += 1
-
-        with open('db/counters.json', 'w') as f:
-            json.dump(values, f, indent=4)
-
     async def smart_delete(self, message: discord.Message):
         if message.guild and message.guild.me.guild_permissions.manage_messages:
             try:
