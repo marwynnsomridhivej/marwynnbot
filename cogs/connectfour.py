@@ -113,7 +113,7 @@ def winning_move(board, piece):
                 return True
 
 
-async def win(ctx, member: discord.Member):
+async def win(ctx, member: discord.Member, bot: commands.AutoShardedBot):
     load = False
     success = False
     init = {'ConnectFour': {}}
@@ -142,8 +142,6 @@ async def win(ctx, member: discord.Member):
             json.dump(file, f, indent=4)
     gcmds.ratio(ctx.author, 'db/gamestats.json', 'ConnectFour')
 
-    initBal = {'Balance': {}}
-    gcmds.json_load('db/balance.json', initBal)
     spell = "credits"
     random_number = random.randint(1, 100001)
     if 1 <= random_number <= 10000:
@@ -160,25 +158,21 @@ async def win(ctx, member: discord.Member):
     elif random_number == 100001:
         award_amount = 1000000
 
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        try:
-            file['Balance'][str(member.id)]
-        except KeyError:
-            file['Balance'][str(member.id)] = 1000 + award_amount
-            balance = 1000
-            initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                      description=f"{member.mention}, you have been credited `{balance}` credits "
-                                                  f"to start!\n\nCheck your current"
-                                                  f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                      color=discord.Color.blue())
-            initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
-                                        "/738390147514499163/chips.png")
-            await ctx.channel.send(embed=initEmbed, delete_after=10)
-        else:
-            file['Balance'][str(member.id)] += award_amount
-    with open('db/balance.json', 'w') as f:
-        json.dump(file, f, indent=4)
+    
+    balance = await gcmds.get_balance(ctx.author)
+    if not balance:
+        await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+        balance = 1000
+        initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                    description=f"{member.mention}, you have been credited `{balance}` credits "
+                                                f"to start!\n\nCheck your current"
+                                                f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                    color=discord.Color.blue())
+        initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                    "/738390147514499163/chips.png")
+        await ctx.channel.send(embed=initEmbed, delete_after=10)
+    op = (f"UPDATE balance SET amount = amount + {award_amount} WHERE user_id = {member.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
 
     if award_amount == 1000000:
         title = "JACKPOT!!!"
@@ -193,7 +187,7 @@ async def win(ctx, member: discord.Member):
         await rewardMessage.pin(reason=f"{member.name} hit the jackpot for winning a game of Connect Four!")
 
 
-def lose(ctx, member: discord.Member):
+def lose(ctx, member: discord.Member, bot: commands.AutoShardedBot):
     load = False
     success = False
     init = {'ConnectFour': {}}
@@ -223,7 +217,7 @@ def lose(ctx, member: discord.Member):
     gcmds.ratio(member, 'db/gamestats.json', 'ConnectFour')
 
 
-def draw(ctx, member: discord.Member):
+def draw(ctx, member: discord.Member, bot: commands.AutoShardedBot):
     load = False
     success = False
     init = {'ConnectFour': {}}
@@ -409,8 +403,8 @@ class ConnectFour(commands.Cog):
                                     url="https://studio.code.org/v3/assets"
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
-                                await win(ctx, ctx.author)
-                                lose(ctx, opponent)
+                                await win(ctx, ctx.author, self.bot)
+                                lose(ctx, opponent, self.bot)
                                 gcmds.incrCounter(ctx, 'connectFour')
                                 return
 
@@ -441,8 +435,8 @@ class ConnectFour(commands.Cog):
                                     url="https://studio.code.org/v3/assets"
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
-                                await win(ctx, opponent)
-                                lose(ctx, ctx.author)
+                                await win(ctx, opponent, self.bot)
+                                lose(ctx, ctx.author, self.bot)
                                 gcmds.incrCounter(ctx, 'connectFour')
                                 return
 
@@ -475,7 +469,7 @@ class ConnectFour(commands.Cog):
         c4.set_thumbnail(url="https://studio.code.org/v3/assets/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y"
                              "/DanYr4AVMAABJ_K.png")
         await message.edit(embed=c4)
-        draw(ctx, member)
+        draw(ctx, member, self.bot)
         gcmds.incrCounter(ctx, 'connectFour')
 
 
