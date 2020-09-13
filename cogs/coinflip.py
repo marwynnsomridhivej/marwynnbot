@@ -9,14 +9,12 @@ from utils import globalcommands
 gcmds = globalcommands.GlobalCMDS()
 
 
-def win(ctx, betAmount):
+def win(ctx, betAmount, bot):
     load = False
     success = False
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        file['Balance'][str(ctx.author.id)] += betAmount
-        with open('db/balance.json', 'w') as k:
-            json.dump(file, k, indent=4)
+    op = (f"UPDATE balance SET amount = amount + {betAmount} WHERE user_id = {ctx.author.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
+
     init = {'Coinflip': {}}
     gcmds.json_load('db/gamestats.json', init)
     with open('db/gamestats.json', 'r') as f:
@@ -42,14 +40,12 @@ def win(ctx, betAmount):
     gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
 
 
-def lose(ctx, betAmount):
+def lose(ctx, betAmount, bot):
     load = False
     success = False
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        file['Balance'][str(ctx.author.id)] -= betAmount
-        with open('db/balance.json', 'w') as k:
-            json.dump(file, k, indent=4)
+    op = (f"UPDATE balance SET amount = amount - {betAmount} WHERE user_id = {ctx.author.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
+
     init = {'Coinflip': {}}
     gcmds.json_load('db/gamestats.json', init)
     with open('db/gamestats.json', 'r') as f:
@@ -78,34 +74,24 @@ def lose(ctx, betAmount):
 class Coinflip(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
-
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(ctx.author.id)]
-            except KeyError:
-                file['Balance'][str(ctx.author.id)] = 1000
-                balance = 1000
-                initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                          description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                      f"to start!\n\nCheck your current"
-                                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                          color=discord.Color.blue())
-                initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
-                                            "/738390147514499163/chips.png")
-                await ctx.channel.send(embed=initEmbed, delete_after=10)
-
-            else:
-                balance = file['Balance'][str(ctx.author.id)]
-
-        with open('db/balance.json', 'w') as f:
-            json.dump(file, f, indent=4)
+        balance = await gcmds.get_balance(ctx.author)
+        if not balance:
+            await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+            balance = 1000
+            initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                        description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                                    f"to start!\n\nCheck your current"
+                                                    f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                        color=discord.Color.blue())
+            initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                        "/738390147514499163/chips.png")
+            await ctx.channel.send(embed=initEmbed, delete_after=10)
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",
@@ -140,10 +126,10 @@ class Coinflip(commands.Cog):
 
         if picked_side == side:
             author = f"{ctx.author.display_name}, you win {betAmount} {spell}"
-            win(ctx, betAmount)
+            win(ctx, betAmount, self.bot)
         else:
             author = f"{ctx.author.display_name}, you lose {betAmount} {spell}"
-            lose(ctx, betAmount)
+            lose(ctx, betAmount, self.bot)
 
         loadingEmbed = discord.Embed(title="Coinflip",
                                      description=emoji,
@@ -165,28 +151,7 @@ class Coinflip(commands.Cog):
             notFound = discord.Embed(title="Game Canceled",
                                      description="The original coinflip message was deleted",
                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=notFound, delete_after=10)
-            with open('db/balance.json', 'r') as f:
-                file = json.load(f)
-
-                with open('db/gamestats.json', 'r') as g:
-                    stats = json.load(g)
-
-                    if picked_side == side:
-                        file["Balance"][str(ctx.author.id)] -= betAmount
-                        stats["Coinflip"][str(ctx.author.id)]["win"] -= 1
-                    else:
-                        file["Balance"][str(ctx.author.id)] += betAmount
-                        stats["Coinflip"][str(ctx.author.id)]["lose"] -= 1
-
-                with open('db/gamestats.json', 'w') as g:
-                    json.dump(stats, g, indent=4)
-            with open('db/balance.json', 'w') as f:
-                json.dump(file, f, indent=4)
-
-            gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
-            return
-
+            return await ctx.channel.send(embed=notFound, delete_after=10)
         if betAmount > 1000 and picked_side == side:
             await message.pin()
 

@@ -115,26 +115,21 @@ class Hand:
 
 class Chips:
 
-    def __init__(self, balance, bet, ctx):
+    def __init__(self, balance, bet, ctx, bot):
         self.total = balance
         self.bet = bet
         self.ctx = ctx
+        self.bot = bot
 
     def win_bet(self):
         self.total += self.bet
-        with open('db/db/balance.json', 'r') as f:
-            file = json.load(f)
-            file['Balance'][str(self.ctx.author.id)] = self.total
-            with open('db/db/balance.json', 'w') as k:
-                json.dump(file, k, indent=4)
+        op = (f"UPDATE balance SET amount = amount + {self.bet} WHERE user_id = {self.ctx.author.id}")
+        self.bot.loop.create_task(gcmds.balance_db(op))
 
     def lose_bet(self):
         self.total -= self.bet
-        with open('db/db/balance.json', 'r') as f:
-            file = json.load(f)
-            file['Balance'][str(self.ctx.author.id)] = self.total
-            with open('db/db/balance.json', 'w') as k:
-                json.dump(file, k, indent=4)
+        op = (f"UPDATE balance SET amount = amount - {self.bet} WHERE user_id = {self.ctx.author.id}")
+        self.bot.loop.create_task(gcmds.balance_db(op))
 
 
 def take_bet(chips):
@@ -169,8 +164,8 @@ def player_busts(player, dealer, chips, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -184,9 +179,9 @@ def player_busts(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/db/gamestats.json', 'Blackjack')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
 
 
 def player_wins(player, dealer, chips, ctx):
@@ -194,8 +189,8 @@ def player_wins(player, dealer, chips, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -209,9 +204,9 @@ def player_wins(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/db/gamestats.json', 'Blackjack')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
 
 
 def dealer_busts(player, dealer, chips, ctx):
@@ -219,8 +214,8 @@ def dealer_busts(player, dealer, chips, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -234,9 +229,9 @@ def dealer_busts(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/db/gamestats.json', 'Blackjack')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
 
 
 def dealer_wins(player, dealer, chips, ctx):
@@ -244,8 +239,8 @@ def dealer_wins(player, dealer, chips, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -259,17 +254,17 @@ def dealer_wins(player, dealer, chips, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/db/gamestats.json', 'Blackjack')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
 
 
 def push(player, dealer, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -283,7 +278,7 @@ def push(player, dealer, ctx):
                         file['Blackjack'][str(ctx.author.id)] = {}
                         success = True
                 file['Blackjack'][str(ctx.author.id)]['tie'] = 0
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
 
 
@@ -293,8 +288,8 @@ def _blackjack(player, dealer, chips, ctx):
     load = False
     success = False
     init = {'Blackjack': {}}
-    gcmds.json_load('db/db/gamestats.json', init)
-    with open('db/db/gamestats.json', 'r') as f:
+    gcmds.json_load('db/gamestats.json', init)
+    with open('db/gamestats.json', 'r') as f:
         file = json.load(f)
         while not load:
             try:
@@ -311,9 +306,9 @@ def _blackjack(player, dealer, chips, ctx):
                 file['Blackjack'][str(ctx.author.id)]['win'] = 0
                 file['Blackjack'][str(ctx.author.id)]['blackjack'] = 0
 
-        with open('db/db/gamestats.json', 'w') as f:
+        with open('db/gamestats.json', 'w') as f:
             json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/db/gamestats.json', 'Blackjack')
+    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
 
 
 def show_dealer(dealer, won):
@@ -465,7 +460,9 @@ def emoji(card):
 class Blackjack(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
@@ -490,31 +487,20 @@ class Blackjack(commands.Cog):
         dealer_hand.add_card((deck.deal()))
         dealer_value = dealer_hand.list_hand(True)
 
-        init = {'Balance': {}}
-        gcmds.json_load('db/db/balance.json', init)
-        with open('db/db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(ctx.author.id)]
-            except KeyError:
-                file['Balance'][str(ctx.author.id)] = 1000
-                balance = 1000
-                initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                          description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                      f"to start!\n\nCheck your current"
-                                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                          color=discord.Color.blue())
-                initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
-                                            "/738390147514499163/chips.png")
-                await ctx.channel.send(embed=initEmbed, delete_after=10)
+        balance = await gcmds.get_balance(ctx.author)
+        if not balance:
+            await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+            balance = 1000
+            initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                        description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                                    f"to start!\n\nCheck your current"
+                                                    f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                        color=discord.Color.blue())
+            initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                        "/738390147514499163/chips.png")
+            await ctx.channel.send(embed=initEmbed, delete_after=10)
 
-            else:
-                balance = file['Balance'][str(ctx.author.id)]
-
-        with open('db/db/balance.json', 'w') as f:
-            json.dump(file, f, indent=4)
-
-        player_chips = Chips(balance, bet, ctx)
+        player_chips = Chips(balance, bet, ctx, self.bot)
         if not take_bet(player_chips):
             insuf = discord.Embed(title="Insufficient Credit Balance",
                                   description=f"{ctx.author.mention}, you have `{balance}` credits"
