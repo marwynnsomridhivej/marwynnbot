@@ -154,6 +154,11 @@ class GlobalCMDS:
             else:
                 await con.execute(execute)
 
+    async def get_balance(self, member: discord.Member):
+        async with self.db.acquire() as con:
+            bal = await con.fetch(f"SELECT amount FROM balance WHERE user_id = {member.id}")
+            return bal[0]['amount'] if bal else None
+
     def ratio(self, user: discord.User, filenamepath: str, gameName: str):
         with open(filenamepath, 'r') as f:
             file = json.load(f)
