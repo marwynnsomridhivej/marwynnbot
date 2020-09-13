@@ -519,7 +519,6 @@ class UNO(commands.Cog):
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
-        
 
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",
@@ -740,7 +739,7 @@ class UNO(commands.Cog):
                 while loop:
                     try:
                         choice = await self.bot.wait_for('message', timeout=60,
-                                                                        check=from_player)
+                                                         check=from_player)
                     except asyncio.TimeoutError:
                         played_card = gameMembers[index].auto_play(pile)
                         gameMembers[index].place(played_card, pile)
@@ -824,8 +823,8 @@ class UNO(commands.Cog):
                                     while not reaction_confirmed:
                                         try:
                                             choice_check = await self.bot.wait_for('reaction_add',
-                                                                                       timeout=20.0,
-                                                                                       check=check)
+                                                                                   timeout=20.0,
+                                                                                   check=check)
                                         except asyncio.TimeoutError:
                                             await color_choice.clear_reactions()
                                             color = random.choice(rlist)
@@ -907,34 +906,25 @@ class UNO(commands.Cog):
             await ctx.channel.send(embed=cancelEmbed, delete_after=30)
             return
 
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
+        balance = await gcmds.get_balance(ctx.author)
+        if not balance:
+            await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+            balance = 1000
+            initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                      description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                      f"to start!\n\nCheck your current"
+                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                      color=discord.Color.blue())
+            initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                        "/738390147514499163/chips.png")
+            await ctx.channel.send(embed=initEmbed, delete_after=10)
 
-            try:
-                file['Balance'][str(placement[0].member.id)]
-            except KeyError:
-                file['Balance'][str(placement[0].member.id)] = 1000
-                initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                          description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                      f"to start!\n\nCheck your current"
-                                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                          color=discord.Color.blue())
-                initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
-                                            "/738390147514499163/chips.png")
-                await ctx.channel.send(embed=initEmbed, delete_after=10)
-                balance = file['Balance'][str(placement[0].member.id)]
-            else:
-                balance = file['Balance'][str(placement[0].member.id)]
+        if turns_to_win > 300:
+            award_amount = int(math.floor(randint(10, 100) * turns_to_win / randint(2, 20)))
+        else:
+            award_amount = int(math.floor(randint(1, 10) * turns_to_win / randint(2, 5)))
 
-            if turns_to_win > 300:
-                award_amount = int(math.floor(randint(10, 100) * turns_to_win / randint(2, 20)))
-            else:
-                award_amount = int(math.floor(randint(1, 10) * turns_to_win / randint(2, 5)))
-            balance += award_amount
-            with open('db/balance.json', 'w') as g:
-                json.dump(file, g, indent=4)
+        await gcmds.balance_db(f"UPDATE balance SET amount = amount + {award_amount} WHERE user_id = {placement[0].member.id}")
 
         rewardEmbed = discord.Embed(title="Winnings",
                                     description=f"{placement[0].member.mention}, you won ```{award_amount} credits!```",

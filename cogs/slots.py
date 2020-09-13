@@ -114,14 +114,11 @@ def rewards(slot_selection, bet):
         return 0
 
 
-def win(ctx, reward):
+def win(ctx, reward, bot: commands.AutoShardedBot):
     load = False
     success = False
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        file['Balance'][str(ctx.author.id)] += reward
-        with open('db/balance.json', 'w') as k:
-            json.dump(file, k, indent=4)
+    op = (f"UPDATE balance SET amount = amount + {reward} WHERE user_id = {ctx.author.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
     init = {'Slots': {}}
     gcmds.json_load('db/gamestats.json', init)
     with open('db/gamestats.json', 'r') as f:
@@ -149,14 +146,11 @@ def win(ctx, reward):
     gcmds.ratio(ctx.author, 'db/gamestats.json', 'Slots')
 
 
-def lose(ctx, reward):
+def lose(ctx, reward, bot: commands.AutoShardedBot):
     load = False
     success = False
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        file['Balance'][str(ctx.author.id)] -= reward
-        with open('db/balance.json', 'w') as k:
-            json.dump(file, k, indent=4)
+    op = (f"UPDATE balance SET amount = amount - {reward} WHERE user_id = {ctx.author.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
     init = {'Slots': {}}
     gcmds.json_load('db/gamestats.json', init)
     with open('db/gamestats.json', 'r') as f:
@@ -184,14 +178,11 @@ def lose(ctx, reward):
     gcmds.ratio(ctx.author, 'db/gamestats.json', 'Slots')
 
 
-def jackpot(ctx, reward):
+def jackpot(ctx, reward, bot: commands.AutoShardedBot):
     load = False
     success = False
-    with open('db/balance.json', 'r') as f:
-        file = json.load(f)
-        file['Balance'][str(ctx.author.id)] += reward
-        with open('db/balance.json', 'w') as k:
-            json.dump(file, k, indent=4)
+    op = (f"UPDATE balance SET amount = amount + {reward} WHERE user_id = {ctx.author.id}")
+    bot.loop.create_task(gcmds.balance_db(op))
     init = {'Slots': {}}
     gcmds.json_load('db/gamestats.json', init)
     with open('db/gamestats.json', 'r') as f:
@@ -220,7 +211,9 @@ def jackpot(ctx, reward):
 class Slots(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
@@ -257,29 +250,18 @@ class Slots(commands.Cog):
             await ctx.channel.send(embed=rates)
             return
 
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            try:
-                file['Balance'][str(ctx.author.id)]
-            except KeyError:
-                file['Balance'][str(ctx.author.id)] = 1000
-                balance = 1000
-                initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                          description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                      f"to start!\n\nCheck your current"
-                                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                          color=discord.Color.blue())
-                initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
-                                            "/738390147514499163/chips.png")
-                await ctx.channel.send(embed=initEmbed, delete_after=10)
-
-            else:
-                balance = file['Balance'][str(ctx.author.id)]
-
-        with open('db/balance.json', 'w') as f:
-            json.dump(file, f, indent=4)
+        balance = await gcmds.get_balance(ctx.author)
+        if not balance:
+            await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+            balance = 1000
+            initEmbed = discord.Embed(title="Initialised Credit Balance",
+                                        description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                                    f"to start!\n\nCheck your current"
+                                                    f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                        color=discord.Color.blue())
+            initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
+                                        "/738390147514499163/chips.png")
+            await ctx.channel.send(embed=initEmbed, delete_after=10)
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",
@@ -300,7 +282,7 @@ class Slots(commands.Cog):
 
         if reward == 0:
             description = f"{ctx.author.display_name}, you lost {betAmount} {spell}"
-            lose(ctx, betAmount)
+            lose(ctx, betAmount, self.bot)
         else:
             if reward != 1:
                 spell = "credits"
@@ -308,10 +290,10 @@ class Slots(commands.Cog):
                 spell = "credit"
             if global_jackpot:
                 description = f"Jackpot! {ctx.author.display_name}, you won {reward} {spell}!"
-                jackpot(ctx, reward)
+                jackpot(ctx, reward, self.bot)
             else:
                 description = f"{ctx.author.display_name}, you won {reward} {spell}!"
-                win(ctx, reward)
+                win(ctx, reward, self.bot)
 
         slot_string = "========\n|" + "|".join(slot_selection) + "|\n========"
 
