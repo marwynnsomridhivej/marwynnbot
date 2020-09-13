@@ -933,7 +933,7 @@ class UNO(commands.Cog):
 
         win(placement[0])
         lose(placement[-1])
-        gcmds.incrCounter(ctx, 'uno')
+
         return
 
 

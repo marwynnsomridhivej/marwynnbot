@@ -492,10 +492,10 @@ class Blackjack(commands.Cog):
             await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
             balance = 1000
             initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                        description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                    f"to start!\n\nCheck your current"
-                                                    f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                        color=discord.Color.blue())
+                                      description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                      f"to start!\n\nCheck your current"
+                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                      color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
             await ctx.channel.send(embed=initEmbed, delete_after=10)
@@ -610,7 +610,7 @@ class Blackjack(commands.Cog):
                 bjEmbedEdit.add_field(name=f"{ctx.author.name} `[{player_value[:-1]}={pv_int}]`",
                                       value=show_player(player_hand))
                 await message.edit(embed=bjEmbedEdit)
-                gcmds.incrCounter(ctx, 'blackjack')
+
                 return
 
             if player_hand.value <= 21 and not stopiter:
@@ -677,7 +677,7 @@ class Blackjack(commands.Cog):
 
                     try:
                         pin_choice = await self.bot.wait_for('reaction_add', timeout=20.0,
-                                                                check=check_pin)
+                                                             check=check_pin)
                     except asyncio.TimeoutError:
                         await message.clear_reactions()
                         bjEmbedEdit.set_footer(text="Not pinned 🛑")
@@ -697,7 +697,6 @@ class Blackjack(commands.Cog):
 
                         await message.edit(embed=bjEmbedEdit)
 
-                gcmds.incrCounter(ctx, 'blackjack')
                 return
 
 

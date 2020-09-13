@@ -25,9 +25,6 @@ class Fun(commands.Cog):
         path = path
         sleepTime = 1.0
 
-        def incr(cmdName):
-            gcmds.incrCounter(ctx, cmdName)
-
         if "imgur" in path:
             local = False
             title = f"{path[5:].capitalize()} from Imgur"
@@ -110,7 +107,6 @@ class Fun(commands.Cog):
                         await ctx.channel.send(file=picture, embed=multipleEmbed)
                         await asyncio.sleep(sleepTime)
                         count += 1
-                        incr(cmdName)
                 return
             else:
                 with open(d, 'rb') as f:
@@ -124,7 +120,6 @@ class Fun(commands.Cog):
                 multipleEmbed.set_image(url=i)
                 await ctx.channel.send(embed=multipleEmbed)
                 await asyncio.sleep(sleepTime)
-                incr(cmdName)
             return
         else:
             pictureEmbed = discord.Embed(title=title,
@@ -135,10 +130,8 @@ class Fun(commands.Cog):
             pictureEmbed.set_footer(text=f'Filename: {name}')
             await ctx.channel.send(file=picture,
                                    embed=pictureEmbed)
-            incr(cmdName)
         else:
             await ctx.channel.send(embed=pictureEmbed)
-            incr(cmdName)
 
     @commands.command(aliases=['8ball', '8b'])
     async def eightball(self, ctx, *, question):
@@ -150,7 +143,6 @@ class Fun(commands.Cog):
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
-        gcmds.incrCounter(ctx, '8ball')
 
     @commands.command()
     async def choose(self, ctx, *, choices):
@@ -163,7 +155,6 @@ class Fun(commands.Cog):
         chooseEmbed.add_field(name=f'{ctx.author} asked: {choices}',
                               value=answer)
         await ctx.channel.send(embed=chooseEmbed)
-        gcmds.incrCounter(ctx, 'choose')
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
@@ -350,7 +341,6 @@ class Fun(commands.Cog):
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
-        gcmds.incrCounter(ctx, 'say')
 
     @commands.command(aliases=['toadpic', 'toademote'])
     async def toad(self, ctx, toSend: typing.Optional[int] = None):

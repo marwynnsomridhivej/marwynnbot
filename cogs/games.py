@@ -55,7 +55,7 @@ class Games(commands.Cog):
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed, delete_after=30)
-            gcmds.incrCounter(ctx, 'balance')
+
         else:
             if color == len(member):
                 color = discord.Color.dark_red()
@@ -68,7 +68,6 @@ class Games(commands.Cog):
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed, delete_after=30)
-            gcmds.incrCounter(ctx, 'balance')
 
     @commands.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
@@ -128,7 +127,7 @@ class Games(commands.Cog):
                                              inline=False)
 
                         await ctx.channel.send(embed=statsEmbed)
-                        gcmds.incrCounter(ctx, 'gameStats')
+
                 else:
                     statsEmbed = discord.Embed(title=f"{person_name.display_name}'s Stats for All Games",
                                                color=discord.Color.blue())
@@ -153,7 +152,6 @@ class Games(commands.Cog):
                             statsEmbed.add_field(name=game,
                                                  value=value)
                     await ctx.channel.send(embed=statsEmbed)
-                    gcmds.incrCounter(ctx, 'gameStats')
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
@@ -236,7 +234,7 @@ class Games(commands.Cog):
                                                  description=description,
                                                  color=discord.Color.blue())
                     await message.edit(embed=confirmEmbed)
-                    gcmds.incrCounter(ctx, 'transfer')
+
                     return
                 if choice == 'cancel':
                     await message.clear_reactions()

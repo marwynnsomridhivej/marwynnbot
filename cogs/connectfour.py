@@ -158,16 +158,15 @@ async def win(ctx, member: discord.Member, bot: commands.AutoShardedBot):
     elif random_number == 100001:
         award_amount = 1000000
 
-    
     balance = await gcmds.get_balance(ctx.author)
     if not balance:
         await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
         balance = 1000
         initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                    description=f"{member.mention}, you have been credited `{balance}` credits "
-                                                f"to start!\n\nCheck your current"
-                                                f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                    color=discord.Color.blue())
+                                  description=f"{member.mention}, you have been credited `{balance}` credits "
+                                  f"to start!\n\nCheck your current"
+                                  f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                  color=discord.Color.blue())
         initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                     "/738390147514499163/chips.png")
         await ctx.channel.send(embed=initEmbed, delete_after=10)
@@ -331,7 +330,7 @@ class ConnectFour(commands.Cog):
             while not confirm_turn:
                 try:
                     choice = await self.bot.wait_for('reaction_add', timeout=60.0,
-                                                        check=check)
+                                                     check=check)
                 except asyncio.TimeoutError:
                     await message.clear_reactions()
                     canceled = discord.Embed(title="Game Timeout",
@@ -405,7 +404,7 @@ class ConnectFour(commands.Cog):
                                 await message.edit(embed=c4)
                                 await win(ctx, ctx.author, self.bot)
                                 lose(ctx, opponent, self.bot)
-                                gcmds.incrCounter(ctx, 'connectFour')
+
                                 return
 
                     if turn == 1 and player == member:
@@ -437,7 +436,7 @@ class ConnectFour(commands.Cog):
                                 await message.edit(embed=c4)
                                 await win(ctx, opponent, self.bot)
                                 lose(ctx, ctx.author, self.bot)
-                                gcmds.incrCounter(ctx, 'connectFour')
+
                                 return
 
             c4 = discord.Embed(title="Connect Four",
@@ -470,7 +469,6 @@ class ConnectFour(commands.Cog):
                              "/DanYr4AVMAABJ_K.png")
         await message.edit(embed=c4)
         draw(ctx, member, self.bot)
-        gcmds.incrCounter(ctx, 'connectFour')
 
 
 def setup(bot):

@@ -59,7 +59,7 @@ class Help(commands.Cog):
 
     @commands.group(invoke_without_subcommand=True, aliases=['h'])
     async def help(self, ctx):
-        gcmds.incrCounter(ctx, 'help')
+
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         helpEmbed = discord.Embed(title="MarwynnBot Help Menu",
                                   color=discord.Color.blue(),

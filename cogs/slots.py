@@ -217,7 +217,6 @@ class Slots(commands.Cog):
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
-        
 
         if betAmount is None:
             betAmount = 1
@@ -255,10 +254,10 @@ class Slots(commands.Cog):
             await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
             balance = 1000
             initEmbed = discord.Embed(title="Initialised Credit Balance",
-                                        description=f"{ctx.author.mention}, you have been credited `1000` credits "
-                                                    f"to start!\n\nCheck your current"
-                                                    f" balance using `{await gcmds.prefix(ctx)}balance`",
-                                        color=discord.Color.blue())
+                                      description=f"{ctx.author.mention}, you have been credited `1000` credits "
+                                      f"to start!\n\nCheck your current"
+                                      f" balance using `{await gcmds.prefix(ctx)}balance`",
+                                      color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
             await ctx.channel.send(embed=initEmbed, delete_after=10)
@@ -319,8 +318,6 @@ class Slots(commands.Cog):
 
         if reward >= 1000:
             await message.pin()
-
-        gcmds.incrCounter(ctx, "slots")
 
 
 def setup(bot):

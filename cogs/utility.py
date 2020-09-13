@@ -8,7 +8,8 @@ from discord.ext.commands import MissingPermissions, BotMissingPermissions, Comm
 from utils import globalcommands
 
 
-gcmds = None
+gcmds = globalcommands.GlobalCMDS()
+
 
 class Utility(commands.Cog):
 
@@ -109,7 +110,6 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, commandName=None, mode='server'):
-
         gcmds.file_check(gcmds, "db/counters.json", '{\n\n}')
 
         if commandName == 'global':
@@ -161,7 +161,6 @@ class Utility(commands.Cog):
                                            value=value)
 
         await ctx.channel.send(embed=counterEmbed)
-        gcmds.incrCounter(ctx, 'counter')
 
     @counter.error
     async def counter_error(self, ctx, error):
@@ -178,7 +177,6 @@ class Utility(commands.Cog):
 
     @commands.command()
     async def invite(self, ctx):
-
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
                               " invite link that you can share:\n\n https://discord.com/oauth2/authorize?bot_id"
@@ -190,7 +188,6 @@ class Utility(commands.Cog):
 
     @commands.group()
     async def request(self, ctx):
-
         self.load_messages()
         if not ctx.invoked_subcommand:
             menu = discord.Embed(title="Request Options",
@@ -263,7 +260,6 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
     async def serverEmotes(self, ctx, *, search=None):
-
         description = []
         for emoji in ctx.guild.emojis:
             if search is not None:
@@ -293,7 +289,6 @@ class Utility(commands.Cog):
                               value=f"{self.bot.user.mention} or `mb ` - *ignorecase*",
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
-        gcmds.incrCounter(ctx, 'prefix')
 
     @commands.command(aliases=['sp', 'setprefix'])
     @commands.has_permissions(manage_guild=True)
@@ -312,7 +307,6 @@ class Utility(commands.Cog):
                                             description=f"Server prefix has been reset to `m!`",
                                             color=discord.Color.blue())
             await ctx.channel.send(embed=prefixEmbed)
-            gcmds.incrCounter(ctx, 'setPrefix')
 
     @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
@@ -356,7 +350,6 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(change_nickname=True)
     async def timezone(self, ctx, *, timezoneInput):
-
         nameSpace = str(timezoneInput)
         name = nameSpace.replace(" ", "")
         if name == 'reset' or name == 'r':
@@ -371,7 +364,7 @@ class Utility(commands.Cog):
                 title = "Timezone Update Success"
                 description = f"{ctx.author.mention}'s timezone has been added to their nickname"
                 color = discord.Color.blue()
-                gcmds.incrCounter(ctx, 'timezone')
+
             else:
                 title = "Invalid Timezone Format"
                 description = "Please put your timezone in `GMT+` or `GMT-` format"

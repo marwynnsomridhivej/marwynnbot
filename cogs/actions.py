@@ -104,7 +104,6 @@ class Actions(commands.Cog):
         embed.set_footer(text=footer)
 
         await ctx.channel.send(embed=embed)
-        gcmds.incrCounter(ctx, cmdNameQuery)
 
     @commands.command(aliases=['action'])
     async def actions(self, ctx, cmdName=None):
