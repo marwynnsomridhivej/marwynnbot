@@ -11,45 +11,34 @@ gcmds = globalcommands.GlobalCMDS()
 class Games(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
-
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            if member is None:
-                try:
-                    file['Balance'][str(ctx.author.id)]
-                except KeyError:
-                    file['Balance'][str(ctx.author.id)] = 1000
+        if not member:
+            balance = await gcmds.get_balance(ctx.author)
+            if not balance:
+                await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
+                balance = 1000
+        else:
+            description = ""
+            color = 0
+            for user in member:
+                balance = await gcmds.get_balance(user)
+                if not balance:
+                    await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({user.id}, 1000)")
                     balance = 1000
-                else:
-                    balance = file['Balance'][str(ctx.author.id)]
-            else:
-                description = ""
-                color = 0
-                for user in member:
-                    try:
-                        file['Balance'][str(user.id)]
-                    except KeyError:
-                        file['Balance'][str(user.id)] = 1000
-                        balance = 1000
-                    else:
-                        balance = file['Balance'][str(user.id)]
-                        if balance != 1:
-                            spelling = "credits"
-                        elif balance == 1:
-                            spelling = 'credit'
-                        if balance == 0:
-                            color += 1
-                        description += f"{user.mention} has ```{balance} {spelling}```\n"
-        with open('db/balance.json', 'w') as f:
-            json.dump(file, f, indent=4)
+                if balance != 1:
+                    spelling = "credits"
+                elif balance == 1:
+                    spelling = 'credit'
+                if balance == 0:
+                    color += 1
+                description += f"{user.mention} has ```{balance} {spelling}```\n"
 
-        if member is None:
+        if not member:
             if balance != 1:
                 spelling = "credits"
             elif balance == 1:
@@ -84,7 +73,6 @@ class Games(commands.Cog):
     @commands.command(aliases=['gamestats', 'stats'])
     async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
                         member: commands.Greedy[discord.Member] = None):
-
         if gameName is not None:
             if "<@!" in gameName:
                 userid = gameName[3:-1]
@@ -169,7 +157,6 @@ class Games(commands.Cog):
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
-
         cmdExit = False
         if amount is None:
             errorEmbed = discord.Embed(title="No Amount Specified",
@@ -192,20 +179,10 @@ class Games(commands.Cog):
             memberString += f"{members.mention}, "
             userlist.append(members.id)
 
-        init = {'Balance': {}}
-        gcmds.json_load('db/balance.json', init)
-        with open('db/balance.json', 'r') as f:
-            file = json.load(f)
-            for user in userlist:
-                try:
-                    file['Balance'][str(user)]
-                except KeyError:
-                    file['Balance'][str(user)] = 1000
+        await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000) ON CONFLICT DO NOTHING")
+        balance = await gcmds.get_balance(ctx.author)
 
-        with open('db/balance.json', 'w') as f:
-            json.dump(file, f, indent=4)
-
-        if (int(file['Balance'][str(ctx.author.id)])) < (amount * (int(len(userlist)) - 1)):
+        if (balance) < (amount * (int(len(userlist)) - 1)):
             if amount != 1:
                 spell = "credits"
             else:
@@ -214,7 +191,7 @@ class Games(commands.Cog):
                                        description=f"{ctx.author.mention}, you cannot transfer more than you have\n"
                                                    f"*Attempted to transfer* "
                                                    f"```{(amount * (int(len(userlist)) - 1))} {spell}```, only have"
-                                                   f"```{int(file['Balance'][str(ctx.author.id)])} {spell}```",
+                                                   f"```{balance} {spell}```",
                                        color=discord.Color.dark_red())
             await ctx.channel.send(embed=errorEmbed, delete_after=10)
             return
@@ -251,14 +228,10 @@ class Games(commands.Cog):
                 if choice == 'confirm':
                     await message.clear_reactions()
                     description = "Successfully transferred:\n"
-                    with open('db/balance.json', 'r') as f:
-                        file = json.load(f)
-                        for members in member:
-                            file['Balance'][str(members.id)] += amount
-                            file['Balance'][str(ctx.author.id)] -= amount
-                            description += f"```{amount}``` ➡ {members.mention}\n"
-                        with open('db/balance.json', 'w') as f:
-                            json.dump(file, f, indent=4)
+                    await gcmds.balance_db(f"UPDATE balance SET amount = amount - {amount * (int(len(userlist)) - 1)} WHERE user_id = {ctx.author.id}")
+                    for members in member:
+                        await gcmds.balance_db(f"UPDATE balance SET amount = amount + {amount} WHERE user_id = {members.id}")
+                        description += f"```{amount}``` ➡ {members.mention}\n"
                     confirmEmbed = discord.Embed(title="Credits Transfer Successful",
                                                  description=description,
                                                  color=discord.Color.blue())
