@@ -19,7 +19,7 @@ gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
-token_rx = re.compile(r'[MN]\w{23}.[\w-]{6}.[\w-]{27}')
+token_rx = re.compile(r'[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}')
 version = f"Running MarwynnBot {gcmds.version}"
 
 if os.path.exists('discord.log'):
@@ -117,7 +117,7 @@ class Bot(commands.AutoShardedBot):
                                   description=f"{message.author.mention}, a Discord token was found in your message. It has"
                                   f" been sent to {url} to be invalidated",
                                   color=discord.Color.dark_red())
-            await message.channel.send(embed=embed, delete_after=10)
+            await message.channel.send(embed=embed)
 
         await self.process_commands(message)
 
