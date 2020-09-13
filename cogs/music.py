@@ -1176,13 +1176,13 @@ class Music(commands.Cog):
                                    description=f"{ctx.author.mention}, your playlist *\"{name}\"* was deleted",
                                    color=discord.Color.blue())
             try:
-                return await panel.edit(embed=edited, delete_after=10)
+                return await panel.edit(embed=edited)
             except discord.NotFound:
-                return await ctx.channel.send(embed=edited, delete_after=10)
+                return await ctx.channel.send(embed=edited)
         try:
-            await panel.edit(embed=no_panel, delete_after=5)
+            await panel.edit(embed=no_panel, delete_after=30)
         except discord.NotFound:
-            await ctx.channel.send(embed=no_panel, delete_after=5)
+            await ctx.channel.send(embed=no_panel, delete_after=30)
 
 
 def setup(bot):
