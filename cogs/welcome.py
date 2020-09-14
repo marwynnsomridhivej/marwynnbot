@@ -21,7 +21,10 @@ api_key = gcmds.env_check("TENOR_API")
 class Welcome(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_welcomer())
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -31,18 +34,23 @@ class Welcome(commands.Cog):
     async def on_member_remove(self, member: discord.Member):
         await self.send_leaver(member)
 
-    async def send_welcomer(self, member: discord.Member):
-        if os.path.exists('db/welcomers.json') and not member.bot:
-            with open('db/welcomers.json', 'r') as f:
-                file = json.load(f)
+    async def init_welcomer(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS welcomers(guild_id bigint PRIMARY KEY, channel_id bigint, title text, description text, media text[], leaver boolean)")
 
+    async def send_welcomer(self, member: discord.Member):
+        if not member.bot:
+            async with self.bot.db.acquire() as con:
+                result = await con.fetch(f"SELECT * FROM welcomers WHERE guild_id = {member.guild.id}")
             member = member
-            if str(member.guild.id) in file:
+            if result:
+                info = result[0]
                 guild = member.guild
-                channel_to_send = await self.bot.fetch_channel(file[str(guild.id)]["channel_id"])
-                embed_title = file[str(guild.id)]['title']
-                edv = str(file[str(guild.id)]['description'])
-                media = file[str(guild.id)]['media']
+                channel_to_send = await self.bot.fetch_channel(int(info["channel_id"]))
+                embed_title = info['title']
+                edv = str(info['description'])
+                media = info['media']
                 bot_count = 0
                 for members in guild.members:
                     if members.bot:
@@ -76,21 +84,24 @@ class Welcome(commands.Cog):
                 return await channel_to_send.send(embed=welcome_embed)
 
     async def send_leaver(self, member: discord.Member):
-        if os.path.exists('db/welcomers.json') and not member.bot:
-            with open('db/welcomers.json', 'r') as f:
-                file = json.load(f)
+        if not member.bot:
+            async with self.bot.db.acquire() as con:
+                result = await con.fetch(f"SELECT channel_id FROM welcomers WHERE guild_id = {member.guild.id}")
+            if not result:
+                return
+            else:
+                info = result[0]
 
             member = member
-            if str(member.guild.id) in file:
-                guild = member.guild
-                channel_to_send = await self.bot.fetch_channel(file[str(guild.id)]["channel_id"])
-                leave_embed = discord.Embed(title=f"{member.display_name} left {guild.name}",
-                                            description=f"{member.mention}, we're sad to see you go!",
-                                            color=discord.Color.dark_red())
-                leave_embed.set_thumbnail(url=member.avatar_url)
-                leave_embed.set_image(url="https://media1.tenor.com/images/e69ebde3631408c200777ebe10f84367/tenor.gif?"
-                                      "itemid=5081296")
-                return await channel_to_send.send(embed=leave_embed)
+            guild = member.guild
+            channel_to_send = await self.bot.fetch_channel(info["channel_id"])
+            leave_embed = discord.Embed(title=f"{member.display_name} left {guild.name}",
+                                        description=f"{member.mention}, we're sad to see you go!",
+                                        color=discord.Color.dark_red())
+            leave_embed.set_thumbnail(url=member.avatar_url)
+            leave_embed.set_image(url="https://media1.tenor.com/images/e69ebde3631408c200777ebe10f84367/tenor.gif?"
+                                    "itemid=5081296")
+            return await channel_to_send.send(embed=leave_embed)
 
     async def get_welcome_help(self, ctx) -> discord.Message:
         title = "Welcomer Help Menu"
@@ -174,86 +185,49 @@ class Welcome(commands.Cog):
 
     async def create_welcomer(self, ctx, channel_id: int, title: str = None, description: str = None,
                               media: list = None) -> bool:
-        init = {
-            str(ctx.guild.id): {
-                "channel_id": channel_id,
-                "title": title,
-                "description": description,
-                "media": media,
-                "leaver": False
-            }
-        }
-        gcmds.json_load('db/welcomers.json', init)
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
+        title = f"'{title}'" if title else "'New Member Joined!'"
+        description = f"'{description}'" if description else "'Welcome to {server_name}! {user_mention} is our {member_count_ord} member!'"
+        media = "'{" + '", "'.join(media) + "}'::text[]" if media else None
+        values = f"VALUES ({ctx.guild.id}, {channel_id}, {title}, {description}, {media}, false)"
 
-        while True:
-            try:
-                if not title:
-                    title = "New Member Joined!"
-                if not description:
-                    description = "Welcome to {server_name}! {user_mention} is our {member_count_ord} member!"
-                file[str(ctx.guild.id)] = {
-                    "channel_id": channel_id,
-                    "title": title,
-                    "description": description,
-                    "media": media,
-                    "leaver": False
-                }
-                break
-            except KeyError:
-                file[str(ctx.guild.id)] = {}
-                continue
-            except Exception:
-                return False
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"INSERT INTO welcomers(guild_id, channel_id, title, description, media, leaver) {values}")
 
-        with open('db/welcomers.json', 'w') as g:
-            json.dump(file, g, indent=4)
-
-        return True
-
-    async def has_welcomer(self, ctx) -> bool:
-        if not os.path.exists('db/welcomers.json'):
-            return False
-
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
-        try:
-            if file[str(ctx.guild.id)]:
-                return True
-        except KeyError:
-            return False
+    async def has_welcomer(self, ctx):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT * FROM welcomers WHERE guild_id = {ctx.guild.id}")
+        return True if result else False
 
     async def get_welcomer(self, ctx) -> list:
         if not await self.has_welcomer(ctx):
             return None
 
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
-        info = file[str(ctx.guild.id)]
+        async with self.bot.db.acquire() as con:
+            info = (await con.fetch(f"SELECT * FROM welcomers WHERE guild_id = {ctx.guild.id}"))[0]
         return [info['channel_id'], info['title'], info['description'], info['media']]
 
     async def edit_welcomer(self, ctx, channel_id: int, title: str, description: str, media=None) -> bool:
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
+        op = []
+        if channel_id:
+            op.append(f"channel_id = {channel_id}")
+        op.append(f"title = '{title}'") if title else op.append(f"title = 'New Member Joined!'")
+        op.append(f"description = '{description}'") if description else op.append(
+            "description = 'Welcome to {server_name}! {user_mention} is our {member_count_ord} member!'"
+            )
+        if media:
+            if media == "default":
+                op.append("media = NULL")
+            else:
+                values = "'{\"" + '", "'.join(media) + "\"}'"
+                op.append(f"media = {values}")
 
         try:
-            file[str(ctx.guild.id)]['channel_id'] = channel_id
-            file[str(ctx.guild.id)]['title'] = title
-            file[str(ctx.guild.id)]['description'] = description
-            if media:
-                if media == "default":
-                    file[str(ctx.guild.id)]['media'] = None
-                else:
-                    file[str(ctx.guild.id)]['media'] = media
-        except KeyError:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"UPDATE welcomers SET {', '.join(op)} WHERE guild_id = {ctx.guild.id}")
+            return True
+        except Exception as e:
+            print(e)
             return False
-
-        with open('db/welcomers.json', 'w') as g:
-            json.dump(file, g, indent=4)
-        return True
 
     async def no_welcomer(self, ctx) -> discord.Message:
         embed = discord.Embed(title="No Welcomer Set",
@@ -262,19 +236,12 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed, delete_after=10)
 
     async def delete_welcomer(self, ctx) -> bool:
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
         try:
-            del file[str(ctx.guild.id)]
-            if len(file) == 0:
-                file = {}
-        except KeyError:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"DELETE FROM welcomers WHERE guild_id = {ctx.guild.id}")
+            return True
+        except Exception:
             return False
-
-        with open('db/welcomers.json', 'w') as g:
-            json.dump(file, g, indent=4)
-        return True
 
     async def get_leaver_help(self, ctx) -> discord.Message:
         title = "Leaver Help"
@@ -302,32 +269,20 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def create_leaver(self, ctx) -> bool:
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
-        try:
-            file[str(ctx.guild.id)]['leaver'] = True
-        except KeyError:
+        if not await self.has_leaver(ctx):
             return False
-
-        with open('db/welcomers.json', 'w') as g:
-            json.dump(file, g, indent=4)
-        return True
+        else:
+            try:
+                async with self.bot.db.acquire() as con:
+                    await con.execute(f"UPDATE welcomers SET leaver = TRUE WHERE guild_id = {ctx.guild.id}")
+                return True
+            except Exception:
+                return False
 
     async def has_leaver(self, ctx) -> bool:
-        if not await self.has_welcomer(ctx):
-            return False
-
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
-        try:
-            if file[str(ctx.guild.id)]['leaver']:
-                return True
-            else:
-                return False
-        except KeyError:
-            return False
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT leaver FROM welcomers WHERE guild_id = {ctx.guild.id} AND leaver = TRUE")
+        return True if result else False
 
     async def no_leaver(self, ctx) -> discord.Message:
         embed = discord.Embed(title="No Leaver Set",
@@ -336,27 +291,16 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed, delete_after=10)
 
     async def delete_leaver(self, ctx) -> bool:
-        with open('db/welcomers.json', 'r') as f:
-            file = json.load(f)
-
         try:
-            if not file[str(ctx.guild.id)]['leaver']:
-                return False
-            else:
-                file[str(ctx.guild.id)]['leaver'] = False
-        except KeyError:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"UPDATE welcomers SET leaver = FALSE WHERE guild_id = {ctx.guild.id}")
+            return True
+        except Exception:
             return False
 
-        with open('db/welcomers.json', 'w') as g:
-            json.dump(file, g, indent=4)
-        return True
-
-    @commands.group(aliases=['welcome'])
+    @commands.group(invoke_without_command=True, aliases=['welcome'])
     async def welcomer(self, ctx):
-        
-
-        if not ctx.invoked_subcommand:
-            return await self.get_welcome_help(ctx)
+        return await self.get_welcome_help(ctx)
 
     @welcomer.command(aliases=['make', 'start', '-c'])
     @commands.has_permissions(manage_guild=True)
@@ -518,7 +462,7 @@ class Welcome(commands.Cog):
             return await self.no_welcomer(ctx)
 
         cmd_title = "welcomer edit"
-        or_default = "or type *\"skip\"* to use the currently set value"
+        or_default = "type *\"skip\"* to use the currently set value, or type *\"default\"* to use the default value"
 
         def from_user(message: discord.Message) -> bool:
             if message.author.id == ctx.author.id and message.channel.id == ctx.channel.id:
@@ -541,7 +485,7 @@ class Welcome(commands.Cog):
                                     description=f"{ctx.author.mention}, this welcomer edit panel will walk you through "
                                     "editing your current server welcome message",
                                     color=discord.Color.blue())
-        panel_embed.set_footer(text="Type *\"cancel\"* to cancel at any time")
+        panel_embed.set_footer(text="Type \"cancel\" to cancel at any time")
         panel = await ctx.channel.send(embed=panel_embed)
 
         await asyncio.sleep(5)
@@ -564,7 +508,7 @@ class Welcome(commands.Cog):
                 except Exception:
                     pass
                 return await gcmds.cancelled(ctx, cmd_title)
-            elif result.content == "skip":
+            elif result.content == "skip" or result.content == "default":
                 new_channel_id = info[0]
                 break
             elif re.match(result.content, channel_tag_rx):
@@ -596,6 +540,8 @@ class Welcome(commands.Cog):
             return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             new_title = info[1]
+        elif result.content == "default":
+            new_title = None
         else:
             new_title = result.content
         await gcmds.smart_delete(result)
@@ -641,6 +587,8 @@ class Welcome(commands.Cog):
             return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             new_description = info[2]
+        elif result.content == "default":
+            new_description = None
         else:
             new_description = result.content
         await gcmds.smart_delete(result)
@@ -653,8 +601,7 @@ class Welcome(commands.Cog):
             else:
                 formatted_urls = '\n==============\n'.join(url_list)
             description = f"{ctx.author.mention}, you can set custom images or gifs to be sent in the welcomer message " \
-                f"when someone joins this server. Please enter a valid image URL *(.png, .jpg, .gif)*, *\"default\"* " \
-                f"to use the default gifs, {or_default}." \
+                f"when someone joins this server. Please enter a valid image URL *(.png, .jpg, .gif)*, {or_default}." \
                 f" Enter *\"finish\"* to finish adding URLs\n\nCurrent URLs:\n {formatted_urls}"
             try:
                 edit_success = await self.edit_panel(ctx, panel, title=None, description=description)
@@ -681,6 +628,7 @@ class Welcome(commands.Cog):
                 mimetype, encoding = mimetypes.guess_type(result.content)
                 if mimetype and mimetype in ["image/gif", "image/jpeg", "image/jpg", "image/png"]:
                     url_list.append(result.content)
+                await gcmds.smart_delete(result)
                 continue
         await gcmds.smart_delete(result)
 
