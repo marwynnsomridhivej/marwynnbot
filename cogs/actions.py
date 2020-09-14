@@ -38,37 +38,53 @@ class Actions(commands.Cog):
 
         async with self.bot.db.acquire() as con:
             result = (await con.fetch(f"SELECT give->>'{user.id}' AS give, receive->>'{user.id}' AS receive FROM actions WHERE action = '{ctx.command.name}'"))[0]
-        give_exec_count = int(result['give']) + 1 if result['give'] else 1
+        give_exec_count = int(result['give']) + 1 if result['give'] else 0
         receive_exec_count = int(result['receive']) + 1 if result['receive'] else 1
         if user_specified:
             async with self.bot.db.acquire() as con:
                 old_author = (await con.fetch(f"SELECT give FROM actions WHERE action = '{ctx.command.name}'"))[0]['give']
                 old_recip = (await con.fetch(f"SELECT receive FROM actions WHERE action = '{ctx.command.name}'"))[0]['receive']
             old_author_dict = json.loads(old_author)
-            old_author_val = int(old_author_dict[str(ctx.author.id)])
+            try:
+                old_author_val = int(old_author_dict[str(ctx.author.id)])
+                author_cond = f"WHERE give->>'{ctx.author.id}' = '{old_author_val}' AND action = '{ctx.command.name}'"
+            except KeyError:
+                old_author_val = 0
+                author_cond = f"WHERE action = '{ctx.command.name}'"
             new_author_dict = "'{" + f'"{ctx.author.id}" : {old_author_val + 1}' + "}'"
-            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{ctx.author.id}' || {new_author_dict} "
-                             f"WHERE give->>'{ctx.author.id}' = '{old_author_val}' AND action = '{ctx.command.name}'")
+            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{ctx.author.id}' || {new_author_dict} {author_cond}")
             old_recip_dict = json.loads(old_recip)
-            old_recip_val = int(old_recip_dict[str(user.id)])
+            try:
+                old_recip_val = int(old_recip_dict[str(user.id)])
+                recip_cond = f"WHERE receive->>'{user.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'"
+            except KeyError:
+                old_recip_val = 0
+                recip_cond = f"WHERE action = '{ctx.command.name}'"
             new_recip_dict = "'{" + f'"{user.id}" : {old_recip_val + 1}' + "}'"
-            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{user.id}' || {new_recip_dict} "
-                             f"WHERE receive->>'{user.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'")
+            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{user.id}' || {new_recip_dict} {recip_cond}")
             ops = [new_author_op, new_recip_op]
         else:
             async with self.bot.db.acquire() as con:
                 old_author = (await con.fetch(f"SELECT give FROM actions WHERE action = '{ctx.command.name}'"))[0]['give']
                 old_recip = (await con.fetch(f"SELECT receive FROM actions WHERE action = '{ctx.command.name}'"))[0]['receive']
             old_author_dict = json.loads(old_author)
-            old_author_val = int(old_author_dict[str(self.bot.user.id)])
+            try:
+                old_author_val = int(old_author_dict[str(self.bot.user.id)])
+                author_cond = f"WHERE give->>'{self.bot.user.id}' = '{old_author_val}' AND action = '{ctx.command.name}'"
+            except KeyError:
+                old_author_val = 0
+                author_cond = f"WHERE action = '{ctx.command.name}'"
             new_author_dict = "'{" + f'"{self.bot.user.id}" : {old_author_val + 1}' + "}'"
-            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{self.bot.user.id}' || {new_author_dict} "
-                             f"WHERE give->>'{self.bot.user.id}' = '{old_author_val}' AND action = '{ctx.command.name}'")
+            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{self.bot.user.id}' || {new_author_dict} {author_cond}")
             old_recip_dict = json.loads(old_recip)
-            old_recip_val = int(old_recip_dict[str(ctx.author.id)])
+            try:
+                old_recip_val = int(old_recip_dict[str(ctx.author.id)])
+                recip_cond = f"WHERE receive->>'{ctx.author.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'"
+            except KeyError:
+                old_recip_val = 0
+                recip_cond = f"WHERE action = '{ctx.command.name}'"
             new_recip_dict = "'{" + f'"{ctx.author.id}" : {old_recip_val + 1}' + "}'"
-            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{ctx.author.id}' || {new_recip_dict} "
-                             f"WHERE receive->>'{ctx.author.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'")
+            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{ctx.author.id}' || {new_recip_dict} {recip_cond}")
             ops = [new_author_op, new_recip_op]
         async with self.bot.db.acquire() as con:
             for op in ops:
