@@ -54,6 +54,8 @@ async def run():
 
     db = await asyncpg.create_pool(**credentials)
     await db.execute("CREATE TABLE IF NOT EXISTS prefix(guild_id bigint PRIMARY KEY, custom_prefix text)")
+    await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
+    await db.execute("CREATE TABLE IF NOT EXISTS guild_counters(guild_id bigint PRIMARY KEY, command_amount jsonb)")
 
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
@@ -91,7 +93,25 @@ class Bot(commands.AutoShardedBot):
         for cog in sorted(cogs):
             self.load_extension(f'cogs.{cog}')
             print(f"Cog \"{cog}\" has been loaded")
+        self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
+
+    async def init_counters(self):
+        await self.wait_until_ready()
+        async with self.db.acquire() as con:
+            values = "('" + "', 0), ('".join(command.name for command in self.commands) + "', 0)"
+            await con.execute(f"INSERT INTO global_counters(command, amount) VALUES {values} ON CONFLICT DO NOTHING")
+        return
+
+    async def on_command_completion(self, ctx):
+        async with self.db.acquire() as con:
+            await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{ctx.command.name}'")
+            old_dict = json.loads((await con.fetch(f"SELECT command_amount FROM guild_counters WHERE guild_id = {ctx.guild.id}"))[0]['command_amount'])
+            old_val = old_dict[ctx.command.name]
+            new_dict = "{" + f'"{ctx.command.name}": {old_val + 1}' + "}"
+            op = (f"UPDATE guild_counters SET command_amount = command_amount::jsonb - '{ctx.command.name}' || '{new_dict}'"
+                  f" WHERE command_amount->>'{ctx.command.name}' = '{old_val}' and guild_id = {ctx.guild.id}")
+            await con.execute(op)
 
     @tasks.loop(seconds=120)
     async def status(self):
@@ -228,15 +248,22 @@ class Bot(commands.AutoShardedBot):
 
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
+            # Checks blacklist table
             result = await con.fetch(f"SELECT id FROM blacklist WHERE id = {guild.id}")
             if result:
                 await guild.leave()
             else:
                 await con.execute(f"INSERT INTO prefix (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')")
 
+            # Adds initial entry for guild in guild_counters table
+            op = [f'"{command.name}": 0' for command in self.commands]
+            op_string = "'{" + ", ".join(op) + "}'"
+            await con.execute(f"INSERT INTO guild_counters(guild_id, command_amount) VALUES({guild.id}, {op_string}) ON CONFLICT DO NOTHING")
+
     async def on_guild_remove(self, guild):
         async with self.db.acquire() as con:
             await con.execute(f"DELETE FROM prefix WHERE guild_id = {guild.id}")
+            await con.execute(f"DELETE FROM guild_counters WHERE guild_id = {guild.id}")
 
     async def all_loaded(self):
         await self.wait_until_ready()

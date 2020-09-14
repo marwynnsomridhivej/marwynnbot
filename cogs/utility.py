@@ -5,7 +5,7 @@ from asyncio import sleep
 from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
-from utils import globalcommands
+from utils import globalcommands, paginator
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -109,71 +109,42 @@ class Utility(commands.Cog):
             json.dump(file, g, indent=4)
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
-    async def counter(self, ctx, commandName=None, mode='server'):
-        gcmds.file_check(gcmds, "db/counters.json", '{\n\n}')
-
-        if commandName == 'global':
-            mode = commandName
-            commandName = None
-
-        serverPrefix = await gcmds.prefix(ctx)
-
-        with open('db/counters.json', 'r') as f:
-            values = json.load(f)
-            if commandName is None:
+    async def counter(self, ctx, name=None, mode='server'):
+        if name == "server" or name == "global":
+            mode = name
+            name = None
+        if not name:
+            async with self.bot.db.acquire() as con:
                 if mode == 'server':
-                    keyList = values['Server'][str(ctx.guild.id)].items()
+                    result = (await con.fetch(f"SELECT command_amount FROM guild_counters WHERE guild_id = {ctx.guild.id}"))[0]['command_amount']
+                    result_dict = json.loads(result)
+                    title = f"Counters for {ctx.guild.name}"
+                    entries = [f"***{key.lower()}:*** *used {result_dict[key]} {'times' if result_dict[key] != 1 else 'time'}*" for key in result_dict.keys()]
                 else:
-                    keyList = values['Global'].items()
-            if commandName is not None:
-                if mode != 'global':
-                    execCount = values['Server'][str(ctx.guild.id)][str(commandName)]
-                else:
-                    execCount = values['Global'][str(commandName)]
-                if execCount != 1:
-                    if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** " \
-                                      f"times in *{ctx.guild.name}*"
-                    else:
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** times globally"
-                else:
-                    if mode != 'global':
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** " \
-                                      f"time in *{ctx.guild.name}*"
-                    else:
-                        description = f"`{serverPrefix}{commandName}` was executed **{execCount}** time globally"
-                counterEmbed = discord.Embed(title=f"Command \"{str.capitalize(commandName)}\" Counter",
-                                             description=description,
-                                             color=discord.Color.blue())
-            else:
-                if mode == 'server':
-                    title = f"{str(ctx.guild.name).capitalize()} Command Counter"
-                else:
-                    title = "Global Command Counter"
-                counterEmbed = discord.Embed(title=title,
-                                             color=discord.Color.blue())
-                for key, execCount in keyList:
-                    if execCount != 1:
-                        value = f"Executed: **{execCount}** times"
-                    else:
-                        value = f"Executed: **{execCount}** time"
-                    counterEmbed.add_field(name=f"Command: {str.capitalize(key)}",
-                                           value=value)
-
-        await ctx.channel.send(embed=counterEmbed)
-
-    @counter.error
-    async def counter_error(self, ctx, error):
-        if isinstance(error, CommandInvokeError):
-            title = "No Command Found"
-            description = "There are no counters for that command"
+                    result = (await con.fetch(f"SELECT * from global_counters"))
+                    title = "Global Counters"
+                    entries = [f"***{record['command'].lower()}:*** *used {record['amount']} {'times' if record['amount'] != 1 else 'time'}*" for record in result]
+            pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=20, show_entry_count=True)
+            pag.embed.title = title
+            return await pag.paginate()
         else:
-            title = "An Error Occured"
-            description = f"**Error Thrown:** {error}"
-        errorEmbed = discord.Embed(title=title,
-                                   description=description,
-                                   color=discord.Color.dark_red())
-        await ctx.channel.send(embed=errorEmbed)
+            command = self.bot.get_command(name)
+            async with self.bot.db.acquire() as con:
+                if mode == "global":
+                    amount = (await con.fetch(f"SELECT amount from global_counters WHERE command = '{command.name}'"))[0]['amount']
+                    title = f"Global Counter for {command.name.title()}"
+                else:
+                    amount = (
+                        await con.fetch(
+                        f"SELECT command_amount->>'{command.name}' from guild_counters WHERE guild_id = {ctx.guild.id}"
+                        )
+                    )[0][0]
+                    title = f"Server Counter for {command.name.title()}"
+            description = f"***{command.name}:*** *used {amount} {'times' if amount != 1 else 'time'}*"
+            embed = discord.Embed(title=title,
+                                  description=description,
+                                  color=discord.Color.blue())
+            return await ctx.channel.send(embed=embed)
 
     @commands.command()
     async def invite(self, ctx):
