@@ -17,24 +17,27 @@ class Utility(commands.Cog):
         global gcmds
         self.bot = bot
         self.messages = {}
+        self.bot.loop.create_task(self.init_server_stats())
         self.update_server_stats.start()
         gcmds = globalcommands.GlobalCMDS(bot=self.bot)
 
     def cog_unload(self):
         self.update_server_stats.cancel()
 
+    async def init_server_stats(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS serverstats (guild_id bigint PRIMARY KEY)")
+
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
         await self.bot.wait_until_ready()
-        if not os.path.exists('db/serverstats.json'):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch("SELECT * from serverstats")
+
+        guild_ids = [item['guild_id'] for item in result] if result else None
+        if not guild_ids:
             return
-
-        init = {"Active": {}}
-        gcmds.json_load('db/serverstats.json', init)
-        with open('db/serverstats.json', 'r') as f:
-            file = json.load(f)
-
-        guild_ids = list(file["Active"].keys())
 
         for guild_id in guild_ids:
             guild = self.bot.get_guild(int(guild_id))
@@ -86,27 +89,12 @@ class Utility(commands.Cog):
         return [totalMembers, totalChannels, totalText, totalVoice, totalRole, totalEmoji]
 
     async def add_ss_entry(self, guild_id: int):
-        init = {"Active": {str(guild_id): 1}}
-        gcmds.json_load('db/serverstats.json', init)
-        with open('db/serverstats.json', 'r') as f:
-            file = json.load(f)
-
-        file['Active'].update({str(guild_id): 1})
-        with open('db/serverstats.json', 'w') as g:
-            json.dump(file, g, indent=4)
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"INSERT INTO serverstats(guild_id) VALUES({guild_id})")
 
     async def remove_ss_entry(self, guild_id: int):
-        init = {"Active": {str(guild_id): 1}}
-        gcmds.json_load('db/serverstats.json', init)
-        with open('db/serverstats.json', 'r') as f:
-            file = json.load(f)
-
-        try:
-            del file['Active'][str(guild_id)]
-        except KeyError:
-            pass
-        with open('db/serverstats.json', 'w') as g:
-            json.dump(file, g, indent=4)
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"DELETE FROM serverstats WHERE guild_id = {guild_id}")
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, name=None, mode='server'):
