@@ -106,12 +106,13 @@ class Bot(commands.AutoShardedBot):
 
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
-            await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{ctx.command.name}'")
+            command = ctx.command.parent.name if ctx.command.parent else ctx.command.name
+            await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
             old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
-            old_val = old_dict[ctx.command.name]
-            new_dict = "{" + f'"{ctx.command.name}": {old_val + 1}' + "}"
-            op = (f"UPDATE guild SET counter = counter::jsonb - '{ctx.command.name}' || '{new_dict}'"
-                  f" WHERE counter->>'{ctx.command.name}' = '{old_val}' and guild_id = {ctx.guild.id}")
+            old_val = old_dict[command]
+            new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
+            op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
+                  f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
             await con.execute(op)
 
     @tasks.loop(seconds=120)
@@ -122,7 +123,7 @@ class Bot(commands.AutoShardedBot):
         activity2 = discord.Activity(name=f"{len(self.users)} users!", type=discord.ActivityType.watching)
         activity3 = discord.Activity(name=f"{len(self.guilds)} servers!", type=discord.ActivityType.watching)
         activity4 = discord.Activity(name=f"MarwynnBot {gcmds.version}", type=discord.ActivityType.playing)
-        activity5 = discord.Activity(name=f"{len(self.commands)} commands {at} aliases",
+        activity5 = discord.Activity(name=f"{len(self.commands)} commands & {at} aliases",
                                      type=discord.ActivityType.listening)
         activityList = [activity1, activity2, activity3, activity4, activity5]
         activity = random.choice(activityList)
