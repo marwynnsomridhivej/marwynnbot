@@ -12,7 +12,18 @@ gcmds = globalcommands.GlobalCMDS()
 class Actions(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_actions())
+
+    async def init_actions(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS actions(action text PRIMARY KEY, give jsonb, receive jsonb)")
+            actions = [command.name for command in self.get_commands() if command.name != "actions"]
+            values = "('" + "'), ('".join(actions) + "')"
+            await con.execute(f"INSERT INTO actions(action) VALUES {values} ON CONFLICT DO NOTHING")
 
     async def get_count_user(self, ctx, user):
         try:
@@ -25,60 +36,46 @@ class Actions(commands.Cog):
             user = ctx.author
             user_specified = False
 
-        cmdNameQuery = ctx.command.name
-
-        init = {f"{cmdNameQuery}": {'give': {}, 'receive': {}}}
-        gcmds.json_load('db/actionstats.json', init)
-        with open('db/actionstats.json', 'r') as f:
-            file = json.load(f)
-
-            try:
-                file[str(cmdNameQuery)]
-            except KeyError:
-                file[str(cmdNameQuery)] = {'give': {}, 'receive': {}}
-
-            if user_specified:
-                try:
-                    file[str(cmdNameQuery)]['give'][str(ctx.author.id)] += 1
-                except KeyError:
-                    file[str(cmdNameQuery)]['give'][str(ctx.author.id)] = 1
-
-                try:
-                    give_exec_count = file[str(cmdNameQuery)]['give'][str(user.id)]
-                except KeyError:
-                    give_exec_count = 0
-
-                try:
-                    file[str(cmdNameQuery)]['receive'][str(user.id)] += 1
-                except KeyError:
-                    file[str(cmdNameQuery)]['receive'][str(user.id)] = 1
-                receive_exec_count = file[str(cmdNameQuery)]['receive'][str(user.id)]
-                with open('db/actionstats.json', 'w') as g:
-                    json.dump(file, g, indent=4)
-
-            else:
-                try:
-                    file[str(cmdNameQuery)]['give'][str(self.bot.user.id)] += 1
-                except KeyError:
-                    file[str(cmdNameQuery)]['give'][str(self.bot.user.id)] = 1
-
-                try:
-                    give_exec_count = file[str(cmdNameQuery)]['give'][str(ctx.author.id)]
-                except KeyError:
-                    give_exec_count = 0
-
-                try:
-                    file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] += 1
-                except KeyError:
-                    file[str(cmdNameQuery)]['receive'][str(ctx.author.id)] = 1
-                receive_exec_count = file[str(cmdNameQuery)]['receive'][str(ctx.author.id)]
-                with open('db/actionstats.json', 'w') as g:
-                    json.dump(file, g, indent=4)
-
-            return [give_exec_count, receive_exec_count, user, user_specified]
+        async with self.bot.db.acquire() as con:
+            result = (await con.fetch(f"SELECT give->>'{user.id}' AS give, receive->>'{user.id}' AS receive FROM actions WHERE action = '{ctx.command.name}'"))[0]
+        give_exec_count = int(result['give']) + 1 if result['give'] else 1
+        receive_exec_count = int(result['receive']) + 1 if result['receive'] else 1
+        if user_specified:
+            async with self.bot.db.acquire() as con:
+                old_author = (await con.fetch(f"SELECT give FROM actions WHERE action = '{ctx.command.name}'"))[0]['give']
+                old_recip = (await con.fetch(f"SELECT receive FROM actions WHERE action = '{ctx.command.name}'"))[0]['receive']
+            old_author_dict = json.loads(old_author)
+            old_author_val = int(old_author_dict[str(ctx.author.id)])
+            new_author_dict = "'{" + f'"{ctx.author.id}" : {old_author_val + 1}' + "}'"
+            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{ctx.author.id}' || {new_author_dict} "
+                             f"WHERE give->>'{ctx.author.id}' = '{old_author_val}' AND action = '{ctx.command.name}'")
+            old_recip_dict = json.loads(old_recip)
+            old_recip_val = int(old_recip_dict[str(user.id)])
+            new_recip_dict = "'{" + f'"{user.id}" : {old_recip_val + 1}' + "}'"
+            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{user.id}' || {new_recip_dict} "
+                             f"WHERE receive->>'{user.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'")
+            ops = [new_author_op, new_recip_op]
+        else:
+            async with self.bot.db.acquire() as con:
+                old_author = (await con.fetch(f"SELECT give FROM actions WHERE action = '{ctx.command.name}'"))[0]['give']
+                old_recip = (await con.fetch(f"SELECT receive FROM actions WHERE action = '{ctx.command.name}'"))[0]['receive']
+            old_author_dict = json.loads(old_author)
+            old_author_val = int(old_author_dict[str(self.bot.user.id)])
+            new_author_dict = "'{" + f'"{self.bot.user.id}" : {old_author_val + 1}' + "}'"
+            new_author_op = (f"UPDATE actions SET give = give::jsonb - '{self.bot.user.id}' || {new_author_dict} "
+                             f"WHERE give->>'{self.bot.user.id}' = '{old_author_val}' AND action = '{ctx.command.name}'")
+            old_recip_dict = json.loads(old_recip)
+            old_recip_val = int(old_recip_dict[str(ctx.author.id)])
+            new_recip_dict = "'{" + f'"{ctx.author.id}" : {old_recip_val + 1}' + "}'"
+            new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{ctx.author.id}' || {new_recip_dict} "
+                             f"WHERE receive->>'{ctx.author.id}' = '{old_recip_val}' AND action = '{ctx.command.name}'")
+            ops = [new_author_op, new_recip_op]
+        async with self.bot.db.acquire() as con:
+            for op in ops:
+                await con.execute(op)
+        return [give_exec_count, receive_exec_count, user, user_specified]
 
     async def embed_template(self, ctx, title: str, footer: str):
-
         api_key = gcmds.env_check("TENOR_API")
         if not api_key:
             no_api = discord.Embed(title="Missing API Key",
@@ -107,7 +104,6 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['action'])
     async def actions(self, ctx, cmdName=None):
-
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
