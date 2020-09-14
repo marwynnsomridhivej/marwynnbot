@@ -84,11 +84,11 @@ class Utility(commands.Cog):
 
     async def add_ss_entry(self, guild_id: int):
         async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET serverstats=TRUE")
+            await con.execute(f"UPDATE guild SET serverstats=TRUE WHERE guild_id = {guild_id}")
 
     async def remove_ss_entry(self, guild_id: int):
         async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET serverstats=FALSE")
+            await con.execute(f"UPDATE guild SET serverstats=FALSE WHERE guild_id = {guild_id}")
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, name=None, mode='server'):
@@ -248,14 +248,14 @@ class Utility(commands.Cog):
     async def setPrefix(self, ctx, prefix):
         async with self.db.acquire() as con:
             if prefix != 'reset':
-                await con.execute(f"UPDATE prefix SET guild_id = {ctx.guild.id}, custom_prefix = {prefix} WHERE guild_id = {ctx.guild.id}")
+                await con.execute(f"UPDATE guild SET custom_prefix = {prefix} WHERE guild_id = {ctx.guild.id}")
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
                                             description=f"Server prefix is now set to `{prefix}` \n\n"
                                                         f"You will still be able to use {self.bot.user.mention} "
                                                         f"and `mb ` as prefixes",
                                             color=discord.Color.blue())
             else:
-                await con.execute(f"UPDATE prefix SET guild_id = {ctx.guild.id}, custom_prefix = 'm!' WHERE guild_id = {ctx.guild.id}")
+                await con.execute(f"UPDATE guild SET custom_prefix = 'm!' WHERE guild_id = {ctx.guild.id}")
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
                                             description=f"Server prefix has been reset to `m!`",
                                             color=discord.Color.blue())

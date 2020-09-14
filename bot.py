@@ -99,7 +99,9 @@ class Bot(commands.AutoShardedBot):
         await self.wait_until_ready()
         async with self.db.acquire() as con:
             values = "('" + "', 0), ('".join(command.name for command in self.commands) + "', 0)"
+            names = "'{\"" + '", "'.join(command.name for command in self.commands) + "\"}'"
             await con.execute(f"INSERT INTO global_counters(command, amount) VALUES {values} ON CONFLICT DO NOTHING")
+            await con.execute(f"DELETE FROM global_counters WHERE command != ALL({names}::text[])")
         return
 
     async def on_command_completion(self, ctx):
@@ -248,7 +250,7 @@ class Bot(commands.AutoShardedBot):
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
             # Checks blacklist table
-            result = await con.fetch(f"SELECT blacklist FROM guild WHERE id = {guild.id}")
+            result = await con.fetch(f"SELECT * FROM blacklist WHERE id = {guild.id} AND type='guild'")
             if result:
                 await guild.leave()
             else:
