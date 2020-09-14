@@ -17,23 +17,17 @@ class Utility(commands.Cog):
         global gcmds
         self.bot = bot
         self.messages = {}
-        self.bot.loop.create_task(self.init_server_stats())
         self.update_server_stats.start()
         gcmds = globalcommands.GlobalCMDS(bot=self.bot)
 
     def cog_unload(self):
         self.update_server_stats.cancel()
 
-    async def init_server_stats(self):
-        await self.bot.wait_until_ready()
-        async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS serverstats (guild_id bigint PRIMARY KEY)")
-
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            result = await con.fetch("SELECT * from serverstats")
+            result = await con.fetch("SELECT guild_id from guild WHERE serverstats=TRUE")
 
         guild_ids = [item['guild_id'] for item in result] if result else None
         if not guild_ids:
@@ -90,11 +84,11 @@ class Utility(commands.Cog):
 
     async def add_ss_entry(self, guild_id: int):
         async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO serverstats(guild_id) VALUES({guild_id})")
+            await con.execute(f"UPDATE guild SET serverstats=TRUE")
 
     async def remove_ss_entry(self, guild_id: int):
         async with self.bot.db.acquire() as con:
-            await con.execute(f"DELETE FROM serverstats WHERE guild_id = {guild_id}")
+            await con.execute(f"UPDATE guild SET serverstats=FALSE")
 
     @commands.command(aliases=['counters', 'used', 'usedcount'])
     async def counter(self, ctx, name=None, mode='server'):
@@ -104,7 +98,7 @@ class Utility(commands.Cog):
         if not name:
             async with self.bot.db.acquire() as con:
                 if mode == 'server':
-                    result = (await con.fetch(f"SELECT command_amount FROM guild_counters WHERE guild_id = {ctx.guild.id}"))[0]['command_amount']
+                    result = (await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter']
                     result_dict = json.loads(result)
                     title = f"Counters for {ctx.guild.name}"
                     entries = [f"***{key.lower()}:*** *used {result_dict[key]} {'times' if result_dict[key] != 1 else 'time'}*" for key in result_dict.keys()]
@@ -124,7 +118,7 @@ class Utility(commands.Cog):
                 else:
                     amount = (
                         await con.fetch(
-                        f"SELECT command_amount->>'{command.name}' from guild_counters WHERE guild_id = {ctx.guild.id}"
+                        f"SELECT counter->>'{command.name}' from guild WHERE guild_id = {ctx.guild.id}"
                         )
                     )[0][0]
                     title = f"Server Counter for {command.name.title()}"

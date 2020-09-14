@@ -37,7 +37,7 @@ async def get_prefix(self: commands.AutoShardedBot, message):
         extras = ('mb ', 'mB ', 'Mb ', 'MB ', 'm!', 'm! ')
     else:
         async with self.db.acquire() as con:
-            prefix = await con.fetch(f"SELECT custom_prefix from PREFIX WHERE guild_id = {message.guild.id}")
+            prefix = await con.fetch(f"SELECT custom_prefix from guild WHERE guild_id = {message.guild.id}")
         extras = (
             f'{prefix[0]}', 'mb ', 'mB ', 'Mb ', 'MB ',
             'm!')
@@ -53,9 +53,8 @@ async def run():
     }
 
     db = await asyncpg.create_pool(**credentials)
-    await db.execute("CREATE TABLE IF NOT EXISTS prefix(guild_id bigint PRIMARY KEY, custom_prefix text)")
+    await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, serverstats boolean, counter jsonb)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
-    await db.execute("CREATE TABLE IF NOT EXISTS guild_counters(guild_id bigint PRIMARY KEY, command_amount jsonb)")
 
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
@@ -106,11 +105,11 @@ class Bot(commands.AutoShardedBot):
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
             await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{ctx.command.name}'")
-            old_dict = json.loads((await con.fetch(f"SELECT command_amount FROM guild_counters WHERE guild_id = {ctx.guild.id}"))[0]['command_amount'])
+            old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
             old_val = old_dict[ctx.command.name]
             new_dict = "{" + f'"{ctx.command.name}": {old_val + 1}' + "}"
-            op = (f"UPDATE guild_counters SET command_amount = command_amount::jsonb - '{ctx.command.name}' || '{new_dict}'"
-                  f" WHERE command_amount->>'{ctx.command.name}' = '{old_val}' and guild_id = {ctx.guild.id}")
+            op = (f"UPDATE guild SET counter = counter::jsonb - '{ctx.command.name}' || '{new_dict}'"
+                  f" WHERE counter->>'{ctx.command.name}' = '{old_val}' and guild_id = {ctx.guild.id}")
             await con.execute(op)
 
     @tasks.loop(seconds=120)
@@ -249,21 +248,17 @@ class Bot(commands.AutoShardedBot):
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
             # Checks blacklist table
-            result = await con.fetch(f"SELECT id FROM blacklist WHERE id = {guild.id}")
+            result = await con.fetch(f"SELECT blacklist FROM guild WHERE id = {guild.id}")
             if result:
                 await guild.leave()
             else:
-                await con.execute(f"INSERT INTO prefix (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')")
-
-            # Adds initial entry for guild in guild_counters table
-            op = [f'"{command.name}": 0' for command in self.commands]
-            op_string = "'{" + ", ".join(op) + "}'"
-            await con.execute(f"INSERT INTO guild_counters(guild_id, command_amount) VALUES({guild.id}, {op_string}) ON CONFLICT DO NOTHING")
+                op = [f'"{command.name}": 0' for command in self.commands]
+                op_string = "'{" + ", ".join(op) + "}'"
+                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix, counter) VALUES ('{guild.id}', 'm!', {op_string})")
 
     async def on_guild_remove(self, guild):
         async with self.db.acquire() as con:
-            await con.execute(f"DELETE FROM prefix WHERE guild_id = {guild.id}")
-            await con.execute(f"DELETE FROM guild_counters WHERE guild_id = {guild.id}")
+            await con.execute(f"UPDATE guild SET serverstats=FALSE")
 
     async def all_loaded(self):
         await self.wait_until_ready()
