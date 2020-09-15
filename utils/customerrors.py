@@ -2,6 +2,19 @@ import discord
 from discord.ext import commands
 
 
+class PostgreSQLError(commands.CommandError):
+    pass
+
+
+class NoPostgreSQL(PostgreSQLError):
+    """Error raised when no valid db is specified
+    """
+    def __init__(self):
+        self.embed = discord.Embed(title="No Valid DB Connection",
+                                   description="No valid DB connection was passed as an argument",
+                                   color=discord.Color.dark_red())
+
+
 class TagError(commands.CommandError):
     pass
 
@@ -106,6 +119,15 @@ class NoPremiumUsers(PremiumError):
                                    color=discord.Color.dark_red())
 
 
+class NoGlobalPremiumUsers(NoPremiumUsers):
+    """Error raised when no user is MarwynnBot Premium
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.embed.description = "There are currently MarwynnBot Premium users"
+
+
 class NotPremiumGuild(PremiumError):
     """Error raised when the current guild is not a MarwynnBot Premium guild
 
@@ -145,6 +167,17 @@ class UserPremiumException(PremiumError):
                                    color=discord.Color.dark_red())
 
 
+class UserAlreadyPremium(UserPremiumException):
+    """Error raised when the user already has MarwynnBot Premium
+
+    Args:
+        user (discord.User): the user the error occured with
+    """
+    def __init__(self, user: discord.User):
+        super().__init__(user)
+        self.embed.description = f"{user.display_name} already has a MarwynnBot Premium subscription"
+
+
 class GuildPremiumException(PremiumError):
     """Error raised when there is an exception while performing a premium operation on a guild
 
@@ -156,3 +189,14 @@ class GuildPremiumException(PremiumError):
         self.embed = discord.Embed(title="Set Premium Error",
                                    description=f"An error occured when trying to operate on {guild.name}",
                                    color=discord.Color.dark_red())
+
+
+class GuildAlreadyPremium(GuildPremiumException):
+    """Error raised when the guild already has MarwynnBot Premium
+
+    Args:
+        guild (discord.Guild): the guild the error occured with
+    """
+    def __init__(self, guild: discord.Guild):
+        super().__init__(guild)
+        self.embed.description = f"{guild.name} already has a MarwynnBot Premium subscription"
