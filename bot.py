@@ -108,12 +108,13 @@ class Bot(commands.AutoShardedBot):
         async with self.db.acquire() as con:
             command = ctx.command.parent.name if ctx.command.parent else ctx.command.name
             await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
-            old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
-            old_val = old_dict[command]
-            new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
-            op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
-                  f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
-            await con.execute(op)
+            if ctx.guild:
+                old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
+                old_val = old_dict[command]
+                new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
+                op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
+                    f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
+                await con.execute(op)
 
     @tasks.loop(seconds=120)
     async def status(self):
