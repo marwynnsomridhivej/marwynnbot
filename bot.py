@@ -240,7 +240,8 @@ class Bot(commands.AutoShardedBot):
             return await ctx.channel.send(embed=embed, delete_after=15)
         elif isinstance(error, customerrors.NoSimilarTags):
             embed = discord.Embed(title="No Results",
-                                  description=f"{ctx.author.mention}, there were no results for any tag named `{error.query}`",
+                                  description=f"{ctx.author.mention}, there were no results for any tag named "
+                                  f"`{error.query}` in this server",
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed, delete_after=15)
         elif isinstance(error, commands.CheckFailure):
