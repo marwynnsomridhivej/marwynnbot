@@ -139,6 +139,7 @@ class Bot(commands.AutoShardedBot):
         await self.change_presence(status=discord.Status.online, activity=activity)
 
     async def on_message(self, message):
+        await self.wait_until_ready()
         tokens = token_rx.findall(message.content)
         if tokens and message.guild:
             await gcmds.smart_delete(message)
@@ -230,29 +231,10 @@ class Bot(commands.AutoShardedBot):
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
             await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
-        elif isinstance(error, customerrors.TagNotFound):
-            embed = discord.Embed(title="Tag Not Found",
-                                  description=f"{ctx.author.mention}, the tag `{error.tag}` does not exist in this server. "
-                                  f"You can create it by doing `{await gcmds.prefix(ctx)}tag create {error.tag}`",
-                                  color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=15)
-        elif isinstance(error, customerrors.TagAlreadyExists):
-            embed = discord.Embed(title="Tag Already Exists",
-                                  description=f"{ctx.author.mention}, the tag `{error.tag}` already exists in this server",
-                                  color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=15)
-        elif isinstance(error, customerrors.UserNoTags):
-            embed = discord.Embed(title="No Tags",
-                                  description=f"{ctx.author.mention}, you do not own any tags in this server. Create one by"
-                                  f" doing `{await gcmds.prefix(ctx)}tag create [tag_name]`",
-                                  color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=15)
-        elif isinstance(error, customerrors.NoSimilarTags):
-            embed = discord.Embed(title="No Results",
-                                  description=f"{ctx.author.mention}, there were no results for any tag named "
-                                  f"`{error.query}` in this server",
-                                  color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=15)
+        elif isinstance(error, customerrors.TagError):
+            return await ctx.channel.send(embed=error.embed)
+        elif isinstance(error, customerrors.PremiumError):
+            return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, commands.CheckFailure):
             pass
         else:

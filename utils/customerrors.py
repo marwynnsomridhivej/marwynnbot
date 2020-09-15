@@ -2,54 +2,73 @@ import discord
 from discord.ext import commands
 
 
-class TagNotFound(commands.CommandError):
+class TagError(commands.CommandError):
+    pass
+
+
+class TagNotFound(TagError):
     """Error raised when user tries to invoke a tag that does not currently exist in the current guild
 
     Args:
         tag (str): name of the tag
     """
+
     def __init__(self, tag: str):
-        self.tag = tag
+        self.embed = discord.Embed(title="Tag Not Found",
+                                   description=f"The tag `{tag}` does not exist in this server",
+                                   color=discord.Color.dark_red())
 
 
-class TagAlreadyExists(commands.CommandError):
+class TagAlreadyExists(TagError):
     """Error raised when user tries to create a tag that already exists
 
     Args:
         tag (str): name of the tag
     """
+
     def __init__(self, tag: str):
-        self.tag = tag
+        self.embed = discord.Embed(title="Tag Already Exists",
+                                   description=f"The tag `{tag}` already exists in this server",
+                                   color=discord.Color.dark_red())
 
 
-class NotTagOwner(commands.CommandError):
+class NotTagOwner(TagError):
     """Error raised when the user tries to edit or delete a tag they do not own
 
     Args:
         tag (str): name of the tag
     """
+
     def __init__(self, tag: str):
-        self.tag = tag
+        self.embed = discord.Embed(title="Illegal Tag Operation",
+                                   description=f"You do not own the tag `{tag}`. Modifying or destructive actions can only be performed by the tag's owner",
+                                   color=discord.Color.dark_red())
 
 
-class UserNoTags(commands.CommandError):
+class UserNoTags(TagError):
     """Error raised when the user tries to list a tag but doesn't own any tags
 
     Args:
         member (discord.Member): the discord.Member instance
     """
+
     def __init__(self, member: discord.Member):
-        self.member = member
+        self.embed = discord.Embed(title="No Tags Owned",
+                                   description=f"{member.mention}, you do not own any tags",
+                                   color=discord.Color.dark_red())
 
 
-class NoSimilarTags(commands.CommandError):
+class NoSimilarTags(TagError):
     """Error raised when the user searches a tag but no similar or exact results were returned
 
     Args:
         query (str): the query that the user searched for
     """
+
     def __init__(self, query: str):
-        self.query = query
+        self.embed = discord.Embed(title="No Results",
+                                   description=f"There were no results for any tag named `{query}` in this server",
+                                   color=discord.Color.dark_red())
 
 
 class CannotPaginate(commands.CommandError):
@@ -58,43 +77,82 @@ class CannotPaginate(commands.CommandError):
     Args:
         message (str): message that will be sent in traceback
     """
+
     def __init__(self, message):
         self.message = message
 
 
-class NoPremiumGuilds(commands.CommandError):
+class PremiumError(commands.CommandError):
+    pass
+
+
+class NoPremiumGuilds(PremiumError):
     """Error raised when there are no guilds that are MarwynnBot Premium guilds
     """
+
     def __init__(self):
-        self.message = "There are no servers registered as MarwynnBot Premium servers"
+        self.embed = discord.Embed(title="No MarwynnBot Premium Members",
+                                   description="There are no servers registered as MarwynnBot Premium servers \:(",
+                                   color=discord.Color.dark_red())
 
 
-class NoPremiumUsers(commands.CommandError):
+class NoPremiumUsers(PremiumError):
     """Error raised when the current guild contains no MarwynnBot Premium users
     """
+
     def __init__(self):
-        self.message = "This server does not have any MarwynnBot Premium members \:("
+        self.embed = discord.Embed(title="No MarwynnBot Premium Members",
+                                   description="This server does not have any MarwynnBot Premium members \:(",
+                                   color=discord.Color.dark_red())
 
 
-class NotPremiumGuild(commands.CommandError):
+class NotPremiumGuild(PremiumError):
     """Error raised when the current guild is not a MarwynnBot Premium guild
 
     Args:
         guild (discord.Guild): the current guild
     """
+
     def __init__(self, guild: discord.Guild):
-        self.guild = guild
-        self.id = self.guild.id
-        self.name = self.guild.name
+        self.embed = discord.Embed(title="Not MarwynnBot Premium",
+                                   description=f"This guild, {guild.name}, does not have a MarwynnBot Premium subscription",
+                                   color=discord.Color.dark_red())
 
 
-class NotPremiumUser(commands.CommandError):
+class NotPremiumUser(PremiumError):
     """Error raised when the current user is not a MarwynnBot Premium user
 
     Args:
         commands (discord.User): the current user
     """
+
     def __init__(self, user: discord.User):
-        self.user = user
-        self.id = self.user.id
-        self.name = self.user.display_name
+        self.embed = discord.Embed(title="Not MarwynnBot Premium",
+                                   description=f"{user.mention}, you must have a MarwynnBot premium user or server subscription to use this command",
+                                   color=discord.Color.dark_red())
+
+
+class UserPremiumException(PremiumError):
+    """Error raised when there is an exception while performing a premium operation on a user
+
+    Args:
+        user (discord.User): the user the error occured with
+    """
+
+    def __init__(self, user: discord.User):
+        self.embed = discord.Embed(title="Set Premium Error",
+                                   description=f"An error occured when trying to operate on {user.display_name}",
+                                   color=discord.Color.dark_red())
+
+
+class GuildPremiumException(PremiumError):
+    """Error raised when there is an exception while performing a premium operation on a guild
+
+    Args:
+        guild (discord.Guild): the guild the error occured with
+    """
+
+    def __init__(self, guild: discord.Guild):
+        self.embed = discord.Embed(title="Set Premium Error",
+                                   description=f"An error occured when trying to operate on {guild.name}",
+                                   color=discord.Color.dark_red())
