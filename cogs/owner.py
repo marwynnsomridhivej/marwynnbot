@@ -1,11 +1,12 @@
 import json
 import os
 import discord
+from asyncpg.exceptions import UniqueViolationError
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
 from utils import globalcommands, paginator, customerrors
 
-gcmds = None
+gcmds = globalcommands.GlobalCMDS()
 
 
 class Owner(commands.Cog):
@@ -17,6 +18,11 @@ class Owner(commands.Cog):
         self.bot.loop.create_task(self.init_blacklist())
         self.bot.loop.create_task(self.init_balance())
 
+    async def get_owner(self):
+        await self.bot.wait_until_ready()
+        owner = self.bot.get_user(self.bot.owner_id)
+        return owner
+
     async def init_blacklist(self):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS blacklist (type text, id bigint PRIMARY KEY)")
@@ -25,29 +31,24 @@ class Owner(commands.Cog):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS balance (user_id bigint PRIMARY KEY, amount bigint)")
 
-    async def get_premium_users(self):
+    async def get_premium_users(self, guild, op):
         async with self.bot.db.acquire() as con:
-            result = await con.fetch("SELECT user_id FROM premium")
+            result = await con.fetch("SELECT user_id FROM premium WHERE user_id IS NOT NULL ORDER BY id")
         if not result:
-            raise customerrors.NoPremiumUsers()
+            raise customerrors.NoGlobalPremiumUsers() if op != "guild" else customerrors.NoPremiumUsers()
         else:
-            return [await self.bot.get_user(int(user['user_id'])) for user in result]
-
-    async def get_guild_premium_users(self, ctx):
-        async with self.bot.db.acquire() as con:
-            result = await con.fetch("SELECT user_id FROM premium")
-        if not result:
-            raise customerrors.NoPremiumUsers()
-        else:
-            return [await self.bot.get_user(int(user['user_id'])) for user in result if user.id in [member.id for member in ctx.guild.members]]
+            if op != "guild":
+                return [self.bot.get_user(int(user['user_id'])) for user in result]
+            else:
+                return [self.bot.get_user(int(user['user_id'])) for user in result if int(user['user_id']) in [member.id for member in guild.members]]
 
     async def get_premium_guilds(self):
         async with self.bot.db.acquire() as con:
-            result = await con.fetch("SELECT guild_id FROM premium")
+            result = await con.fetch("SELECT guild_id FROM premium WHERE guild_id IS NOT NULL ORDER BY id")
         if not result:
             raise customerrors.NoPremiumGuilds()
         else:
-            return [await self.bot.get_guild(int(guild['guild_id'])) for guild in result]
+            return [self.bot.get_guild(int(guild['guild_id'])) for guild in result]
 
     async def op_user_premium(self, op: str, user: discord.User) -> bool:
         try:
@@ -57,19 +58,39 @@ class Owner(commands.Cog):
                 elif op == "remove":
                     await con.execute(f"DELETE FROM premium WHERE user_id = {user.id}")
             return True
+        except UniqueViolationError:
+            raise customerrors.UserAlreadyPremium(user)
         except Exception:
-            return False
+            raise customerrors.UserPremiumException(user)
 
     async def op_guild_premium(self, op: str, guild: discord.Guild) -> bool:
         try:
+            owner = await self.get_owner()
             async with self.bot.db.acquire() as con:
                 if op == "set":
                     await con.execute(f"INSERT INTO premium(guild_id) VALUES ({guild.id})")
+                    embed = discord.Embed(title=f"{guild.name} is now a MarwynnBot Premium Server",
+                                          description=f"{guild.owner.mention}, {owner.mention} has granted {guild.name} a "
+                                          f"never expiring MarwynnBot Premium subscription. Thank you for being a supporter of MarwynnBot!",
+                                          color=discord.Color.blue())
+                    embed.set_footer(text=f"Although this version of MarwynnBot Premium will never expire, it can be "
+                                     f"revoked at any time at the discretion of {owner.name}")
                 elif op == "remove":
                     await con.execute(f"DELETE FROM premium WHERE guild_id = {guild.id}")
+                    embed = discord.Embed(title=f"{guild.name} is no longer a MarwynnBot Premium Server",
+                                          description=f"{guild.owner.mention}, the MarwynnBot Premium subscription for "
+                                          f"{guild.name} has been revoked. Please contact {owner.mention} if you "
+                                          "believe this was a mistake",
+                                          color=discord.Color.dark_red())
+            try:
+                await guild.owner.send(embed=embed)
+            except Exception:
+                pass
             return True
+        except UniqueViolationError:
+            raise customerrors.GuildAlreadyPremium(guild)
         except Exception:
-            return False
+            raise customerrors.GuildPremiumException(guild)
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
@@ -361,14 +382,60 @@ class Owner(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def premium(self, ctx):
         description = ("MarwynnBot Premium is an optional, subscription based plan that will grant the subscriber complete, unrestricted "
-        "access to all of MarwynnBot's \"premium locked\" features, such as creating and saving playlists, receiving special monthly"
-        "balance crates, public tags, unlimited number of tags, a special role in the MarwynnBot Support Server, and more!\n\n"
-        "**MarwynnBot Premium is currently unavailable. This message will update when it becomes available, most likely after MarwynnBot's"
-        "v1.0.0-rc.1 release**")
+                       "access to all of MarwynnBot's \"premium locked\" features, such as creating and saving playlists, receiving special monthly"
+                       "balance crates, public tags, unlimited number of tags, a special role in the MarwynnBot Support Server, and more!\n\n"
+                       "**MarwynnBot Premium is currently unavailable. This message will update when it becomes available, most likely after MarwynnBot's"
+                       "v1.0.0-rc.1 release**")
         embed = discord.Embed(title="MarwynnBot Premium",
                               description=description,
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
+
+    @commands.is_owner()
+    @premium.group(invoke_without_command=True, aliases=['set', '-s'])
+    async def set_premium(self, ctx):
+        return
+
+    @set_premium.command(aliases=['user', '-u'])
+    async def users(self, ctx, user: discord.User, pm: bool = False):
+        op = "set" if pm else "remove"
+        title = f"{user} is now MarwynnBot Premium!" if pm else f"{user} is no longer MarwynnBot Premium"
+        description = (f"{ctx.author.mention} set {user.mention} to MarwynnBot Premium" if pm
+                       else f"{ctx.author.mention} removed {user.mention}'s MarwynnBot Premium")
+        color = discord.Color.blue() if pm else discord.Color.dark_red()
+        await self.op_user_premium(op, user)
+        embed = discord.Embed(title=title, description=description, color=color)
+        return await ctx.channel.send(embed=embed)
+
+    @set_premium.command(aliases=['guild', '-g'])
+    async def guilds(self, ctx, pm: bool = False):
+        op = "set" if pm else "remove"
+        title = f"{ctx.guild.name} is now MarwynnBot Premium!" if pm else f"{ctx.guild.name} is no longer MarwynnBot Premium"
+        description = (f"{ctx.author.mention} set {ctx.guild.name} to MarwynnBot Premium" if pm
+                       else f"{ctx.author.mention} removed {ctx.guild.name}'s MarwynnBot Premium")
+        color = discord.Color.blue() if pm else discord.Color.dark_red()
+        await self.op_guild_premium(op, ctx.guild)
+        embed = discord.Embed(title=title, description=description, color=color)
+        return await ctx.channel.send(embed=embed)
+
+    @premium.group(invoke_without_command=True, aliases=['list', '-l', '-ls'])
+    async def list_premium(self, ctx):
+        return
+
+    @list_premium.command(aliases=['users', '-u'])
+    async def user(self, ctx, source: str = "guild"):
+        op = source if source == "guild" else "global"
+        entries = [f"{user.mention} - {user.name}" for user in await self.get_premium_users(ctx.guild, op)]
+        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag.embed.title = f"MarwynnBot Premium Users in {ctx.guild.name}" if op == "guild" else "MarwynnBot Premium Users"
+        return await pag.paginate()
+
+    @list_premium.command(aliases=['guilds', '-g'])
+    async def guild(self, ctx):
+        entries = [f"{guild.name}" for guild in await self.get_premium_guilds()]
+        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag.embed.title = "MarwynnBot Premium Servers"
+        return await pag.paginate()
 
     @commands.command(aliases=['dm', 'privatemessage'])
     @commands.is_owner()
