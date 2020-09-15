@@ -4,27 +4,34 @@ import os
 import asyncio
 from datetime import datetime
 from discord.ext import commands
-from utils import globalcommands, customerrors, paginator
+from utils import globalcommands, customerrors, paginator, premium
 
 
 gcmds = globalcommands.GlobalCMDS()
-PROHIB_NAMES = ("list", "search", "create", "edit", "delete", "tag", "tags", "make", "remove")
+PROHIB_NAMES = []
+reactions = ["✅", "🛑"]
 timeout = 600
 
 
 class Tags(commands.Cog):
 
     def __init__(self, bot):
-        global gcmds
+        global gcmds, PROHIB_NAMES
         self.bot = bot
+        PROHIB_NAMES = [command.name.lower() for command in self.bot.commands]
+        for command in self.bot.commands:
+            if command.aliases:
+                for alias in command.aliases:
+                    if not alias.lower() in PROHIB_NAMES:
+                        PROHIB_NAMES.append(alias.lower())
         gcmds = globalcommands.GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_tags())
 
     async def init_tags(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS tags(id SERIAL PRIMARY KEY, guild_id bigint, author_id bigint,"
-                              " name text, message_content text, created_at NUMERIC, modified_at NUMERIC)")
+            await con.execute("CREATE TABLE IF NOT EXISTS tags(guild_id bigint, author_id bigint, name text PRIMARY KEY,"
+                              " message_content text, created_at NUMERIC, modified_at NUMERIC, global boolean DEFAULT FALSE, uuid uuid DEFAULT uuid_generate_v4())")
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
@@ -68,17 +75,22 @@ class Tags(commands.Cog):
             raise customerrors.TagNotFound(name)
 
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT id FROM tags WHERE name = $tag${name}$tag$ AND guild_id = {ctx.guild.id}")
+            result = await con.fetch(f"SELECT uuid FROM tags WHERE name = $tag${name}$tag$ AND (guild_id = {ctx.guild.id} OR global=TRUE)")
 
         if not result:
             raise customerrors.TagNotFound(name)
         else:
             return True
 
+    async def check_tag_exists(self, ctx, tag) -> bool:
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT uuid FROM tags WHERE name=$tag${tag}$tag$")
+        return True if not result else False
+
     async def check_tag_owner(self, ctx, tag) -> bool:
         await self.check_tag(ctx, tag)
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT author_id FROM tags WHERE name = $tag${tag}$tag AND guild_id = {ctx.guild.id}")
+            result = await con.fetch(f"SELECT author_id FROM tags WHERE name = $tag${tag}$tag$ AND guild_id = {ctx.guild.id}")
 
         if not result or int(result[0]['author_id']) != ctx.author.id:
             raise customerrors.NotTagOwner(tag)
@@ -99,7 +111,7 @@ class Tags(commands.Cog):
     async def send_tag(self, ctx, name: str) -> discord.Message:
         timestamp = "{:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         async with self.bot.db.acquire() as con:
-            info = (await con.fetch(f"SELECT message_content FROM tags WHERE name = $tag${name}$tag and guild_id = {ctx.guild.id}"))[0]
+            info = (await con.fetch(f"SELECT message_content FROM tags WHERE name = $tag${name}$tag and (guild_id = {ctx.guild.id} OR global=TRUE)"))[0]
         content = info['message_content']
         embed = discord.Embed(description=content,
                               color=discord.Color.blue())
@@ -109,28 +121,85 @@ class Tags(commands.Cog):
 
     async def list_user_tags(self, ctx) -> list:
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT * from tags WHERE guild_id = {ctx.guild.id} AND author_id = {ctx.author.id}")
+            result = await con.fetch(f"SELECT * from tags WHERE (guild_id = {ctx.guild.id} OR global=TRUE) AND author_id = {ctx.author.id}")
 
         if not result:
             raise customerrors.UserNoTags(ctx.author)
 
-        desc_list = [f"{tag['name']} [ID: {tag['id']}]\n*created at "
-                     f"{datetime.fromtimestamp(int(tag['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}*\n" for tag in result]
+        desc_list = [f"**{tag['name']}** [UUID: {tag['uuid']}]\n*created at "
+                     f"{datetime.fromtimestamp(int(tag['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}* {'(global)' if tag['global'] else ''}\n" for tag in result]
         return sorted(desc_list)
 
     async def search_tags(self, ctx, keyword) -> list:
         async with self.bot.db.acquire() as con:
             await con.execute("SELECT set_limit(0.1)")
-            result = await con.fetch(f"SELECT name, id FROM tags WHERE name % $tag${keyword}$tag$ AND guild_id = {ctx.guild.id} LIMIT 100")
+            result = await con.fetch(f"SELECT name, uuid, global FROM tags WHERE name % $tag${keyword}$tag$ AND (guild_id = {ctx.guild.id} OR global=TRUE) LIMIT 100")
         if not result:
             raise customerrors.NoSimilarTags(keyword)
         else:
-            return [f"{tag['name']} [ID: {tag['id']}]\n" for tag in result]
+            return [f"**{tag['name']}** [UUID: {tag['uuid']}]\n{'(global)' if tag['global'] else ''}" for tag in result]
+
+    async def edit_tag(self, ctx, orig_name, tag, content) -> bool:
+        ts = int(datetime.now().timestamp())
+        try:
+            async with self.bot.db.acquire() as con:
+                if not content and tag:
+                    op = f"UPDATE tags SET name=$tag${tag}$tag$, modified_at={ts} WHERE name=$tag${orig_name}$tag$ AND author_id = {ctx.author.id}"
+                elif content and tag:
+                    op = f"UPDATE tags SET name=$tag${tag}$tag$, message_content=$tag${content}$tag$, modified_at={ts} WHERE name=$tag${orig_name}$tag$ AND author_id = {ctx.author.id}"
+                elif not tag and content:
+                    op = f"UPDATE tags set message_content=$tag${content}$tag$, modified_at={ts} WHERE name={orig_name} AND author_id = {ctx.author.id}"
+                else:
+                    return False
+                await con.execute(op)
+            return True
+        except Exception:
+            return False
+
+    async def delete_tag(self, ctx, tag) -> discord.Message:
+        try:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"DELETE FROM tags WHERE name=$tag${tag}$tag$ AND author_id={ctx.author.id}")
+            embed = discord.Embed(title="Successfully Deleted Tag",
+                                  description=f"{ctx.author.mention}, your tag `{tag}` was deleted",
+                                  color=discord.Color.blue())
+        except Exception:
+            embed = discord.Embed(title="Delete Tag Failed",
+                                  description=f"{ctx.author.mention}, your tag `{tag}` could not be deleted",
+                                  color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
 
     async def check_tag_name_taken(self, ctx, tag) -> bool:
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT id from tags WHERE name = $tag${tag}$tag$")
+            result = await con.fetch(f"SELECT uuid from tags WHERE name = $tag${tag}$tag$")
         return True if result else False
+
+    async def edit_global(self, ctx, tag, status: bool) -> discord.Message:
+        try:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"UPDATE tags SET global={status} WHERE name=$tag${tag}$tag$ AND author_id = {ctx.author.id}")
+            title = "Global Tag Update Success"
+            color = discord.Color.blue()
+            if status:
+                description = (f"{ctx.author.mention}, your tag `{tag}` is now global, meaning you can access it from "
+                               "anywhere, as long as I am in that server")
+            else:
+                description = (f"{ctx.author.mention}, your tag `{tag}` is no longer global, meaning that you can access "
+                               "it only in the server it was originally created")
+        except Exception:
+            title = "Global Tag Update Failed"
+            description = f"{ctx.author.mention}, your tag `{tag}` could not be edited"
+            color = discord.Color.dark_red()
+
+        embed = discord.Embed(title=title, description=description, color=color)
+        return await ctx.channel.send(embed=embed)
+
+    async def check_panel(self, ctx, panel):
+        try:
+            if panel.id:
+                return True
+        except (discord.NotFound, discord.Forbidden):
+            return False
 
     @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
@@ -155,7 +224,9 @@ class Tags(commands.Cog):
 
     @tag.command(aliases=['make'])
     async def create(self, ctx, *, tag):
-        await self.check_tag(ctx, tag)
+        if tag.lower() in PROHIB_NAMES:
+            raise customerrors.InvalidTagName(tag)
+        await self.check_tag_exists(ctx, tag)
         embed = discord.Embed(title=f"Create Tag \"{tag}\"",
                               description=f"{ctx.author.mention}, within 2 minutes, please enter what you would like the tag to return\n\n"
                               f"ex. *If you enter \"test\", doing `{await gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
@@ -174,6 +245,11 @@ class Tags(commands.Cog):
             return gcmds.cancelled(ctx, "tag creation")
         await gcmds.smart_delete(result)
 
+        try:
+            await panel.delete()
+        except Exception:
+            pass
+
         return await self.create_tag(ctx, tag, result.content)
 
     @tag.command()
@@ -183,12 +259,117 @@ class Tags(commands.Cog):
         async def from_user(message: discord.Message):
             return message.author.id == ctx.author.id and not await self.check_tag_name_taken(ctx, message.content)
 
+        def from_user_content_only(message: discord.Message):
+            return message.author.id == ctx.author.id and message.channel.id == ctx.channel.id
+
+        default = "or enter *\"skip\"* to keep the current value"
+
+        panel_embed = discord.Embed(title="Edit Tag",
+                                    description=f"{ctx.author.mention}, please enter the tag's new name {default}\n\nCurrent Name: {tag}",
+                                    color=discord.Color.blue())
+        panel_embed.set_footer(text="Enter \"cancel\" to cancel at any time")
+        panel = await ctx.channel.send(embed=panel_embed)
+
         # User can edit tag name
+        while True:
+            try:
+                if not await self.check_panel(ctx, panel):
+                    return await gcmds.panel_deleted(ctx, "tag edit")
+                result = await self.bot.wait_for("message", check=from_user, timeout=30)
+            except asyncio.TimeoutError:
+                return await gcmds.timeout(ctx, "tag edit", 30)
+            if result.content == "cancel":
+                return await gcmds.cancelled(ctx, "tag edit")
+            else:
+                if result.content.lower() in PROHIB_NAMES:
+                    raise customerrors.InvalidTagName(tag)
+                else:
+                    new_name = result.content if result.content != "skip" else tag
+                    break
+        await gcmds.smart_delete(result)
+
+        async with self.bot.db.acquire() as con:
+            orig_content = (await con.fetch(f"SELECT message_content FROM tags WHERE author_id = {ctx.author.id} AND name = $tag${tag}$tag$"))[0]['message_content']
+
+        panel_embed.description = f"{ctx.author.mention}, please enter the tag's new content {default}\n\nCurrent Content: {orig_content}"
+
+        try:
+            await panel.edit(embed=panel_embed)
+        except (discord.Forbidden, discord.NotFound):
+            return await gcmds.panel_deleted(ctx, "tag edit")
+
+        # User can edit tag content
+        try:
+            if not await self.check_panel(ctx, panel):
+                return await gcmds.panel_deleted(ctx, "tag edit")
+            result = await self.bot.wait_for("message", check=from_user_content_only, timeout=240)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "tag edit", 240)
+        if result.content == "cancel":
+            return await gcmds.cancelled(ctx, "tag edit")
+        else:
+            new_content = result.content if result.content != "skip" else None
+
+        succeeded = await self.edit_tag(ctx, tag, new_name, new_content)
+        if succeeded:
+            title = "Successfully Edited Tag"
+            description_list = []
+            if new_name != tag:
+                description_list.append(f"`{tag}` ⟶ `{new_name}`")
+            if new_content and new_content != orig_content:
+                description_list.append(f"New Tag Content:\n```{new_content}\n```")
+            description = (f"{ctx.author.mention}, your tag was successfully edited\n\n" + "\n\n".join(description_list)
+                           ) if description_list else f"{ctx.author.mention}, your tag was not edited"
+            color = discord.Color.blue()
+        else:
+            title = "Unable to Edit Tag"
+            description = f"{ctx.author.mention}, your tag could not be edited"
+            color = discord.Color.dark_red()
+
+        embed = discord.Embed(title=title,
+                              description=description,
+                              color=color)
+        try:
+            await panel.edit(embed=embed)
+        except Exception:
+            await ctx.channel.send(embed=embed)
 
     @tag.command(aliaes=['remove'])
     async def delete(self, ctx, *, tag):
         await self.check_tag_owner(ctx, tag)
 
+        panel_embed = discord.Embed(title="Confirm Tag Deletion",
+                                    description=f"{ctx.author.mention}, you are about to delete the tag `{tag}`. "
+                                    f"This action is destructive and cannot be undone. React with {reactions[0]} to "
+                                    f"confirm or {reactions[1]} to cancel",
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+
+        def reacted(reaction: discord.Reaction, user: discord.User) -> bool:
+            return reaction.emoji in reactions and user.id == ctx.author.id and reaction.message.id == panel.message.id
+
+        while True:
+            try:
+                result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
+            except asyncio.TimeoutError:
+                return await gcmds.timeout(ctx, "tag delete")
+            if result[0].emoji in reactions:
+                try:
+                    await panel.delete()
+                except Exception:
+                    pass
+                break
+            else:
+                continue
+        if result[0].emoji == reactions[0]:
+            return await self.delete_tag(ctx, tag)
+        else:
+            return await gcmds.cancelled(ctx, "tag delete")
+
+    @premium.is_premium()
+    @tag.command(aliases=['mg'])
+    async def make_global(self, ctx, tag):
+        await self.check_tag_owner(ctx, tag)
 
 def setup(bot):
     bot.add_cog(Tags(bot))
