@@ -3,7 +3,7 @@ import os
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from utils import globalcommands
+from utils import globalcommands, paginator, customerrors
 
 gcmds = None
 
@@ -24,6 +24,52 @@ class Owner(commands.Cog):
     async def init_balance(self):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS balance (user_id bigint PRIMARY KEY, amount bigint)")
+
+    async def get_premium_users(self):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch("SELECT user_id FROM premium")
+        if not result:
+            raise customerrors.NoPremiumUsers()
+        else:
+            return [await self.bot.get_user(int(user['user_id'])) for user in result]
+
+    async def get_guild_premium_users(self, ctx):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch("SELECT user_id FROM premium")
+        if not result:
+            raise customerrors.NoPremiumUsers()
+        else:
+            return [await self.bot.get_user(int(user['user_id'])) for user in result if user.id in [member.id for member in ctx.guild.members]]
+
+    async def get_premium_guilds(self):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch("SELECT guild_id FROM premium")
+        if not result:
+            raise customerrors.NoPremiumGuilds()
+        else:
+            return [await self.bot.get_guild(int(guild['guild_id'])) for guild in result]
+
+    async def op_user_premium(self, op: str, user: discord.User) -> bool:
+        try:
+            async with self.bot.db.acquire() as con:
+                if op == "set":
+                    await con.execute(f"INSERT INTO premium(user_id) VALUES ({user.id})")
+                elif op == "remove":
+                    await con.execute(f"DELETE FROM premium WHERE user_id = {user.id}")
+            return True
+        except Exception:
+            return False
+
+    async def op_guild_premium(self, op: str, guild: discord.Guild) -> bool:
+        try:
+            async with self.bot.db.acquire() as con:
+                if op == "set":
+                    await con.execute(f"INSERT INTO premium(guild_id) VALUES ({guild.id})")
+                elif op == "remove":
+                    await con.execute(f"DELETE FROM premium WHERE guild_id = {guild.id}")
+            return True
+        except Exception:
+            return False
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
@@ -311,6 +357,18 @@ class Owner(commands.Cog):
                                    description=f"Left guild id: {id}",
                                    color=discord.Color.blue())
         await ctx.author.send(embed=leaveEmbed)
+
+    @commands.group(invoke_without_command=True)
+    async def premium(self, ctx):
+        description = ("MarwynnBot Premium is an optional, subscription based plan that will grant the subscriber complete, unrestricted "
+        "access to all of MarwynnBot's \"premium locked\" features, such as creating and saving playlists, receiving special monthly"
+        "balance crates, public tags, unlimited number of tags, a special role in the MarwynnBot Support Server, and more!\n\n"
+        "**MarwynnBot Premium is currently unavailable. This message will update when it becomes available, most likely after MarwynnBot's"
+        "v1.0.0-rc.1 release**")
+        embed = discord.Embed(title="MarwynnBot Premium",
+                              description=description,
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['dm', 'privatemessage'])
     @commands.is_owner()
