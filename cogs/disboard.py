@@ -37,9 +37,11 @@ class Disboard(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.guild and message.author.id == disboard_bot_id:
             async with self.bot.db.acquire() as con:
-                result = (await con.fetch(f"SELECT channel_id, message_content, time from disboard WHERE guild_id = {message.guild.id}"))[0]
+                result = await con.fetch(f"SELECT channel_id, message_content, time from disboard WHERE guild_id = {message.guild.id}")
             if not result:
                 return
+            else:
+                result = result[0]
             message = message
             disboard_embed = message.embeds[0]
             if "bump done" in disboard_embed.description.lower():
