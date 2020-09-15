@@ -176,7 +176,10 @@ class EmbedPaginator:
         self.in_help = True
 
     async def stop_pages(self):
-        await self.message.delete()
+        try:
+            await self.message.delete()
+        except Exception:
+            pass
         self.paginating = False
 
     async def rem_reaction(self, payload):
@@ -189,7 +192,7 @@ class EmbedPaginator:
 
         try:
             await self.message.remove_reaction(payload.emoji, member_converted)
-        except:
+        except Exception:
             pass
 
     def react_check(self, payload):
