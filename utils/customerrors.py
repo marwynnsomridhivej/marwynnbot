@@ -60,3 +60,41 @@ class CannotPaginate(commands.CommandError):
     """
     def __init__(self, message):
         self.message = message
+
+
+class NoPremiumGuilds(commands.CommandError):
+    """Error raised when there are no guilds that are MarwynnBot Premium guilds
+    """
+    def __init__(self):
+        self.message = "There are no servers registered as MarwynnBot Premium servers"
+
+
+class NoPremiumUsers(commands.CommandError):
+    """Error raised when the current guild contains no MarwynnBot Premium users
+    """
+    def __init__(self):
+        self.message = "This server does not have any MarwynnBot Premium members \:("
+
+
+class NotPremiumGuild(commands.CommandError):
+    """Error raised when the current guild is not a MarwynnBot Premium guild
+
+    Args:
+        guild (discord.Guild): the current guild
+    """
+    def __init__(self, guild: discord.Guild):
+        self.guild = guild
+        self.id = self.guild.id
+        self.name = self.guild.name
+
+
+class NotPremiumUser(commands.CommandError):
+    """Error raised when the current user is not a MarwynnBot Premium user
+
+    Args:
+        commands (discord.User): the current user
+    """
+    def __init__(self, user: discord.User):
+        self.user = user
+        self.id = self.user.id
+        self.name = self.user.display_name
