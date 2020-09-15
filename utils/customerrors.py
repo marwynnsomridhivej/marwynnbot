@@ -84,6 +84,13 @@ class NoSimilarTags(TagError):
                                    color=discord.Color.dark_red())
 
 
+class InvalidTagName(TagError):
+    def __init__(self, tag: str):
+        self.embed = discord.Embed(title="Invalid Tag Name",
+                                   description=f"You cannot create a tag with the name `{tag}`",
+                                   color=discord.Color.dark_red())
+
+
 class CannotPaginate(commands.CommandError):
     """Error raised when the paginator cannot paginate
 
