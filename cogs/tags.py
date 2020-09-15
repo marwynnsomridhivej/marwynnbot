@@ -4,7 +4,7 @@ import os
 import asyncio
 from datetime import datetime
 from discord.ext import commands
-from utils import globalcommands, customerrors, paginator, fuzzysearch
+from utils import globalcommands, customerrors, paginator
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -15,7 +15,16 @@ timeout = 600
 class Tags(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_tags())
+
+    async def init_tags(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS tags(id SERIAL PRIMARY KEY, guild_id bigint, author_id bigint,"
+                              " name text, message_content text, created_at NUMERIC, modified_at NUMERIC)")
 
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
@@ -55,42 +64,31 @@ class Tags(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def check_tag(self, ctx, name) -> bool:
-        if not os.path.exists('db/tags.json') or not name:
+        if not name:
             raise customerrors.TagNotFound(name)
 
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT id FROM tags WHERE name = $tag${name}$tag$ AND guild_id = {ctx.guild.id}")
 
-        if not str(ctx.guild.id) in file or not name in file[str(ctx.guild.id)]:
+        if not result:
             raise customerrors.TagNotFound(name)
-
-        return True
+        else:
+            return True
 
     async def check_tag_owner(self, ctx, tag) -> bool:
         await self.check_tag(ctx, tag)
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT author_id FROM tags WHERE name = $tag${tag}$tag AND guild_id = {ctx.guild.id}")
 
-        if not ctx.author.id == file[str(ctx.guild.id)][tag]['author_id']:
+        if not result or int(result[0]['author_id']) != ctx.author.id:
             raise customerrors.NotTagOwner(tag)
-
-        return True
+        else:
+            return True
 
     async def create_tag(self, ctx, name, content) -> discord.Message:
-        gcmds.json_load('db/tags.json', {})
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
-        if not str(ctx.guild.id) in file:
-            file.update({str(ctx.guild.id): {}})
-        file[str(ctx.guild.id)].update({
-            name: {
-                'author_id': ctx.author.id,
-                'content': content,
-                'created_at': int(datetime.now().timestamp())
-            }
-        })
-        with open('db/tags.json', 'w') as g:
-            json.dump(file, g, indent=4)
+        async with self.bot.db.acquire() as con:
+            values = f"({ctx.guild.id}, {ctx.author.id}, $tag${name}$tag$, $tag${content}$tag$, {int(datetime.now().timestamp())})"
+            await con.execute(f"INSERT INTO tags(guild_id, author_id, name, message_content, created_at) VALUES {values}")
 
         embed = discord.Embed(title="Tag Created",
                               description=f"{ctx.author.mention}, your tag `{name}` was created and can be accessed "
@@ -100,9 +98,9 @@ class Tags(commands.Cog):
 
     async def send_tag(self, ctx, name: str) -> discord.Message:
         timestamp = "{:%m/%d/%Y %H:%M:%S}".format(datetime.now())
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
-        content = file[str(ctx.guild.id)][name]['content']
+        async with self.bot.db.acquire() as con:
+            info = (await con.fetch(f"SELECT message_content FROM tags WHERE name = $tag${name}$tag and guild_id = {ctx.guild.id}"))[0]
+        content = info['message_content']
         embed = discord.Embed(description=content,
                               color=discord.Color.blue())
         embed.set_author(name=name, icon_url=ctx.author.avatar_url)
@@ -110,39 +108,29 @@ class Tags(commands.Cog):
         await ctx.channel.send(embed=embed)
 
     async def list_user_tags(self, ctx) -> list:
-        if not os.path.exists('db/tags.json'):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT * from tags WHERE guild_id = {ctx.guild.id} AND author_id = {ctx.author.id}")
+
+        if not result:
             raise customerrors.UserNoTags(ctx.author)
 
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
-
-        if not str(ctx.guild.id) in file:
-            raise customerrors.UserNoTags(ctx.author)
-
-        desc_list = [f"{tag}\nCreated at {datetime.fromtimestamp(int(file[str(ctx.guild.id)][tag]['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}\n"
-                     for tag in file[str(ctx.guild.id)] if file[str(ctx.guild.id)][tag]['author_id'] == ctx.author.id]
-        if len(desc_list) != 0:
-            return desc_list
-        else:
-            raise customerrors.UserNoTags(ctx.author)
+        desc_list = [f"{tag['name']} [ID: {tag['id']}]\n*created at "
+                     f"{datetime.fromtimestamp(int(tag['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}*\n" for tag in result]
+        return sorted(desc_list)
 
     async def search_tags(self, ctx, keyword) -> list:
-        if not os.path.exists('db/tags.json'):
+        async with self.bot.db.acquire() as con:
+            await con.execute("SELECT set_limit(0.1)")
+            result = await con.fetch(f"SELECT name, id FROM tags WHERE name % $tag${keyword}$tag$ AND guild_id = {ctx.guild.id} LIMIT 100")
+        if not result:
             raise customerrors.NoSimilarTags(keyword)
-
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
-
-        if not str(ctx.guild.id) in file:
-            raise customerrors.NoSimilarTags(keyword)
-
-        pool = [item for item in file[str(ctx.guild.id)]]
-        return await fuzzysearch.TagFuzzy(query=keyword, pool=pool, threshold=60).over_threshold()
+        else:
+            return [f"{tag['name']} [ID: {tag['id']}]\n" for tag in result]
 
     async def check_tag_name_taken(self, ctx, tag) -> bool:
-        with open('db/tags.json', 'r') as f:
-            file = json.load(f)
-        return True if tag in file[str(ctx.guild.id)] else False
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT id from tags WHERE name = $tag${tag}$tag$")
+        return True if result else False
 
     @commands.group(invoke_without_command=True, aliases=['tags'])
     async def tag(self, ctx, *, tag: str = None):
@@ -160,14 +148,10 @@ class Tags(commands.Cog):
 
     @tag.command()
     async def search(self, ctx, *, keyword):
-        result = await self.search_tags(ctx, keyword)
-        if not result:
-            raise customerrors.NoSimilarTags(keyword)
-
-        embed = discord.Embed(title="Search Results",
-                              description="```\n" + '\n```\n```\n'.join(result) + "\n```",
-                              color=discord.Color.blue())
-        return await ctx.channel.send(embed=embed)
+        entries = await self.search_tags(ctx, keyword)
+        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag.embed.title = "Search Results"
+        return await pag.paginate()
 
     @tag.command(aliases=['make'])
     async def create(self, ctx, *, tag):
@@ -204,7 +188,6 @@ class Tags(commands.Cog):
     @tag.command(aliaes=['remove'])
     async def delete(self, ctx, *, tag):
         await self.check_tag_owner(ctx, tag)
-
 
 
 def setup(bot):
