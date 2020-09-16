@@ -14,10 +14,23 @@ def is_premium(*args, **kwargs):
                 result = await con.fetch(f"SELECT guild_id FROM premium WHERE guild_id = {ctx.guild.id}")
                 if not result:
                     raise customerrors.NotPremiumGuild(ctx.guild)
-            else:
+            elif kwargs.get('req_user', False):
                 result = await con.fetch(f"SELECT user_id FROM premium WHERE user_id = {ctx.author.id}")
                 if not result:
                     raise customerrors.NotPremiumUser(ctx.author)
+            else:
+                result = await con.fetch(f"SELECT * FROM premium WHERE user_id = {ctx.author.id} OR guild_id = {ctx.guild.id}")
+                if not result:
+                    raise customerrors.NotPremiumUserOrGuild(ctx.author, ctx.guild)
         return True
 
     return commands.check(predicate)
+
+
+async def check_premium(user: discord.User) -> bool:
+    db = globalcommands.db
+    if not db:
+        raise customerrors.NoPostgreSQL()
+    async with db.acquire() as con:
+        result = await con.fetch(f"SELECT user_id FROM premium WHERE user_id = {user.id}")
+    return True if result else False
