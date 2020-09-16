@@ -232,7 +232,7 @@ class Bot(commands.AutoShardedBot):
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=notFound)
         elif isinstance(error, commands.CommandOnCooldown):
-            cooldown_time_truncated = truncate(error.retry_after, 3)
+            cooldown_time_truncated = gcmds.truncate(error.retry_after, 3)
             if cooldown_time_truncated < 1:
                 spell = "milliseconds"
                 cooldown_time_truncated *= 1000
@@ -288,11 +288,6 @@ class Bot(commands.AutoShardedBot):
                 for alias in command.aliases:
                     at += 1
         return at
-
-    @staticmethod
-    def truncate(number: float, decimal_places: int):
-        stepper = 10.0 ** decimal_places
-        return math.trunc(stepper * number) / stepper
 
 
 loop = asyncio.get_event_loop()
