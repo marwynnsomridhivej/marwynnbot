@@ -9,6 +9,7 @@ class PostgreSQLError(commands.CommandError):
 class NoPostgreSQL(PostgreSQLError):
     """Error raised when no valid db is specified
     """
+
     def __init__(self):
         self.embed = discord.Embed(title="No Valid DB Connection",
                                    description="No valid DB connection was passed as an argument",
@@ -16,7 +17,11 @@ class NoPostgreSQL(PostgreSQLError):
 
 
 class TagError(commands.CommandError):
-    pass
+    def __init__(self, message=None, error=None, *args):
+        super().__init__(message=message, *args)
+        self.embed = discord.Embed(title="An Error Occurred",
+                                   description=f"An error occurred while processing a tag command:\n```{error}\n```",
+                                   color=discord.Color.dark_red())
 
 
 class TagNotFound(TagError):
@@ -91,6 +96,14 @@ class InvalidTagName(TagError):
                                    color=discord.Color.dark_red())
 
 
+class TagLimitReached(TagError):
+    def __init__(self, user: discord.User):
+        self.embed = discord.Embed(title="Tag Limit Reached",
+                                   description=f"{user.mention}, you must be a MarwynnBot Premium subscriber in order to "
+                                   "create more than 100 tags",
+                                   color=discord.Color.dark_red())
+
+
 class CannotPaginate(commands.CommandError):
     """Error raised when the paginator cannot paginate
 
@@ -144,7 +157,8 @@ class NotPremiumGuild(PremiumError):
 
     def __init__(self, guild: discord.Guild):
         self.embed = discord.Embed(title="Not MarwynnBot Premium",
-                                   description=f"This guild, {guild.name}, does not have a MarwynnBot Premium subscription",
+                                   description=f"This guild, {guild.name}, must have a MarwynnBot Premium Server Subscription"
+                                   " to use this command",
                                    color=discord.Color.dark_red())
 
 
@@ -152,12 +166,27 @@ class NotPremiumUser(PremiumError):
     """Error raised when the current user is not a MarwynnBot Premium user
 
     Args:
-        commands (discord.User): the current user
+        user (discord.User): the current user
     """
 
     def __init__(self, user: discord.User):
         self.embed = discord.Embed(title="Not MarwynnBot Premium",
-                                   description=f"{user.mention}, you must have a MarwynnBot premium user or server subscription to use this command",
+                                   description=f"{user.mention}, you must have a MarwynnBot Premium User Subscription to use this command",
+                                   color=discord.Color.dark_red())
+
+
+class NotPremiumUserOrGuild(PremiumError):
+    """Error raised when the current user and guild are both not MarwynnBot Premium
+
+    Args:
+        user (discord.User): the current user
+        guild (discord.Guild): the current guild
+    """
+
+    def __init__(self, user: discord.User, guild: discord.Guild):
+        self.embed = discord.Embed(title="Not MarwynnBot Premium",
+                                   description=f"{user.mention}, you or this server, {guild.name}, must have a "
+                                   "MarwynnBot Premium Server Subscription to use this command",
                                    color=discord.Color.dark_red())
 
 
@@ -180,6 +209,7 @@ class UserAlreadyPremium(UserPremiumException):
     Args:
         user (discord.User): the user the error occured with
     """
+
     def __init__(self, user: discord.User):
         super().__init__(user)
         self.embed.description = f"{user.display_name} already has a MarwynnBot Premium subscription"
@@ -204,6 +234,7 @@ class GuildAlreadyPremium(GuildPremiumException):
     Args:
         guild (discord.Guild): the guild the error occured with
     """
+
     def __init__(self, guild: discord.Guild):
         super().__init__(guild)
         self.embed.description = f"{guild.name} already has a MarwynnBot Premium subscription"
