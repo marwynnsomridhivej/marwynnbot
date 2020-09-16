@@ -238,3 +238,23 @@ class GuildAlreadyPremium(GuildPremiumException):
     def __init__(self, guild: discord.Guild):
         super().__init__(guild)
         self.embed.description = f"{guild.name} already has a MarwynnBot Premium subscription"
+
+
+class GameStatsError(commands.CommandError):
+    def __init__(self):
+        self.embed = discord.Embed(title="GameStats Error",
+                                   description="An error occurred while executing a gamestats query",
+                                   color=discord.Color.dark_red())
+
+
+class NoStatsAll(GameStatsError):
+    def __init__(self, user: discord.User):
+        super().__init__()
+        self.embed.description = f"{user.mention}, you do not have any stats for any of MarwynnBot's games. Start playing to see your stats update!"
+
+
+class NoStatsGame(GameStatsError):
+    def __init__(self, user: discord.User, game: str):
+        super().__init__()
+        self.embed.description = f"{user.mention}, you do not have any stats for the game {game.title()}. Start playing to see your stats update!"
+        
