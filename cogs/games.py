@@ -3,7 +3,7 @@ import json
 import discord
 import typing
 from discord.ext import commands
-from utils import globalcommands
+from utils import globalcommands, customerrors
 
 gcmds = globalcommands.GlobalCMDS()
 
@@ -14,6 +14,14 @@ class Games(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_gamestats())
+
+    async def init_gamestats(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            dn = "DEFAULT NULL"
+            await con.execute(f"CREATE TABLE IF NOT EXISTS gamestats(user_id bigint PRIMARY KEY, blackjack jsonb {dn}, "
+                              f"coinflip jsonb {dn}, connectfour jsonb {dn}, slots jsonb {dn}, uno jsonb {dn})")
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
@@ -69,89 +77,41 @@ class Games(commands.Cog):
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed, delete_after=30)
 
-    @commands.command(aliases=['gamestats', 'stats'])
-    async def gameStats(self, ctx, gameName: typing.Optional[str] = None,
-                        member: commands.Greedy[discord.Member] = None):
-        if gameName is not None:
-            if "<@!" in gameName:
-                userid = gameName[3:-1]
-                if member is None:
-                    member = [await commands.AutoShardedBot.fetch_user(self.bot, user_id=int(userid))]
+    @commands.command(aliases=['gamestats', 'gs'])
+    async def gameStats(self, ctx, member: typing.Optional[discord.Member] = None, game: str = None):
+        if not member:
+            member = ctx.author
+        async with self.bot.db.acquire() as con:
+            if not game:
+                result = await con.fetch(f"SELECT * FROM gamestats WHERE user_id = {member.id}")
+            else:
+                result = await con.fetch(f"SELECT {game.lower()} FROM gamestats WHERE user_id = {member.id} AND {game.lower()} IS NOT NULL")
+        if not result:
+            raise customerrors.NoStatsGame(member, game.lower()) if game else customerrors.NoStatsAll(member)
+
+        if not game:
+            embed = discord.Embed(title=f"Stats for {member.display_name}",
+                                  color=discord.Color.blue())
+            items = result[0]
+            game_names = ["blackjack", "coinflip", "connectfour", "slots", "uno"]
+            for name in game_names:
+                if items[f"{name}"]:
+                    jsoned = json.loads(items[f"{name}"])
+                    values = [f"> {key}: *{jsoned[key]}*" for key in sorted(jsoned.keys(), reverse=True)]
+                    embed.add_field(name=name.title(),
+                                    value="\n".join(values),
+                                    inline=True)
                 else:
-                    member.append(userid)
-                gameName = None
-            elif "<@" in gameName:
-                userid = gameName[2:-1]
-                if member is None:
-                    member = [await commands.AutoShardedBot.fetch_user(self.bot, user_id=int(userid))]
-                else:
-                    member.append(userid)
-                gameName = None
-        userlist = []
-        if member is None:
-            userlist.append(ctx.author)
+                    embed.add_field(name=name.title(),
+                                    value="> N/A",
+                                    inline=True)
         else:
-            for user in member:
-                userlist.append(user)
-
-        for user in userlist:
-            person_name = await commands.AutoShardedBot.fetch_user(self.bot, user_id=user.id)
-            with open('db/gamestats.json', 'r') as f:
-                file = json.load(f)
-                if gameName is not None:
-                    try:
-                        stats = file[str(gameName)][str(user.id)]
-                        statsEmbed = discord.Embed(
-                            title=f"{person_name.display_name}'s Stats for {str(gameName).capitalize()}",
-                            color=discord.Color.blue())
-                    except KeyError:
-                        errorEmbed = discord.Embed(title="No Stats Available",
-                                                   description=f"{ctx.author.mention}, you have no stats for this game",
-                                                   color=discord.Color.dark_red())
-                        await ctx.channel.send(embed=errorEmbed, delete_after=5)
-                    else:
-                        for item in stats:
-                            value = file[str(gameName)][str(user.id)][item]
-                            if item == "ratio":
-                                continue
-                            else:
-                                if value == 1:
-                                    spell = "time"
-                                else:
-                                    spell = "times"
-                            statsEmbed.add_field(name=str(item).capitalize(),
-                                                 value=f"**{value}** {spell}",
-                                                 inline=False)
-                        statsEmbed.add_field(name="Ratio",
-                                             value=f"**{file[str(gameName)][str(user.id)]['ratio']}**",
-                                             inline=False)
-
-                        await ctx.channel.send(embed=statsEmbed)
-
-                else:
-                    statsEmbed = discord.Embed(title=f"{person_name.display_name}'s Stats for All Games",
-                                               color=discord.Color.blue())
-                    for game in file:
-                        try:
-                            user_data = file[str(game)][str(user.id)]
-                        except KeyError:
-                            statsEmbed.add_field(name=f"{game}",
-                                                 value="No Data Available")
-                        else:
-                            value = ""
-                            for item in user_data:
-                                if item == "ratio":
-                                    continue
-                                else:
-                                    if file[str(game)][str(user.id)][str(item)] == 1:
-                                        spell = "time"
-                                    else:
-                                        spell = "times"
-                                value += f"**{str(item).capitalize()}:** `{str(file[str(game)][str(user.id)][str(item)])}` {spell}\n "
-                            value += f"**Ratio**: `{str(file[str(game)][str(user.id)][str(item)])}`"
-                            statsEmbed.add_field(name=game,
-                                                 value=value)
-                    await ctx.channel.send(embed=statsEmbed)
+            jsoned = json.loads(result[0][game.lower()])
+            desc_list = [f"> {key}: *{jsoned[key]}*" for key in sorted(jsoned.keys(), reverse=True)]
+            embed = discord.Embed(title=f"{game.title()} Stats for {member.display_name}",
+                                  description="\n".join(desc_list),
+                                  color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.command()
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
