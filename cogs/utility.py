@@ -19,9 +19,15 @@ class Utility(commands.Cog):
         self.messages = {}
         self.update_server_stats.start()
         gcmds = globalcommands.GlobalCMDS(bot=self.bot)
+        self.bot.loop.create_task(self.init_requests())
 
     def cog_unload(self):
         self.update_server_stats.cancel()
+
+    async def init_requests(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS requests(message_id bigint PRIMARY KEY, user_id bigint, type text)")
 
     @tasks.loop(minutes=15)
     async def update_server_stats(self):
@@ -49,24 +55,18 @@ class Utility(commands.Cog):
             if not exists:
                 await self.remove_ss_entry(int(guild_id))
 
-    def load_messages(self):
-        init = {}
-        gcmds.json_load('db/requests.json', init)
-        with open('db/requests.json', 'r') as f:
-            self.messages = json.load(f)
+    async def add_entry(self, ctx, message_id: int, type: str):
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"INSERT INTO requests(message_id, user_id, type) VALUES ({message_id}, {ctx.author.id}, '{type}')")
 
-    def add_entry(self, ctx, message_id: int):
-        self.messages[str(message_id)] = str(ctx.author.id)
-        with open('db/requests.json', 'w') as f:
-            json.dump(self.messages, f, indent=4)
+    async def get_entry(self, message_id: int):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT * FROM requests WHERE message_id = {message_id}")
+        return result if result else None
 
-    def get_entry(self, message_id: int):
-        return self.messages[str(message_id)]
-
-    def remove_entry(self, message_id: int):
-        del self.messages[str(message_id)]
-        with open('db/requests.json', 'w') as f:
-            json.dump(self.messages, f, indent=4)
+    async def remove_entry(self, message_id: int):
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"DELETE FROM requests WHERE message_id = {message_id}")
 
     async def get_guild_info(self, guild: discord.Guild) -> list:
         botCount = 0
@@ -139,15 +139,13 @@ class Utility(commands.Cog):
                               "ions=2146958583")
         await ctx.channel.send(embed=embed)
 
-    @commands.group()
+    @commands.group(invoke_without_command=True)
     async def request(self, ctx):
-        self.load_messages()
-        if not ctx.invoked_subcommand:
-            menu = discord.Embed(title="Request Options",
-                                 description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
-                                             f"to submit a feature request with a 60 second cooldown",
-                                 color=discord.Color.blue())
-            await ctx.channel.send(embed=menu)
+        menu = discord.Embed(title="Request Options",
+                                description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
+                                            f"to submit a feature request with a 60 second cooldown",
+                                color=discord.Color.blue())
+        await ctx.channel.send(embed=menu)
 
     @request.command()
     @commands.cooldown(1, 60, commands.BucketType.user)
@@ -178,7 +176,7 @@ class Utility(commands.Cog):
         if not feature_message.endswith(" --noreceipt"):
             feature_embed.set_author(name=f"Copy of your request", icon_url=ctx.author.avatar_url)
             await ctx.author.send(embed=feature_embed)
-        self.add_entry(ctx, message.id)
+        self.add_entry(ctx, message.id, "feature")
 
     @request.command()
     async def reply(self, ctx, message_id: int = None, *, reply_message: str = None):
