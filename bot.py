@@ -108,7 +108,7 @@ class Bot(commands.AutoShardedBot):
 
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
-            command = ctx.command.parent.name if ctx.command.parent else ctx.command.name
+            command = ctx.command.root_parent.name if ctx.command.parent else ctx.command.name
             await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
             if ctx.guild:
                 old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
