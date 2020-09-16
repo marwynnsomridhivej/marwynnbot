@@ -81,22 +81,25 @@ class Games(commands.Cog):
     async def gameStats(self, ctx, member: typing.Optional[discord.Member] = None, game: str = None):
         if not member:
             member = ctx.author
+        game_names = ["blackjack", "coinflip", "connectfour", "slots", "uno"]
         async with self.bot.db.acquire() as con:
             if not game:
-                result = await con.fetch(f"SELECT * FROM gamestats WHERE user_id = {member.id}")
+                result = [await con.fetch(f"SELECT * FROM {name} WHERE user_id = {member.id}") for name in game_names]
+                print(result)
             else:
-                result = await con.fetch(f"SELECT {game.lower()} FROM gamestats WHERE user_id = {member.id} AND {game.lower()} IS NOT NULL")
+                result = await con.fetch(f"SELECT * FROM {game.lower()} WHERE user_id = {member.id}")
         if not result:
             raise customerrors.NoStatsGame(member, game.lower()) if game else customerrors.NoStatsAll(member)
 
         if not game:
+            if not [sub_elem for elem in result for sub_elem in elem]:
+                raise customerrors.NoStatsAll(member)
             embed = discord.Embed(title=f"Stats for {member.display_name}",
                                   color=discord.Color.blue())
-            items = result[0]
-            game_names = ["blackjack", "coinflip", "connectfour", "slots", "uno"]
             for name in game_names:
-                if items[f"{name}"]:
-                    jsoned = json.loads(items[f"{name}"])
+                item = result[int(game_names.index(name))]
+                if item:
+                    jsoned = dict(item)
                     values = [f"> {key}: *{jsoned[key]}*" for key in sorted(jsoned.keys(), reverse=True)]
                     embed.add_field(name=name.title(),
                                     value="\n".join(values),
@@ -106,7 +109,7 @@ class Games(commands.Cog):
                                     value="> N/A",
                                     inline=True)
         else:
-            jsoned = json.loads(result[0][game.lower()])
+            jsoned = dict(result[0])
             desc_list = [f"> {key}: *{jsoned[key]}*" for key in sorted(jsoned.keys(), reverse=True)]
             embed = discord.Embed(title=f"{game.title()} Stats for {member.display_name}",
                                   description="\n".join(desc_list),
