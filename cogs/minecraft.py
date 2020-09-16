@@ -9,7 +9,9 @@ gcmds = globalcommands.GlobalCMDS()
 class Minecraft(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def get_server(self, host: str) -> MinecraftServer:
         try:

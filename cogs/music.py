@@ -16,7 +16,9 @@ plist_delete_reactions = ["✅", "🛑"]
 
 class Music(commands.Cog):
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
         self.info = {}
         self.bot.loop.create_task(self.lavalink_setup())
 

@@ -18,7 +18,9 @@ gcmds = globalcommands.GlobalCMDS()
 class Fun(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
 

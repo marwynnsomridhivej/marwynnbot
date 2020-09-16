@@ -217,7 +217,6 @@ class Slots(commands.Cog):
 
     @commands.command(aliases=['slot'])
     async def slots(self, ctx, betAmount=None):
-
         if betAmount is None:
             betAmount = 1
         try:

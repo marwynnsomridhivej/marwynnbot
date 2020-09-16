@@ -266,7 +266,9 @@ def draw(ctx, member: discord.Member, bot: commands.AutoShardedBot):
 class ConnectFour(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):

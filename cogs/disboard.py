@@ -18,8 +18,10 @@ timeout = 60
 class Disboard(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
         self.tasks = []
+        gcmds = globalcommands.GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_disboard())
         self.check_unsent_reminder.start()
 

@@ -19,7 +19,9 @@ high quality translations that are actually grammatically correct.
 class Pokedex(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     def truncate(self, number: float, decimal_places: int) -> float:
         stepper = 10.0 ** decimal_places

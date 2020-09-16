@@ -12,7 +12,9 @@ gcmds = globalcommands.GlobalCMDS()
 class Reddit(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def get_id_secret(self, ctx):
         bot_id = gcmds.env_check("REDDIT_CLIENT_ID")
@@ -71,8 +73,6 @@ class Reddit(commands.Cog):
 
     @commands.command(aliases=['reddithelp'])
     async def reddit(self, ctx, cmdName=None):
-        
-
         CMDLIST = self.get_commands()
         del CMDLIST[0]
         CMDNAMES = [i.name for i in CMDLIST]
@@ -106,121 +106,101 @@ class Reddit(commands.Cog):
 
     @commands.command(aliases=['abj', 'meananimals'])
     async def animalsbeingjerks(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['anime'])
     async def awwnime(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['car', 'cars', 'carpics'])
     async def carporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def cosplay(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['earth', 'earthpics'])
     async def earthporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['food', 'foodpics'])
     async def foodporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['animemes'])
     async def goodanimemes(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['history', 'historypics'])
     async def historyporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['pic', 'itap'])
     async def itookapicture(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['map', 'maps', 'mappics'])
     async def mapporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['interesting', 'mi'])
     async def mildlyinteresting(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def pareidolia(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['ptiming'])
     async def perfecttiming(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['psbattle'])
     async def photoshopbattles(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['quotes'])
     async def quotesporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['room', 'rooms', 'roompics'])
     async def roomporn(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def tumblr(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command()
     async def unexpected(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['wallpaper'])
     async def wallpapers(self, ctx):
-        
         await self.embed_template(ctx)
         return
 
     @commands.command(aliases=['woah'])
     async def woahdude(self, ctx):
-        
         await self.embed_template(ctx)
         return
 

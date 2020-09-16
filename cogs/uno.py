@@ -515,11 +515,12 @@ def lose(player: UnoPlayer):
 class UNO(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
-
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",
                                       description=f"{ctx.author.mention}, please mention other players to start a game",

@@ -20,7 +20,9 @@ channel_id_rx = re.compile(r'[0-9]{18}')
 class Reminders(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
         self.tasks = []
         self.check_single.start()
         self.check_loop.start()
