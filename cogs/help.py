@@ -298,10 +298,10 @@ class Help(commands.Cog):
     @help.command(aliases=['gamestats', 'gs'])
     async def gameStats(self, ctx):
         commandName = "GameStats"
-        syntaxMessage = f"`{await gcmds.prefix(ctx)}gamestats [optional gameName] [optional user @mentions]`"
+        syntaxMessage = f"`{await gcmds.prefix(ctx)}gamestats [optional user @mention] [optional gameName]`"
         specialCases = 'If the `[optional gameName]` argument is not specified, it will show your stats for all the ' \
                        'games you have played at least once before' \
-                       "\n\nIf the `[optional user @mentions]` argument is not specified, it will default to yourself"
+                       "\n\nIf the `[optional user @mention]` argument is not specified, it will default to yourself"
         await self.syntaxEmbed(ctx,
                                commandName=commandName,
                                syntaxMessage=syntaxMessage,
