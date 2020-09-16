@@ -7,7 +7,6 @@ import typing
 import aiohttp
 import discord
 import requests
-import yaml
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
 from utils import globalcommands
@@ -23,7 +22,6 @@ class Fun(commands.Cog):
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def imageSend(self, ctx, path, url=None, toSend=None):
-
         path = path
         sleepTime = 1.0
 
@@ -135,20 +133,50 @@ class Fun(commands.Cog):
         else:
             await ctx.channel.send(embed=pictureEmbed)
 
+    @commands.command(aliases=['dailyastro'])
+    async def apod(self, ctx):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY") as returned:
+                result = await returned.json()
+        embed = discord.Embed(title=result['title'],
+                              color=discord.Color.blue())
+        embed.set_author(name=f"NASA Astronomy Photo of the Day {result['date'].replace('-', '/')}")
+        embed.set_footer(text=result['explanation'])
+        embed.set_image(url=result['hdurl'])
+        return await ctx.channel.send(embed=embed)
+
+    @commands.command(aliases=['dad', 'father'])
+    async def dadjoke(self, ctx):
+        async with aiohttp.ClientSession(headers={"Accept": "application/json"}) as session:
+            async with session.get("https://icanhazdadjoke.com/") as returned:
+                result = await returned.json()
+        embed = discord.Embed(description=result['joke'],
+                              color=discord.Color.blue())
+        embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(aliases=['8ball', '8b'])
     async def eightball(self, ctx, *, question):
-
-        file = open('responses', 'r')
-        responses = file.readlines()
+        with open('responses', 'r') as f:
+            responses = f.readlines()
         embed = discord.Embed(title='Magic 8 Ball 🎱', color=discord.colour.Color.blue())
         embed.set_thumbnail(url="https://www.horoscope.com/images-US/games/game-magic-8-ball-no-text.png")
         embed.add_field(name='Question', value=f"{ctx.message.author.mention}: " + question, inline=True)
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=['affirm'])
+    async def encourage(self, ctx):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://www.affirmations.dev/") as returned:
+                result = await returned.json()
+        embed = discord.Embed(title="Affirmation",
+                              description=f"{ctx.author.mention}\n```\n{result['affirmation']}\n```",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
     @commands.command()
     async def choose(self, ctx, *, choices):
-
         remQuestion = re.sub('[?]', '', str(choices))
         options = remQuestion.split(' or ')
         answer = random.choice(options)
@@ -339,7 +367,6 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *, args):
-
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
