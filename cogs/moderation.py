@@ -21,35 +21,40 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.tasks = []
-        self.check_mute_expire.start()
+        self.bot.loop.create_task(self.setup_tables())
 
     def cog_unload(self):
         for task in self.tasks:
             task.cancel()
         self.check_mute_expire.cancel()
 
+    async def setup_tables(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS mutes(id SERIAL PRIMARY KEY, guild_id bigint, user_id bigint, "
+                              "time NUMERIC DEFAULT NULL)")
+            await con.execute("CREATE TABLE IF NOT EXISTS warns(id SERIAL PRIMARY KEY, guild_id bigint, user_id bigint,"
+                              " moderator bigint, reason text, timestamp NUMERIC)")
+        self.check_mute_expire.start()
+
     @tasks.loop(seconds=60)
     async def check_mute_expire(self):
         await self.bot.wait_until_ready()
-        current_time = int(datetime.now().timestamp())
-        if not os.path.exists('db/mutes.json'):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch("SELECT guild_id, user_id, time FROM mutes WHERE time IS NOT NULL")
+        if not result:
             return
 
-        with open('db/mutes.json', 'r') as f:
-            file = json.load(f)
-
-        for guild_id in file:
-            if not file[guild_id]:
+        for info in result:
+            user_id = info['user_id']
+            guild_id = info['guild_id']
+            current_time = int(datetime.now().timestamp())
+            time = int(info['time'])
+            sleep_time = int(time - current_time)
+            if sleep_time > 60:
                 continue
-            for user_id in file[guild_id]:
-                time = file[guild_id][user_id]['time']
-                if not time:
-                    continue
-                sleep_time = int(time - current_time)
-                if sleep_time > 60:
-                    continue
-                self.tasks.append(self.bot.loop.create_task(
-                    self.unmute_user(int(guild_id), int(user_id), sleep_time)))
+            self.tasks.append(self.bot.loop.create_task(
+                self.unmute_user(int(guild_id), int(user_id), sleep_time)))
 
     async def check_panel(self, panel: discord.Message) -> bool:
         try:
@@ -113,99 +118,53 @@ class Moderation(commands.Cog):
                 await member.send(embed=embed)
             except (discord.HTTPError, discord.Forbidden):
                 pass
-        with open('db/mutes.json', 'r') as f:
-            file = json.load(f)
-
         try:
-            del file[str(guild_id)][str(user_id)]
-        except KeyError:
+            async with self.bot.db.acquire() as con:
+                result = await con.execute(f"DELETE FROM mutes WHERE user_id = {user_id} AND guild_id = {guild_id}")
+        except Exception:
             pass
-        with open('db/mutes.json', 'w') as g:
-            json.dump(file, g, indent=4)
 
         return
 
     async def set_mute(self, ctx, member: discord.Member, time: int = None):
-        init = {
-            str(ctx.guild.id): {
-                str(member.id): {
-                    "time": time
-                }
-            }
-        }
-        gcmds.json_load('db/mutes.json', init)
-        with open('db/mutes.json', 'r') as f:
-            file = json.load(f)
-
-        file.update({str(ctx.guild.id): {}})
-        file[str(ctx.guild.id)].update({str(member.id): {}})
-        file[str(ctx.guild.id)][str(member.id)].update({'time': time})
-        with open('db/mutes.json', 'w') as g:
-            json.dump(file, g, indent=4)
+        if not time:
+            op = f"INSERT INTO mutes(guild_id, user_id) VALUES({ctx.guild.id}, {member.id})"
+        else:
+            op = f"INSERT INTO mutes(guild_id, user_id, time) VALUES({ctx.guild.id}, {member.id}, {time})"
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"DELETE FROM mutes WHERE guild_id = {ctx.guild.id} AND user_id = {member.id}")
+            await con.execute(op)
 
     async def get_warns(self, ctx, members) -> list:
-        if not os.path.exists('db/warns.json'):
-            return [(member, 0) for member in members]
-
-        with open('db/warns.json', 'r') as f:
-            file = json.load(f)
-
         warns = []
-        for member in members:
-            try:
-                warns.append((member, file[str(ctx.guild.id)][str(member.id)]['count']))
-            except KeyError:
-                warns.append((member, 0))
+        async with self.bot.db.acquire() as con:
+            for member in members:
+                result = await con.fetch(f"SELECT * FROM warns WHERE user_id = {member.id} AND guild_id = {ctx.guild.id}")
+                if not result:
+                    warns.append((member, 0))
+                else:
+                    warns.append((member, len(result)))
         return warns
 
     async def remove_warn(self, ctx, member: discord.Member, index) -> bool:
         try:
-            with open('db/warns.json', 'r') as f:
-                file = json.load(f)
-
-            if isinstance(index, str):
-                del file[str(ctx.guild.id)][str(member.id)]
-            else:
-                del file[str(ctx.guild.id)][str(member.id)]['history'][index]
-                count = file[str(ctx.guild.id)][str(member.id)]['count']
-                if count == 1:
-                    del file[str(ctx.guild.id)][str(member.id)]
+            async with self.bot.db.acquire() as con:
+                if isinstance(index, str):
+                    await con.execute(f"DELETE FROM warns WHERE user_id = {member.id} AND guild_id = {ctx.guild.id}")
                 else:
-                    file[str(ctx.guild.id)][str(member.id)]['count'] -= 1
-            with open('db/warns.json', 'w') as g:
-                json.dump(file, g, indent=4)
+                    await con.fetch(f"DELETE FROM warns WHERE id={index}")
             return True
-        except KeyError:
+        except Exception:
             return False
 
     async def get_administered_warns(self, ctx, member: discord.Member = None) -> list:
-        if not os.path.exists('db/warns.json'):
-            return None
-        with open('db/warns.json', 'r') as f:
-            file = json.load(f)
-
-        warns = []
-        count = 0
-
-        try:
-            if not member:
-                for users in file[str(ctx.guild.id)]:
-                    for item in file[str(ctx.guild.id)][str(users)]['history']:
-                        if int(item['moderator']) == ctx.author.id:
-                            count += 1
-                    warns.append((users, count))
+        async with self.bot.db.acquire() as con:
+            if member:
+                result = await con.fetch(f"SELECT reason, timestamp, id from warns WHERE user_id = {member.id} AND guild_id = {ctx.guild.id} AND moderator = {ctx.author.id}")
+                return [(info['reason'], info['timestamp'], info['id']) for info in result]
             else:
-                history = []
-                for item in file[str(ctx.guild.id)][str(member.id)]['history']:
-                    if int(item['moderator']) == ctx.author.id:
-                        count += 1
-                        reason = base64.urlsafe_b64decode(str.encode(item['reason'])).decode("ascii")
-                        history.append((reason, item['timestamp']))
-                warns = [count, history]
-        except KeyError:
-            return None
-
-        return warns
+                result = await con.fetch(f"SELECT user_id, id FROM warns WHERE guild_id = {ctx.guild.id} AND moderator = {ctx.author.id}")
+                return [(info['user_id'], info['id']) for info in result]
 
     async def auto_warn_action(self, ctx, member: discord.Member, reason: str, count: int, timestamp):
         count_adj = count + 1
@@ -252,37 +211,16 @@ class Moderation(commands.Cog):
         embed.set_author(name=f"Warning sent to {member.display_name}", icon_url=member.avatar_url)
         await ctx.author.send(embed=embed)
 
-        if not os.path.exists('db/warns.json'):
-            gcmds.json_load('db/warns.json', {})
-        with open('db/warns.json', 'r') as f:
-            file = json.load(f)
-
-        try:
-            if file[str(ctx.guild.id)]:
-                pass
-        except KeyError:
-            file.update({str(ctx.guild.id): {}})
-
         reason = str(base64.urlsafe_b64encode(reason.encode("ascii")), encoding="utf-8")
-
-        try:
-            file[str(ctx.guild.id)][str(member.id)]['count'] += 1
-            file[str(ctx.guild.id)][str(member.id)]['history'].append(
-                {"moderator": ctx.author.id, "reason": reason, "timestamp": int(timestamp)})
-        except KeyError:
-            file[str(ctx.guild.id)].update({str(member.id): {}})
-            file[str(ctx.guild.id)][str(member.id)]['count'] = 1
-            file[str(ctx.guild.id)][str(member.id)]['history'] = [{"moderator": ctx.author.id,
-                                                                   "reason": reason, "timestamp": int(timestamp)}]
-
-        with open('db/warns.json', 'w') as g:
-            json.dump(file, g, indent=4)
+        
+        async with self.bot.db.acquire() as con:
+            await con.execute("INSERT INTO warns(guild_id, user_id, moderator, reason, timestamp) VALUES "
+                              f"({ctx.guild.id}, {member.id}, {ctx.author.id}, {reason}, {int(timestamp)})")
 
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
-
         def from_user(message):
             return member is None or message.author == member
 
@@ -303,7 +241,6 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             role = await ctx.guild.create_role(name="Muted",
@@ -349,7 +286,6 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         for member in members:
             if not role:
@@ -369,12 +305,13 @@ class Moderation(commands.Cog):
                                             color=discord.Color.blue())
                 unmuteEmbed.set_footer(text=f'{member} was unmuted by: {ctx.author}')
                 await ctx.channel.send(embed=unmuteEmbed)
+                async with self.bot.db.acquire() as con:
+                    await con.execute(f"DELETE FROM mutes WHERE user_id = {member.id} AND guild_id = {ctx.guild.id}")
 
     @commands.command()
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason='Unspecified'):
-
         for member in members:
             await member.kick(reason=reason)
             kickEmbed = discord.Embed(title="Kicked User",
@@ -391,7 +328,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, members: commands.Greedy[discord.Member], days: typing.Optional[int] = 0, *,
                   reason='Unspecified'):
-
         for member in members:
             await member.ban(delete_message_days=days, reason=reason)
             if days != 0:
@@ -412,7 +348,6 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, users: commands.Greedy[discord.User]):
-
         for user in users:
             try:
                 user = await commands.converter.UserConverter().convert(ctx, user)
@@ -448,7 +383,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def warn(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
-
         timestamp = datetime.now().timestamp()
         warned_by = ctx.author
         warns = await self.get_warns(ctx, members)
@@ -458,8 +392,9 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=['offenses'])
     async def offense(self, ctx, member: discord.Member = None):
-
-        if not os.path.exists('db/warns.json'):
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT guild_id FROM warns WHERE guild_id = {ctx.guild.id}")
+        if not result:
             embed = discord.Embed(title="No Warning History",
                                   description=f"{ctx.author.mention}, no warnings have been issued on this server",
                                   color=discord.Color.blue())
@@ -472,8 +407,8 @@ class Moderation(commands.Cog):
                                   f"{member.mention}",
                                   color=discord.Color.blue())
         else:
-            if isinstance(administered[0], int):
-                count = administered.pop(0)
+            if member:
+                count = len(administered)
                 if count != 1:
                     title = f"{count} Warnings Given"
                 else:
@@ -483,21 +418,21 @@ class Moderation(commands.Cog):
                                       description=f"{ctx.author.mention}, here is a list of warnings you have given to "
                                       f"{member.mention}",
                                       color=discord.Color.blue())
-                administered = administered[0]
-                for reason, timestamp in administered:
-                    formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(timestamp))
-                    embed.add_field(name=f"{num2words((index), to='ordinal_num')} Warning",
-                                    value=f"**Time: ** {formatted_time}\n**Reason:** {reason}",
+                for counter, values in enumerate(administered, 1):
+                    formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(values[1]))
+                    embed.add_field(name=f"{num2words((counter), to='ordinal_num')} Warning",
+                                    value=f"**ID:** {values[2]}\n**Time:** {formatted_time}\n**Reason:** {values[0]}",
                                     inline=False)
-                    index += 1
             else:
                 description = ""
                 for item in administered:
-                    if item[1] != 1:
+                    count = count(item)
+                    if count != 1:
                         spell = "times"
                     else:
                         spell = "time"
-                    description += f"**User:** <@{item[0]}>\n**Warned:** {item[1]} {spell}\n\n"
+                    administered = list(filter(lambda e: e!= item, administered))
+                    description += f"**User:** <@{item[0]}>\n**Warned:** {count} {spell}\n\n"
                 embed = discord.Embed(title="Warnings Given",
                                       description=f"{ctx.author.mention}, here is a list of warnings you have given in "
                                       f"{ctx.guild.name}:\n\n{description}",
@@ -508,7 +443,6 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def expunge(self, ctx, member: discord.Member = None):
-
         if not member:
             embed = discord.Embed(title="No Member Specified",
                                   description=f"{ctx.author.mention}, please specify the member you want to expunge "
@@ -524,15 +458,12 @@ class Moderation(commands.Cog):
             return await ctx.channel.send(embed=embed)
 
         records = ""
-        index = 1
-        administered.pop(0)
-        print(administered)
-        for reason, timestamp in administered[0]:
-            formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(timestamp))
-            records += f"**{index}:**\n**Time: ** {formatted_time}\n**Reason:** {reason}\n\n"
-            index += 1
+        for counter, values in enumerate(administered, 1):
+            formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(values[1]))
+            records += f"**{counter}:**\n**ID:** {values[2]}**Time: ** {formatted_time}\n**Reason:** {values[0]}\n\n"
+
         panel_embed = discord.Embed(title="Expunge Warn Records",
-                                    description=f"{ctx.author.mention}, please type the number of the record you would "
+                                    description=f"{ctx.author.mention}, please type the id number of the record you would "
                                     f"like to expunge, or enter \"all\" to expunge all\n\n{records}",
                                     color=discord.Color.blue())
         panel_embed.set_footer(text='Type "cancel" to cancel')
@@ -610,7 +541,6 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
     async def modsOnline(self, ctx):
-
         modsList = []
         for member in ctx.guild.members:
             if member.status is not discord.Status.offline:
