@@ -168,13 +168,13 @@ class Bot(commands.AutoShardedBot):
                                                 description=f"{ctx.author.mention}, you are blacklisted from using this bot. "
                                                             f"Please contact `MS Arranges#3060` if you believe this is a mistake",
                                                 color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=blacklisted, delete_after=10)
+                    await ctx.channel.send(embed=blacklisted)
                 if 'guild' == item['type']:
                     blacklisted = discord.Embed(title="Guild is Blacklisted",
                                                 description=f"{ctx.guild.name} is blacklisted from using this bot. "
                                                             f"Please contact `MS Arranges#3060` if you believe this is a mistake",
                                                 color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=blacklisted, delete_after=10)
+                    await ctx.channel.send(embed=blacklisted)
                     await ctx.guild.leave()
                     return False
 
@@ -196,31 +196,37 @@ class Bot(commands.AutoShardedBot):
             req_arg = discord.Embed(title="Missing Required Argument",
                                     description=f"{ctx.author.mention}, `[{error.param.name}]` is a required argument",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=req_arg, delete_after=10)
+            return await ctx.channel.send(embed=req_arg)
+        elif isinstance(error, discord.Forbidden):
+            forbidden = discord.Embed(title="403 Forbidden",
+                                      description=f"{ctx.author.mention}, I cannot execute this command because I lack "
+                                      f"the permissions to do so, or my role is lower in the hierarchy.",
+                                      color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=forbidden)
         elif isinstance(error, discord.ext.commands.MissingPermissions):
             missing = discord.Embed(title="Insufficient User Permissions",
                                     description=f"{ctx.author.mention}, to execute this command, you need "
                                                 f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=missing, delete_after=10)
+            return await ctx.channel.send(embed=missing)
         elif isinstance(error, discord.ext.commands.BotMissingPermissions):
             missing = discord.Embed(title="Insufficient Bot Permissions",
                                     description=f"{ctx.author.mention}, to execute this command, I need "
                                                 f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=missing, delete_after=10)
+            return await ctx.channel.send(embed=missing)
         elif isinstance(error, commands.NotOwner):
             not_owner = discord.Embed(title="Insufficient User Permissions",
                                       description=f"{ctx.author.mention}, only the bot owner is authorised to use this "
                                       f"command",
                                       color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=not_owner, delete_after=10)
+            return await ctx.channel.send(embed=not_owner)
         elif isinstance(error, commands.CommandNotFound):
             notFound = discord.Embed(title="Command Not Found",
                                      description=f"{ctx.author.mention}, `{ctx.message.content}` "
                                      f"does not exist\n\nDo `{await gcmds.prefix(ctx)}help` for help",
                                      color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=notFound, delete_after=10)
+            return await ctx.channel.send(embed=notFound)
         elif isinstance(error, commands.CommandOnCooldown):
             cooldown_time_truncated = truncate(error.retry_after, 3)
             if cooldown_time_truncated < 1:
@@ -231,7 +237,7 @@ class Bot(commands.AutoShardedBot):
             cooldown = discord.Embed(title="Command on Cooldown",
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=cooldown, delete_after=math.ceil(error.retry_after))
+            await ctx.channel.send(embed=cooldown)
         elif isinstance(error, customerrors.TagError):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, customerrors.PremiumError):
