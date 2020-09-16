@@ -58,9 +58,8 @@ class Reminders(commands.Cog):
                     sleep_time = 0
                 self.tasks.append(
                     self.bot.loop.create_task(
-                        self.send_single(sleep_time, user_id, int(reminder['channel_id']), reminder['message_content'],
-                                         int(reminder['guild_id'], int(reminder['id']))
-                                         )
+                        self.send_single(sleep_time, user_id, int(reminder['channel_id']), message_content,
+                                         int(reminder['guild_id']), int(reminder['id']))
                     )
                 )
 
@@ -70,9 +69,9 @@ class Reminders(commands.Cog):
         try:
             channel = await self.bot.fetch_channel(channel_id)
             user = await channel.guild.fetch_member(user_id)
-            embed = discord.Embed(title=f"Reminder for {user.display_name}",
-                                  description=message_content,
+            embed = discord.Embed(description=message_content,
                                   color=discord.Color.blue())
+            embed.set_author(name=f"Reminder for {user.display_name}", icon_url=user.avatar_url)
             await channel.send(f"{user.mention}")
             await channel.send(embed=embed)
         except (discord.Forbidden, discord.HTTPException, discord.InvalidData, discord.NotFound, KeyError):
@@ -106,9 +105,9 @@ class Reminders(commands.Cog):
                 try:
                     channel = await self.bot.fetch_channel(channel_id)
                     user = await channel.guild.fetch_member(user_id)
-                    embed = discord.Embed(title=f"Reminder for {user.display_name}",
-                                          description=message_content,
+                    embed = discord.Embed(description=message_content,
                                           color=discord.Color.blue())
+                    embed.set_author(name=f"Reminder for {user.display_name}", icon_url=user.avatar_url)
                     await channel.send(f"{user.mention}")
                     await channel.send(embed=embed)
                 except (discord.Forbidden, discord.HTTPException, discord.InvalidData, discord.NotFound):
