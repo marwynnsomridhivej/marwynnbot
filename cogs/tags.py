@@ -90,7 +90,7 @@ class Tags(commands.Cog):
     async def check_tag_owner(self, ctx, tag) -> bool:
         await self.check_tag(ctx, tag)
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT author_id FROM tags WHERE name = $tag${tag}$tag$ AND guild_id = {ctx.guild.id}")
+            result = await con.fetch(f"SELECT author_id FROM tags WHERE name = $tag${tag}$tag$")
 
         if not result or int(result[0]['author_id']) != ctx.author.id:
             raise customerrors.NotTagOwner(tag)
@@ -111,7 +111,7 @@ class Tags(commands.Cog):
     async def send_tag(self, ctx, name: str) -> discord.Message:
         timestamp = "{:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         async with self.bot.db.acquire() as con:
-            info = (await con.fetch(f"SELECT message_content FROM tags WHERE name = $tag${name}$tag and (guild_id = {ctx.guild.id} OR global=TRUE)"))[0]
+            info = (await con.fetch(f"SELECT message_content FROM tags WHERE name = $tag${name}$tag$ and (guild_id = {ctx.guild.id} OR global=TRUE)"))[0]
         content = info['message_content']
         embed = discord.Embed(description=content,
                               color=discord.Color.blue())
@@ -129,6 +129,14 @@ class Tags(commands.Cog):
         desc_list = [f"**{tag['name']}** [UUID: {tag['uuid']}]\n*created at "
                      f"{datetime.fromtimestamp(int(tag['created_at'])).strftime('%m/%d/%Y %H:%M:%S')}* {'(global)' if tag['global'] else ''}\n" for tag in result]
         return sorted(desc_list)
+
+    async def get_user_tag_amount(self, ctx):
+        try:
+            tags = await self.list_user_tags(ctx)
+        except customerrors.UserNoTags:
+            tags = []
+        if len(tags) >= 100 and not premium.check_premium(ctx.author):
+            raise customerrors.TagLimitReached(ctx.author)
 
     async def search_tags(self, ctx, keyword) -> list:
         async with self.bot.db.acquire() as con:
@@ -173,6 +181,14 @@ class Tags(commands.Cog):
         async with self.bot.db.acquire() as con:
             result = await con.fetch(f"SELECT uuid from tags WHERE name = $tag${tag}$tag$")
         return True if result else False
+
+    async def get_global(self, ctx, tag) -> bool:
+        try:
+            async with self.bot.db.acquire() as con:
+                status = (await con.fetch(f"SELECT global FROM tags WHERE name=$tag${tag}$tag$ AND author_id={ctx.author.id}"))[0]['global']
+            return bool(status)
+        except Exception as e:
+            raise customerrors.TagError(error=e)
 
     async def edit_global(self, ctx, tag, status: bool) -> discord.Message:
         try:
@@ -344,32 +360,55 @@ class Tags(commands.Cog):
                                     f"confirm or {reactions[1]} to cancel",
                                     color=discord.Color.blue())
         panel = await ctx.channel.send(embed=panel_embed)
+        for reaction in reactions:
+            await panel.add_reaction(reaction)
 
         def reacted(reaction: discord.Reaction, user: discord.User) -> bool:
-            return reaction.emoji in reactions and user.id == ctx.author.id and reaction.message.id == panel.message.id
+            return reaction.emoji in reactions and user.id == ctx.author.id and reaction.message.id == panel.id
 
-        while True:
-            try:
-                result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
-            except asyncio.TimeoutError:
-                return await gcmds.timeout(ctx, "tag delete")
-            if result[0].emoji in reactions:
-                try:
-                    await panel.delete()
-                except Exception:
-                    pass
-                break
-            else:
-                continue
+        try:
+            result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "tag delete", 30)
+        try:
+            await panel.delete()
+        except Exception:
+            pass
         if result[0].emoji == reactions[0]:
             return await self.delete_tag(ctx, tag)
         else:
             return await gcmds.cancelled(ctx, "tag delete")
 
-    @premium.is_premium()
+    @premium.is_premium(req_user=True)
     @tag.command(aliases=['mg'])
-    async def make_global(self, ctx, tag):
+    async def makeGlobal(self, ctx, tag):
         await self.check_tag_owner(ctx, tag)
+        status = not (await self.get_global(ctx, tag))
+        description = (f"{ctx.author.mention}, you are about to make the tag `{tag}` {'global' if status else 'not global anymore'}. "
+                       f"React with {reactions[0]} to confirm or {reactions[1]} to cancel.")
+
+        def reacted(reaction: discord.Reaction, user: discord.User) -> bool:
+            return reaction.emoji in reactions and user.id == ctx.author.id and reaction.message.id == panel.id
+
+        panel_embed = discord.Embed(title="Confirm Changing Tag Global Status",
+                                    description=description,
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+        for reaction in reactions:
+            await panel.add_reaction(reaction)
+
+        try:
+            result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "tag edit global status", 30)
+        try:
+            await panel.delete()
+        except Exception:
+            pass
+        if result[0].emoji == reactions[0]:
+            return await self.edit_global(ctx, tag, status)
+        else:
+            return await gcmds.cancelled(ctx, "tag edit global status")
 
 def setup(bot):
     bot.add_cog(Tags(bot))
