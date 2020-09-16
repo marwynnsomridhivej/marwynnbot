@@ -295,7 +295,7 @@ class Help(commands.Cog):
                                syntaxMessage=syntaxMessage,
                                specialCases=specialCases)
 
-    @help.command(aliases=['gamestats', 'stats'])
+    @help.command(aliases=['gamestats', 'gs'])
     async def gameStats(self, ctx):
         commandName = "GameStats"
         syntaxMessage = f"`{await gcmds.prefix(ctx)}gamestats [optional gameName] [optional user @mentions]`"
