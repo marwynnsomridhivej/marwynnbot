@@ -109,7 +109,11 @@ class Bot(commands.AutoShardedBot):
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
             command = ctx.command.root_parent.name if ctx.command.parent else ctx.command.name
-            await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
+            result = await con.fetch(f"SELECT * from global_counters WHERE command = '{command}'")
+            if result:
+                await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
+            else:
+                await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ('{command}', 1)")
             if ctx.guild:
                 old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
                 try:
@@ -241,6 +245,8 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, customerrors.TagError):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, customerrors.PremiumError):
+            return await ctx.channel.send(embed=error.embed)
+        elif isinstance(error, customerrors.GameStatsError):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, commands.CheckFailure):
             pass
