@@ -161,7 +161,7 @@ class Moderation(commands.Cog):
         async with self.bot.db.acquire() as con:
             if member:
                 result = await con.fetch(f"SELECT reason, timestamp, id from warns WHERE user_id = {member.id} AND guild_id = {ctx.guild.id} AND moderator = {ctx.author.id}")
-                return [(info['reason'], info['timestamp'], info['id']) for info in result]
+                return [(base64.urlsafe_b64decode(str.encode(info['reason'])).decode("ascii"), info['timestamp'], info['id']) for info in result]
             else:
                 result = await con.fetch(f"SELECT user_id, id FROM warns WHERE guild_id = {ctx.guild.id} AND moderator = {ctx.author.id}")
                 return [(info['user_id'], info['id']) for info in result]
@@ -205,7 +205,7 @@ class Moderation(commands.Cog):
             datetime.fromtimestamp(timestamp))), icon_url=ctx.author.avatar_url)
         try:
             await member.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except Exception:
             pass
 
         embed.set_author(name=f"Warning sent to {member.display_name}", icon_url=member.avatar_url)
@@ -215,7 +215,7 @@ class Moderation(commands.Cog):
         
         async with self.bot.db.acquire() as con:
             await con.execute("INSERT INTO warns(guild_id, user_id, moderator, reason, timestamp) VALUES "
-                              f"({ctx.guild.id}, {member.id}, {ctx.author.id}, {reason}, {int(timestamp)})")
+                              f"({ctx.guild.id}, {member.id}, {ctx.author.id}, '{reason}', {int(timestamp)})")
 
     @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
     @commands.has_permissions(manage_messages=True)
@@ -420,19 +420,19 @@ class Moderation(commands.Cog):
                                       color=discord.Color.blue())
                 for counter, values in enumerate(administered, 1):
                     formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(values[1]))
-                    embed.add_field(name=f"{num2words((counter), to='ordinal_num')} Warning",
-                                    value=f"**ID:** {values[2]}\n**Time:** {formatted_time}\n**Reason:** {values[0]}",
+                    embed.add_field(name=f"Warning ID {values[2]}",
+                                    value=f"> **Time:** {formatted_time}\n> **Reason:** {values[0]}",
                                     inline=False)
             else:
                 description = ""
                 for item in administered:
-                    count = count(item)
-                    if count != 1:
+                    amount = administered.count(item)
+                    if amount != 1:
                         spell = "times"
                     else:
                         spell = "time"
                     administered = list(filter(lambda e: e!= item, administered))
-                    description += f"**User:** <@{item[0]}>\n**Warned:** {count} {spell}\n\n"
+                    description += f"**User:** <@{item[0]}> - warned {amount} {spell}\n\n"
                 embed = discord.Embed(title="Warnings Given",
                                       description=f"{ctx.author.mention}, here is a list of warnings you have given in "
                                       f"{ctx.guild.name}:\n\n{description}",
@@ -460,7 +460,7 @@ class Moderation(commands.Cog):
         records = ""
         for counter, values in enumerate(administered, 1):
             formatted_time = "{:%m/%d/%Y %H:%M:%S}".format(datetime.fromtimestamp(values[1]))
-            records += f"**{counter}:**\n**ID:** {values[2]}**Time: ** {formatted_time}\n**Reason:** {values[0]}\n\n"
+            records += f"**Warning ID {values[2]}**\n> **Time: ** {formatted_time}\n> **Reason:** {values[0]}\n\n"
 
         panel_embed = discord.Embed(title="Expunge Warn Records",
                                     description=f"{ctx.author.mention}, please type the id number of the record you would "
@@ -501,7 +501,7 @@ class Moderation(commands.Cog):
                 index = result.content
                 break
             try:
-                index = int(result.content) - 1
+                index = int(result.content)
                 break
             except TypeError:
                 continue
@@ -527,6 +527,11 @@ class Moderation(commands.Cog):
             elif result[0].emoji == "🛑":
                 return await self.end_setup(ctx, cmd_name, "cancel")
             continue
+
+        try:
+            await panel.delete()
+        except Exception:
+            pass
 
         succeeded = await self.remove_warn(ctx, member, index)
         if succeeded:
