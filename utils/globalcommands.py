@@ -47,7 +47,7 @@ default_env = ["YOUR_BOT_TOKEN",
 class GlobalCMDS:
 
     def __init__(self, bot: commands.AutoShardedBot = None):
-        self.version = "v0.2.0-alpha.1"
+        self.version = "v0.6.0-alpha.1"
         self.bot = bot
         if bot:
             self.db = self.bot.db
