@@ -109,7 +109,7 @@ class Owner(commands.Cog):
         loadEmbed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-        await ctx.channel.send(embed=loadEmbed, delete_after=5)
+        await ctx.channel.send(embed=loadEmbed)
 
     @commands.command(aliases=['ul', 'uld'])
     @commands.is_owner()
@@ -128,7 +128,7 @@ class Owner(commands.Cog):
         unloadEmbed = discord.Embed(title=title,
                                     description=description,
                                     color=color)
-        await ctx.channel.send(embed=unloadEmbed, delete_after=5)
+        await ctx.channel.send(embed=unloadEmbed)
 
     @commands.command(aliases=['r', 'rl'])
     @commands.is_owner()
@@ -142,7 +142,7 @@ class Owner(commands.Cog):
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description="Successfully reloaded all cogs",
                                         color=discord.Color.blue())
-            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            await ctx.channel.send(embed=reloadEmbed)
             print("==========================")
         else:
             print("==========================")
@@ -151,7 +151,7 @@ class Owner(commands.Cog):
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description=f"Successfully reloaded cog `{extension}`",
                                         color=discord.Color.blue())
-            await ctx.channel.send(embed=reloadEmbed, delete_after=5)
+            await ctx.channel.send(embed=reloadEmbed)
             print("==========================")
 
     @commands.command(aliases=['taskkill'])
@@ -200,7 +200,7 @@ class Owner(commands.Cog):
         setEmbed = discord.Embed(title="Balance Set",
                                  description=f"The balance for {user.mention} is now set to ```{amount} {spell}```",
                                  color=discord.Color.blue())
-        await ctx.channel.send(embed=setEmbed, delete_after=60)
+        await ctx.channel.send(embed=setEmbed)
 
     @balanceAdmin.command()
     async def give(self, ctx, user: discord.Member, amount):
@@ -240,7 +240,7 @@ class Owner(commands.Cog):
                                   description=f"{user.mention} has been given `{amount} {spell_amt}`. \nTheir balance "
                                               f"is now ```{balance} {spell}```",
                                   color=discord.Color.blue())
-        await ctx.channel.send(embed=giveEmbed, delete_after=60)
+        await ctx.channel.send(embed=giveEmbed)
 
     @balanceAdmin.command()
     async def remove(self, ctx, user: discord.Member, amount):
@@ -283,7 +283,7 @@ class Owner(commands.Cog):
                                     description=f"{user.mention} has had `{amount} {spell_amt}` removed. \nTheir "
                                                 f"balance is now ```{balance} {spell}```",
                                     color=discord.Color.blue())
-        await ctx.channel.send(embed=removeEmbed, delete_after=60)
+        await ctx.channel.send(embed=removeEmbed)
 
     @commands.group(aliases=['blist'])
     @commands.is_owner()
@@ -296,7 +296,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid, delete_after=10)
+            await ctx.channel.send(embed=invalid)
             return
 
         try:
@@ -305,7 +305,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid, delete_after=10)
+            await ctx.channel.send(embed=invalid)
             return
         if operation == "add":
             op = f"INSERT INTO blacklist(type, id) VALUES('user', {user.id})"
@@ -327,7 +327,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Operation",
                                     description=f"{ctx.author.mention}, `{operation}` is an invalid operation",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid, delete_after=10)
+            await ctx.channel.send(embed=invalid)
 
     @blacklist.command(aliases=['server'])
     async def guild(self, ctx, operation, *, server_id: int = None):
@@ -444,7 +444,7 @@ class Owner(commands.Cog):
             no_id = discord.Embed(title="No User ID Specified",
                                   description=f"{ctx.author.mention}, you did not specify a user ID",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=no_id, delete_after=10)
+            await ctx.channel.send(embed=no_id)
 
         try:
             user = commands.AutoShardedBot.get_user(self.bot, id=userID)
@@ -452,7 +452,7 @@ class Owner(commands.Cog):
             bad_id = discord.Embed(title="Invalid User ID Specified",
                                    description=f"{ctx.author.mention}, please specify a valid user ID",
                                    color=discord.Color.dark_red())
-            await ctx.channel.send(embed=bad_id, delete_after=10)
+            await ctx.channel.send(embed=bad_id)
 
         dmEmbed = discord.Embed(title="MarwynnBot",
                                 description=message,
