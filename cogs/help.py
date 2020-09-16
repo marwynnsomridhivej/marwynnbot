@@ -10,7 +10,9 @@ gcmds = globalcommands.GlobalCMDS()
 class Help(commands.Cog):
 
     def __init__(self, bot):
+        global gcmds
         self.bot = bot
+        gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def syntaxEmbed(self, ctx, commandName, syntaxMessage, exampleUsage=None, exampleOutput=None,
                           userPerms=None, botPerms=None, specialCases=None, thumbnailURL="https://www.jing.fm/clipimg"
