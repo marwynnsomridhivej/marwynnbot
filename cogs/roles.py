@@ -4,7 +4,7 @@ import re
 import os
 import discord
 from discord.ext import commands
-from utils import globalcommands
+from utils import globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -25,7 +25,7 @@ class Roles(commands.Cog):
     async def init_rr(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, type text, author_id bigint)")
+            await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, type text, author_id bigint, guild_id bigint, jump_url text)")
             await con.execute("CREATE TABLE IF NOT EXISTS emoji_rr(message_id bigint, role_id bigint PRIMARY KEY, emoji text)")
 
     @commands.Cog.listener()
@@ -177,7 +177,8 @@ class Roles(commands.Cog):
                               role_emoji: list, type_name: str):
         rr_message = await channel.send(embed=send_embed)
         async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO base_rr(message_id, type, author_id) VALUES ({rr_message.id}, $tag${type_name}$tag$, {ctx.author.id})")
+            await con.execute(f"INSERT INTO base_rr(message_id, type, author_id, guild_id, jump_url) VALUES "
+                              f"({rr_message.id}, $tag${type_name}$tag$, {ctx.author.id}, {ctx.guild.id}, '{rr_message.jump_url}')")
             for role, emoji in role_emoji:
                 await rr_message.add_reaction(emoji)
                 await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES ({rr_message.id}, {int(role)}, $tag${emoji}$tag$)")
@@ -221,6 +222,22 @@ class Roles(commands.Cog):
         async with self.bot.db.acquire() as con:
             result = await con.fetch(f"SELECT * FROM base_rr WHERE message_id={message_id}")
         return True if result else False
+
+    async def get_guild_rr(self, ctx, flag: str = None):
+        async with self.bot.db.acquire() as con:
+            if not flag:
+                result = await con.fetch(f"SELECT * FROM base_rr WHERE author_id={ctx.author.id} AND guild_id={ctx.guild.id}")
+            else:
+                result = await con.fetch(f"SELECT * FROM base_rr WHERE guild_id = {ctx.guild.id}")
+        if not result:
+            return None
+        else:
+            messages = []
+            async with self.bot.db.acquire() as con:
+                for item in result:
+                    messages.append(((int(item['message_id'])), int(item['author_id']), item['jump_url'],
+                                     await con.fetchval(f"SELECT count(*) FROM emoji_rr WHERE message_id={int(item['message_id'])}")))
+            return messages
 
     async def get_rr_info(self, ctx, message_id: int) -> discord.Embed:
         found = False
@@ -273,46 +290,66 @@ class Roles(commands.Cog):
             type = await con.fetchval(f"SELECT type FROM base_rr WHERE message_id={message_id}")
         return type.replace("_", " ").title()
 
-    @commands.group(aliases=['rr'])
+    @commands.group(invoke_without_command=True, aliases=['rr'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
     async def reactionrole(self, ctx):
+        message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
+            f"roles panel that you have created. You will be unable to edit the panel if you " \
+            f"provide an invalid message ID or provide a message ID of a panel that was " \
+            f"not created by you"
+        embed = discord.Embed(title="ReactionRoles Help Menu",
+                              description=f"All reaction roles commands can be accessed using "
+                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
+                              f"Below is a list of all the valid options",
+                              color=discord.Color.blue())
+        embed.add_field(name="Create",
+                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`\n"
+                        f"**Returns:** Interactive reaction roles setup panel\n"
+                        f"**Aliases:** `-c` `start` `make`")
+        embed.add_field(name="Edit",
+                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
+                        f"**Returns:** Interactive reaction roles edit panel\n"
+                        f"**Aliases:** `-e` `adjust`\n"
+                        f"**Special Cases:** {message_id_message}",
+                        inline=False)
+        embed.add_field(name="Delete",
+                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
+                        f"**Returns:** Message that details status of the deletion\n"
+                        f"**Aliases:** `-d` `-rm` `del`\n"
+                        f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
+                        f"MarwynnBot will delete the panel's record from its database of reaction role panels",
+                        inline=False)
+        embed.add_field(name="Useful Resources",
+                        value="**Hex Color Picker:** https://www.google.com/search?q=color+picker",
+                        inline=False)
+        return await ctx.channel.send(embed=embed)
 
-        if not ctx.invoked_subcommand:
-            message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
-                                 f"roles panel that you have created. You will be unable to edit the panel if you " \
-                                 f"provide an invalid message ID or provide a message ID of a panel that was " \
-                                 f"not created by you"
-            embed = discord.Embed(title="ReactionRoles Help Menu",
-                                  description=f"All reaction roles commands can be accessed using "
-                                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
-                                              f"Below is a list of all the valid options",
-                                  color=discord.Color.blue())
-            embed.add_field(name="Create",
-                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`\n"
-                                  f"**Returns:** Interactive reaction roles setup panel\n"
-                                  f"**Aliases:** `-c` `start` `make`")
-            embed.add_field(name="Edit",
-                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
-                                  f"**Returns:** Interactive reaction roles edit panel\n"
-                                  f"**Aliases:** `-e` `adjust`\n"
-                                  f"**Special Cases:** {message_id_message}",
-                            inline=False)
-            embed.add_field(name="Delete",
-                            value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
-                                  f"**Returns:** Message that details status of the deletion\n"
-                                  f"**Aliases:** `-d` `-rm` `del`\n"
-                                  f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
-                                  f"MarwynnBot will delete the panel's record from its database of reaction role panels",
-                            inline=False)
-            embed.add_field(name="Useful Resources",
-                            value="**Hex Color Picker:** https://www.google.com/search?q=color+picker",
-                            inline=False)
+    @reactionrole.command(aliases=['-ls'])
+    async def list(self, ctx, flag: str = None):
+        messages = await self.get_guild_rr(ctx, flag) if flag == "all" else await self.get_guild_rr(ctx, None)
+        if not messages:
+            if flag == "all":
+                description = f"{ctx.author.mention}, this server does not have any reaction roles panels"
+            else:
+                description = f"{ctx.author.mention}, you do not own any reaction roles panels in this server"
+            embed = discord.Embed(title="No Reaction Roles Panel",
+                                  description=description,
+                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed)
+        else:
+            if flag == "all":
+                title = "All Reaction Roles Panels"
+            else:
+                title = f"{ctx.author.display_name}'s Reaction Roles Panels"
+            entries = [
+                f"Message ID: [{item[0]}]({item[2]}) *[Emojis: {item[3]}]*\n> Owner: <@{item[1]}>" for item in messages]
+            pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=5, show_entry_count=True)
+            pag.embed.title = title
+            return await pag.paginate()
 
     @reactionrole.command(aliases=['-c', 'start', 'make'])
     async def create(self, ctx):
-
         panel_embed = discord.Embed(title="Reaction Role Setup Menu",
                                     description=f"{ctx.author.mention}, welcome to MarwynnBot's reaction role setup "
                                                 f"menu. Just follow the prompts and you will have a working reaction "
@@ -446,6 +483,7 @@ class Roles(commands.Cog):
                     else:
                         continue
                 else:
+                    await gcmds.smart_delete(result)
                     break
             if result.content == "finish":
                 await gcmds.smart_delete(result)
@@ -768,7 +806,31 @@ class Roles(commands.Cog):
                                        color=discord.Color.dark_red())
             return await ctx.channel.send(embed=not_author, delete_after=10)
 
-        return await self.delete_rr_message(ctx, message_id)
+        reactions = ["✅", "❌"]
+
+        panel_embed = discord.Embed(title="Confirmation",
+                                    description=f"{ctx.author.mention}, deleting a reaction roles panel is a destructive"
+                                    f" action that cannot be undone. React with {reactions[0]} to confirm or {reactions[1]} to cancel",
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+        for reaction in reactions:
+            try:
+                await panel.add_reaction(reaction)
+            except Exception:
+                return await gcmds.cancelled(ctx, "delete reaction roles panel")
+
+        def user_reacted(reaction: discord.Reaction, user: discord.User):
+            return reaction.emoji in reactions and reaction.message.id == panel.id and user.id == ctx.author.id
+
+        try:
+            result = await self.bot.wait_for("reaction_add", check=user_reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await self.timeout(ctx, 30, panel)
+        if result[0].emoji == reactions[0]:
+            await gcmds.safe_delete(panel)
+            return await self.delete_rr_message(ctx, message_id)
+        else:
+            return await self.user_cancelled(ctx, panel)
 
 
 def setup(bot):
