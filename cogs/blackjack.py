@@ -159,156 +159,61 @@ def hit_or_stand(deck, hand, choice):
         return False
 
 
-def player_busts(player, dealer, chips, ctx):
+async def win(ctx: commands.Context, bot: commands.AutoShardedBot, blackjack=False):
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM blackjack WHERE user_id={ctx.author.id}")
+        if not result:
+            if blackjack:
+                await con.execute(f"INSERT INTO blackjack(user_id, win, blackjack) VALUES ({ctx.author.id}, 1, 1)")
+            else:
+                await con.execute(f"INSERT INTO blackjack(user_id, win) VALUES ({ctx.author.id}, 1)")
+        else:
+            if blackjack:
+                await con.execute(f"UPDATE blackjack SET win = win + 1, blackjack = blackjack + 1 WHERE user_id = {ctx.author.id}")
+            else:
+                await con.execute(f"UPDATE blackjack SET win = win + 1 WHERE user_id = {ctx.author.id}")
+    return
+
+
+async def lose(ctx: commands.Context, bot: commands.AutoShardedBot):
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM blackjack WHERE user_id={ctx.author.id}")
+        if not result:
+            await con.execute(f"INSERT INTO blackjack(user_id, lose) VALUES ({ctx.author.id}, 1)")
+        else:
+            await con.execute(f"UPDATE blackjack SET lose = lose + 1 WHERE user_id = {ctx.author.id}")
+    return
+
+
+async def player_busts(player, dealer, chips: Chips, ctx):
     chips.lose_bet()
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
+    await lose(ctx, chips.bot)
+    await gcmds.ratio(ctx.author, 'blackjack')
 
 
-def player_wins(player, dealer, chips, ctx):
+async def player_wins(player, dealer, chips, ctx):
     chips.win_bet()
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['win'] = 0
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
+    await win(ctx, chips.bot)
+    await gcmds.ratio(ctx.author, 'blackjack')
 
 
-def dealer_busts(player, dealer, chips, ctx):
+async def dealer_busts(player, dealer, chips, ctx):
     chips.win_bet()
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['win'] = 0
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
+    await win(ctx, chips.bot)
+    await gcmds.ratio(ctx.author, 'blackjack')
 
 
-def dealer_wins(player, dealer, chips, ctx):
+async def dealer_wins(player, dealer, chips, ctx):
     chips.lose_bet()
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['lose'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['lose'] = 0
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
+    await lose(ctx, chips.bot)
+    await gcmds.ratio(ctx.author, 'blackjack')
 
 
-def push(player, dealer, ctx):
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['tie'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['tie'] = 0
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-
-
-def _blackjack(player, dealer, chips, ctx):
+async def _blackjack(player, dealer, chips, ctx):
     chips.win_bet()
     chips.win_bet()
-    load = False
-    success = False
-    init = {'Blackjack': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Blackjack'][str(ctx.author.id)]['win'] += 1
-                file['Blackjack'][str(ctx.author.id)]['blackjack'] += 1
-                load = True
-            except KeyError:
-                if not success:
-                    try:
-                        file['Blackjack'][str(ctx.author.id)]
-                    except KeyError:
-                        file['Blackjack'][str(ctx.author.id)] = {}
-                        success = True
-                file['Blackjack'][str(ctx.author.id)]['win'] = 0
-                file['Blackjack'][str(ctx.author.id)]['blackjack'] = 0
-
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Blackjack')
+    await win(ctx, chips.bot)
+    await gcmds.ratio(ctx.author, 'blackjack')
 
 
 def show_dealer(dealer, won):
@@ -463,6 +368,13 @@ class Blackjack(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_blacklist())
+
+    async def init_blacklist(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS blackjack(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, "
+                              "lose NUMERIC DEFAULT 0, tie NUMERIC DEFAULT 0, blackjack NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
@@ -591,7 +503,7 @@ class Blackjack(commands.Cog):
                     return
 
             if player_hand.value > 21:
-                player_busts(player_hand, dealer_hand, player_chips, ctx)
+                await player_busts(player_hand, dealer_hand, player_chips, ctx)
                 won = True
 
                 player_value = player_hand.list_hand(gameEnd=won)
@@ -627,25 +539,30 @@ class Blackjack(commands.Cog):
                 large_bet_win = False
 
                 if (player_hand.iter - 3) == 0 and player_hand.value == 21:
-                    _blackjack(player_hand, dealer_hand, player_chips, ctx)
+                    await _blackjack(player_hand, dealer_hand, player_chips, ctx)
                     description = f"Blackjack! {ctx.author.mention} wins **{bet * 2}** credits"
                     if bet >= 1000:
                         large_bet_win = True
                 elif dealer_hand.value > 21:
-                    dealer_busts(player_hand, dealer_hand, player_chips, ctx)
+                    await dealer_busts(player_hand, dealer_hand, player_chips, ctx)
                     description = f"Dealer busts! {ctx.author.mention} wins **{bet}** {spell}"
                     if bet >= 1000:
                         large_bet_win = True
                 elif dealer_hand.value > player_hand.value:
-                    dealer_wins(player_hand, dealer_hand, player_chips, ctx)
+                    await dealer_wins(player_hand, dealer_hand, player_chips, ctx)
                     description = f"Dealer wins! {ctx.author.mention} lost **{bet}** {spell}"
                 elif player_hand.value > dealer_hand.value:
-                    player_wins(player_hand, dealer_hand, player_chips, ctx)
+                    await player_wins(player_hand, dealer_hand, player_chips, ctx)
                     description = f"{ctx.author.mention} wins **{bet}** {spell}"
                     if bet >= 1000:
                         large_bet_win = True
                 else:
-                    push(player_hand, dealer_hand, ctx)
+                    async with self.bot.db.acquire() as con:
+                        _ = await con.fetch(f"SELECT * FROM blackjack WHERE user_id = {ctx.author.id}")
+                        if not _:
+                            await con.execute(f"INSERT INTO blackjack(user_id, tie) VALUES ({ctx.author.id}, 1)")
+                        else:
+                            await con.execute(f"UPDATE blackjack SET tie = tie + 1 WHERE user_id = {ctx.author.id}")
                     description = "Its a tie! No credits lost or gained"
 
                 await message.clear_reactions()
