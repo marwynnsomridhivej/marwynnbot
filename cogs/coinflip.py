@@ -9,66 +9,30 @@ from utils import globalcommands
 gcmds = globalcommands.GlobalCMDS()
 
 
-def win(ctx, betAmount, bot):
-    load = False
-    success = False
+async def win(ctx, betAmount, bot):
     op = (f"UPDATE balance SET amount = amount + {betAmount} WHERE user_id = {ctx.author.id}")
     bot.loop.create_task(gcmds.balance_db(op))
-
-    init = {'Coinflip': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Coinflip'][str(ctx.author.id)]['win'] += 1
-                load = True
-                success = False
-            except KeyError:
-                if not success:
-                    try:
-                        try:
-                            file['Coinflip']
-                        except KeyError:
-                            file['Coinflip'] = {}
-                        file['Coinflip'][str(ctx.author.id)]['win'] = 0
-                    except KeyError:
-                        file['Coinflip'][str(ctx.author.id)] = {}
-                        success = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM coinflip WHERE user_id={ctx.author.id}")
+        if not result:
+            await con.execute(f"INSERT INTO coinflip(user_id, win) VALUES ({ctx.author.id}, 1)")
+        else:
+            await con.execute(f"UPDATE coinflip SET win = win + 1 WHERE user_id = {ctx.author.id}")
+    await gcmds.ratio(ctx.author, 'coinflip')
+    return
 
 
-def lose(ctx, betAmount, bot):
-    load = False
-    success = False
+async def lose(ctx, betAmount, bot):
     op = (f"UPDATE balance SET amount = amount - {betAmount} WHERE user_id = {ctx.author.id}")
     bot.loop.create_task(gcmds.balance_db(op))
-
-    init = {'Coinflip': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Coinflip'][str(ctx.author.id)]['lose'] += 1
-                load = True
-                success = False
-            except KeyError:
-                if not success:
-                    try:
-                        try:
-                            file['Coinflip']
-                        except KeyError:
-                            file['Coinflip'] = {}
-                        file['Coinflip'][str(ctx.author.id)]['lose'] = 0
-                    except KeyError:
-                        file['Coinflip'][str(ctx.author.id)] = {}
-                        success = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'Coinflip')
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM coinflip WHERE user_id={ctx.author.id}")
+        if not result:
+            await con.execute(f"INSERT INTO coinflip(user_id, lose) VALUES ({ctx.author.id}, 1)")
+        else:
+            await con.execute(f"UPDATE coinflip SET lose = lose + 1 WHERE user_id = {ctx.author.id}")
+    await gcmds.ratio(ctx.author, 'coinflip')
+    return
 
 
 class Coinflip(commands.Cog):
@@ -77,6 +41,13 @@ class Coinflip(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_cf())
+
+    async def init_cf(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS coinflip(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
+                              "NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
     @commands.command(aliases=['cf'])
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
@@ -126,10 +97,10 @@ class Coinflip(commands.Cog):
 
         if picked_side == side:
             author = f"{ctx.author.display_name}, you win {betAmount} {spell}"
-            win(ctx, betAmount, self.bot)
+            await win(ctx, betAmount, self.bot)
         else:
             author = f"{ctx.author.display_name}, you lose {betAmount} {spell}"
-            lose(ctx, betAmount, self.bot)
+            await lose(ctx, betAmount, self.bot)
 
         loadingEmbed = discord.Embed(title="Coinflip",
                                      description=emoji,
