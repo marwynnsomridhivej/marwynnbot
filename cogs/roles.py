@@ -180,7 +180,7 @@ class Roles(commands.Cog):
             await con.execute(f"INSERT INTO base_rr(message_id, type, author_id) VALUES ({rr_message.id}, $tag${type_name}$tag$, {ctx.author.id})")
             for role, emoji in role_emoji:
                 await rr_message.add_reaction(emoji)
-                await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES {rr_message.id}, {int(role)}, $tag${emoji}$tag$")
+                await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES ({rr_message.id}, {int(role)}, $tag${emoji}$tag$)")
         return
 
     async def edit_rr_message(self, ctx, message_id: int, guild_id: int, title: str, description: str, color: str,
@@ -207,7 +207,7 @@ class Roles(commands.Cog):
                     await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message.id}")
                     for role, emoji in emoji_role_list:
                         await message.add_reaction(emoji)
-                        await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES {message.id}, {role.id}, $tag${emoji}$tag$")
+                        await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES ({message.id}, {role.id}, $tag${emoji}$tag$)")
                 if type_name:
                     await con.execute(f"UPDATE base_rr SET type=$tag${type_name}$tag$ WHERE message_id={message.id}")
         return
