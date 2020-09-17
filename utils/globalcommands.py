@@ -48,7 +48,7 @@ default_env = ["YOUR_BOT_TOKEN",
 class GlobalCMDS:
 
     def __init__(self, bot: commands.AutoShardedBot = None):
-        self.version = "v0.6.0-alpha.1"
+        self.version = "v0.7.0-alpha.1"
         self.bot = bot
         if bot:
             self.db = self.bot.db
@@ -64,12 +64,6 @@ class GlobalCMDS:
         if not self.init_env() or os.getenv(key) in default_env:
             return False
         return os.getenv(key)
-
-    def file_check(self, filenamepath: str, init):
-        if not os.path.exists(filenamepath):
-            with open(filenamepath, 'w') as f:
-                for string in init:
-                    f.write(string)
 
     async def smart_delete(self, message: discord.Message):
         if message.guild and message.guild.me.guild_permissions.manage_messages:
@@ -97,11 +91,6 @@ class GlobalCMDS:
                               "deleted or could not be found",
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed, delete_after=10)
-
-    def json_load(self, filenamepath: str, init: dict):
-        if not os.path.exists(filenamepath):
-            with open(filenamepath, 'w') as f:
-                json.dump(init, f, indent=4)
 
     async def prefix(self, ctx):
         if not ctx.guild:
