@@ -452,64 +452,26 @@ def emoji_to_game(player: UnoPlayer):
     return string * int(len(player.hand))
 
 
-def win(player: UnoPlayer):
-    load = False
-    success = False
-    init = {'Uno': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Uno'][str(player.member.id)]['win']
-            except KeyError:
-                if not success:
-                    try:
-                        file['Uno'][str(player.member.id)]
-                    except KeyError:
-                        try:
-                            file['Uno']
-                        except KeyError:
-                            file['Uno'] = {}
-                        file['Uno'][str(player.member.id)] = {}
-                        success = True
-                file['Uno'][str(player.member.id)]['win'] = 0
-            else:
-                file['Uno'][str(player.member.id)]['win'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(player.member, 'db/gamestats.json', 'Uno')
+async def win(player: UnoPlayer, bot: commands.AutoShardedBot):
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM uno WHERE user_id={player.member.id}")
+        if not result:
+            await con.execute(f"INSERT INTO uno(user_id, win) VALUES ({player.member.id}, 1)")
+        else:
+            await con.execute(f"UPDATE uno SET win = win + 1 WHERE user_id = {player.member.id}")
+    await gcmds.ratio(player.member, 'uno')
+    return
 
 
-def lose(player: UnoPlayer):
-    load = False
-    success = False
-    init = {'Uno': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['Uno'][str(player.member.id)]['lose']
-            except KeyError:
-                if not success:
-                    try:
-                        file['Uno'][str(player.member.id)]
-                    except KeyError:
-                        try:
-                            file['Uno']
-                        except KeyError:
-                            file['Uno'] = {}
-                        file['Uno'][str(player.member.id)] = {}
-                        success = True
-                file['Uno'][str(player.member.id)]['lose'] = 0
-            else:
-                file['Uno'][str(player.member.id)]['lose'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(player.member, 'db/gamestats.json', 'Uno')
+async def lose(player: UnoPlayer, bot: commands.AutoShardedBot):
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM uno WHERE user_id={player.member.id}")
+        if not result:
+            await con.execute(f"INSERT INTO uno(user_id, lose) VALUES ({player.member.id}, 1)")
+        else:
+            await con.execute(f"UPDATE uno SET lose = lose + 1 WHERE user_id = {player.member.id}")
+    await gcmds.ratio(player.member, 'uno')
+    return
 
 
 class UNO(commands.Cog):
@@ -518,6 +480,13 @@ class UNO(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_uno())
+
+    async def init_uno(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS uno(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
+                              "NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
     @commands.command()
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
@@ -932,8 +901,8 @@ class UNO(commands.Cog):
                                     color=discord.Color.blue())
         await ctx.channel.send(embed=rewardEmbed)
 
-        win(placement[0])
-        lose(placement[-1])
+        await win(placement[0], self.bot)
+        await lose(placement[-1], self.bot)
 
         return
 
