@@ -14,14 +14,6 @@ class Games(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
-        self.bot.loop.create_task(self.init_gamestats())
-
-    async def init_gamestats(self):
-        await self.bot.wait_until_ready()
-        async with self.bot.db.acquire() as con:
-            dn = "DEFAULT NULL"
-            await con.execute(f"CREATE TABLE IF NOT EXISTS gamestats(user_id bigint PRIMARY KEY, blackjack jsonb {dn}, "
-                              f"coinflip jsonb {dn}, connectfour jsonb {dn}, slots jsonb {dn}, uno jsonb {dn})")
 
     @commands.command(aliases=['bal'])
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
