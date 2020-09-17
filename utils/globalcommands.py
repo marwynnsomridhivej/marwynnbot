@@ -3,6 +3,7 @@ import os
 import discord
 import aiohttp
 import asyncio
+import math
 from dotenv import load_dotenv
 from datetime import datetime
 from discord.ext import commands
@@ -127,22 +128,16 @@ class GlobalCMDS:
             bal = await con.fetch(f"SELECT amount FROM balance WHERE user_id = {member.id}")
             return bal[0]['amount'] if bal else None
 
-    def ratio(self, user: discord.User, filenamepath: str, gameName: str):
-        with open(filenamepath, 'r') as f:
-            file = json.load(f)
-            try:
-                wins = file[str(gameName)][str(user.id)]['win']
-            except KeyError:
-                file[str(gameName)][str(user.id)]['ratio'] = 0
-            else:
-                try:
-                    losses = file[str(gameName)][str(user.id)]['lose']
-                except KeyError:
-                    file[str(gameName)][str(user.id)]['ratio'] = 1
-                else:
-                    file[str(gameName)][str(user.id)]['ratio'] = round((wins / losses), 3)
-        with open(filenamepath, 'w') as f:
-            json.dump(file, f, indent=4)
+    async def ratio(self, user: discord.User, game: str):
+        async with self.db.acquire() as con:
+            result = (await con.fetch(f"SELECT win, lose FROM {game.lower()} WHERE user_id={user.id}"))[0]
+        if int(result['lose']) == 0:
+            op = f"UPDATE {game.lower()} SET ratio = 9999 WHERE user_id = {user.id}"
+        else:
+            op = f"UPDATE {game.lower()} SET ratio = {self.truncate((int(result['win']) / int(result['lose'])), 3)}"
+            f" WHERE user_id = {user.id}"
+        async with self.db.acquire() as con:
+            await con.execute(op)
 
     async def github_request(self, method, url, *, params=None, data=None, headers=None):
         hdrs = {
@@ -187,6 +182,11 @@ class GlobalCMDS:
 
         response = await self.github_request('POST', 'gists', data=data, headers=headers)
         return response['html_url']
+
+    @staticmethod
+    def truncate(number: float, decimal_places: int):
+        stepper = 10.0 ** decimal_places
+        return math.trunc(stepper * number) / stepper
 
 
 class GithubError(commands.CommandError):
