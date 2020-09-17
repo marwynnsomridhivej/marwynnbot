@@ -99,7 +99,7 @@ class GlobalCMDS:
 
         async with self.db.acquire() as con:
             prefix = await con.fetchval(f"SELECT custom_prefix FROM guild WHERE guild_id = {ctx.guild.id}")
-            return (prefix)
+            return prefix
 
     async def blacklist_db(self, execute):
         try:
