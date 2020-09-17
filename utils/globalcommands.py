@@ -98,8 +98,8 @@ class GlobalCMDS:
             return "m!"
 
         async with self.db.acquire() as con:
-            prefix = await con.fetch(f"SELECT custom_prefix FROM guild WHERE guild_id = {ctx.guild.id}")
-            return (prefix[0][0])
+            prefix = await con.fetchval(f"SELECT custom_prefix FROM guild WHERE guild_id = {ctx.guild.id}")
+            return (prefix)
 
     async def blacklist_db(self, execute):
         try:
@@ -118,8 +118,8 @@ class GlobalCMDS:
 
     async def get_balance(self, member: discord.Member):
         async with self.db.acquire() as con:
-            bal = await con.fetch(f"SELECT amount FROM balance WHERE user_id = {member.id}")
-            return bal[0]['amount'] if bal else None
+            bal = await con.fetchval(f"SELECT amount FROM balance WHERE user_id = {member.id}")
+            return int(bal) if bal else None
 
     async def ratio(self, user: discord.User, game: str):
         async with self.db.acquire() as con:
