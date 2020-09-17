@@ -257,4 +257,11 @@ class NoStatsGame(GameStatsError):
     def __init__(self, user: discord.User, game: str):
         super().__init__()
         self.embed.description = f"{user.mention}, you do not have any stats for the game {game.title()}. Start playing to see your stats update!"
-        
+
+
+class BlacklistOperationError(commands.CommandError):
+    def __init__(self):
+        self.embed = discord.Embed(title="A Blacklist Operation Error Occurred",
+                                   description="An error occurred while trying to operate on the blacklist. Please check "
+                                   "to see if the user was already blacklisted or if any table constraints were violated",
+                                   color=discord.Color.dark_red())
