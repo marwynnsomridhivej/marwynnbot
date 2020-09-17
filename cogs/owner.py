@@ -290,8 +290,8 @@ class Owner(commands.Cog):
     async def blacklist(self, ctx):
         return
 
-    @blacklist.command(aliases=['member'])
-    async def user(self, ctx, operation, user: discord.Member = None):
+    @blacklist.command(aliases=['member', 'user'])
+    async def _user(self, ctx, operation, user: discord.Member = None):
         if not user:
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
@@ -308,7 +308,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
         if operation == "add":
-            op = f"INSERT INTO blacklist(type, id) VALUES('user', {user.id})"
+            op = f"INSERT INTO blacklist(type, id) VALUES('user', {user.id}) ON CONFLICT DO NOTHING"
             await gcmds.blacklist_db(op)
             b_add = discord.Embed(title="Blacklist Entry Added",
                                   description=f"{ctx.author.mention}, {user.mention} has been added to the "
@@ -329,8 +329,8 @@ class Owner(commands.Cog):
                                     color=discord.Color.dark_red())
             await ctx.channel.send(embed=invalid)
 
-    @blacklist.command(aliases=['server'])
-    async def guild(self, ctx, operation, *, server_id: int = None):
+    @blacklist.command(aliases=['server', 'guild'])
+    async def _guild(self, ctx, operation, *, server_id: int = None):
         if server_id is None:
             invalid = discord.Embed(title="Invalid Guild ID",
                                     description=f"{ctx.author.mention}, please provide a valid guild ID",
@@ -347,7 +347,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
         if operation == "add":
-            op = f"INSERT INTO blacklist(type, id) VALUES('guild', {guild.id})"
+            op = f"INSERT INTO blacklist(type, id) VALUES('guild', {guild.id}) ON CONFLICT DO NOTHING"
             await gcmds.blacklist_db(op)
             b_add = discord.Embed(title="Blacklist Entry Added",
                                   description=f"{ctx.author.mention}, {guild.name} `ID:{guild.id}` has been added "

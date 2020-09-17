@@ -7,6 +7,7 @@ import math
 from dotenv import load_dotenv
 from datetime import datetime
 from discord.ext import commands
+from utils import customerrors
 
 load_dotenv()
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
@@ -101,8 +102,11 @@ class GlobalCMDS:
             return (prefix[0][0])
 
     async def blacklist_db(self, execute):
-        async with self.db.acquire() as con:
-            result = await con.execute(execute)
+        try:
+            async with self.db.acquire() as con:
+                result = await con.execute(execute)
+        except Exception:
+            raise customerrors.BlacklistOperationError()
 
     async def balance_db(self, execute: str, ret_val: bool = False):
         async with self.db.acquire() as con:
