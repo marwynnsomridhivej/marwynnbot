@@ -85,7 +85,6 @@ class Games(commands.Cog):
         async with self.bot.db.acquire() as con:
             if not game:
                 result = [await con.fetch(f"SELECT * FROM {name} WHERE user_id = {member.id}") for name in game_names]
-                print(result)
             else:
                 result = await con.fetch(f"SELECT * FROM {game.lower()} WHERE user_id = {member.id}")
         if not result:
@@ -97,13 +96,14 @@ class Games(commands.Cog):
             embed = discord.Embed(title=f"Stats for {member.display_name}",
                                   color=discord.Color.blue())
             for name in game_names:
-                item = result[int(game_names.index(name))]
-                if item:
-                    jsoned = dict(item)
-                    values = [f"> {key}: *{jsoned[key]}*" for key in sorted(jsoned.keys(), reverse=True)]
-                    embed.add_field(name=name.title(),
-                                    value="\n".join(values),
-                                    inline=True)
+                pre_item = result[int(game_names.index(name))]
+                if pre_item:
+                    item = result[int(game_names.index(name))][0]
+                    if item:
+                        values = [f"> {key}: *{item[key]}*" for key in item.keys() if key != "user_id"]
+                        embed.add_field(name=name.title(),
+                                        value="\n".join(values),
+                                        inline=True)
                 else:
                     embed.add_field(name=name.title(),
                                     value="> N/A",
