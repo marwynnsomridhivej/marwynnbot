@@ -5,7 +5,7 @@ from datetime import datetime
 import discord
 import lavalink
 from discord.ext import commands, tasks
-from utils import globalcommands
+from utils import globalcommands, premium
 
 gcmds = globalcommands.GlobalCMDS()
 url_rx = re.compile(r'https?://(?:www\.)?.+')
@@ -703,6 +703,7 @@ class Music(commands.Cog):
             volume_message_sent = await ctx.channel.send(embed=volumeEmbed)
         await self.set_value(ctx.guild.id, "volume_message", volume_message_sent)
 
+    @premium.is_premium()
     @commands.group(invoke_without_command=True, aliases=['playlists'])
     async def playlist(self, ctx):
         await self.init_playlist(ctx)
