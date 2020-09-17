@@ -114,33 +114,14 @@ def winning_move(board, piece):
 
 
 async def win(ctx, member: discord.Member, bot: commands.AutoShardedBot):
-    load = False
-    success = False
-    init = {'ConnectFour': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['ConnectFour'][str(member.id)]['win']
-            except KeyError:
-                if not success:
-                    try:
-                        file['ConnectFour'][str(member.id)]
-                    except KeyError:
-                        try:
-                            file['ConnectFour']
-                        except KeyError:
-                            file['ConnectFour'] = {}
-                        file['ConnectFour'][str(member.id)] = {}
-                        success = True
-                file['ConnectFour'][str(member.id)]['win'] = 0
-            else:
-                file['ConnectFour'][str(member.id)]['win'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(ctx.author, 'db/gamestats.json', 'ConnectFour')
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM connectfour WHERE user_id={ctx.author.id}")
+        if not result:
+            await con.execute(f"INSERT INTO connectfour(user_id, win) VALUES ({ctx.author.id}, 1)")
+        else:
+            await con.execute(f"UPDATE connectfour SET win = win + 1 WHERE user_id = {ctx.author.id}")
+    await gcmds.ratio(ctx.author, 'connectfour')
+    return
 
     spell = "credits"
     random_number = random.randint(1, 100001)
@@ -186,81 +167,27 @@ async def win(ctx, member: discord.Member, bot: commands.AutoShardedBot):
         await rewardMessage.pin(reason=f"{member.name} hit the jackpot for winning a game of Connect Four!")
 
 
-def lose(ctx, member: discord.Member, bot: commands.AutoShardedBot):
-    load = False
-    success = False
-    init = {'ConnectFour': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['ConnectFour'][str(member.id)]['lose']
-            except KeyError:
-                if not success:
-                    try:
-                        file['ConnectFour'][str(member.id)]
-                    except KeyError:
-                        try:
-                            file['ConnectFour']
-                        except KeyError:
-                            file['ConnectFour'] = {}
-                        file['ConnectFour'][str(member.id)] = {}
-                        success = True
-                file['ConnectFour'][str(member.id)]['lose'] = 0
-            else:
-                file['ConnectFour'][str(member.id)]['lose'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    gcmds.ratio(member, 'db/gamestats.json', 'ConnectFour')
+async def lose(ctx, member: discord.Member, bot: commands.AutoShardedBot):
+    async with bot.db.acquire() as con:
+        result = await con.fetch(f"SELECT * FROM connectfour WHERE user_id={ctx.author.id}")
+        if not result:
+            await con.execute(f"INSERT INTO connectfour(user_id, lose) VALUES ({ctx.author.id}, 1)")
+        else:
+            await con.execute(f"UPDATE connectfour SET lose = lose + 1 WHERE user_id = {ctx.author.id}")
+    await gcmds.ratio(member, 'connectfour')
+    return
 
 
-def draw(ctx, member: discord.Member, bot: commands.AutoShardedBot):
-    load = False
-    success = False
-    init = {'ConnectFour': {}}
-    gcmds.json_load('db/gamestats.json', init)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['ConnectFour'][str(ctx.author.id)]['tie']
-            except KeyError:
-                if not success:
-                    try:
-                        file['ConnectFour'][str(ctx.author.id)]
-                    except KeyError:
-                        try:
-                            file['ConnectFour']
-                        except KeyError:
-                            file['ConnectFour'] = {}
-                        file['ConnectFour'][str(ctx.author.id)] = {}
-                        success = True
-                file['ConnectFour'][str(ctx.author.id)]['tie'] = 0
+async def draw(ctx, member: discord.Member, bot: commands.AutoShardedBot):
+    for user in [ctx.author, member]:
+        async with bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT * FROM connectfour WHERE user_id={user.id}")
+            if not result:
+                await con.execute(f"INSERT INTO connectfour(user_id, tie) VALUES ({user.id}, 1)")
             else:
-                file['ConnectFour'][str(ctx.author.id)]['tie'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
-    with open('db/gamestats.json', 'r') as f:
-        file = json.load(f)
-        while not load:
-            try:
-                file['ConnectFour'][str(member.id)]['tie']
-            except KeyError:
-                if not success:
-                    try:
-                        file['ConnectFour'][str(member.id)]
-                    except KeyError:
-                        file['ConnectFour'][str(member.id)] = {}
-                        success = True
-                file['ConnectFour'][str(member.id)]['tie'] = 0
-            else:
-                file['ConnectFour'][str(member.id)]['tie'] += 1
-                load = True
-        with open('db/gamestats.json', 'w') as f:
-            json.dump(file, f, indent=4)
+                await con.execute(f"UPDATE connectfour SET tie = tie + 1 WHERE user_id = {user.id}")
+        await gcmds.ratio(user, 'connectfour')
+    return
 
 
 class ConnectFour(commands.Cog):
@@ -269,6 +196,13 @@ class ConnectFour(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.bot.loop.create_task(self.init_c4())
+
+    async def init_c4(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS connectfour(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
+                              "NUMERIC DEFAULT 0, tie NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):
@@ -405,7 +339,7 @@ class ConnectFour(commands.Cog):
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
                                 await win(ctx, ctx.author, self.bot)
-                                lose(ctx, opponent, self.bot)
+                                await lose(ctx, opponent, self.bot)
 
                                 return
 
@@ -437,7 +371,7 @@ class ConnectFour(commands.Cog):
                                         "/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y/DanYr4AVMAABJ_K.png")
                                 await message.edit(embed=c4)
                                 await win(ctx, opponent, self.bot)
-                                lose(ctx, ctx.author, self.bot)
+                                await lose(ctx, ctx.author, self.bot)
 
                                 return
 
@@ -470,7 +404,7 @@ class ConnectFour(commands.Cog):
         c4.set_thumbnail(url="https://studio.code.org/v3/assets/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y"
                              "/DanYr4AVMAABJ_K.png")
         await message.edit(embed=c4)
-        draw(ctx, member, self.bot)
+        await draw(ctx, member, self.bot)
 
 
 def setup(bot):
