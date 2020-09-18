@@ -236,7 +236,7 @@ class Utility(commands.Cog):
                        f"Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
                        f"Boosts: `{len(ctx.guild.premium_subscribers)}`")
         embed = discord.Embed(title=ctx.guild.name, description="\n".join(description), color=discord.Color.blue())
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_image(url=ctx.guild.icon_url)
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
