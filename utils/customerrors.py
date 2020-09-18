@@ -16,6 +16,28 @@ class NoPostgreSQL(PostgreSQLError):
                                    color=discord.Color.dark_red())
 
 
+class AutoroleInsertError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Autoroles Error",
+                                   description="An error occured while setting this server's autoroles",
+                                   color=discord.Color.dark_red())
+
+
+class AutoroleDeleteError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Autoroles Error",
+                                   description="An error occured while removing this server's autoroles. Please check "
+                                   "if the role you provided is a valid autorole",
+                                   color=discord.Color.dark_red())
+
+
+class AutoroleSearchError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Autoroles Error",
+                                   description="An error occured while retrieving this server's autoroles",
+                                   color=discord.Color.dark_red())
+
+
 class TagError(commands.CommandError):
     def __init__(self, message=None, error=None, *args):
         super().__init__(message=message, *args)
