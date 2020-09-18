@@ -438,7 +438,8 @@ class Roles(commands.Cog):
                 await con.execute(f"DELETE FROM autoroles WHERE guild_id={ctx.guild.id} AND type='bot'")
                 values = [f"({role.id}, 'bot', {ctx.guild.id}, {ctx.author.id})" for role in roles]
                 await con.execute(f"INSERT INTO autoroles(role_id, type, guild_id, author_id) VALUES {', '.join(values)}")
-        except Exception:
+        except Exception as e:
+            raise e
             raise customerrors.AutoroleInsertError()
         role_desc = "\n".join([f"> {role.mention}" for role in roles])
         embed = discord.Embed(title="Set Autoroles",
