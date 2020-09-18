@@ -281,7 +281,6 @@ class Bot(commands.AutoShardedBot):
                 result = await con.fetch(f"SELECT role_id FROM autoroles WHERE guild_id={member.guild.id} AND type='bot'")
             else:
                 result = await con.fetch(f"SELECT role_id FROM autoroles WHERE guild_id={member.guild.id} AND type='member'")
-        print(result)
         if not result:
             return
         else:

@@ -225,8 +225,7 @@ class Welcome(commands.Cog):
             async with self.bot.db.acquire() as con:
                 await con.execute(f"UPDATE welcomers SET {', '.join(op)} WHERE guild_id = {ctx.guild.id}")
             return True
-        except Exception as e:
-            print(e)
+        except Exception:
             return False
 
     async def no_welcomer(self, ctx) -> discord.Message:
