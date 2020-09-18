@@ -378,7 +378,6 @@ class Blackjack(commands.Cog):
 
     @commands.command(aliases=['bj', 'Blackjack'])
     async def blackjack(self, ctx, bet=1):
-
         won = False
         bet = bet
         deck = Deck()
