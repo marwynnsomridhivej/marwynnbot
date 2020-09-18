@@ -12,7 +12,7 @@ import asyncio
 from datetime import datetime
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from utils import customerrors, globalcommands
+from utils import customerrors, globalcommands, context
 
 
 gcmds = globalcommands.GlobalCMDS()
@@ -83,8 +83,9 @@ class Bot(commands.AutoShardedBot):
         self.uptime = int(datetime.now().timestamp())
         self.db = kwargs.pop("db")
         globalcommands.db = self.db
+        globalcommands.bot = self
         gcmds = globalcommands.GlobalCMDS(bot=self)
-        func_checks = (self.check_blacklist, self.disable_dm_exec)
+        func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
         func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
@@ -147,6 +148,8 @@ class Bot(commands.AutoShardedBot):
         await self.wait_until_ready()
         tokens = token_rx.findall(message.content)
         if tokens and message.guild:
+            if message.guild.id == 336642139381301249:
+                return
             await gcmds.smart_delete(message)
             if gcmds.env_check('GITHUB_TOKEN'):
                 url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for "
