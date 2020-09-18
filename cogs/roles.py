@@ -27,7 +27,7 @@ class Roles(commands.Cog):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, type text, author_id bigint, guild_id bigint, jump_url text)")
             await con.execute("CREATE TABLE IF NOT EXISTS emoji_rr(message_id bigint, role_id bigint PRIMARY KEY, emoji text)")
-            await con.execute("CREATE TABLE IF NOT EXISTS autoroles(role_id bigint PRIMARY KEY, type text, guild_id bigint, author_id bigint)")
+            await con.execute("CREATE TABLE IF NOT EXISTS autoroles(role_id bigint, type text, guild_id bigint, author_id bigint)")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -438,8 +438,7 @@ class Roles(commands.Cog):
                 await con.execute(f"DELETE FROM autoroles WHERE guild_id={ctx.guild.id} AND type='bot'")
                 values = [f"({role.id}, 'bot', {ctx.guild.id}, {ctx.author.id})" for role in roles]
                 await con.execute(f"INSERT INTO autoroles(role_id, type, guild_id, author_id) VALUES {', '.join(values)}")
-        except Exception as e:
-            raise e
+        except Exception:
             raise customerrors.AutoroleInsertError()
         role_desc = "\n".join([f"> {role.mention}" for role in roles])
         embed = discord.Embed(title="Set Autoroles",
