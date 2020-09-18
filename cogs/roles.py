@@ -291,12 +291,12 @@ class Roles(commands.Cog):
 
     async def ar_help(self, ctx):
         spar = f"{await gcmds.prefix(ctx)}autorole [user/bot]"
-        description= (f"{ctx.author.mention}, here is some important info about the `autorole` commands\n"
-                      "> - Alias: `ar`\n"
-                      "> - You can set autoroles for users and bots. The subcommands are `user` and `bot` respectively\n"
-                      "> - The subcommands below, with the exception of list, apply for both users and bots and assume that"
-                      " you have selected either `user` or `bot` already\n\n"
-                      "Here are the supported autorole subcommands")
+        description = (f"{ctx.author.mention}, here is some important info about the `autorole` commands\n"
+                       "> - Alias: `ar`\n"
+                       "> - You can set autoroles for users and bots. The subcommands are `user` and `bot` respectively\n"
+                       "> - The subcommands below, with the exception of list, apply for both users and bots and assume that"
+                       " you have selected either `user` or `bot` already\n\n"
+                       "Here are the supported autorole subcommands")
         set = (f"**Usage:** `{spar} set [roles]`",
                "**Returns:** A confirmation embed with the list of roles that will be set to automatically give to new users/bots"
                " who join the server",
@@ -327,20 +327,28 @@ class Roles(commands.Cog):
 
     @autorole.command(aliases=['list', '-ls', 'show'])
     async def autorole_list(self, ctx, flag: str = "all"):
-        async with self.bot.db.acquire() as con:
-            if "user" in flag.lower():
-                flag = "user"
-                result = await con.fetch(f"SELECT * FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id}")
-            elif "bot" in flag.lower():
-                flag = "bot"
-                result = await con.fetch(f"SELECT * FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id}")
-            else:
-                flag = "all"
-                result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id}")
-        if not result:
+        try:
+            async with self.bot.db.acquire() as con:
+                if "user" in flag.lower():
+                    flag = "user"
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id}")
+                elif "bot" in flag.lower():
+                    flag = "bot"
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id}")
+                else:
+                    flag = "all"
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id}")
+        except Exception:
             raise customerrors.AutoroleSearchError()
 
-        entries = [f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
+        if not result:
+            embed = discord.Embed(title="No Autoroles Set",
+                                  description=f"{ctx.author.mention}, this server does not have any autoroles set for {flag}",
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed)
+
+        entries = [
+            f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
         pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=10, show_entry_count=True)
         pag.embed.title = f"{flag.title()} Autoroles"
         await pag.paginate()
@@ -411,7 +419,8 @@ class Roles(commands.Cog):
         if not roles:
             description = f"{ctx.author.mention}, no roles will be given to new members when they join this server anymore"
         else:
-            description = f"{ctx.author.mention}, the roles\n\n" + "\n".join(role_list) + "\n\nwill no longer be given to new members when they join this server"
+            description = f"{ctx.author.mention}, the roles\n\n" + \
+                "\n".join(role_list) + "\n\nwill no longer be given to new members when they join this server"
 
         embed = discord.Embed(title="Autoroles Remove Success",
                               description=description,
@@ -484,7 +493,8 @@ class Roles(commands.Cog):
         if not roles:
             description = f"{ctx.author.mention}, no roles will be given to new bots when they join this server anymore"
         else:
-            description = f"{ctx.author.mention}, the roles\n\n" + "\n".join(role_list) + "\n\nwill no longer be given to new bots when they join this server"
+            description = f"{ctx.author.mention}, the roles\n\n" + \
+                "\n".join(role_list) + "\n\nwill no longer be given to new bots when they join this server"
 
         embed = discord.Embed(title="Autoroles Remove Success",
                               description=description,
