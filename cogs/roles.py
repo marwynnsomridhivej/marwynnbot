@@ -338,7 +338,7 @@ class Roles(commands.Cog):
                 flag = "all"
                 result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id}")
         if not result:
-            raise customerrors.AutoroleSearchError
+            raise customerrors.AutoroleSearchError()
 
         entries = [f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
         pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=10, show_entry_count=True)
