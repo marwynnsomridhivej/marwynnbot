@@ -137,8 +137,12 @@ class Owner(commands.Cog):
             print("==========================")
             for filenameReload in os.listdir('./cogs'):
                 if filenameReload.endswith('.py'):
-                    self.bot.reload_extension(f'cogs.{filenameReload[:-3]}')
-                    print(f'Cog "{filenameReload[:-3].capitalize()}" has been reloaded')
+                    try:
+                        self.bot.reload_extension(f'cogs.{filenameReload[:-3]}')
+                        print(f'Cog "{filenameReload[:-3]}" has been reloaded')
+                    except commands.ExtensionError:
+                        self.bot.load_extension(f'cogs.{filenameReload[:-3]}')
+                        print(f'Cog "{filenameReload[:-3]}" has been loaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description="Successfully reloaded all cogs",
                                         color=discord.Color.blue())
@@ -146,8 +150,12 @@ class Owner(commands.Cog):
             print("==========================")
         else:
             print("==========================")
-            self.bot.reload_extension(f'cogs.{extension}')
-            print(f'Cog "{extension}" has been reloaded')
+            try:
+                self.bot.reload_extension(f'cogs.{extension}')
+                print(f'Cog "{extension}" has been reloaded')
+            except commands.ExtensionError:
+                self.bot.load_extension(f'cogs.{extension}')
+                print(f'Cog "{extension}" has been loaded')
             reloadEmbed = discord.Embed(title="Reload Success",
                                         description=f"Successfully reloaded cog `{extension}`",
                                         color=discord.Color.blue())
