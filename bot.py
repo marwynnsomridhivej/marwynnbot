@@ -85,7 +85,7 @@ class Bot(commands.AutoShardedBot):
         globalcommands.db = self.db
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec)
-        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove)
+        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
@@ -250,6 +250,8 @@ class Bot(commands.AutoShardedBot):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, customerrors.BlacklistOperationError):
             return await ctx.channel.send(embed=error.embed)
+        elif isinstance(error, customerrors.PostgreSQLError):
+            return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, commands.CheckFailure):
             pass
         else:
@@ -269,6 +271,23 @@ class Bot(commands.AutoShardedBot):
     async def on_guild_remove(self, guild):
         async with self.db.acquire() as con:
             await con.execute(f"UPDATE guild SET serverstats=FALSE")
+
+    async def on_member_join(self, member: discord.Member):
+        async with self.db.acquire() as con:
+            if member.bot:
+                result = await con.fetch(f"SELECT role_id FROM autoroles WHERE guild_id={member.guild.id} AND type='bot'")
+            else:
+                result = await con.fetch(f"SELECT role_id FROM autoroles WHERE guild_id={member.guild.id} AND type='member'")
+        print(result)
+        if not result:
+            return
+        else:
+            for item in result:
+                try:
+                    await member.add_roles(member.guild.get_role(int(item['role_id'])), reason=f"Given member {member.display_name} roles from set autoroles")
+                except Exception:
+                    pass
+        return
 
     async def all_loaded(self):
         await self.wait_until_ready()
