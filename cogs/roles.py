@@ -4,7 +4,7 @@ import re
 import os
 import discord
 from discord.ext import commands
-from utils import globalcommands, paginator
+from utils import globalcommands, paginator, customerrors
 
 gcmds = globalcommands.GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -20,13 +20,14 @@ class Roles(commands.Cog):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
-        self.bot.loop.create_task(self.init_rr())
+        self.bot.loop.create_task(self.init_roles())
 
-    async def init_rr(self):
+    async def init_roles(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, type text, author_id bigint, guild_id bigint, jump_url text)")
             await con.execute("CREATE TABLE IF NOT EXISTS emoji_rr(message_id bigint, role_id bigint PRIMARY KEY, emoji text)")
+            await con.execute("CREATE TABLE IF NOT EXISTS autoroles(role_id bigint PRIMARY KEY, type text, guild_id bigint, author_id bigint)")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -111,8 +112,6 @@ class Roles(commands.Cog):
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
             return await self.no_panel(ctx)
-        else:
-            raise error
 
     async def check_panel(self, panel: discord.Message) -> discord.Message:
         return panel
@@ -289,6 +288,208 @@ class Roles(commands.Cog):
         async with self.bot.db.acquire() as con:
             type = await con.fetchval(f"SELECT type FROM base_rr WHERE message_id={message_id}")
         return type.replace("_", " ").title()
+
+    async def ar_help(self, ctx):
+        spar = f"{await gcmds.prefix(ctx)}autorole [user/bot]"
+        description= (f"{ctx.author.mention}, here is some important info about the `autorole` commands\n"
+                      "> - Alias: `ar`\n"
+                      "> - You can set autoroles for users and bots. The subcommands are `user` and `bot` respectively\n"
+                      "> - The subcommands below, with the exception of list, apply for both users and bots and assume that"
+                      " you have selected either `user` or `bot` already\n\n"
+                      "Here are the supported autorole subcommands")
+        set = (f"**Usage:** `{spar} set [roles]`",
+               "**Returns:** A confirmation embed with the list of roles that will be set to automatically give to new users/bots"
+               " who join the server",
+               "**Aliases:** `-s` `create` `assign`",
+               "**Special Cases:** `[roles]` must be role tags or role IDs")
+        remove = (f"**Usage:** `{spar} remove [roles]`",
+                  "**Returns:** A confirmation embed with the list of roles that will be no longer given to new users/bots "
+                  "who join the server",
+                  "**Aliases:** `-rm` `delete` `cancel`")
+        list = (f"**Usage:** `{await gcmds.prefix(ctx)} autorole list (user/bot)`",
+                "**Returns:** An embed that lists any active autoroles for users, bots, or both",
+                "**Aliases:** `-ls` `show`",
+                "**Special Cases:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
+        nv = [("Set", set), ("Remove", remove), ("List", list)]
+
+        embed = discord.Embed(title="Autorole Command Help",
+                              description=description,
+                              color=discord.Color.blue())
+        for name, value in nv:
+            embed.add_field(name=name, value="\n".join(value), inline=False)
+        return await ctx.channel.send(embed=embed)
+
+    @commands.group(invoke_without_command=True, aliases=['ar', 'autoroles'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
+    async def autorole(self, ctx):
+        return await self.ar_help(ctx)
+
+    @autorole.command(aliases=['list', '-ls', 'show'])
+    async def autorole_list(self, ctx, flag: str = "all"):
+        async with self.bot.db.acquire() as con:
+            if "user" in flag.lower():
+                flag = "user"
+                result = await con.fetch(f"SELECT * FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id}")
+            elif "bot" in flag.lower():
+                flag = "bot"
+                result = await con.fetch(f"SELECT * FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id}")
+            else:
+                flag = "all"
+                result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id}")
+        if not result:
+            raise customerrors.AutoroleSearchError
+
+        entries = [f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
+        pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=10, show_entry_count=True)
+        pag.embed.title = f"{flag.title()} Autoroles"
+        await pag.paginate()
+
+    @autorole.group(invoke_without_command=True, aliases=['user', 'users', '-u'])
+    async def autorole_user(self, ctx):
+        return await self.ar_help(ctx)
+
+    @autorole_user.command(aliases=['set', '-s', 'create', 'assign'])
+    async def autorole_user_set(self, ctx, roles: commands.Greedy[discord.Role]):
+        try:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"DELETE FROM autoroles WHERE guild_id={ctx.guild.id} AND type='member'")
+                values = [f"({role.id}, 'member', {ctx.guild.id}, {ctx.author.id})" for role in roles]
+                await con.execute(f"INSERT INTO autoroles(role_id, type, guild_id, author_id) VALUES {', '.join(values)}")
+        except Exception:
+            raise customerrors.AutoroleInsertError()
+        role_desc = "\n".join([f"> {role.mention}" for role in roles])
+        embed = discord.Embed(title="Set Autoroles",
+                              description=f"{ctx.author.mention}, users will now gain the following roles when joining "
+                              f"this server:\n\n {role_desc}",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
+    @autorole_user.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    async def autorole_user_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
+        reactions = ["✅", "🛑"]
+        if not roles:
+            description = (f"{ctx.author.mention}, you are about to clear all user autoroles from this server. This action "
+                           f"is destructive and irreversible. React with {reactions[0]} to confirm or {reactions[1]} to cancel")
+        else:
+            role_list = [f"> {role.mention}" for role in roles]
+            description = (f"{ctx.author.mention}, you are about to clear these user autoroles from this server:\n\n" + "\n\n".join(role_list) +
+                           f"\n\nThis action is destructive and irreversible. React with {reactions[0]} to confirm or {reactions[1]} to cancel")
+        panel_embed = discord.Embed(title="Confirmation",
+                                    description=description,
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+        try:
+            for reaction in reactions:
+                await panel.add_reaction(reaction)
+        except Exception:
+            raise customerrors.AutoroleDeleteError()
+
+        def reacted(reaction: discord.Reaction, user: discord.User) -> bool:
+            return reaction.emoji in reactions and ctx.author.id == user.id and reaction.message.id == panel.id
+
+        try:
+            result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "autoroles remove", 30)
+        try:
+            await panel.delete()
+        except Exception:
+            pass
+        if result[0].emoji == reactions[0]:
+            try:
+                async with self.bot.db.acquire() as con:
+                    if roles:
+                        for role in roles:
+                            await con.execute(f"DELETE FROM autoroles WHERE role_id={role.id}")
+                    else:
+                        await con.execute(f"DELETE FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id}")
+            except Exception:
+                raise customerrors.AutoroleDeleteError()
+        else:
+            return await gcmds.cancelled(ctx, "autoroles remove")
+        if not roles:
+            description = f"{ctx.author.mention}, no roles will be given to new members when they join this server anymore"
+        else:
+            description = f"{ctx.author.mention}, the roles\n\n" + "\n".join(role_list) + "\n\nwill no longer be given to new members when they join this server"
+
+        embed = discord.Embed(title="Autoroles Remove Success",
+                              description=description,
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
+    @autorole.group(invoke_without_command=True, aliases=['bot', 'bots', '-b'])
+    async def autorole_bot(self, ctx):
+        return await self.ar_help(ctx)
+
+    @autorole_bot.command(aliases=['set', '-s', 'create', 'assign'])
+    async def autorole_bot_set(self, ctx, roles: commands.Greedy[discord.Role]):
+        try:
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"DELETE FROM autoroles WHERE guild_id={ctx.guild.id} AND type='bot'")
+                values = [f"({role.id}, 'bot', {ctx.guild.id}, {ctx.author.id})" for role in roles]
+                await con.execute(f"INSERT INTO autoroles(role_id, type, guild_id, author_id) VALUES {', '.join(values)}")
+        except Exception:
+            raise customerrors.AutoroleInsertError()
+        role_desc = "\n".join([f"> {role.mention}" for role in roles])
+        embed = discord.Embed(title="Set Autoroles",
+                              description=f"{ctx.author.mention}, bots will now gain the following roles when joining "
+                              f"this server:\n\n {role_desc}",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
+    @autorole_bot.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    async def autorole_bot_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
+        reactions = ["✅", "🛑"]
+        if not roles:
+            description = (f"{ctx.author.mention}, you are about to clear all bot autoroles from this server. This action "
+                           f"is destructive and irreversible. React with {reactions[0]} to confirm or {reactions[1]} to cancel")
+        else:
+            role_list = [f"> {role.mention}" for role in roles]
+            description = (f"{ctx.author.mention}, you are about to clear these bot autoroles from this server:\n\n" + "\n\n".join(role_list) +
+                           f"\n\nThis action is destructive and irreversible. React with {reactions[0]} to confirm or {reactions[1]} to cancel")
+        panel_embed = discord.Embed(title="Confirmation",
+                                    description=description,
+                                    color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=panel_embed)
+        try:
+            for reaction in reactions:
+                await panel.add_reaction(reaction)
+        except Exception:
+            raise customerrors.AutoroleDeleteError()
+
+        def reacted(reaction: discord.Reaction, user: discord.User) -> bool:
+            return reaction.emoji in reactions and ctx.author.id == user.id and reaction.message.id == panel.id
+
+        try:
+            result = await self.bot.wait_for("reaction_add", check=reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await gcmds.timeout(ctx, "autoroles remove", 30)
+        try:
+            await panel.delete()
+        except Exception:
+            pass
+        if result[0].emoji == reactions[0]:
+            try:
+                async with self.bot.db.acquire() as con:
+                    if roles:
+                        for role in roles:
+                            await con.execute(f"DELETE FROM autoroles WHERE role_id={role.id}")
+                    else:
+                        await con.execute(f"DELETE FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id}")
+            except Exception:
+                raise customerrors.AutoroleDeleteError()
+        else:
+            return await gcmds.cancelled(ctx, "autoroles remove")
+        if not roles:
+            description = f"{ctx.author.mention}, no roles will be given to new bots when they join this server anymore"
+        else:
+            description = f"{ctx.author.mention}, the roles\n\n" + "\n".join(role_list) + "\n\nwill no longer be given to new bots when they join this server"
+
+        embed = discord.Embed(title="Autoroles Remove Success",
+                              description=description,
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['rr'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
