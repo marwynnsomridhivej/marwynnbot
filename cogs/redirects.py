@@ -53,11 +53,12 @@ class Redirects(commands.Cog):
                           "Subcommand redirects are not supported, so the redirect will apply to all commands within the "
                           "command group if the base command is a group.")
 
-        nv = [("Set", rset), ("List", rlist), ("Remove", rremove), ("Important Info", important_note)]
+        nv = [("Set", rset), ("List", rlist), ("Remove", rremove)]
 
         embed = discord.Embed(title="Redirect Help", description=description, color=discord.Color.blue())
         for name, value in nv:
             embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
+        embed.set_footer(text=important_note)
 
         return await ctx.channel.send(embed=embed)
 
