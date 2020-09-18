@@ -150,7 +150,7 @@ async def win(ctx, member: discord.Member, bot: commands.AutoShardedBot):
                                   color=discord.Color.blue())
         initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                     "/738390147514499163/chips.png")
-        await ctx.channel.send(embed=initEmbed, delete_after=10)
+        await ctx.channel.send(embed=initEmbed)
     op = (f"UPDATE balance SET amount = amount + {award_amount} WHERE user_id = {member.id}")
     bot.loop.create_task(gcmds.balance_db(op))
 
@@ -206,20 +206,19 @@ class ConnectFour(commands.Cog):
 
     @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
     async def connectFour(self, ctx, member: discord.Member = None):
-
         if member is None:
             error = discord.Embed(title="No Opponent Selected",
                                   description=f"{ctx.author.mention}, please mention another member to start a game "
                                               f"with them",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=error, delete_after=10)
+            await ctx.channel.send(embed=error)
             return
         elif member == ctx.author:
             error = discord.Embed(title="No Opponent Selected",
                                   description=f"{ctx.author.mention}, you cannot play with yourself, please mention "
                                               "another member to start the game with them",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=error, delete_after=10)
+            await ctx.channel.send(embed=error)
             return
         else:
             opponent = member
@@ -276,7 +275,7 @@ class ConnectFour(commands.Cog):
                     canceled.set_thumbnail(url='https://cdn.discordapp.com/attachments/734962101432615006'
                                                '/738083697726849034/nocap.jpg')
                     canceled.set_footer(text=f"No valid reaction provided within 60 seconds")
-                    await message.edit(embed=canceled, delete_after=10)
+                    await message.edit(embed=canceled)
                     return
                 else:
                     for item in choice:
@@ -308,7 +307,7 @@ class ConnectFour(commands.Cog):
                             c4.set_thumbnail(
                                 url="https://studio.code.org/v3/assets/dQveW7B23TPYvHgQmNOvkf1v_fQW5hO1TOBfPkuJM0Y"
                                     "/DanYr4AVMAABJ_K.png")
-                            await message.edit(embed=c4, delete_after=20)
+                            await message.edit(embed=c4)
                             return
 
                     if turn == 0 and player == ctx.author:

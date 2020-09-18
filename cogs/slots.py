@@ -213,14 +213,14 @@ class Slots(commands.Cog):
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
-            await ctx.channel.send(embed=initEmbed, delete_after=10)
+            await ctx.channel.send(embed=initEmbed)
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",
                                   description=f"{ctx.author.mention}, you have `{balance}` credits"
                                               f"\nYour bet of `{betAmount}` credits exceeds your current balance",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
+            await ctx.channel.send(embed=insuf)
             return
 
         slot_selection = np.choice(a=emojis, size=3, replace=True, p=weights)

@@ -62,14 +62,14 @@ class Coinflip(commands.Cog):
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
-            await ctx.channel.send(embed=initEmbed, delete_after=10)
+            await ctx.channel.send(embed=initEmbed)
 
         if balance < betAmount:
             insuf = discord.Embed(title="Insufficient Credit Balance",
                                   description=f"{ctx.author.mention}, you have `{balance}` credits"
                                               f"\nYour bet of `{betAmount}` credits exceeds your current balance",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
+            await ctx.channel.send(embed=insuf)
             return
 
         emoji = "<a:Coin_spin:742197823537414254>"
@@ -122,7 +122,7 @@ class Coinflip(commands.Cog):
             notFound = discord.Embed(title="Game Canceled",
                                      description="The original coinflip message was deleted",
                                      color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=notFound, delete_after=10)
+            return await ctx.channel.send(embed=notFound)
         if betAmount > 1000 and picked_side == side:
             await message.pin()
 

@@ -494,7 +494,7 @@ class UNO(commands.Cog):
             noPlayers = discord.Embed(title="No Opponents",
                                       description=f"{ctx.author.mention}, please mention other players to start a game",
                                       color=discord.Color.dark_red())
-            await ctx.channel.send(embed=noPlayers, delete_after=10)
+            await ctx.channel.send(embed=noPlayers)
             return
         elif members:
             if int(len(members)) > 9:
@@ -502,7 +502,7 @@ class UNO(commands.Cog):
                                         description=f"{ctx.author.mention}, please mention up to 9 other players to "
                                                     f"start a game",
                                         color=discord.Color.dark_red())
-                await ctx.channel.send(embed=tooMany, delete_after=10)
+                await ctx.channel.send(embed=tooMany)
                 return
             for player in members:
                 if ctx.author == player:
@@ -510,7 +510,7 @@ class UNO(commands.Cog):
                                            description=f"{ctx.author.mention}, you cannot mention yourself as an "
                                                        f"opponent",
                                            color=discord.Color.dark_red())
-                    await ctx.channel.send(embed=noSelf, delete_after=10)
+                    await ctx.channel.send(embed=noSelf)
                     return
 
         playerlist = [ctx.author]
@@ -821,7 +821,7 @@ class UNO(commands.Cog):
                                     wildEmbed = discord.Embed(title="Card Color Set",
                                                               description=f"The card's color is now {played_card.color}",
                                                               color=pile.embed_color())
-                                    await color_choice.edit(embed=wildEmbed, delete_after=60)
+                                    await color_choice.edit(embed=wildEmbed)
                                     DM = discord.Embed(title=user.display_name,
                                                        description=f"\n\nYou placed: {played_card.__str__()}",
                                                        color=pile.embed_color())
@@ -873,7 +873,7 @@ class UNO(commands.Cog):
             cancelEmbed = discord.Embed(title="Uno Game Canceled",
                                         description="The original game message was deleted",
                                         color=discord.Color.dark_red())
-            await ctx.channel.send(embed=cancelEmbed, delete_after=30)
+            await ctx.channel.send(embed=cancelEmbed)
             return
 
         balance = await gcmds.get_balance(ctx.author)
@@ -887,7 +887,7 @@ class UNO(commands.Cog):
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
-            await ctx.channel.send(embed=initEmbed, delete_after=10)
+            await ctx.channel.send(embed=initEmbed)
 
         if turns_to_win > 300:
             award_amount = int(math.floor(randint(10, 100) * turns_to_win / randint(2, 20)))

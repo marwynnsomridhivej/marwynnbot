@@ -26,7 +26,7 @@ class Reddit(commands.Cog):
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
         return [bot_id, bot_secret, user_agent]
 
     async def embed_template(self, ctx):

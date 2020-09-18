@@ -19,18 +19,18 @@ class Debug(commands.Cog):
                               description=f"{ctx.author.mention}, your report update request timed out",
                               color=discord.Color.dark_red())
         try:
-            return await message.edit(embed=embed, delete_after=10)
+            return await message.edit(embed=embed)
         except (discord.NotFound, discord.HTTPError, discord.Forbidden):
-            return await ctx.author.send(embed=embed, delete_after=10)
+            return await ctx.author.send(embed=embed)
 
     async def cancel(self, ctx, message: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Report Update Cancelled",
                               description=f"{ctx.author.mention}, your report update request was cancelled",
                               color=discord.Color.dark_red())
         try:
-            return await message.edit(embed=embed, delete_after=10)
+            return await message.edit(embed=embed)
         except (discord.NotFound, discord.HTTPError, discord.Forbidden):
-            return await ctx.author.send(embed=embed, delete_after=10)
+            return await ctx.author.send(embed=embed)
 
     @commands.command()
     async def ping(self, ctx):
@@ -38,7 +38,7 @@ class Debug(commands.Cog):
         ping = discord.Embed(title='Ping', color=discord.colour.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.bot.latency * 1000)}ms')
-        await ctx.send(embed=ping, delete_after=10)
+        await ctx.send(embed=ping)
 
     @commands.group(aliases=['flag'])
     async def report(self, ctx):
@@ -88,7 +88,7 @@ class Debug(commands.Cog):
             insuf = discord.Embed(title="Insufficient User Permissions",
                                   description=f"{ctx.author.mention}, you must be the bot owner to use this command",
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=insuf, delete_after=10)
+            return await ctx.channel.send(embed=insuf)
 
         updates_channel_id = gcmds.env_check("UPDATES_CHANNEL")
         if not updates_channel_id:
@@ -96,7 +96,7 @@ class Debug(commands.Cog):
                                        description=f"{ctx.author.mention}, you must specify the updates channel ID in"
                                                    f"the `.env` file",
                                        color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=no_channel, delete_after=10)
+            return await ctx.channel.send(embed=no_channel)
 
         def confirm(reaction: discord.Reaction, user) -> bool:
             if reaction.emoji in updates_reaction and user.id == ctx.author.id:
@@ -226,7 +226,7 @@ class Debug(commands.Cog):
         shardEmbed = discord.Embed(title="Shard Info",
                                    description=shardDesc,
                                    color=discord.Color.blue())
-        await ctx.channel.send(embed=shardEmbed, delete_after=30)
+        await ctx.channel.send(embed=shardEmbed)
 
 
 def setup(bot):

@@ -135,7 +135,7 @@ class Roles(commands.Cog):
         embed = discord.Embed(title="No Message Found",
                               description=f"{ctx.author.mention}, no reaction roles panel was found for that message ID",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=5)
+        return await ctx.channel.send(embed=embed)
 
     async def user_cancelled(self, ctx, panel: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Reaction Roles Setup Cancelled",
@@ -143,9 +143,9 @@ class Roles(commands.Cog):
                               color=discord.Color.dark_red())
         panel_message = await self.check_panel(panel)
         if not panel_message:
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
         else:
-            return await panel_message.edit(embed=embed, delete_after=10)
+            return await panel_message.edit(embed=embed)
 
     async def timeout(self, ctx, timeout: int, panel: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Reaction Roles Setup Cancelled",
@@ -154,9 +154,9 @@ class Roles(commands.Cog):
                               color=discord.Color.dark_red())
         panel_message = await self.check_panel(panel)
         if not panel_message:
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
         else:
-            return await panel_message.edit(embed=embed, delete_after=10)
+            return await panel_message.edit(embed=embed)
 
     async def success(self, ctx, success_str: str) -> discord.Message:
         embed = discord.Embed(title=f"Successfully {success_str.title()} Reaction Role Panel",
@@ -787,7 +787,7 @@ class Roles(commands.Cog):
                                        description=f"{ctx.author.mention}, you must be the author of that reaction "
                                                    f"roles panel to edit the panel",
                                        color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=not_author, delete_after=10)
+            return await ctx.channel.send(embed=not_author)
 
         panel_embed = discord.Embed(title="Reaction Role Setup Menu",
                                     description=f"{ctx.author.mention}, welcome to MarwynnBot's reaction role setup "
@@ -1015,7 +1015,7 @@ class Roles(commands.Cog):
                                        description=f"{ctx.author.mention}, you must be the author of that reaction "
                                                    f"roles panel to edit the panel",
                                        color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=not_author, delete_after=10)
+            return await ctx.channel.send(embed=not_author)
 
         reactions = ["✅", "❌"]
 

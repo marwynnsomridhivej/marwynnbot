@@ -113,7 +113,7 @@ class Actions(commands.Cog):
             no_api = discord.Embed(title="Missing API Key",
                                    description="Insert your Tenor API Key in the `.env` file",
                                    color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=no_api, delete_after=10)
+            return await ctx.channel.send(embed=no_api)
         cmdNameQuery = ctx.command.name
         query = f"anime {cmdNameQuery}"
         async with aiohttp.ClientSession() as session:

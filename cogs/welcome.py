@@ -232,7 +232,7 @@ class Welcome(commands.Cog):
         embed = discord.Embed(title="No Welcomer Set",
                               description=f"{ctx.author.mention}, no welcomer is set to display for this server",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def delete_welcomer(self, ctx) -> bool:
         try:
@@ -287,7 +287,7 @@ class Welcome(commands.Cog):
         embed = discord.Embed(title="No Leaver Set",
                               description=f"{ctx.author.mention}, you don't have a leaver set up for this server yet",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def delete_leaver(self, ctx) -> bool:
         try:
@@ -733,7 +733,7 @@ class Welcome(commands.Cog):
             embed = discord.Embed(title="Leaver Already Set",
                                   description=f"{ctx.author.mention}, this server already has a leaver set up",
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
 
         def from_user(message: discord.Message) -> bool:
             if message.author.id == ctx.author.id and message.channel.id == ctx.channel.id:

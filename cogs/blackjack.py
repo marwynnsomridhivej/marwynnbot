@@ -409,7 +409,7 @@ class Blackjack(commands.Cog):
                                       color=discord.Color.blue())
             initEmbed.set_thumbnail(url="https://cdn.discordapp.com/attachments/734962101432615006"
                                         "/738390147514499163/chips.png")
-            await ctx.channel.send(embed=initEmbed, delete_after=10)
+            await ctx.channel.send(embed=initEmbed)
 
         player_chips = Chips(balance, bet, ctx, self.bot)
         if not take_bet(player_chips):
@@ -417,7 +417,7 @@ class Blackjack(commands.Cog):
                                   description=f"{ctx.author.mention}, you have `{balance}` credits"
                                               f"\nYour bet of `{bet}` credits exceeds your current balance",
                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=insuf, delete_after=10)
+            await ctx.channel.send(embed=insuf)
             return
 
         hitEmoji = '✅'
@@ -466,7 +466,7 @@ class Blackjack(commands.Cog):
                         bjEmbed = discord.Embed(title="Blackjack Game Canceled",
                                                 description=f"{ctx.author.mention}, your game was cancelled",
                                                 color=discord.Color.dark_red())
-                        await message.edit(embed=bjEmbed, delete_after=10)
+                        await message.edit(embed=bjEmbed)
                         return
                 stopiter = hit_or_stand(deck, player_hand, choice)
 
@@ -498,7 +498,7 @@ class Blackjack(commands.Cog):
                     canceled.set_thumbnail(url='https://cdn.discordapp.com/attachments/734962101432615006'
                                                '/738083697726849034/nocap.jpg')
                     canceled.set_footer(text=f"{ctx.author.name} did not provide a valid reaction within 60 seconds")
-                    await message.edit(embed=canceled, delete_after=10)
+                    await message.edit(embed=canceled)
                     return
 
             if player_hand.value > 21:

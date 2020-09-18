@@ -287,7 +287,7 @@ class Pokedex(commands.Cog):
                                     description=f"{ctx.author.mention}, `{pokemon_name.capitalize()}` is not a valid "
                                                 f"Pokémon",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=5)
+            return await ctx.channel.send(embed=invalid)
 
     @pokedex.command(aliases=['-m', 'moves'])
     async def move(self, ctx, *, move_name: str):
@@ -304,7 +304,7 @@ class Pokedex(commands.Cog):
             invalid = discord.Embed(title="Invalid Move Name",
                                     description=f"{ctx.author.mention}, `{move_name}` is not a valid move",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=5)
+            return await ctx.channel.send(embed=invalid)
 
     @pokedex.command(aliases=['-a'])
     async def ability(self, ctx, *, ability_name_with_flag: str):
@@ -341,7 +341,7 @@ class Pokedex(commands.Cog):
                 invalid = discord.Embed(title="Invalid Ability Name",
                                         description=f"{ctx.author.mention}, `{ability_name}` is not a valid ability",
                                         color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=5)
+            return await ctx.channel.send(embed=invalid)
 
     @pokedex.command(aliases=['-i'])
     async def item(self, ctx, *, item_name: str):
@@ -358,7 +358,7 @@ class Pokedex(commands.Cog):
             invalid = discord.Embed(title="Invalid Item Name",
                                     description=f"{ctx.author.mention}, `{item_name}` is not a valid item",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=5)
+            return await ctx.channel.send(embed=invalid)
 
     @pokedex.command(aliases=['-t'])
     async def type(self, ctx, *, type_name_flag: str):
@@ -390,7 +390,7 @@ class Pokedex(commands.Cog):
             invalid = discord.Embed(title="Invalid Type Name",
                                     description=f"{ctx.author.mention}, `{type_name}` is not a valid type",
                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=invalid, delete_after=5)
+            return await ctx.channel.send(embed=invalid)
 
 
 def setup(bot):

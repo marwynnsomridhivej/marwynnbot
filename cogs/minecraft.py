@@ -45,7 +45,7 @@ class Minecraft(commands.Cog):
             embed = discord.Embed(title="Request Timed Out",
                                   description=f"{ctx.author.mention}, your request was timed out. Please try again later",
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
         players_online = f"Players Online: `{status.players.online}`"
         max_players = f"Max Players: `{status.players.max}`"
         software = f"Software: `{status.software.brand.title()} {status.software.version}`"
@@ -67,7 +67,7 @@ class Minecraft(commands.Cog):
         embed = discord.Embed(title="Invalid Server",
                               description=f"{ctx.author.mention}, no server exists for hostname {host}",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(aliases=['mc'])
     @commands.cooldown(1, 10, commands.BucketType.member)

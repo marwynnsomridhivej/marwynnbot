@@ -196,7 +196,7 @@ class Fun(commands.Cog):
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
 
         if query is None:
             if toSend:
@@ -262,7 +262,7 @@ class Fun(commands.Cog):
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
 
         path = f"imgur{str(query)}"
         query = str(query)
@@ -320,7 +320,7 @@ class Fun(commands.Cog):
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=color)
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
 
         headers = {"x-api-key": api_key}
 

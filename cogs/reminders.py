@@ -183,22 +183,22 @@ class Reminders(commands.Cog):
                               description=f"{ctx.author.mention}, the reminder setup panel was either deleted or could "
                                           f"not be found",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def cancelled(self, ctx, panel: discord.Message) -> discord.Message:
         embed = discord.Embed(title="Reminder Setup Cancelled",
                               description=f"{ctx.author.mention}, the reminder setup was cancelled",
                               color=discord.Color.blue())
         if await self.check_panel_exists(panel):
-            return await panel.edit(embed=embed, delete_after=10)
+            return await panel.edit(embed=embed)
         else:
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
 
     async def not_valid_time(self, ctx) -> discord.Message:
         embed = discord.Embed(title="Invalid Time",
                               description=f"{ctx.author.mention}, you did not provide a valid time",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def create_reminder(self, user_id: int, channel_id: int, guild_id: int,
                               send_time: int, message_content: str, remind_type: str):
@@ -293,7 +293,7 @@ class Reminders(commands.Cog):
         embed = discord.Embed(title="No Reminders",
                               description=f"{ctx.author.mention}, you currently have no reminders scheduled",
                               color=discord.Color.blue())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def get_reminder_type(self, index: int) -> str:
         async with self.bot.db.acquire() as con:

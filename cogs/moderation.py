@@ -235,7 +235,7 @@ class Moderation(commands.Cog):
                                    color=discord.Color.blue())
         clearEmbed.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/734962101432615006/734962158290468944/eraser.png")
-        await ctx.channel.send(embed=clearEmbed, delete_after=5)
+        await ctx.channel.send(embed=clearEmbed)
 
     @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
     @commands.bot_has_permissions(manage_roles=True)
@@ -292,12 +292,12 @@ class Moderation(commands.Cog):
                 unmuteEmbed = discord.Embed(title="No Muted Role",
                                             description="There is no muted role on this server.",
                                             color=discord.Color.dark_red())
-                await ctx.channel.send(embed=unmuteEmbed, delete_after=5)
+                await ctx.channel.send(embed=unmuteEmbed)
             if not (role in member.roles):
                 unmuteEmbed = discord.Embed(title=f"User {member} Not Muted",
                                             description="You cannot unmute an already unmuted user.",
                                             color=discord.Color.dark_red())
-                await ctx.channel.send(embed=unmuteEmbed, delete_after=5)
+                await ctx.channel.send(embed=unmuteEmbed)
             else:
                 await member.remove_roles(role)
                 unmuteEmbed = discord.Embed(title=f"Unmuted {member}",
@@ -355,7 +355,7 @@ class Moderation(commands.Cog):
                 error = discord.Embed(title='Error',
                                       description='User could not be found!',
                                       color=discord.Color.dark_red())
-                await ctx.channel.send(embed=error, delete_after=5)
+                await ctx.channel.send(embed=error)
 
             bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
             if user in bans:
@@ -377,7 +377,7 @@ class Moderation(commands.Cog):
                 notBanned.add_field(name='Moderator',
                                     value=ctx.author.mention,
                                     inline=False)
-                await ctx.channel.send(embed=notBanned, delete_after=5)
+                await ctx.channel.send(embed=notBanned)
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
@@ -448,7 +448,7 @@ class Moderation(commands.Cog):
                                   description=f"{ctx.author.mention}, please specify the member you want to expunge "
                                   "warn records",
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed, delete_after=10)
+            return await ctx.channel.send(embed=embed)
         administered = await self.get_administered_warns(ctx, member)
         if not administered:
             embed = discord.Embed(title="No Warnings Given",
@@ -567,7 +567,7 @@ class Moderation(commands.Cog):
                                   description=description,
                                   color=color)
         modsEmbed.set_thumbnail(url="https://www.pinclipart.com/picdir/big/529-5290012_gavel-clipart.png")
-        await ctx.channel.send(embed=modsEmbed, delete_after=60)
+        await ctx.channel.send(embed=modsEmbed)
 
 
 def setup(bot):

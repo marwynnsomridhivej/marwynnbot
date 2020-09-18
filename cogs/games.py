@@ -54,7 +54,7 @@ class Games(commands.Cog):
             balanceEmbed.set_thumbnail(
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
-            await ctx.channel.send(embed=balanceEmbed, delete_after=30)
+            await ctx.channel.send(embed=balanceEmbed)
 
         else:
             if color == len(member):
@@ -67,7 +67,7 @@ class Games(commands.Cog):
             balanceEmbed.set_thumbnail(
                 url="https://cdn.discordapp.com/attachments/734962101432615006/738390147514499163"
                     "/chips.png")
-            await ctx.channel.send(embed=balanceEmbed, delete_after=30)
+            await ctx.channel.send(embed=balanceEmbed)
 
     @commands.command(aliases=['gamestats', 'gs'])
     async def gameStats(self, ctx, member: typing.Optional[discord.Member] = None, game: str = None):
@@ -115,13 +115,13 @@ class Games(commands.Cog):
             errorEmbed = discord.Embed(title="No Amount Specified",
                                        description=f"{ctx.author.mention}, you must specify a credit amount to transfer",
                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=errorEmbed, delete_after=10)
+            await ctx.channel.send(embed=errorEmbed)
             cmdExit = True
         if member is None:
             errorEmbed = discord.Embed(title="No User Specified",
                                        description=f"{ctx.author.mention}, you must specify user to transfer credit to",
                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=errorEmbed, delete_after=10)
+            await ctx.channel.send(embed=errorEmbed)
             cmdExit = True
         if cmdExit:
             return
@@ -146,7 +146,7 @@ class Games(commands.Cog):
                                                    f"```{(amount * (int(len(userlist)) - 1))} {spell}```, only have"
                                                    f"```{balance} {spell}```",
                                        color=discord.Color.dark_red())
-            await ctx.channel.send(embed=errorEmbed, delete_after=10)
+            await ctx.channel.send(embed=errorEmbed)
             return
         else:
             if amount != 1:
@@ -196,7 +196,7 @@ class Games(commands.Cog):
                     confirmEmbed = discord.Embed(title="Credits Transfer Cancelled",
                                                  description=f"{ctx.author.mention} cancelled the transfer\n",
                                                  color=discord.Color.dark_red())
-                    await message.edit(embed=confirmEmbed, delete_after=10)
+                    await message.edit(embed=confirmEmbed)
                     return
             except asyncio.TimeoutError:
                 await message.clear_reactions()
@@ -206,7 +206,7 @@ class Games(commands.Cog):
                 canceled.set_thumbnail(url='https://cdn.discordapp.com/attachments/734962101432615006'
                                            '/738083697726849034/nocap.jpg')
                 canceled.set_footer(text=f"{ctx.author.name} did not provide a valid reaction within 60 seconds")
-                await message.edit(embed=canceled, delete_after=10)
+                await message.edit(embed=canceled)
                 return
 
 

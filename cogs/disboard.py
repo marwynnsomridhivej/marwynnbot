@@ -145,7 +145,7 @@ class Disboard(commands.Cog):
                               description=f"{ctx.author.mention}, you must register this server to `Disboard` before "
                               "you can use this command",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def check_bump_reminder(self, ctx) -> bool:
         async with self.bot.db.acquire() as con:
@@ -156,7 +156,7 @@ class Disboard(commands.Cog):
         embed = discord.Embed(title="Bump Message Already Set",
                               description=f"{ctx.author.mention}, there is already a bump reminder set",
                               color=discord.Color.dark_red())
-        return await ctx.channel.send(embed=embed, delete_after=10)
+        return await ctx.channel.send(embed=embed)
 
     async def set_bump_reminder(self, ctx, channel_id: int, message_content: str = None) -> bool:
         if not await self.disboard_joined(ctx) or not await self.bot.fetch_channel(channel_id):

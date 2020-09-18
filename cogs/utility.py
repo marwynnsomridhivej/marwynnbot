@@ -167,7 +167,7 @@ class Utility(commands.Cog):
             no_api = discord.Embed(title="Missing Owner ID",
                                    description="This command is disabled",
                                    color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=no_api, delete_after=10)
+            return await ctx.channel.send(embed=no_api)
         owner = self.bot.get_user(int(owner_id))
         message = await owner.send(embed=feature_embed)
         feature_embed.set_footer(text=f"{timestamp}\nMessage ID: {message.id}")
@@ -205,7 +205,7 @@ class Utility(commands.Cog):
 
         await user.send(embed=reply_embed)
         reply_embed.description = f"Message was successfully sent:\n\n{raw_reply}"
-        await ctx.author.send(embed=reply_embed, delete_after=60)
+        await ctx.author.send(embed=reply_embed)
         self.remove_entry(message_id)
 
     @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
@@ -293,7 +293,7 @@ class Utility(commands.Cog):
                                            description=f"{ctx.author.mention}, this server already has a server stats "
                                            "panel set up!",
                                            color=discord.Color.dark_red())
-                    return await ctx.channel.send(embed=exists, delete_after=10)
+                    return await ctx.channel.send(embed=exists)
             else:
                 category = await ctx.guild.create_category_channel("📊 Server Stats 📊")
                 await category.edit(position=0)
@@ -338,7 +338,7 @@ class Utility(commands.Cog):
         gmt = discord.Embed(title=title,
                             description=description,
                             color=color)
-        await ctx.channel.send(embed=gmt, delete_after=10)
+        await ctx.channel.send(embed=gmt)
 
     @commands.command()
     async def uptime(self, ctx):
