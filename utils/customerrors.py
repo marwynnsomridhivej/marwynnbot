@@ -47,7 +47,7 @@ class RedirectSetError(PostgreSQLError):
 
 class RedirectSearchError(PostgreSQLError):
     def __init__(self):
-        self.embed = discord.Embed(title="Redirect Set Error",
+        self.embed = discord.Embed(title="Redirect Retrieve Error",
                                    description="An error occured while retrieving this server's redirects",
                                    color=discord.Color.dark_red())
 
@@ -56,6 +56,13 @@ class RedirectRemoveError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Remove Error",
                                    description="An error occured while removing this server's redirects",
+                                   color=discord.Color.dark_red())
+
+
+class InvalidCommandSpecified(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="No Valid Commands Specified",
+                                   description="An error occured while searching for valid commands",
                                    color=discord.Color.dark_red())
 
 
