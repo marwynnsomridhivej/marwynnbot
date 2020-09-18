@@ -73,6 +73,12 @@ class GlobalCMDS:
             except Exception:
                 pass
 
+    async def confirmation(self, ctx, description):
+        embed = discord.Embed(title="Confirmation",
+                              description=description + " React with ✅ to confirm or 🛑 to cancel",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
     async def timeout(self, ctx: commands.Context, title: str, timeout: int) -> discord.Message:
         embed = discord.Embed(title=f"{title.title()} Timed Out",
                               description=f"{ctx.author.mention}, your {title} timed out after {timeout} seconds"
