@@ -38,6 +38,27 @@ class AutoroleSearchError(PostgreSQLError):
                                    color=discord.Color.dark_red())
 
 
+class RedirectSetError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Redirect Set Error",
+                                   description="An error occured while setting this server's redirects",
+                                   color=discord.Color.dark_red())
+
+
+class RedirectSearchError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Redirect Set Error",
+                                   description="An error occured while retrieving this server's redirects",
+                                   color=discord.Color.dark_red())
+
+
+class RedirectRemoveError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Redirect Remove Error",
+                                   description="An error occured while removing this server's redirects",
+                                   color=discord.Color.dark_red())
+
+
 class TagError(commands.CommandError):
     def __init__(self, message=None, error=None, *args):
         super().__init__(message=message, *args)
