@@ -135,8 +135,7 @@ class Utility(commands.Cog):
                               " invite link that you can share:\n\n https://discord.com/oauth2/authorize?bot_id"
                               "=623317451811061763&scope=bot&permissions=2146958583",
                               color=discord.Color.blue(),
-                              url="https://discord.com/oauth2/authorize?bot_id=623317451811061763&scope=bot&permiss"
-                              "ions=2146958583")
+                              url="https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958839")
         await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True)
@@ -227,6 +226,18 @@ class Utility(commands.Cog):
                                    description=description,
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=emojiEmbed)
+
+    @commands.command(aliases=['info', 'si', 'serverinfo'])
+    async def serverInfo(self, ctx):
+        description = (f"Owner: {ctx.guild.owner.mention}",
+                       f"Created At: `{str(ctx.guild.created_at)[:-7]}`",
+                       f"Members: `{ctx.guild.member_count}`",
+                       f"Roles: `{len(ctx.guild.roles)}`",
+                       f"Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
+                       f"Boosts: `{len(ctx.guild.premium_subscribers)}`")
+        embed = discord.Embed(title=ctx.guild.name, description="\n".join(description), color=discord.Color.blue())
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
