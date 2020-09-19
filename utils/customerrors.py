@@ -80,6 +80,13 @@ class ToDoSetError(ToDoError):
         self.embed.description = "An error occurred while setting the todo list"
 
 
+class ToDoUpdateError(ToDoError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Todo Update Error"
+        self.embed.description = "An error occurred while updating the todo list"
+
+
 class ToDoSearchError(ToDoError):
     def __init__(self):
         super().__init__()
@@ -95,10 +102,17 @@ class ToDoRemoveError(ToDoError):
 
 
 class ToDoEmptyError(ToDoError):
-    def __init__(self, user: discord.User):
+    def __init__(self, user: discord.User, status: str = "set"):
         super().__init__()
         self.embed.title = "No Todos Set"
-        self.embed.description = f"{user.mention}, you do not have any todos currently set or active"
+        self.embed.description = f"{user.mention}, you currently do not have any todos that are {status}"
+
+
+class ToDoCheckError(ToDoError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Todo Verification Error"
+        self.embed.description = "The IDs that were passed could not be verified, or were invalid"
 
 
 class TagError(commands.CommandError):
