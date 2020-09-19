@@ -66,6 +66,41 @@ class InvalidCommandSpecified(PostgreSQLError):
                                    color=discord.Color.dark_red())
 
 
+class ToDoError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="An Error Occurred",
+                                   description="An error occurred while performing operations on todo lists",
+                                   color=discord.Color.dark_red())
+
+
+class ToDoSetError(ToDoError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Todo Set Error"
+        self.embed.description = "An error occurred while setting the todo list"
+
+
+class ToDoSearchError(ToDoError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Todo Retrieve Error"
+        self.embed.description = "An error occurred while retrieving the todo list"
+
+
+class ToDoRemoveError(ToDoError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Todo Remove Error"
+        self.embed.description = "An error occurred while removing items from the todo list"
+
+
+class ToDoEmptyError(ToDoError):
+    def __init__(self, user: discord.User):
+        super().__init__()
+        self.embed.title = "No Todos Set"
+        self.embed.description = f"{user.mention}, you do not have any todos currently set or active"
+
+
 class TagError(commands.CommandError):
     def __init__(self, message=None, error=None, *args):
         super().__init__(message=message, *args)
