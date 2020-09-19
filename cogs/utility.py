@@ -239,6 +239,13 @@ class Utility(commands.Cog):
         embed.set_image(url=ctx.guild.icon_url)
         return await ctx.channel.send(embed=embed)
 
+    @commands.command(aliases=['pfp'])
+    async def profile(self, ctx, member: discord.Member):
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.set_image(url=member.avatar_url)
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
         serverPrefix = await gcmds.prefix(ctx)
