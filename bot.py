@@ -44,7 +44,7 @@ async def get_prefix(self: commands.AutoShardedBot, message):
     return commands.when_mentioned_or(*extras)(self, message)
 
 
-async def run():
+async def run(uptime):
     credentials = {
         "user": os.getenv("PG_USER"),
         "password": os.getenv("PG_PASSWORD"),
@@ -60,7 +60,8 @@ async def run():
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
     bot = Bot(command_prefix=get_prefix, help_command=None, shard_count=1, description=description, db=db,
-              fetch_offline_members=True, status=discord.Status.online, activity=startup)
+              fetch_offline_members=True, status=discord.Status.online, activity=startup, uptime=uptime)
+
     try:
         await bot.start(gcmds.env_check("TOKEN"))
     except KeyboardInterrupt:
@@ -80,7 +81,7 @@ class Bot(commands.AutoShardedBot):
             status=kwargs['status'],
             activity=kwargs['activity']
         )
-        self.uptime = int(datetime.now().timestamp())
+        self.uptime = kwargs['uptime']
         self.db = kwargs.pop("db")
         globalcommands.db = self.db
         globalcommands.bot = self
@@ -312,6 +313,15 @@ class Bot(commands.AutoShardedBot):
                     at += 1
         return at
 
-
+uptime = int(datetime.now().timestamp())
 loop = asyncio.get_event_loop()
-loop.run_until_complete(run())
+while True:
+    try:
+        loop.run_until_complete(run(uptime))
+    except KeyboardInterrupt:
+        quit_conf = input("Restart MarwynnBot (y/n): ")
+        if quit_conf == "y":
+            continue
+        else:
+            break
+loop.close()
