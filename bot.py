@@ -87,7 +87,8 @@ class Bot(commands.AutoShardedBot):
         globalcommands.bot = self
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
-        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_guild_remove, self.on_member_join)
+        func_listen = (self.on_message, self.on_command_error, self.on_guild_join,
+                       self.on_guild_remove, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
@@ -122,7 +123,7 @@ class Bot(commands.AutoShardedBot):
                     old_val = old_dict[command]
                     new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
                     op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
-                    f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
+                          f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
                 except KeyError:
                     old_val = 0
                     new_dict = "{" + f'"{command}": 1' + "}"
@@ -312,6 +313,7 @@ class Bot(commands.AutoShardedBot):
                 for alias in command.aliases:
                     at += 1
         return at
+
 
 uptime = int(datetime.now().timestamp())
 loop = asyncio.get_event_loop()
