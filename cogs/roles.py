@@ -331,13 +331,13 @@ class Roles(commands.Cog):
             async with self.bot.db.acquire() as con:
                 if "user" in flag.lower():
                     flag = "user"
-                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id}")
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='member' AND guild_id={ctx.guild.id} ORDER BY role_id DESC")
                 elif "bot" in flag.lower():
                     flag = "bot"
-                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id}")
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE type='bot' AND guild_id={ctx.guild.id} ORDER BY role_id DESC")
                 else:
                     flag = "all"
-                    result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id}")
+                    result = await con.fetch(f"SELECT * FROM autoroles WHERE guild_id={ctx.guild.id} ORDER BY type DESC")
         except Exception:
             raise customerrors.AutoroleSearchError()
 
@@ -349,7 +349,7 @@ class Roles(commands.Cog):
 
         entries = [
             f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
-        pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=10, show_entry_count=True)
+        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = f"{flag.title()} Autoroles"
         await pag.paginate()
 
