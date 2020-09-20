@@ -50,6 +50,7 @@ class Utility(commands.Cog):
                     index = 0
                     for voice_channel in category.voice_channels:
                         if not str(voice_channel.name) == str(names[index]):
+                            print(voice_channel.name)
                             await voice_channel.edit(name=names[index])
                         index += 1
                     exists = True
