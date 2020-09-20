@@ -12,6 +12,7 @@ import asyncio
 from datetime import datetime
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+from lavalink.exceptions import NodeException
 from utils import customerrors, globalcommands, context
 
 
@@ -206,19 +207,13 @@ class Bot(commands.AutoShardedBot):
                                     description=f"{ctx.author.mention}, `[{error.param.name}]` is a required argument",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=req_arg)
-        elif isinstance(error, discord.Forbidden):
-            forbidden = discord.Embed(title="403 Forbidden",
-                                      description=f"{ctx.author.mention}, I cannot execute this command because I lack "
-                                      f"the permissions to do so, or my role is lower in the hierarchy.",
-                                      color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=forbidden)
-        elif isinstance(error, discord.ext.commands.MissingPermissions):
+        elif isinstance(error, commands.MissingPermissions):
             missing = discord.Embed(title="Insufficient User Permissions",
                                     description=f"{ctx.author.mention}, to execute this command, you need "
                                                 f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=missing)
-        elif isinstance(error, discord.ext.commands.BotMissingPermissions):
+        elif isinstance(error, commands.BotMissingPermissions):
             missing = discord.Embed(title="Insufficient Bot Permissions",
                                     description=f"{ctx.author.mention}, to execute this command, I need "
                                                 f"`{'` `'.join(error.missing_perms).replace('_', ' ').title()}`",
@@ -246,7 +241,7 @@ class Bot(commands.AutoShardedBot):
             cooldown = discord.Embed(title="Command on Cooldown",
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
-            await ctx.channel.send(embed=cooldown)
+            return await ctx.channel.send(embed=cooldown)
         elif isinstance(error, customerrors.TagError):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, customerrors.PremiumError):
@@ -262,6 +257,17 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, commands.CheckFailure):
             pass
         else:
+            if isinstance(error.original, NodeException):
+                embed = discord.Embed(title="Music Error",
+                                  description="NodeException: " + str(error.original),
+                                  color=discord.Color.dark_red())
+                return await ctx.channel.send(embed=embed)
+            elif isinstance(error.original, discord.Forbidden):
+                forbidden = discord.Embed(title="403 Forbidden",
+                                            description=f"{ctx.author.mention}, I cannot execute this command because I lack "
+                                            f"the permissions to do so, or my role is lower in the hierarchy.",
+                                            color=discord.Color.dark_red())
+                return await ctx.channel.send(embed=forbidden)
             raise error
 
     async def on_guild_join(self, guild):
