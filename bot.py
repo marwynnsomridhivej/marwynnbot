@@ -257,6 +257,8 @@ class Bot(commands.AutoShardedBot):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, customerrors.PostgreSQLError):
             return await ctx.channel.send(embed=error.embed)
+        elif isinstance(error, customerrors.MathError):
+            return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, commands.CheckFailure):
             pass
         else:
