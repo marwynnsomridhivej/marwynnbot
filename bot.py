@@ -314,15 +314,5 @@ class Bot(commands.AutoShardedBot):
         return at
 
 uptime = int(datetime.now().timestamp())
-while True:
-    try:
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(run(uptime))
-    except KeyboardInterrupt:
-        if not loop.is_closed():
-            loop.close()
-        quit_conf = input("Restart MarwynnBot (y/n): ")
-        if quit_conf == "y":
-            continue
-        else:
-            break
+loop = asyncio.get_event_loop()
+loop.run_until_complete(run(uptime))
