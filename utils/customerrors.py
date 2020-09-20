@@ -364,3 +364,17 @@ class BlacklistOperationError(commands.CommandError):
                                    description="An error occurred while trying to operate on the blacklist. Please check "
                                    "to see if the user was already blacklisted or if any table constraints were violated",
                                    color=discord.Color.dark_red())
+
+
+class MathError(commands.CommandError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Math Error",
+                                   description="An error occurred while trying to parse or solve an equation or expression input",
+                                   color=discord.Color.dark_red())
+
+
+class InvalidExpression(MathError):
+    def __init__(self, eq: str):
+        super().__init__()
+        self.embed.title = "Invalid Expression"
+        self.embed.description = f"```{eq}``` is not a valid expression or equation"
