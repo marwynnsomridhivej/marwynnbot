@@ -1,6 +1,5 @@
 import json
 import discord
-import mimetypes
 import os
 from asyncio import sleep
 from datetime import datetime, timedelta
@@ -245,19 +244,11 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['pfp'])
     async def profile(self, ctx, member: discord.Member):
+        icon = member.avatar_url_as(static_format="png", size=4096)
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
-
-        icon = member.avatar_url_as(static_format="png", size=4096)
-        mimetype, encoding = mimetypes.guess_type(str(icon))
-        if mimetype and mimetype == "image/gif":
-            filename = "image.gif"
-        else:
-            filename = "image.png"
-        output_img = discord.File(fp=BytesIO(await icon.read()), filename=filename)
-
-        embed.set_image(url=f"attachment://{filename}")
-        return await ctx.channel.send(file=output_img, embed=embed)
+        embed.set_image(url=icon)
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
