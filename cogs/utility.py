@@ -43,6 +43,7 @@ class Utility(commands.Cog):
         for guild_id in guild_ids:
             guild = self.bot.get_guild(int(guild_id))
             exists = False
+            print(guild.name)
             for category in guild.categories:
                 if "server stats" in category.name.lower():
                     names = await self.get_guild_info(guild)
@@ -291,10 +292,8 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
     @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
-        confirm = False
         for category in ctx.guild.categories:
             if "server stats" in category.name.lower():
-                confirm = True
                 if reset == "reset":
                     for channel in category.channels:
                         await channel.delete()
