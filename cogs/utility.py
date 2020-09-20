@@ -43,15 +43,16 @@ class Utility(commands.Cog):
         for guild_id in guild_ids:
             guild = self.bot.get_guild(int(guild_id))
             exists = False
-            print(guild.name)
             for category in guild.categories:
                 if "server stats" in category.name.lower():
                     names = await self.get_guild_info(guild)
                     index = 0
                     for voice_channel in category.voice_channels:
                         if not str(voice_channel.name) == str(names[index]):
-                            print(voice_channel.name)
-                            await voice_channel.edit(name=names[index])
+                            try:
+                                await voice_channel.edit(name=names[index])
+                            except discord.Forbidden:
+                                pass
                         index += 1
                     exists = True
                     break
