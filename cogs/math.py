@@ -4,8 +4,6 @@ import sympy
 
 from discord.ext import commands
 from io import BytesIO
-from sympy import latex
-from sympy.parsing.latex import parse_latex, LaTeXParsingError
 from urllib.parse import quote
 
 from utils import globalcommands, paginator, customerrors
