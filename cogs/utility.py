@@ -1,10 +1,11 @@
 import json
 import discord
+import mimetypes
 import os
 from asyncio import sleep
 from datetime import datetime, timedelta
+from io import BytesIO
 from discord.ext import commands, tasks
-from discord.ext.commands import MissingPermissions, BotMissingPermissions, CommandInvokeError
 from utils import globalcommands, paginator
 
 
@@ -243,8 +244,17 @@ class Utility(commands.Cog):
     async def profile(self, ctx, member: discord.Member):
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
-        embed.set_image(url=member.avatar_url)
-        return await ctx.channel.send(embed=embed)
+
+        icon = member.avatar_url_as(static_format="png", size=4096)
+        mimetype, encoding = mimetypes.guess_type(str(icon))
+        if mimetype and mimetype == "image/gif":
+            filename = "image.gif"
+        else:
+            filename = "image.png"
+        output_img = discord.File(fp=BytesIO(await icon.read()), filename=filename)
+
+        embed.set_image(url=f"attachment://{filename}")
+        return await ctx.channel.send(file=output_img, embed=embed)
 
     @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
     async def prefix(self, ctx):
