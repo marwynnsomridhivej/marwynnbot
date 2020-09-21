@@ -87,7 +87,7 @@ class Bot(commands.AutoShardedBot):
         globalcommands.db = self.db
         globalcommands.bot = self
         gcmds = globalcommands.GlobalCMDS(bot=self)
-        func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
+        func_checks = (self.check_blacklist, self.check_locks, self.disable_dm_exec, context.redirect)
         func_listen = (self.on_message, self.on_command_error, self.on_guild_join,
                        self.on_guild_remove, self.on_member_join)
         for func in func_checks:
@@ -189,6 +189,26 @@ class Bot(commands.AutoShardedBot):
                     return False
 
         return False if blist else True
+
+    async def check_locks(self, ctx):
+        await self.wait_until_ready()
+        async with self.db.acquire() as con:
+            try_ae = await con.fetchval(f"SELECT channel_id FROM locks WHERE guild_id={ctx.guild.id} AND type='all_except'")
+            if not try_ae:
+                lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={ctx.channel.id}")
+                if lock_type and lock_type != "unlocked":
+                    return False
+                else:
+                    return True
+            else:
+                if int(try_ae) == ctx.channel.id:
+                    return True
+                else:
+                    lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={ctx.channel.id}")
+                    if not lock_type or lock_type != "unlocked":
+                        return False
+                    else:
+                        return True
 
     async def disable_dm_exec(self, ctx):
         if not ctx.guild and (ctx.cog.qualified_name in DISABLED_COGS or ctx.command.name in DISABLED_COMMANDS):
