@@ -23,11 +23,10 @@ class Todo(commands.Cog):
 
     async def todo_help(self, ctx):
         pfx = f"{await gcmds.prefix(ctx)}todo"
-        description = (f"{ctx.author.mention}, the base command is `{pfx}` *alias = `td` `todos`*. Using `{pfx}` will display all your currently "
-                       "active todos. \nThe `todo` commands serve as an alternative to `reminders`, which are scheduled to "
-                       "fire at a specific point in time, or on a defined interval. If you just want an organised list "
-                       "of tasks to complete, or are not sure when you want to complete that task, then use `todo`"
-                       "\n\nHere are all the subcommands for `todo`")
+        description = (f"{ctx.author.mention}, the base command is `{pfx}` *alias = `td` `todos`*. The `todo` commands "
+                       "serve as an alternative to `reminders`, which are scheduled to fire at a specific point in time,"
+                       " or on a defined interval. If you just want an organised list of tasks to complete, or are not "
+                       "sure when you want to complete that task, then use `todo`\n\nHere are all the subcommands for `todo`")
         tset = (f"**Usage:** `{pfx} create [item]`",
                 "**Returns:** An embed that confirms your todo was successfully created, or added to the current todo list",
                 "**Aliaes:** `-s` `add`",
@@ -63,7 +62,7 @@ class Todo(commands.Cog):
               ("Complete", tcomplete), ("Reset", treset), ("Remove", tremove)]
         embed = discord.Embed(title="Todo Help", description=description, color=discord.Color.blue())
         for name, value in nv:
-            embed.add_field(name=name, value=value, inline=False)
+            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
         return await ctx.channel.send(embed=embed)
 
     async def check_todos(self, ctx, ids):
@@ -96,7 +95,7 @@ class Todo(commands.Cog):
             if list and (req_active or req_complete):
                 raise customerrors.ToDoEmptyError(ctx.author, status=status)
             else:
-                raise customerrors.ToDoEmptyError(ctx.author, status=status)
+                raise customerrors.ToDoEmptyError(ctx.author)
         if detailed:
             if list and not (req_active or req_complete):
                 return [f"**{(base64.urlsafe_b64decode(str.encode(item['message_content']))).decode('ascii')}**"
@@ -161,10 +160,7 @@ class Todo(commands.Cog):
 
     @commands.group(invoke_without_command=True, aliases=['td', 'todos'])
     async def todo(self, ctx):
-        entries = await self.get_todos(ctx, req_active=True)
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
-        pag.embed.set_author(name=f"{ctx.author.display_name}'s Todo List", icon_url=ctx.author.avatar_url)
-        return await pag.paginate()
+        return await self.todo_help(ctx)
 
     @todo.command(aliases=['-s', 'create', 'add'])
     async def todo_create(self, ctx, *, entry: str):
@@ -209,9 +205,9 @@ class Todo(commands.Cog):
             title = f"All Todos Created"
         elif flag == "active":
             entries = await self.get_todos(ctx, req_active=True, list=True, detailed=True)
-            title = "All Active Todos"
+            title = "Your Active Todos"
         elif flag in ["done", "complete", "completed", "finished"]:
-            title = "All Completed Todos"
+            title = "Your Completed Todos"
             entries = await self.get_todos(ctx, req_complete=True, list=True, detailed=True)
         pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = title
