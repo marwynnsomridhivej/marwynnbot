@@ -243,7 +243,7 @@ class Utility(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['pfp'])
-    async def profile(self, ctx, member: discord.Member):
+    async def profile(self, ctx, *, member: discord.Member):
         icon = member.avatar_url_as(static_format="png", size=4096)
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
