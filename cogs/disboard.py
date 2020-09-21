@@ -119,12 +119,7 @@ class Disboard(commands.Cog):
                   "**Special Cases:** You must satisfy the special case for `edit`")
         invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`",
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
-        kick = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard kick`",
-                "**Returns:** An embed that confirms if `Disboard` bot was successfully kicked from the server",
-                "**Aliases:** `leave`",
-                "**Special Cases:** You must satisfy the special case for `create`. It is recommended that you kick "
-                "the `Disboard` bot this way because it will automatically delete any set bump reminders as well")
-        nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite), ("Kick", kick)]
+        nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite)]
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
@@ -413,7 +408,7 @@ class Disboard(commands.Cog):
                               color=discord.Color.blue())
         for name, value in name_value:
             embed.add_field(name=name,
-                            value=value,
+                            value="> " + value,
                             inline=False)
         return await ctx.channel.send(embed=embed)
 
