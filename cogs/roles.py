@@ -172,6 +172,34 @@ class Roles(commands.Cog):
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
+    async def rr_help(self, ctx):
+        message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
+            f"roles panel that you have created. You will be unable to edit the panel if you " \
+            f"provide an invalid message ID or provide a message ID of a panel that was " \
+            f"not created by you"
+        embed = discord.Embed(title="ReactionRoles Help Menu",
+                              description=f"All reaction roles commands can be accessed using "
+                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
+                              f"Below is a list of all the valid options",
+                              color=discord.Color.blue())
+        rrcreate = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`",
+                    f"**Returns:** Interactive reaction roles setup panel",
+                    f"**Aliases:** `-c` `start` `make`")
+        rredit = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`",
+                  f"**Returns:** Interactive reaction roles edit panel",
+                  f"**Aliases:** `-e` `adjust`",
+                  f"**Special Cases:** {message_id_message}")
+        rrdelete = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`",
+                    f"**Returns:** Message that details status of the deletion",
+                    f"**Aliases:** `-d` `-rm` `del`",
+                    f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
+                    f"MarwynnBot will delete the panel's record from its database of reaction role panels")
+        rrur = ("**Hex Color Picker:** https://www.google.com/search?q=color+picker",)
+        nv = [("Create", rrcreate), ("Edit", rredit), ("Delete", rrdelete), ("Useful Resources", rrur)]
+        for name, value in nv:
+            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
+        return await ctx.channel.send(embed=embed)
+
     async def send_rr_message(self, ctx, channel: discord.TextChannel, send_embed: discord.Embed,
                               role_emoji: list, type_name: str):
         rr_message = await channel.send(embed=send_embed)
@@ -505,36 +533,7 @@ class Roles(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
     async def reactionrole(self, ctx):
-        message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
-            f"roles panel that you have created. You will be unable to edit the panel if you " \
-            f"provide an invalid message ID or provide a message ID of a panel that was " \
-            f"not created by you"
-        embed = discord.Embed(title="ReactionRoles Help Menu",
-                              description=f"All reaction roles commands can be accessed using "
-                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
-                              f"Below is a list of all the valid options",
-                              color=discord.Color.blue())
-        embed.add_field(name="Create",
-                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`\n"
-                        f"**Returns:** Interactive reaction roles setup panel\n"
-                        f"**Aliases:** `-c` `start` `make`")
-        embed.add_field(name="Edit",
-                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`\n"
-                        f"**Returns:** Interactive reaction roles edit panel\n"
-                        f"**Aliases:** `-e` `adjust`\n"
-                        f"**Special Cases:** {message_id_message}",
-                        inline=False)
-        embed.add_field(name="Delete",
-                        value=f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`\n"
-                        f"**Returns:** Message that details status of the deletion\n"
-                        f"**Aliases:** `-d` `-rm` `del`\n"
-                        f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
-                        f"MarwynnBot will delete the panel's record from its database of reaction role panels",
-                        inline=False)
-        embed.add_field(name="Useful Resources",
-                        value="**Hex Color Picker:** https://www.google.com/search?q=color+picker",
-                        inline=False)
-        return await ctx.channel.send(embed=embed)
+        return await self.rr_help(ctx)
 
     @reactionrole.command(aliases=['-ls'])
     async def list(self, ctx, flag: str = None):
