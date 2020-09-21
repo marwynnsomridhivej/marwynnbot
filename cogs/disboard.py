@@ -104,34 +104,32 @@ class Disboard(commands.Cog):
         description = (f"{ctx.author.mention}, this is MarwynnBot's Disboard integration. MarwynnBot's many functions "
                        f"are listed here below. The base command is {await gcmds.prefix(ctx)}disboard [option]. "
                        "Here are all the valid options for the `[option]` argument")
-        create = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard create`\n"
-                  "**Returns:** An interactive setup panel that will make your disboard bump reminder\n"
-                  "**Aliases:** `-c` `make` `start`\n"
+        create = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard create`",
+                  "**Returns:** An interactive setup panel that will make your disboard bump reminder",
+                  "**Aliases:** `-c` `make` `start`",
                   "**Special Cases:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
-        edit = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard edit`\n"
-                "**Returns:** An interactive setup panel that will edit your current disboard bump reminder\n"
-                "**Aliases:** `-e` `adjust`\n"
+        edit = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard edit`",
+                "**Returns:** An interactive setup panel that will edit your current disboard bump reminder",
+                "**Aliases:** `-e` `adjust`",
                 "**Special Cases:** You must satisfy the special case for `create` and currently have a working bump "
                 "reminder set")
-        delete = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard delete`\n"
-                  "**Returns:** A confirmation panel that will delete your current disboard bump reminder\n"
-                  "**Aliases:** `-rm` `trash` `cancel`\n"
+        delete = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard delete`",
+                  "**Returns:** A confirmation panel that will delete your current disboard bump reminder",
+                  "**Aliases:** `-rm` `trash` `cancel`",
                   "**Special Cases:** You must satisfy the special case for `edit`")
-        invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`\n"
+        invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`",
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
-        kick = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard kick`\n"
-                "**Returns:** An embed that confirms if `Disboard` bot was successfully kicked from the server\n"
-                "**Aliases:** `leave`\n"
-                "**Special Cases:** You must satisfy the special case for `create`\nIt is recommended that you kick "
+        kick = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard kick`",
+                "**Returns:** An embed that confirms if `Disboard` bot was successfully kicked from the server",
+                "**Aliases:** `leave`",
+                "**Special Cases:** You must satisfy the special case for `create`. It is recommended that you kick "
                 "the `Disboard` bot this way because it will automatically delete any set bump reminders as well")
-        name_value = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite), ("Kick", kick)]
+        nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite), ("Kick", kick)]
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
-        for name, value in name_value:
-            embed.add_field(name=name,
-                            value=value,
-                            inline=False)
+        for name, value in nv:
+            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
         return await ctx.channel.send(embed=embed)
 
     async def disboard_joined(self, ctx) -> bool:
