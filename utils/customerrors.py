@@ -38,6 +38,25 @@ class AutoroleSearchError(PostgreSQLError):
                                    color=discord.Color.dark_red())
 
 
+class LockException(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Invalid Lock Operation",
+                                   description="An error occurred due to an invalid lock oepration",
+                                   color=discord.Color.dark_red())
+
+
+class LockAllExcept(LockException):
+    def __init__(self):
+        super().__init__()
+        self.embed.description = "You cannot lock all channels, otherwise, MarwynnBot won't be able to respond to any commands!"
+
+
+class NoLocksExist(LockException):
+    def __init__(self):
+        super().__init__()
+        self.embed.description = "No need to unlock anything! No channels are currently locked."
+
+
 class RedirectSetError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Set Error",
