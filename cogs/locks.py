@@ -43,7 +43,7 @@ class Locks(commands.Cog):
                    "**Special Cases:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
                    "by commas, or \"all\" to unlock all locked channels. After confirmation, MarwynnBot will once again"
                    " respond to any commands invoked in those channels",
-                   f"**Note:** *this command can also be invoked with `{await gcmds.prefix(ctx)}unlock [#channel]\*va*`")
+                   f"**Note:** *this command can also be invoked with `{await gcmds.prefix(ctx)}unlock [#channel]\*va`*")
         nv = [("Set", lset), ("List", llist), ("Unlock", lunlock)]
         embed = discord.Embed(title="Lock Help", description=description, color=discord.Color.blue())
         for name, value in nv:
