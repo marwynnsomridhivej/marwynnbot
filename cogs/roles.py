@@ -316,7 +316,7 @@ class Roles(commands.Cog):
                               description=description,
                               color=discord.Color.blue())
         for name, value in nv:
-            embed.add_field(name=name, value="\n".join(value), inline=False)
+            embed.add_field(name=name, value="> " + "\n".join(value), inline=False)
         return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['ar', 'autoroles'])
