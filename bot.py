@@ -54,7 +54,8 @@ async def run(uptime):
     }
 
     db = await asyncpg.create_pool(**credentials)
-    await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean DEFAULT FALSE, serverstats boolean, counter jsonb)")
+    await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean "
+                     "DEFAULT FALSE, serverstats boolean, starboard_emoji text DEFAULT NULL, counter jsonb)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
 
