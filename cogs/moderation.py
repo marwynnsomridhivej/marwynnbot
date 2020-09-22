@@ -168,7 +168,12 @@ class Moderation(commands.Cog):
 
     async def auto_warn_action(self, ctx, member: discord.Member, reason: str, count: int, timestamp):
         count_adj = count + 1
-        action = auto_warn_actions[count_adj]
+        async with self.bot.db.acquire() as con:
+            am_status = await con.fetchval(f"SELECT automod FROM guild WHERE guild_id={ctx.guild.id}")
+        if am_status:
+            action = auto_warn_actions[count_adj]
+        else:
+            action = None
         title = f"Warning from {ctx.author.display_name} in {ctx.guild.name}"
         ord_count = num2words((count_adj), to='ordinal_num')
         description = f"{member.mention}, this is your **{ord_count}** warning in {ctx.guild.name}\n\n**Reason:**\n{reason}"
@@ -212,7 +217,7 @@ class Moderation(commands.Cog):
         await ctx.author.send(embed=embed)
 
         reason = str(base64.urlsafe_b64encode(reason.encode("ascii")), encoding="utf-8")
-        
+
         async with self.bot.db.acquire() as con:
             await con.execute("INSERT INTO warns(guild_id, user_id, moderator, reason, timestamp) VALUES "
                               f"({ctx.guild.id}, {member.id}, {ctx.author.id}, '{reason}', {int(timestamp)})")
@@ -335,6 +340,7 @@ class Moderation(commands.Cog):
                            f"messages from the past {days} days "
             else:
                 dMessage = f'{member.mention} has been banned from the server!'
+
             banEmbed = discord.Embed(title="Banned User",
                                      description=dMessage,
                                      color=discord.Color.blue())
@@ -350,15 +356,17 @@ class Moderation(commands.Cog):
     async def unban(self, ctx, users: commands.Greedy[discord.User]):
         for user in users:
             try:
-                user = await commands.converter.UserConverter().convert(ctx, user)
-            except commands.BadArgument:
-                error = discord.Embed(title='Error',
-                                      description='User could not be found!',
-                                      color=discord.Color.dark_red())
-                await ctx.channel.send(embed=error)
-
-            bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
-            if user in bans:
+                await ctx.guild.fetch_ban(user)
+            except Exception:
+                notBanned = discord.Embed(title="User Not Banned!",
+                                          description='For now :)',
+                                          color=discord.Color.blue())
+                notBanned.set_thumbnail(url=user.avatar_url)
+                notBanned.add_field(name='Moderator',
+                                    value=ctx.author.mention,
+                                    inline=False)
+                await ctx.channel.send(embed=notBanned)
+            else:
                 unban = discord.Embed(title='Unbanned',
                                       color=discord.Color.blue())
                 unban.set_thumbnail(url=user.avatar_url)
@@ -368,16 +376,6 @@ class Moderation(commands.Cog):
                                 value=ctx.author.mention)
                 await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
                 await ctx.channel.send(embed=unban)
-
-            else:
-                notBanned = discord.Embed(title="User Not Banned!",
-                                          description='For now :)',
-                                          color=discord.Color.blue())
-                notBanned.set_thumbnail(url=user.avatar_url)
-                notBanned.add_field(name='Moderator',
-                                    value=ctx.author.mention,
-                                    inline=False)
-                await ctx.channel.send(embed=notBanned)
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
@@ -389,6 +387,18 @@ class Moderation(commands.Cog):
         for member, count in warns:
             await self.auto_warn_action(ctx, member, reason, count, timestamp)
         return
+
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def automod(self, ctx):
+        async with self.bot.db.acquire() as con:
+            am_status = await con.fetchval(f"SELECT automod FROM guild WHERE guild_id={ctx.guild.id}")
+            await con.execute(f"UPDATE guild SET automod={not am_status} WHERE guild_id={ctx.guild.id}")
+        embed = discord.Embed(title="Automod Toggle",
+                              description=f"{ctx.author.mention}, automod has been turned "
+                              f"{'on' if not am_status else 'off'} for this server",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['offenses'])
     async def offense(self, ctx, member: discord.Member = None):
@@ -431,7 +441,7 @@ class Moderation(commands.Cog):
                         spell = "times"
                     else:
                         spell = "time"
-                    administered = list(filter(lambda e: e!= item, administered))
+                    administered = list(filter(lambda e: e != item, administered))
                     description += f"**User:** <@{item[0]}> - warned {amount} {spell}\n\n"
                 embed = discord.Embed(title="Warnings Given",
                                       description=f"{ctx.author.mention}, here is a list of warnings you have given in "
