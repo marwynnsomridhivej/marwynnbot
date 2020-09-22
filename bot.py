@@ -191,6 +191,8 @@ class Bot(commands.AutoShardedBot):
         return False if blist else True
 
     async def check_locks(self, ctx):
+        if not ctx.guild:
+            return True
         await self.wait_until_ready()
         async with self.db.acquire() as con:
             try_ae = await con.fetchval(f"SELECT channel_id FROM locks WHERE guild_id={ctx.guild.id} AND type='all_except'")
