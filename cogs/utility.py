@@ -9,6 +9,7 @@ from utils import globalcommands, paginator
 
 
 gcmds = globalcommands.GlobalCMDS()
+invite_url = "https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958583"
 
 
 class Utility(commands.Cog):
@@ -135,10 +136,9 @@ class Utility(commands.Cog):
     async def invite(self, ctx):
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
-                              " invite link that you can share:\n\n https://discord.com/oauth2/authorize?bot_id"
-                              "=623317451811061763&scope=bot&permissions=2146958583",
+                              f" invite link that you can share:\n\n {invite_url}",
                               color=discord.Color.blue(),
-                              url="https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958839")
+                              url=invite_url)
         await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True)
