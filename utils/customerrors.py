@@ -57,6 +57,19 @@ class NoLocksExist(LockException):
         self.embed.description = "No need to unlock anything! No channels are currently locked."
 
 
+class StarboardException(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Starboard Error",
+                                   description="An error occurred while performing an operation on the starboard",
+                                   color=discord.Color.dark_red())
+
+
+class NoStarboardSet(StarboardException):
+    def __init__(self):
+        super().__init__()
+        self.embed.description = "There is no starboard currently set in this server"
+
+
 class RedirectSetError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Set Error",
