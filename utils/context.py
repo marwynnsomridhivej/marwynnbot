@@ -4,6 +4,8 @@ from utils import customerrors, globalcommands
 
 
 async def redirect(ctx):
+    if not ctx.guild:
+        return True
     bot = globalcommands.bot
     db = globalcommands.db
     cmd = ctx.command.root_parent.name if ctx.command.root_parent else ctx.command.name
