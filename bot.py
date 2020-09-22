@@ -192,6 +192,7 @@ class Bot(commands.AutoShardedBot):
 
     async def check_locks(self, ctx):
         await self.wait_until_ready()
+        print(ctx.guild)
         if not ctx.guild:
             return True
         async with self.db.acquire() as con:
