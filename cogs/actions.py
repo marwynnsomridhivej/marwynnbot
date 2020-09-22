@@ -3,7 +3,7 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-from utils import globalcommands
+from utils import globalcommands, customerrors
 
 converter = commands.MemberConverter()
 gcmds = globalcommands.GlobalCMDS()
@@ -21,6 +21,7 @@ class Actions(commands.Cog):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS actions(action text PRIMARY KEY, give jsonb, receive jsonb)")
+            await con.execute("CREATE TABLE IF NOT EXISTS action_blocks(blocked_id bigint, author_id bigint)")
             actions = [command.name for command in self.get_commands() if command.name != "actions"]
             values = "('" + "'), ('".join(actions) + "')"
             await con.execute(f"INSERT INTO actions(action) VALUES {values} ON CONFLICT DO NOTHING")
@@ -42,6 +43,9 @@ class Actions(commands.Cog):
         receive_exec_count = int(result['receive']) + 1 if result['receive'] else 1
         if user_specified:
             async with self.bot.db.acquire() as con:
+                blocked = await con.fetchval(f"SELECT * FROM action_blocks WHERE blocked_id={ctx.author.id} AND author_id={user.id}")
+                if blocked:
+                    raise customerrors.SilentActionError
                 old_author = (await con.fetch(f"SELECT give FROM actions WHERE action = '{ctx.command.name}'"))[0]['give']
                 old_recip = (await con.fetch(f"SELECT receive FROM actions WHERE action = '{ctx.command.name}'"))[0]['receive']
             if not old_author:
@@ -56,7 +60,8 @@ class Actions(commands.Cog):
                     old_author_val = 0
                     author_cond = f"WHERE action = '{ctx.command.name}'"
                 new_author_dict = "'{" + f'"{ctx.author.id}" : {old_author_val + 1}' + "}'"
-                new_author_op = (f"UPDATE actions SET give = give::jsonb - '{ctx.author.id}' || {new_author_dict} {author_cond}")
+                new_author_op = (
+                    f"UPDATE actions SET give = give::jsonb - '{ctx.author.id}' || {new_author_dict} {author_cond}")
             if not old_recip:
                 new_recip_val = "'{" + f'"{user.id}": 1' + "}'"
                 new_recip_op = f"UPDATE actions SET receive = {new_recip_val} WHERE action = '{ctx.command.name}'"
@@ -69,7 +74,8 @@ class Actions(commands.Cog):
                     old_recip_val = 0
                     recip_cond = f"WHERE action = '{ctx.command.name}'"
                 new_recip_dict = "'{" + f'"{user.id}" : {old_recip_val + 1}' + "}'"
-                new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{user.id}' || {new_recip_dict} {recip_cond}")
+                new_recip_op = (
+                    f"UPDATE actions SET receive = receive::jsonb - '{user.id}' || {new_recip_dict} {recip_cond}")
             ops = [new_author_op, new_recip_op]
         else:
             async with self.bot.db.acquire() as con:
@@ -87,7 +93,8 @@ class Actions(commands.Cog):
                     old_author_val = 0
                     author_cond = f"WHERE action = '{ctx.command.name}'"
                 new_author_dict = "'{" + f'"{self.bot.user.id}" : {old_author_val + 1}' + "}'"
-                new_author_op = (f"UPDATE actions SET give = give::jsonb - '{self.bot.user.id}' || {new_author_dict} {author_cond}")
+                new_author_op = (
+                    f"UPDATE actions SET give = give::jsonb - '{self.bot.user.id}' || {new_author_dict} {author_cond}")
             if not old_recip:
                 new_recip_val = "'{" + f'"{ctx.author.id}": 1' + "}'"
                 new_recip_op = f"UPDATE actions SET receive = {new_recip_val} WHERE action = '{ctx.command.name}'"
@@ -100,12 +107,13 @@ class Actions(commands.Cog):
                     old_recip_val = 0
                     recip_cond = f"WHERE action = '{ctx.command.name}'"
                 new_recip_dict = "'{" + f'"{ctx.author.id}" : {old_recip_val + 1}' + "}'"
-                new_recip_op = (f"UPDATE actions SET receive = receive::jsonb - '{ctx.author.id}' || {new_recip_dict} {recip_cond}")
+                new_recip_op = (
+                    f"UPDATE actions SET receive = receive::jsonb - '{ctx.author.id}' || {new_recip_dict} {recip_cond}")
             ops = [new_author_op, new_recip_op]
         async with self.bot.db.acquire() as con:
             for op in ops:
                 await con.execute(op)
-        return [give_exec_count, receive_exec_count, user, user_specified]
+        return give_exec_count, receive_exec_count, user, user_specified
 
     async def embed_template(self, ctx, title: str, footer: str):
         api_key = gcmds.env_check("TENOR_API")
@@ -134,7 +142,7 @@ class Actions(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['action'])
+    @commands.group(invoke_without_command=True, aliases=['action'])
     async def actions(self, ctx, cmdName=None):
         CMDLIST = self.get_commands()
         del CMDLIST[0]
@@ -145,6 +153,10 @@ class Actions(commands.Cog):
             helpEmbed = discord.Embed(title="Actions Help",
                                       description=description,
                                       color=discord.Color.blue())
+            helpEmbed.add_field(name="Blocking/Unblocking Users",
+                                value=f"Do `{await gcmds.prefix(ctx)}actions block/unblock [@user]*va (flag)` *`(flag)` "
+                                "can be \"all\" to block everyone in the server*",
+                                inline=False)
         else:
             if cmdName in CMDNAMES:
                 action = cmdName.capitalize()
@@ -171,14 +183,59 @@ class Actions(commands.Cog):
                                           color=discord.Color.blue())
         await ctx.channel.send(embed=helpEmbed)
 
+    @actions.command(aliases=['b', 'block'])
+    async def actions_block(self, ctx, members: commands.Greedy[discord.Member] = None, flag: str = None):
+        if len(members) == 1 and members[0].id == self.bot.user.id or members[0].id == ctx.author.id:
+            embed = discord.Embed(title="Block Error",
+                                  description=f"{ctx.author.mention}, you can't block {members[0].mention}",
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed)
+        elif flag == "all":
+            members = (member for member in ctx.guild.members if (
+                member.id != ctx.author.id and member.id != self.bot.user.id))
+            description = f"{ctx.author.mention}, you blocked everyone. You're gonna be a bit lonely now \:("
+        else:
+            description = f"{ctx.author.mention}, you blocked {','.join(member.mention for member in members)}"
+
+        for member in members:
+            async with self.bot.db.acquire() as con:
+                check = await con.fetch(f"SELECT blocked_id FROM action_blocks WHERE blocked_id={member.id} "
+                                        f"AND author_id={ctx.author.id}")
+                if not check:
+                    await con.execute(f"INSERT INTO action_blocks(blocked_id, author_id) VALUES ({member.id}, {ctx.author.id})")
+
+        embed = discord.Embed(title="Members Blocked", description=description, color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
+    @actions.command(aliases=['ub', 'unblock'])
+    async def actions_unblock(self, ctx, members: commands.Greedy[discord.Member] = None, flag: str = None):
+        if len(members) == 1 and members[0].id == self.bot.user.id:
+            embed = discord.Embed(title="Unblock Error",
+                                  description=f"{ctx.author.mention}, you didn't {members[0].mention}",
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed)
+        elif flag == "all":
+            members = (member for member in ctx.guild.members if (
+                member.id != ctx.author.id and member.id != self.bot.user.id))
+            description = f"{ctx.author.mention}, you unblocked everyone. Welcome to the party \:)"
+        else:
+            description = f"{ctx.author.mention}, you unblocked {','.join(member.mention for member in members)}"
+
+        for member in members:
+            async with self.bot.db.acquire() as con:
+                check = await con.fetch(f"SELECT blocked_id FROM action_blocks WHERE blocked_id={member.id} "
+                                        f"AND author_id={ctx.author.id}")
+                if check:
+                    await con.execute(f"DELETE FROM action_blocks WHERE blocked_id={member.id} AND author_id={ctx.author.id}")
+
+        embed = discord.Embed(title="Members Blocked", description=description, color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(aliases=['BITE'])
     async def bite(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -195,12 +252,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['BLUSH'])
     async def blush(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} blushed at {action_to}"
@@ -217,12 +271,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['BONK'])
     async def bonk(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} bonked {action_to}"
@@ -239,12 +290,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['BOOP'])
     async def boop(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} boop {action_to}"
@@ -261,12 +309,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['BORED'])
     async def bored(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} bored {action_to}"
@@ -283,12 +328,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CHASE'])
     async def chase(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -305,12 +347,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CHEER'])
     async def cheer(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} cheered for {action_to}"
@@ -327,12 +366,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['COMFORT'])
     async def comfort(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} comforted {action_to}"
@@ -349,12 +385,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CRINGE'])
     async def cringe(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} cringed at {action_to}"
@@ -371,12 +404,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CRY'])
     async def cry(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} cried at {action_to}"
@@ -393,12 +423,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CUDDLE'])
     async def cuddle(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} cuddled {action_to}"
@@ -415,12 +442,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['CUT'])
     async def cut(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} cut {action_to}"
@@ -437,12 +461,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['DAB'])
     async def dab(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} dabbed on {action_to}"
@@ -459,12 +480,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['DANCE'])
     async def dance(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} danced with {action_to}"
@@ -481,12 +499,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['DESTROY'])
     async def destroy(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} destroyed {action_to}"
@@ -503,12 +518,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['DIE'])
     async def die(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} made {action_to} die"
@@ -525,12 +537,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['DROWN'])
     async def drown(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} drowned {action_to}"
@@ -547,12 +556,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['EAT'])
     async def eat(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} ate {action_to}"
@@ -569,12 +575,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FACEPALM'])
     async def facepalm(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_to} made {action_by} facepalm"
@@ -591,12 +594,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FEED'])
     async def feed(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -613,12 +613,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FLIP'])
     async def flip(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} flipped {action_to}"
@@ -635,12 +632,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FLIRT'])
     async def flirt(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} flirted with {action_to}"
@@ -657,12 +651,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FORGET'])
     async def forget(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} forgot about {action_to}"
@@ -679,12 +670,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['FRIEND'])
     async def friend(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -701,12 +689,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['GLOMP'])
     async def glomp(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -723,12 +708,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['HANDHOLD'])
     async def handhold(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} held hands with {action_to}"
@@ -745,12 +727,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['HAPPY'])
     async def happy(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_to} made {action_by} happy"
@@ -767,12 +746,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['HATE'])
     async def hate(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} hated {action_to}"
@@ -789,12 +765,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['HIGHFIVE'])
     async def highfive(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -811,12 +784,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['HUG'])
     async def hug(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} hugged {action_to}"
@@ -833,12 +803,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['KILL'])
     async def kill(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} killed {action_to}"
@@ -855,12 +822,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['KISS'])
     async def kiss(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} kissed {action_to}"
@@ -877,12 +841,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['LAUGH'])
     async def laugh(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} laughed at {action_to}"
@@ -899,12 +860,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['LICK'])
     async def lick(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} licked {action_to}"
@@ -921,12 +879,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['LOVE'])
     async def love(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} loved {action_to}"
@@ -943,12 +898,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['LURK'])
     async def lurk(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} lurked at {action_to}"
@@ -965,12 +917,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['MARRY'])
     async def marry(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} married {action_to}"
@@ -987,12 +936,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['MISS'])
     async def miss(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} missed {action_to}"
@@ -1009,12 +955,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['NERVOUS'])
     async def nervous(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_to} made {action_by} nervous"
@@ -1031,13 +974,10 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['NO'])
     async def no(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
         no_list = ['disagreed', 'no likey', "doesn't like that", "didn't vibe with that"]
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} said no to {action_to}"
@@ -1054,12 +994,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['NOM'])
     async def nom(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} nommed {action_to}"
@@ -1076,12 +1013,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['NUZZLE'])
     async def nuzzle(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} nuzzled {action_to}"
@@ -1098,12 +1032,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['PANIC'])
     async def panic(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} panicked {action_to}"
@@ -1120,12 +1051,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['PAT'])
     async def pat(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} pat {action_to}"
@@ -1142,12 +1070,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['PECK'])
     async def peck(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} pecked {action_to}"
@@ -1164,12 +1089,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['POKE'])
     async def poke(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} poked {action_to}"
@@ -1186,12 +1108,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['POUT'])
     async def pout(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} pouted at {action_to}"
@@ -1208,12 +1127,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['PUNT'])
     async def punt(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -1230,12 +1146,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['RUN'])
     async def run(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} ran from {action_to}"
@@ -1252,12 +1165,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['RACE'])
     async def race(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} raced with {action_to}"
@@ -1274,12 +1184,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SAD'])
     async def sad(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} saddened {action_to}"
@@ -1296,12 +1203,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SHOOT'])
     async def shoot(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} shot {action_to}"
@@ -1318,12 +1222,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SHRUG'])
     async def shrug(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} shrugged at {action_to}"
@@ -1340,12 +1241,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SIP'])
     async def sip(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} sipped {action_to}"
@@ -1362,12 +1260,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SLAP'])
     async def slap(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} slapped {action_to}"
@@ -1384,12 +1279,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SLEEP'])
     async def sleep(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} made {action_to} fall asleep"
@@ -1406,12 +1298,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SLICE'])
     async def slice(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} sliced {action_to}"
@@ -1428,12 +1317,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['SMUG'])
     async def smug(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} was smug to {action_to}"
@@ -1450,12 +1336,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['STAB'])
     async def stab(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} stabbed {action_to}"
@@ -1472,12 +1355,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['STARE'])
     async def stare(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} stared at {action_to}"
@@ -1494,12 +1374,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TACKLE'])
     async def tackle(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
         else:
@@ -1516,15 +1393,12 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TAP'])
     async def tap(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
         parts = ['head', 'neck', 'face', 'nose', 'forehead', 'shoulder', 'chest', 'arm', 'elbow', 'hand', 'stomach',
                  'leg', 'knee', 'foot', 'toe', 'ankle']
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             body = random.choice(parts)
@@ -1542,12 +1416,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TASTE'])
     async def taste(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} tasted {action_to}"
@@ -1564,12 +1435,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TALK'])
     async def talk(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} talked to {action_to}"
@@ -1586,12 +1454,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TAUNT'])
     async def taunt(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} taunted at {action_to}"
@@ -1608,12 +1473,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TEASE'])
     async def tease(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} teased {action_to}"
@@ -1630,14 +1492,11 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['THANK'])
     async def thank(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
         adjlist = ['thankful', 'grateful', 'appreciative']
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} thanked {action_to}"
@@ -1655,12 +1514,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['THINK'])
     async def think(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} thought about {action_to}"
@@ -1677,10 +1533,7 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['THROW'])
     async def throw(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
         objlist = ['an apple', 'an orange', 'a banana', 'a singular grape', 'a bunch of grapes', 'some hands',
                    'a spear', 'a trident', 'some water balloons', 'some eggs', 'a stuffed toad plushie',
@@ -1691,7 +1544,7 @@ class Actions(commands.Cog):
                    'an exception', 'an error', 'their phone at the wall', 'a sharp stone', 'a shot put', 'a discus',
                    'away their chances at a relationship']
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} threw {action_to}"
@@ -1709,12 +1562,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['THUMBSDOWN'])
     async def thumbsdown(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} gave {action_to} a thumbs down"
@@ -1731,12 +1581,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['THUMBSUP'])
     async def thumbsup(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} gave {action_to} a thumbs up"
@@ -1753,12 +1600,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TICKLE'])
     async def tickle(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} tickled {action_to}"
@@ -1775,12 +1619,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TOUCH'])
     async def touch(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} touched {action_to}"
@@ -1797,12 +1638,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['TRASH'])
     async def trash(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} trashed {action_to}"
@@ -1819,12 +1657,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['triggered'])
     async def trigger(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} triggered {action_to}"
@@ -1841,12 +1676,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['UPSET'])
     async def upset(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} upset {action_to}"
@@ -1863,12 +1695,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WAG'])
     async def wag(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} wagged at {action_to}"
@@ -1885,12 +1714,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WAIT'])
     async def wait(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} waited for {action_to}"
@@ -1907,12 +1733,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WAKEUP'])
     async def wakeup(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} woke {action_to} up"
@@ -1929,12 +1752,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WASH'])
     async def wash(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} washed {action_to}"
@@ -1951,12 +1771,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WAVE'])
     async def wave(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} waved at {action_to}"
@@ -1973,12 +1790,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WHINE'])
     async def whine(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} whined at {action_to}"
@@ -1995,12 +1809,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WHISPER'])
     async def whisper(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} whispered to {action_to}"
@@ -2017,12 +1828,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WINK'])
     async def wink(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} winked at {action_to}"
@@ -2039,12 +1847,9 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['WORRY'])
     async def worry(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} worried about {action_to}"
@@ -2061,13 +1866,10 @@ class Actions(commands.Cog):
 
     @commands.command(aliases=['YES'])
     async def yes(self, ctx, user=None):
-        info = await self.get_count_user(ctx, user)
-        give = info[0]
-        receive = info[1]
-        user = info[2]
+        give, receive, user, info = await self.get_count_user(ctx, user)
         no_list = ['agreed', 'likey', "likes that", "vibed with that"]
 
-        if info[3]:
+        if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
             title = f"{action_by} said yes to {action_to}"
