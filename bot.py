@@ -89,7 +89,7 @@ class Bot(commands.AutoShardedBot):
         globalcommands.db = self.db
         globalcommands.bot = self
         gcmds = globalcommands.GlobalCMDS(bot=self)
-        func_checks = (self.check_blacklist, self.check_locks, self.disable_dm_exec, context.redirect)
+        func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
         func_listen = (self.on_message, self.on_command_error, self.on_guild_join,
                        self.on_guild_remove, self.on_member_join)
         for func in func_checks:
@@ -165,7 +165,8 @@ class Bot(commands.AutoShardedBot):
                                   color=discord.Color.dark_red())
             await message.channel.send(embed=embed)
 
-        await self.process_commands(message)
+        if await self.check_locks(message):
+            await self.process_commands(message)
 
     async def check_blacklist(self, ctx):
         if not ctx.guild:
@@ -192,23 +193,23 @@ class Bot(commands.AutoShardedBot):
 
         return False if blist else True
 
-    async def check_locks(self, ctx):
+    async def check_locks(self, message):
         await self.wait_until_ready()
-        if not ctx.guild:
+        if not message.guild:
             return True
         async with self.db.acquire() as con:
-            try_ae = await con.fetchval(f"SELECT channel_id FROM locks WHERE guild_id={ctx.guild.id} AND type='all_except'")
+            try_ae = await con.fetchval(f"SELECT channel_id FROM locks WHERE guild_id={message.guild.id} AND type='all_except'")
             if not try_ae:
-                lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={ctx.channel.id}")
+                lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={message.channel.id}")
                 if lock_type and lock_type != "unlocked":
                     return False
                 else:
                     return True
             else:
-                if int(try_ae) == ctx.channel.id:
+                if int(try_ae) == message.channel.id:
                     return True
                 else:
-                    lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={ctx.channel.id}")
+                    lock_type = await con.fetchval(f"SELECT type FROM locks WHERE channel_id={message.channel.id}")
                     if not lock_type or lock_type != "unlocked":
                         return False
                     else:
@@ -280,7 +281,7 @@ class Bot(commands.AutoShardedBot):
             return await ctx.channel.send(embed=error.embed)
         elif isinstance(error, commands.CheckFailure):
             pass
-        else:
+        elif hasattr(error, "original"):
             if isinstance(error.original, NodeException):
                 embed = discord.Embed(title="Music Error",
                                   description="NodeException: " + str(error.original),
@@ -292,6 +293,7 @@ class Bot(commands.AutoShardedBot):
                                             f"the permissions to do so, or my role is lower in the hierarchy.",
                                             color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=forbidden)
+        else:
             raise error
 
     async def on_guild_join(self, guild):
