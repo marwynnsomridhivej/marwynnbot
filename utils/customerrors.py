@@ -147,6 +147,10 @@ class ToDoCheckError(ToDoError):
         self.embed.description = "The IDs that were passed could not be verified, or were invalid"
 
 
+class SilentActionError(commands.CommandError):
+    pass
+
+
 class TagError(commands.CommandError):
     def __init__(self, message=None, error=None, *args):
         super().__init__(message=message, *args)
