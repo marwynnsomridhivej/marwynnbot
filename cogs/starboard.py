@@ -131,7 +131,7 @@ class Starboard(commands.Cog):
                 counter = await con.fetchval(f"UPDATE starboard SET counter=counter-1 WHERE message_id={sb_message.id} RETURNING counter")
 
         if counter != 0:
-            embed_copy = sb_message.embeds[0].copy()
+            embed_copy = sb_message.embeds[0]
             counter_emoji = levels[counter // 10 if counter // 10 <= 4 else 4]
             embed_copy.set_footer(text=f"{counter_emoji} Upvoted {counter} {'times' if counter != 1 else 'time'}. React with {emoji} to upvote!")
             return await sb_message.edit(embed=embed_copy)
