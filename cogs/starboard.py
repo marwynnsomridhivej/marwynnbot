@@ -98,7 +98,7 @@ class Starboard(commands.Cog):
         else:
             description = message.embeds[0].description
         embed = discord.Embed(title="Original Message",
-                              description=description + f"\n\n> Click on the [jump URL]({message.jump_url}) to see me!",
+                              description=description + f"\n\n> Click on the [Jump URL]({message.jump_url}) to see me!",
                               color=discord.Color.blue())
         embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
         embed.set_footer(text=f"{levels[0]} Upvoted 1 time. React with {emoji} to upvote!")
