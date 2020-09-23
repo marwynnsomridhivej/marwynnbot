@@ -295,6 +295,8 @@ class Bot(commands.AutoShardedBot):
                                             f"the permissions to do so, or my role is lower in the hierarchy.",
                                             color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=forbidden)
+            else:
+                raise error
         else:
             raise error
 
