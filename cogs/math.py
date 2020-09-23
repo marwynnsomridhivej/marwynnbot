@@ -10,7 +10,7 @@ from utils import globalcommands, paginator, customerrors
 
 
 gcmds = globalcommands.GlobalCMDS()
-LATEX_URL = "https://latex.codecogs.com/gif.download?%5Cbg_white%20%5Chuge%20"
+LATEX_URL = "https://latex.codecogs.com/gif.download?%5Cbg_white%20%5Clarge%20"
 
 
 class Math(commands.Cog):
