@@ -55,8 +55,8 @@ async def run(uptime):
 
     db = await asyncpg.create_pool(**credentials)
     await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean "
-                     "DEFAULT FALSE, serverstats boolean, starboard_emoji text DEFAULT NULL, "
-                     "starboard_channel bigint DEFAULT null, counter jsonb)")
+                     "DEFAULT FALSE, serverstats boolean, counter jsonb, starboard_emoji text DEFAULT NULL, "
+                     "starboard_channel bigint DEFAULT null, log_channel bigint, log_level smallint DEFAULT 0)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
 
@@ -102,6 +102,24 @@ class Bot(commands.AutoShardedBot):
             print(f"Cog \"{cog}\" has been loaded")
         self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
+        self.loop.create_task(self.fix_base_rr())
+
+    async def fix_base_rr(self):
+        await self.wait_until_ready()
+        async with self.db.acquire() as con:
+            results = await con.fetch("SELECT * FROM base_rr")
+            for guild in self.guilds:
+                for text_channel in guild.text_channels:
+                    for item in results:
+                        try:
+                            if await text_channel.fetch_message(int(item['message_id'])):
+                                await con.execute(f"UPDATE base_rr SET guild_id={guild.id} WHERE message_id={int(item['message_id'])}")
+                            print("Found")
+                            break
+                        except Exception:
+                            continue
+        print("Fixed base RR")
+        return
 
     async def init_counters(self):
         await self.wait_until_ready()
