@@ -101,7 +101,7 @@ class Owner(commands.Cog):
     async def git(self, ctx, *, args: str):
         embed = discord.Embed(title="Git Output")
         try:
-            output = subprocess.check_output(f"git {args}", stderr=subprocess.STDOUT)
+            output = subprocess.check_output(f"git {args}", stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError as e:
             output = e.output
             embed.color = discord.Color.dark_red()
