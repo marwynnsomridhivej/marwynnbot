@@ -109,6 +109,7 @@ class Bot(commands.AutoShardedBot):
         async with self.db.acquire() as con:
             results = await con.fetch("SELECT * FROM base_rr")
             for guild in self.guilds:
+                print("Started guild", guild.name)
                 for text_channel in guild.text_channels:
                     for item in results:
                         try:
