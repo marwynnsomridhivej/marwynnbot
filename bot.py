@@ -161,7 +161,7 @@ class Bot(commands.AutoShardedBot):
                                               f"invalidation. Server: {message.guild.name}")
             embed = discord.Embed(title="Token Found",
                                   description=f"{message.author.mention}, a Discord token was found in your message. It has"
-                                  f" been sent to {url} to be invalidated",
+                                  f" been sent to [Github]({url}) to be invalidated",
                                   color=discord.Color.dark_red())
             await message.channel.send(embed=embed)
 

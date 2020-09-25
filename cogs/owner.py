@@ -1,9 +1,12 @@
-import json
-import os
 import discord
+import os
+import subprocess
+import sys
 from asyncpg.exceptions import UniqueViolationError
+from datetime import datetime
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
+from io import StringIO, BytesIO
 from utils import globalcommands, paginator, customerrors
 
 gcmds = globalcommands.GlobalCMDS()
@@ -91,6 +94,28 @@ class Owner(commands.Cog):
             raise customerrors.GuildAlreadyPremium(guild)
         except Exception:
             raise customerrors.GuildPremiumException(guild)
+        return
+
+    @commands.group()
+    @commands.is_owner()
+    async def git(self, ctx, *, args: str):
+        embed = discord.Embed(title="Git Output")
+        try:
+            output = subprocess.check_output(f"git {args}", stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            output = e.output
+            embed.color = discord.Color.dark_red()
+        else:
+            embed.color = discord.Color.blue()
+
+        if len(output) <= 2048:
+            embed.description = f"```{output.decode('utf-8') if output else f'{args} executed successfully'}```"
+            return await ctx.channel.send(embed=embed)
+        else:
+            embed.description = "```\nSTDOUT longer than 2048 characters. See the file below:\n```"
+            stdout_file = discord.File(BytesIO(output), filename=f"{ctx.author.display_name.upper()}{datetime.now()}.txt")
+            await ctx.channel.send(embed=embed)
+            return await ctx.channel.send(file=stdout_file)
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
