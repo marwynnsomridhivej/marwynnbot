@@ -114,6 +114,7 @@ class Bot(commands.AutoShardedBot):
                 for text_channel in guild.text_channels:
                     try:
                         message = await text_channel.fetch_message(message_id)
+                        print(message.id)
                         await con.execute(f"UPDATE base_rr SET jump_url={message.jump_url} WHERE message_id={message_id}")
                         print("Found")
                         break
