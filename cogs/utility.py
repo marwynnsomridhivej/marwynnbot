@@ -42,7 +42,8 @@ class Utility(commands.Cog):
 
         for guild_id in guild_ids:
             guild = self.bot.get_guild(int(guild_id))
-            exists = False
+            if not guild:
+                await self.remove_ss_entry(int(guild_id))
             for category in guild.categories:
                 if "server stats" in category.name.lower():
                     names = await self.get_guild_info(guild)
@@ -54,10 +55,8 @@ class Utility(commands.Cog):
                             except discord.Forbidden:
                                 pass
                         index += 1
-                    exists = True
                     break
-            if not exists:
-                await self.remove_ss_entry(int(guild_id))
+        return
 
     async def add_entry(self, ctx, message_id: int, type: str):
         async with self.bot.db.acquire() as con:
