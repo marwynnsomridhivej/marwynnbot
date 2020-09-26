@@ -38,10 +38,9 @@ async def get_prefix(self: commands.AutoShardedBot, message):
         extras = ('mb ', 'mB ', 'Mb ', 'MB ', 'm!', 'm! ')
     else:
         async with self.db.acquire() as con:
-            prefix = await con.fetch(f"SELECT custom_prefix from guild WHERE guild_id = {message.guild.id}")
+            prefix = await con.fetchval(f"SELECT custom_prefix from guild WHERE guild_id = {message.guild.id}")
         extras = (
-            f'{prefix[0]}', 'mb ', 'mB ', 'Mb ', 'MB ',
-            'm!')
+            f'{prefix}', 'mb ', 'mB ', 'Mb ', 'MB ', 'm!')
     return commands.when_mentioned_or(*extras)(self, message)
 
 
