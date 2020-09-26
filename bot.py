@@ -108,17 +108,10 @@ class Bot(commands.AutoShardedBot):
         await self.wait_until_ready()
         async with self.db.acquire() as con:
             results = await con.fetch("SELECT * FROM base_rr")
-            for guild in self.guilds:
-                print("Started guild", guild.name)
-                for text_channel in guild.text_channels:
-                    for item in results:
-                        try:
-                            if await text_channel.fetch_message(int(item['message_id'])):
-                                await con.execute(f"UPDATE base_rr SET guild_id={guild.id} WHERE message_id={int(item['message_id'])}")
-                            print("Found")
-                            break
-                        except Exception:
-                            continue
+            for item in results:
+                message_id = int(item['message_id'])
+                message = await self.user.fetch_message(message_id)
+                await con.execute(f"UPDATE base_rr SET jump_url={message.jump_url} WHERE message_id={message_id}")
         print("Fixed base RR")
         return
 
