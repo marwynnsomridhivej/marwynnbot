@@ -2,6 +2,22 @@ import discord
 from discord.ext import commands
 
 
+class LoggingError(commands.CommandError):
+    pass
+
+
+class LoggingNotEnabled(LoggingError):
+    pass
+
+
+class LoggingLevelInsufficient(LoggingError):
+    pass
+
+
+class LoggingChannelUnspecified(LoggingError):
+    pass
+
+
 class PostgreSQLError(commands.CommandError):
     pass
 
