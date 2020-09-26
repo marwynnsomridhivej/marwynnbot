@@ -102,25 +102,6 @@ class Bot(commands.AutoShardedBot):
             print(f"Cog \"{cog}\" has been loaded")
         self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
-        self.loop.create_task(self.fix_base_rr())
-
-    async def fix_base_rr(self):
-        await self.wait_until_ready()
-        async with self.db.acquire() as con:
-            results = await con.fetch("SELECT * FROM base_rr")
-            for item in results:
-                guild = self.get_guild(int(item['guild_id']))
-                for text_channel in guild.text_channels:
-                    try:
-                        message = await text_channel.fetch_message(int(item['message_id']))
-                        print(message.jump_url)
-                        await con.execute(f"UPDATE base_rr SET jump_url=$tag${message.jump_url}$tag$ WHERE message_id={int(item['message_id'])}")
-                        print("Set Jump URL")
-                        break
-                    except Exception:
-                        continue
-        print("Fixed base RR")
-        return
 
     async def init_counters(self):
         await self.wait_until_ready()
