@@ -120,6 +120,7 @@ class Bot(commands.AutoShardedBot):
                         print("Found")
                         break
                     except Exception:
+                        print("exception")
                         continue
         print("Fixed base RR")
         return
