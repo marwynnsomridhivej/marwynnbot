@@ -114,10 +114,10 @@ class Bot(commands.AutoShardedBot):
                     try:
                         message = await text_channel.fetch_message(int(item['message_id']))
                         print(message.jump_url)
-                        await con.execute(f"UPDATE base_rr SET jump_url={message.jump_url} WHERE message_id={message.id}")
+                        await con.execute(f"UPDATE base_rr SET jump_url={message.jump_url} WHERE message_id={int(item['message_id'])}")
                         print("Set Jump URL")
+                        break
                     except Exception:
-                        print("Exception Raised")
                         continue
         print("Fixed base RR")
         return
