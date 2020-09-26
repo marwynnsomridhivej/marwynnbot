@@ -111,7 +111,7 @@ class Bot(commands.AutoShardedBot):
             for item in results:
                 guild = await self.fetch_guild(int(item['guild_id']))
                 message_id = int(item['message_id'])
-                for text_channel in guild:
+                for text_channel in guild.text_channels:
                     try:
                         message = await text_channel.fetch_message(message_id)
                         await con.execute(f"UPDATE base_rr SET jump_url={message.jump_url} WHERE message_id={message_id}")
