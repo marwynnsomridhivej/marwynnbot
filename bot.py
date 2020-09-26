@@ -109,7 +109,7 @@ class Bot(commands.AutoShardedBot):
         async with self.db.acquire() as con:
             results = await con.fetch("SELECT * FROM base_rr")
             for item in results:
-                guild = self.fetch_guild(int(item['guild_id']))
+                guild = await self.fetch_guild(int(item['guild_id']))
                 message_id = int(item['message_id'])
                 for text_channel in guild:
                     try:
