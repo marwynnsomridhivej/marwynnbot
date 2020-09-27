@@ -135,7 +135,7 @@ class Tags(commands.Cog):
             tags = await self.list_user_tags(ctx)
         except customerrors.UserNoTags:
             tags = []
-        if len(tags) >= 100 and not premium.check_premium(ctx.author):
+        if len(tags) >= 100 and not premium.check_user_premium(ctx.author):
             raise customerrors.TagLimitReached(ctx.author)
 
     async def search_tags(self, ctx, keyword) -> list:
