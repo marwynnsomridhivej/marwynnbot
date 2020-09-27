@@ -120,13 +120,13 @@ class Bot(commands.AutoShardedBot):
             else:
                 await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ('{command}', 1)")
             if ctx.guild:
-                old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
                 try:
+                    old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
                     old_val = old_dict[command]
                     new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
                     op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
                           f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
-                except KeyError:
+                except (KeyError, IndexError):
                     old_val = 0
                     new_dict = "{" + f'"{command}": 1' + "}"
                     init_others = "{" + f'"{command}": 0' + "}"
