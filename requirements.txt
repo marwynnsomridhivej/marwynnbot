@@ -1,4 +1,4 @@
-discord.py[voice]==1.4.1
+git+https://github.com/Rapptz/discord.py.git
 requests==2.24.0
 numpy==1.19.1
 num2words==0.5.10
