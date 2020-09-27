@@ -18,6 +18,14 @@ class LoggingChannelUnspecified(LoggingError):
     pass
 
 
+class LoggingLevelInvalid(LoggingError):
+    def __init__(self, level):
+        self.embed = discord.Embed(title="Invalid Logging Level",
+                                   description=f"The logging level `{level}` is not a valid logging level. Please enter "
+                                   "either `basic`, `server`, or `hidef`",
+                                   color=discord.Color.dark_red())
+
+
 class PostgreSQLError(commands.CommandError):
     pass
 
