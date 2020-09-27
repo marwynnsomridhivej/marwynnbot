@@ -1,7 +1,21 @@
-from enum import Enum
+import enum
 
-class LogLevel(Enum):
+class LogLevel(enum.IntEnum):
     NULL = 0
     BASIC = 1
     GUILD = 2
     HIDEF = 3
+    
+    def __str__(self):
+        return self.name.lower() if self.name != "GUILD" else "server"
+
+
+class ConfirmReactions(enum.Enum):
+    YES = '✅'
+    NO = '🛑'
+    
+    def __str__(self):
+        return self.value
+    
+    def __repr__(self):
+        return f"<ConfirmationReactions name = {self.name}, value = {self.value}>"
