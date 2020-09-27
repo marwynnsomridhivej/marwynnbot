@@ -283,7 +283,10 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, customerrors.SilentActionError):
             pass
         elif isinstance(error, customerrors.LoggingError):
-            pass
+            if hasattr(error, "embed"):
+                return await ctx.channel.send(embed=error.embed)
+            else:
+                pass
         elif isinstance(error, commands.CheckFailure):
             pass
         elif hasattr(error, "original"):
