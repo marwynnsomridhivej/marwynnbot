@@ -348,8 +348,6 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['ar', 'autoroles'])
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.has_permissions(manage_guild=True)
     async def autorole(self, ctx):
         return await self.ar_help(ctx)
 
@@ -382,10 +380,14 @@ class Roles(commands.Cog):
         await pag.paginate()
 
     @autorole.group(invoke_without_command=True, aliases=['user', 'users', '-u'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_user(self, ctx):
         return await self.ar_help(ctx)
 
     @autorole_user.command(aliases=['set', '-s', 'create', 'assign'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_user_set(self, ctx, roles: commands.Greedy[discord.Role]):
         try:
             async with self.bot.db.acquire() as con:
@@ -402,6 +404,8 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @autorole_user.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_user_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
         reactions = ["✅", "🛑"]
         if not roles:
@@ -456,10 +460,14 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @autorole.group(invoke_without_command=True, aliases=['bot', 'bots', '-b'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_bot(self, ctx):
         return await self.ar_help(ctx)
 
     @autorole_bot.command(aliases=['set', '-s', 'create', 'assign'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_bot_set(self, ctx, roles: commands.Greedy[discord.Role]):
         try:
             async with self.bot.db.acquire() as con:
@@ -476,6 +484,8 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @autorole_bot.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
     async def autorole_bot_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
         reactions = ["✅", "🛑"]
         if not roles:
@@ -530,8 +540,6 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['rr'])
-    @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
-    @commands.has_permissions(manage_guild=True)
     async def reactionrole(self, ctx):
         return await self.rr_help(ctx)
 
@@ -559,6 +567,8 @@ class Roles(commands.Cog):
             return await pag.paginate()
 
     @reactionrole.command(aliases=['-c', 'start', 'make'])
+    @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
+    @commands.has_permissions(manage_guild=True)
     async def create(self, ctx):
         panel_embed = discord.Embed(title="Reaction Role Setup Menu",
                                     description=f"{ctx.author.mention}, welcome to MarwynnBot's reaction role setup "
@@ -772,6 +782,8 @@ class Roles(commands.Cog):
         return await self.send_rr_message(ctx, channel, rr_embed, emoji_role_list, type_name)
 
     @reactionrole.command(aliases=['adjust', '-e'])
+    @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
+    @commands.has_permissions(manage_guild=True)
     async def edit(self, ctx, message_id: int = None):
         if not message_id:
             return await ctx.invoke(self.reactionrole)
@@ -1000,6 +1012,8 @@ class Roles(commands.Cog):
                                           color, emoji_role_list, type_name)
 
     @reactionrole.command(aliases=['-d', '-rm', 'del'])
+    @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
+    @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx, message_id: int = None):
         if not message_id:
             return await ctx.invoke(self.reactionrole)

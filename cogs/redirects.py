@@ -63,11 +63,11 @@ class Redirects(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['rd'])
-    @commands.has_permissions(manage_guild=True)
     async def redirect(self, ctx):
         await self.get_redirect_help(ctx)
 
     @redirect.command(aliases=['-s', 'set', 'apply'])
+    @commands.has_permissions(manage_guild=True)
     async def redirect_set(self, ctx, channel: discord.TextChannel, *, cmds: str):
         if cmds != "all":
             cmds = cmds.replace(" ", "").split(",")
@@ -144,6 +144,7 @@ class Redirects(commands.Cog):
         return await pag.paginate()
 
     @redirect.command(aliases=['-rm', 'delete', 'cancel', 'remove'])
+    @commands.has_permissions(manage_guild=True)
     async def redirect_remove(self, ctx, *, cmds: str):
         if cmds != "all":
             cmds = cmds.replace(" ", "").split(",")

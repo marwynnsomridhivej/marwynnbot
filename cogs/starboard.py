@@ -226,11 +226,11 @@ class Starboard(commands.Cog):
         return
 
     @commands.group(invoke_without_command=True, aliases=['sb'])
-    @commands.has_permissions(manage_guild=True)
     async def starboard(self, ctx):
         return await self.starboard_help(ctx)
 
     @starboard.command(aliases=['cn', 'channel'])
+    @commands.has_permissions(manage_guild=True)
     async def starboard_channel(self, ctx, channel: discord.TextChannel):
         async with self.bot.db.acquire() as con:
             prev_channel_id = await con.fetchval(f"SELECT starboard_channel FROM guild WHERE guild_id={ctx.guild.id}")
@@ -243,6 +243,7 @@ class Starboard(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @starboard.command(aliases=['-s', 'bind', 'use', 'set'])
+    @commands.has_permissions(manage_guild=True)
     async def starboard_set(self, ctx, emoji):
         await self.set_starboard_emoji(ctx, emoji)
         embed = discord.Embed(title="Startboard Emoji Bound",
@@ -255,6 +256,7 @@ class Starboard(commands.Cog):
         return await self.get_starboard(ctx)
 
     @starboard.command(aliases=['-rm', 'clear', 'reset', 'delete', 'remove'])
+    @commands.has_permissions(manage_guild=True)
     async def starboard_remove(self, ctx):
         await self.remove_starboard_emoji(ctx)
         embed = discord.Embed(title="Starboard Emoji Unbound",

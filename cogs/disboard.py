@@ -213,14 +213,12 @@ class Disboard(commands.Cog):
         await orig_message.edit(embed=embed)
         return True
 
-    @commands.group()
-    @commands.has_permissions(manage_guild=True)
+    @commands.group(invoke_without_command=True)
     async def disboard(self, ctx):
-
-        if not ctx.invoked_subcommand:
-            return await self.get_disboard_help(ctx)
+        return await self.get_disboard_help(ctx)
 
     @disboard.command()
+    @commands.has_permissions(manage_guild=True)
     async def create(self, ctx):
         if not await self.disboard_joined(ctx):
             return await self.no_disboard(ctx)
@@ -304,6 +302,7 @@ class Disboard(commands.Cog):
             return await ctx.channel.send(embed=embed)
 
     @disboard.command(aliases = ['-e', 'adjust'])
+    @commands.has_permissions(manage_guild=True)
     async def edit(self, ctx):
         if not await self.check_bump_reminder(ctx):
             await ctx.invoke(self.create)
@@ -364,6 +363,7 @@ class Disboard(commands.Cog):
                 return await ctx.channel.send(embed=embed)
 
     @disboard.command(aliases = ['-rm', 'trash', 'cancel'])
+    @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx):
         if not await self.check_bump_reminder(ctx):
             embed = discord.Embed(title="No Bump Reminder Set",

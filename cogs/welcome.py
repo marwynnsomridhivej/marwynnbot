@@ -655,6 +655,7 @@ class Welcome(commands.Cog):
                 return await ctx.channel.send(embed=embed)
 
     @welcomer.command(aliases=['-rm', 'trash', 'cancel'])
+    @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx):
         info = await self.get_welcomer(ctx)
         if not info:
@@ -713,6 +714,7 @@ class Welcome(commands.Cog):
                 return await ctx.channel.send(embed=embed)
 
     @welcomer.command()
+    @commands.has_permissions(manage_guild=True)
     async def test(self, ctx):
         await self.send_welcomer(ctx.author)
 
@@ -724,6 +726,7 @@ class Welcome(commands.Cog):
             return await self.get_leaver_help(ctx)
 
     @leaver.command(aliases=['-c', 'make', 'start', 'create'])
+    @commands.has_permissions(manage_guild=True)
     async def _create(self, ctx):
         welcomer = await self.get_welcomer(ctx)
         if not welcomer:
@@ -756,6 +759,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @leaver.command(aliases=['-rm', 'cancel', 'trash', 'delete'])
+    @commands.has_permissions(manage_guild=True)
     async def _delete(self, ctx):
         if not await self.has_leaver(ctx):
             return await self.no_leaver(ctx)
@@ -772,6 +776,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @leaver.command(aliases=['test'])
+    @commands.has_permissions(manage_guild=True)
     async def _test(self, ctx):
         await self.send_leaver(ctx.author)
 
