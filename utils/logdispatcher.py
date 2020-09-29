@@ -17,7 +17,8 @@ def enabled(func):
         try:
             await func(*args, **kwargs)
         except Exception as e:
-            raise e
+            if isinstance(e, customerrors.LoggingError):
+                pass
 
     return checker
 
