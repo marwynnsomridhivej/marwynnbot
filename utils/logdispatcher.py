@@ -1,3 +1,4 @@
+import functools
 from collections import namedtuple
 from datetime import datetime
 from typing import Optional, Union
@@ -8,6 +9,17 @@ from discord.ext import commands
 from utils import customerrors, premium
 from utils.enums import ChannelEmoji as CE
 from utils.enums import LogLevel
+
+
+def enabled(func):
+
+    async def checker(*args, **kwargs):
+        try:
+            await func(*args, **kwargs)
+        except Exception:
+            pass
+
+    return checker
 
 
 class LogDispatcher():
@@ -24,7 +36,7 @@ class LogDispatcher():
         if not log_channel or log_channel == "DISABLED":
             raise customerrors.LoggingNotEnabled()
         elif log_level < min_level.value:
-            raise customerrors.LoggingLevelInsufficient
+            raise customerrors.LoggingLevelInsufficient()
         else:
             return self.bot.get_channel(log_channel)
 
@@ -38,16 +50,24 @@ class GuildGenericEventDispatcher(LogDispatcher):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
 
+    @enabled
     async def guild_update(self, guild: discord.Guild, diff: list):
         if not diff:
             return
         log_channel = await self.check_logging_enabled(guild, self.min_level)
         embed = discord.Embed(title="Server Updated", color=discord.Color.blue())
-        description = [f"{item.type.replace('_', ' ').title()}\n> Server {item.type.replace('_', ' ')} changed "
-                       f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
+        description = ["{}\n> Server {} changed from `{}` ⟶ `{}`\n"
+                       .format(
+                           item.type.replace('_', ' ').title(),
+                           item.type.replace('_', ' '),
+                           item.before,
+                           item.after
+                           )
+                       for item in diff if diff]
         embed.description = "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def guild_integrations_update(self, guild: discord.Guild):
         log_channel = await self.check_logging_enabled(guild, self.min_level)
         embed = discord.Embed(title="Server Integrations Updated",
@@ -63,16 +83,24 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
     def get_channel_string(self, channel: discord.abc.GuildChannel, event_type: str = "none"):
         return f"Channel {CE[str(channel.type)]}{channel.mention if event_type != 'deleted' and str(channel.type) == 'text' else channel.name}"
 
+    @enabled
     async def guild_channel_attr_update(self, channel: discord.abc.GuildChannel, diff: list):
         if not diff:
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title="Channel Updated", color=discord.Color.blue())
-        description = [f"{item.type.replace('_', ' ').title()}\n> Channel {item.type.replace('_', ' ')} changed "
-                       f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
+        description = ["{}\n> Channel {} changed from `{}` ⟶ `{}`\n"
+                       .format(
+                           item.type.replace('_', ' ').title(),
+                           item.type.replace('_', ' '),
+                           item.before,
+                           item.after
+                           )
+                       for item in diff if diff]
         embed.description = f"{self.get_channel_string(channel)}\n\n" + "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def guild_channels_update(self, channel: discord.abc.GuildChannel, event_type: str):
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title=f"Channel {event_type.title()}",
@@ -80,6 +108,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
                               color=discord.Color.blue() if event_type == "created" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def channel_pins_update(self, channel: discord.abc.GuildChannel):
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         pins = await channel.pins()
@@ -89,6 +118,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
                               color=discord.Color.blue())
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def channel_webhooks_update(self, channel: discord.abc.GuildChannel):
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title=f"Channel Webhooks Updated",
@@ -101,6 +131,7 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
 
+    @enabled
     async def guild_role_update(self, role: discord.Role, event_type: str):
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
         embed = discord.Embed(title=f"Role {event_type.title()}",
@@ -108,13 +139,20 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
                               color=role.color if event_type == "created" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def guild_role_attr_update(self, role: discord.Role, diff: list):
         if not diff:
             return
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
         embed = discord.Embed(title="Role Updated", color=role.color)
-        description = [f"{item.type.replace('_', ' ').title()}\n> Role {item.type.replace('_', ' ')} changed "
-                       f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
+        description = ["{}\n> Role {} changed from `{}` ⟶ `{}`\n"
+                       .format(
+                           item.type.replace('_', ' ').title(),
+                           item.type.replace('_', ' '),
+                           item.before,
+                           item.after
+                           )
+                       for item in diff if diff]
         embed.description = f"{role.mention}\n\n" + "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
 
@@ -123,6 +161,7 @@ class GuildEmojiEventDispatcher(GuildGenericEventDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
 
+    @enabled
     async def guild_emoji_update(self, guild, event_type: str, diff: list):
         log_channel = await self.check_logging_enabled(guild, self.min_level)
         embed = discord.Embed(title=f"Emojis {event_type.title()}", color=discord.Color.blue()
@@ -135,6 +174,7 @@ class GuildInviteEventDispatcher(GuildGenericEventDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
 
+    @enabled
     async def guild_invite_update(self, invite: discord.Invite, event_type: str):
         if not invite.guild:
             return
@@ -145,9 +185,11 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
 
+    @enabled
     async def message_raw_edit(self, message_id: int, channel: int, data: dict):
         return
 
+    @enabled
     async def message_raw_delete(self, message_id: int, channel_id: int, guild_id: Optional[int]):
         return
 
@@ -156,12 +198,15 @@ class GuildReactionEventDispatcher(GuildGenericEventDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
 
+    @enabled
     async def reaction_raw_update(self, message_id: int, emoji: discord.PartialEmoji, user_id: int, channel_id: int, event_type: str):
         return
 
+    @enabled
     async def reaction_raw_clear(self, message_id: int, channel_id: int):
         return
 
+    @enabled
     async def reaction_raw_clear_emoji(self, message_id: int, channel_id: int, emoji: discord.PartialEmoji):
         return
 
@@ -190,6 +235,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         else:
             return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before}` ⟶ `{item.after}`"
 
+    @enabled
     async def member_membership_update(self, member: discord.Member, event_type: str):
         log_channel = await self.check_logging_enabled(member, self.min_level)
         embed = discord.Embed(title=f"Member {event_type.title()}",
@@ -197,19 +243,22 @@ class MemberGenericEventDispatcher(LogDispatcher):
                               color=discord.Color.blue() if event_type == "joined" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def member_update(self, member: discord.Member, diff: list):
         if not diff:
             return
         log_channel = await self.check_logging_enabled(member, self.min_level)
         description = [await self.update_parser(member, item) for item in diff]
         embed = discord.Embed(title="Member Updated",
-                              description = f"{member.mention} changed\n" + "\n".join(description),
+                              description=f"{member.mention} changed\n" + "\n".join(description),
                               color=member.color)
         return await self.dispatch_embed(log_channel, embed)
 
+    @enabled
     async def member_ban_update(self, guild: discord.Guild, member: Union[discord.User, discord.Member], event_type: str):
         return
 
+    @enabled
     async def member_voice_state_update(self, member: discord.Member, diff: list):
         return
 
@@ -219,6 +268,7 @@ class UserGenericEventDispatcher(LogDispatcher):
         super().__init__(bot)
         self.min_level = LogLevel.HIDEF
 
+    @enabled
     async def user_update(self, user: discord.User, diff: list):
         return
 
