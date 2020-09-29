@@ -282,35 +282,18 @@ class Roles(commands.Cog):
             return None
 
     async def delete_rr_message(self, ctx, message_id: int):
-        found = False
-        for text_channel in ctx.guild.text_channels:
-            try:
-                message = await text_channel.fetch_message(message_id)
-                found = True
-                break
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                continue
+        message = await ctx.channel.fetch_message(message_id)
+        await gcmds.smart_delete(message)
 
-        if found:
-            title = "Successfully Deleted Reaction Role"
-            description = f"{ctx.author.mention}, I have deleted the reaction roles panel and cleared the record from " \
-                          f"my database "
-            color = discord.Color.blue()
-            try:
-                await gcmds.smart_delete(message)
-            except discord.Forbidden:
-                title = "404 Forbidden"
-                description = f"{ctx.author}, I could not delete the reaction roles panel"
-                color = discord.Color.dark_red()
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"DELETE FROM base_rr WHERE message_id={message.id}")
+            await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message.id}")
 
-            async with self.bot.db.acquire() as con:
-                await con.execute(f"DELETE FROM base_rr WHERE message_id={message.id}")
-                await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message.id}")
-
-            embed = discord.Embed(title=title,
-                                  description=description,
-                                  color=color)
-            return await ctx.channel.send(embed=embed)
+        embed = discord.Embed(title="Successfully Deleted Reaction Role",
+                              description=f"{ctx.author.mention}, I have deleted the reaction roles panel and cleared the record from "
+                              f"my database ",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     async def get_rr_type(self, message_id: int) -> str:
         async with self.bot.db.acquire() as con:
