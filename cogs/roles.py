@@ -285,8 +285,8 @@ class Roles(commands.Cog):
             pass
 
         async with self.bot.db.acquire() as con:
-            await con.execute(f"DELETE FROM base_rr WHERE message_id={message.id}")
-            await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message.id}")
+            await con.execute(f"DELETE FROM base_rr WHERE message_id={message_id}")
+            await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message_id}")
 
         embed = discord.Embed(title="Successfully Deleted Reaction Role",
                               description=f"{ctx.author.mention}, I have deleted the reaction roles panel and cleared the record from "
