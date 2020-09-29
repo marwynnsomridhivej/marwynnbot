@@ -2,7 +2,6 @@ import asyncio
 import discord
 import typing
 from discord.ext import commands
-import json
 import numpy as np
 from utils import globalcommands
 

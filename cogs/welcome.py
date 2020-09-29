@@ -1,15 +1,14 @@
-import discord
-from discord.ext import commands
-from utils import globalcommands
 import asyncio
-import aiohttp
-from num2words import num2words
-import re
 import mimetypes
-import json
 import os
 import random
+import re
 
+import aiohttp
+import discord
+from discord.ext import commands
+from num2words import num2words
+from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 timeout = 120

@@ -1,8 +1,8 @@
 import asyncio
+
 import discord
 from discord.ext import commands
-from utils import globalcommands, paginator, customerrors, context
-
+from utils import context, customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 reactions = ["✅", "🛑"]

@@ -1,7 +1,9 @@
 # Thank you to Rapptz (Danny) from the discord.py Discord server for this paginator example
 import asyncio
+
 import discord
 from discord.ext import commands
+
 from utils import customerrors, globalcommands
 
 gcmds = globalcommands.GlobalCMDS()

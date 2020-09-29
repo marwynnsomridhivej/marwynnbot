@@ -1,13 +1,11 @@
-import aiohttp
-import discord
-import sympy
-
-from discord.ext import commands
 from io import BytesIO
 from urllib.parse import quote
 
-from utils import globalcommands, paginator, customerrors
-
+import aiohttp
+import discord
+import sympy
+from discord.ext import commands
+from utils import customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 LATEX_URL = "https://latex.codecogs.com/gif.download?%5Cbg_white%20%5Clarge%20"

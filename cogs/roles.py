@@ -1,10 +1,10 @@
 import asyncio
-import json
-import re
 import os
+import re
+
 import discord
 from discord.ext import commands
-from utils import globalcommands, paginator, customerrors
+from utils import customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')

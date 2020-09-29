@@ -1,13 +1,14 @@
-import discord
 import os
 import subprocess
 import sys
-from asyncpg.exceptions import UniqueViolationError
 from datetime import datetime
+from io import BytesIO, StringIO
+
+import discord
+from asyncpg.exceptions import UniqueViolationError
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from io import StringIO, BytesIO
-from utils import globalcommands, paginator, customerrors
+from utils import customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 

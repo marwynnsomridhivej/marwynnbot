@@ -1,8 +1,8 @@
 import asyncio
+
 import discord
-from discord.ext import commands
 import numpy.random as np
-import json
+from discord.ext import commands
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()

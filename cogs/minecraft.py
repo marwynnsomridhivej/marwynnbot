@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from utils import globalcommands
 from mcstatus import MinecraftServer
+from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 

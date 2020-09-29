@@ -2,16 +2,21 @@ import asyncio
 import types
 from collections import namedtuple
 from datetime import datetime
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence, Union
 
 import discord
 from discord.ext import commands
-
-from utils import globalcommands, customerrors, premium
+from utils import customerrors, globalcommands, premium
 from utils.enums import ConfirmReactions, LogLevel
-from utils.logdispatcher import GuildGenericEventDispatcher, GuildChannelEventDispatcher, GuildRoleEventDispatcher, \
-    GuildEmojiEventDispatcher, GuildInviteEventDispatcher, GuildMessageEventDispatcher, GuildReactionEventDispatcher, \
-    MemberGenericEventDispatcher, UserGenericEventDispatcher
+from utils.logdispatcher import (GuildChannelEventDispatcher,
+                                 GuildEmojiEventDispatcher,
+                                 GuildGenericEventDispatcher,
+                                 GuildInviteEventDispatcher,
+                                 GuildMessageEventDispatcher,
+                                 GuildReactionEventDispatcher,
+                                 GuildRoleEventDispatcher,
+                                 MemberGenericEventDispatcher,
+                                 UserGenericEventDispatcher)
 
 gcmds = globalcommands.GlobalCMDS()
 GuildDiff = namedtuple("GuildAttributeDiff", ['type', 'before', 'after'])

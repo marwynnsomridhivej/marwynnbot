@@ -1,11 +1,11 @@
 import asyncio
 import math
-from num2words import num2words
+import random
+from random import randint, shuffle
+
 import discord
 from discord.ext import commands
-import random
-from random import shuffle, randint
-import json
+from num2words import num2words
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()

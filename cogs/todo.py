@@ -1,10 +1,10 @@
 import asyncio
 import base64
-import discord
 from datetime import datetime
-from discord.ext import commands
-from utils import globalcommands, customerrors, paginator
 
+import discord
+from discord.ext import commands
+from utils import customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
 

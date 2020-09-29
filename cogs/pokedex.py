@@ -1,7 +1,8 @@
 import math
+
 import discord
-from discord.ext import commands
 import pokepy
+from discord.ext import commands
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()

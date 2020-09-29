@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Union, Optional
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands
 
 from utils import customerrors, premium
-from utils.enums import LogLevel
 from utils.enums import ChannelEmoji as CE
+from utils.enums import LogLevel
 
 
 class LogDispatcher():
