@@ -19,6 +19,8 @@ def enabled(func):
         except Exception as e:
             if isinstance(e, customerrors.LoggingError):
                 pass
+            else:
+                raise e
 
     return checker
 
@@ -63,7 +65,7 @@ class GuildGenericEventDispatcher(LogDispatcher):
                            item.type.replace('_', ' '),
                            item.before,
                            item.after
-                           )
+                       )
                        for item in diff if diff]
         embed.description = "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
@@ -96,7 +98,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
                            item.type.replace('_', ' '),
                            item.before,
                            item.after
-                           )
+                       )
                        for item in diff if diff]
         embed.description = f"{self.get_channel_string(channel)}\n\n" + "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
@@ -152,7 +154,7 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
                            item.type.replace('_', ' '),
                            item.before,
                            item.after
-                           )
+                       )
                        for item in diff if diff]
         embed.description = f"{role.mention}\n\n" + "\n".join(description)
         return await self.dispatch_embed(log_channel, embed)
@@ -179,7 +181,25 @@ class GuildInviteEventDispatcher(GuildGenericEventDispatcher):
     async def guild_invite_update(self, invite: discord.Invite, event_type: str):
         if not invite.guild:
             return
-        return
+        log_channel = await self.check_logging_enabled(invite.guild, self.min_level)
+        if event_type == "created":
+            description = "\n> ".join((f"**Details:**",
+                                       f"Created by: {invite.inviter.mention}",
+                                       "Expiration: {}".format(
+                                           datetime.fromtimestamp(int(datetime.now().timestamp()) + invite.max_age)
+                                           if invite.max_age != 0 else '`never`'
+                                       ),
+                                       "Max Uses: {}".format(invite.max_uses if invite.max_uses !=
+                                                             0 else '`unlimited`'),
+                                       f"Channel: {invite.channel.mention}",
+                                       f"URL: {invite.url}"))
+        else:
+            description = f"The invite {invite.url} was revoked and can no longer be used"
+        embed = discord.Embed(title=f"Instant Invite {event_type.title()}",
+                              description=description,
+                              color=discord.Color.blue() if event_type == "created" else discord.Color.dark_red(),
+                              url=invite.url if event_type == "created" else None)
+        return await self.dispatch_embed(log_channel, embed)
 
 
 class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
