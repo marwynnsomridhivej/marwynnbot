@@ -16,8 +16,8 @@ def enabled(func):
     async def checker(*args, **kwargs):
         try:
             await func(*args, **kwargs)
-        except Exception:
-            pass
+        except Exception as e:
+            raise e
 
     return checker
 
@@ -222,16 +222,23 @@ class MemberGenericEventDispatcher(LogDispatcher):
         else:
             raise customerrors.LoggingNotEnabled()
 
-    async def update_parser(self, member, item: namedtuple) -> str:
+    def update_parser(self, member, item: namedtuple) -> str:
         if item.type == "activities":
-            return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before.name}` ⟶ `{item.after.name}`"
+            before = set(before.name for before in item.before)
+            after = set(after.name for after in item.after)
+            if before ^ after:
+                return f"{item.type.replace('_', ' ').title()}\n> Changed to {before ^ after}"
+            else:
+                pass
         elif item.type == "premium_since":
             return f"{item.type.replace('_', ' ').title()}\n> Nitro Boosted this server"
         elif "status" in item.type:
             pass
         elif item.type == "voice":
-            return f"{item.type.replace('_', ' ').title()}\n> {f'Connected to voice channel {item.after.channel.name}'}" \
-                if item.after.channel else f"Disconnected from voice channel `{item.before.channel.name}`'"
+            return "{}\n> {}".format(
+                item.type.replace('_', ' ').title(),
+                f'Connected to voice channel {item.after.channel.name}'
+                if item.after.channel else f"Disconnected from voice channel `{item.before.channel.name}`'")
         else:
             return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before}` ⟶ `{item.after}`"
 
@@ -248,7 +255,9 @@ class MemberGenericEventDispatcher(LogDispatcher):
         if not diff:
             return
         log_channel = await self.check_logging_enabled(member, self.min_level)
-        description = [await self.update_parser(member, item) for item in diff]
+        description = [self.update_parser(member, item) for item in diff if self.update_parser(member, item)]
+        if not description:
+            return
         embed = discord.Embed(title="Member Updated",
                               description=f"{member.mention} changed\n" + "\n".join(description),
                               color=member.color)
