@@ -109,10 +109,6 @@ class Roles(commands.Cog):
             except (discord.Forbidden, discord.NotFound, KeyError):
                 pass
 
-    # async def cog_command_error(self, ctx, error):
-    #     if isinstance(error, commands.CommandInvokeError):
-    #         return await self.no_panel(ctx)
-
     async def check_panel(self, panel: discord.Message) -> discord.Message:
         return panel
 
