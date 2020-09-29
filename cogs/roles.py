@@ -109,9 +109,9 @@ class Roles(commands.Cog):
             except (discord.Forbidden, discord.NotFound, KeyError):
                 pass
 
-    async def cog_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandInvokeError):
-            return await self.no_panel(ctx)
+    # async def cog_command_error(self, ctx, error):
+    #     if isinstance(error, commands.CommandInvokeError):
+    #         return await self.no_panel(ctx)
 
     async def check_panel(self, panel: discord.Message) -> discord.Message:
         return panel
@@ -1024,7 +1024,7 @@ class Roles(commands.Cog):
             try:
                 await panel.add_reaction(reaction)
             except Exception:
-                return await gcmds.cancelled(ctx, "delete reaction roles panel")
+                pass
 
         def user_reacted(reaction: discord.Reaction, user: discord.User):
             return reaction.emoji in reactions and reaction.message.id == panel.id and user.id == ctx.author.id
