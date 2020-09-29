@@ -278,8 +278,11 @@ class Roles(commands.Cog):
             return None
 
     async def delete_rr_message(self, ctx, message_id: int):
-        message = await ctx.channel.fetch_message(message_id)
-        await gcmds.smart_delete(message)
+        try:
+            message = await ctx.channel.fetch_message(message_id)
+            await gcmds.smart_delete(message)
+        except Exception:
+            pass
 
         async with self.bot.db.acquire() as con:
             await con.execute(f"DELETE FROM base_rr WHERE message_id={message.id}")
