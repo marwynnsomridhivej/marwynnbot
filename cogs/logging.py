@@ -43,11 +43,13 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [GuildDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [GuildDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.guild_gen_event_dispatcher.guild_update(after, diff_list)
 
     @commands.Cog.listener()
@@ -60,11 +62,13 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [ChannelDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [ChannelDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.guild_channel_event_dispatcher.guild_channel_attr_update(after, diff_list)
 
     @commands.Cog.listener()
@@ -81,11 +85,13 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before: discord.Role, after: discord.Role):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [ChannelDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [ChannelDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.guild_role_event_dispatcher.guild_role_attr_update(after, diff_list)
 
     @commands.Cog.listener()
@@ -112,11 +118,15 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [MemberDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not attr == "system"
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not attr == "system"
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [MemberDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.member_gen_event_dispatcher.member_update(after, diff_list)
 
     @commands.Cog.listener()
@@ -129,20 +139,26 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before: discord.User, after: discord.User):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [UserDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not attr == "system"
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not attr == "system"
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [UserDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.user_gen_event_dispatcher.user_update(after, diff_list)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        set_after = set([(attr, getattr(after, attr))
-                         for attr in after.__slots__ if not attr.startswith("_") and not type(getattr(after, attr)) == list])
-        set_before = set([(attr, getattr(before, attr))
-                          for attr in before.__slots__ if not attr.startswith("_") and not type(getattr(before, attr)) == list])
-        diff_list = [MemberDiff(item[0], getattr(before, item[0]), item[1]) for item in set_after - set_before]
+        set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
+                         if not attr.startswith("_")
+                         and not type(getattr(after, attr)) == list])
+        set_before = set([(attr, getattr(before, attr)) for attr in before.__slots__
+                          if not attr.startswith("_")
+                          and not type(getattr(before, attr)) == list])
+        diff_list = [MemberDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         await self.member_gen_event_dispatcher.member_voice_state_update(member, diff_list)
 
     @commands.Cog.listener()
