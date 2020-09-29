@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Union, Optional
 
@@ -10,7 +9,7 @@ from utils.enums import LogLevel
 from utils.enums import ChannelEmoji as CE
 
 
-class LogDispatcher(ABC):
+class LogDispatcher():
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__()
         self.bot = bot
@@ -22,7 +21,7 @@ class LogDispatcher(ABC):
             log_level = await con.fetchval(f"SELECT log_level FROM guild WHERE guild_id={guild.id}")
 
         if not log_channel or log_channel == "DISABLED":
-            raise customerrors.LoggingNotEnabled
+            raise customerrors.LoggingNotEnabled()
         elif log_level < min_level.value:
             raise customerrors.LoggingLevelInsufficient
         else:
@@ -39,12 +38,14 @@ class GuildGenericEventDispatcher(LogDispatcher):
         self.min_level = LogLevel.GUILD
 
     async def guild_update(self, guild: discord.Guild, diff: list):
+        if not diff:
+            return
         log_channel = await self.check_logging_enabled(guild, self.min_level)
         embed = discord.Embed(title="Server Updated", color=discord.Color.blue())
         description = [f"{item.type.replace('_', ' ').title()}\n> Server {item.type.replace('_', ' ')} changed "
                        f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
         embed.description = "\n".join(description)
-        return await self.dispatch_embed(log_channel, embed) if diff else None
+        return await self.dispatch_embed(log_channel, embed)
 
     async def guild_integrations_update(self, guild: discord.Guild):
         log_channel = await self.check_logging_enabled(guild, self.min_level)
@@ -62,12 +63,14 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         return f"Channel {CE[str(channel.type)]}{channel.mention if event_type != 'deleted' and str(channel.type) == 'text' else channel.name}"
 
     async def guild_channel_attr_update(self, channel: discord.abc.GuildChannel, diff: list):
+        if not diff:
+            return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title="Channel Updated", color=discord.Color.blue())
         description = [f"{item.type.replace('_', ' ').title()}\n> Channel {item.type.replace('_', ' ')} changed "
                        f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
         embed.description = f"{self.get_channel_string(channel)}\n\n" + "\n".join(description)
-        return await self.dispatch_embed(log_channel, embed) if diff else None
+        return await self.dispatch_embed(log_channel, embed)
 
     async def guild_channels_update(self, channel: discord.abc.GuildChannel, event_type: str):
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
@@ -101,16 +104,18 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
         embed = discord.Embed(title=f"Role {event_type.title()}",
                               description=f"Created role {role.mention}" if event_type == "created" else f"Deleted role {role.name}",
-                              color=discord.Color.blue() if event_type == "created" else discord.Color.dark_red())
+                              color=role.color if event_type == "created" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
     async def guild_role_attr_update(self, role: discord.Role, diff: list):
+        if not diff:
+            return
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
-        embed = discord.Embed(title="Role Updated", color=discord.Color.blue())
+        embed = discord.Embed(title="Role Updated", color=role.color)
         description = [f"{item.type.replace('_', ' ').title()}\n> Role {item.type.replace('_', ' ')} changed "
                        f"from `{item.before}` ⟶ `{item.after}`\n" for item in diff if diff]
         embed.description = f"{role.mention}\n\n" + "\n".join(description)
-        return await self.dispatch_embed(log_channel, embed) if diff else None
+        return await self.dispatch_embed(log_channel, embed)
 
 
 class GuildEmojiEventDispatcher(GuildGenericEventDispatcher):
@@ -165,15 +170,41 @@ class MemberGenericEventDispatcher(LogDispatcher):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
 
+    async def check_logging_enabled(self, member: discord.Member, min_level: LogLevel):
+        if not member.bot:
+            return await super().check_logging_enabled(member.guild, min_level)
+        else:
+            raise customerrors.LoggingNotEnabled()
+
+    async def update_parser(self, member, item: namedtuple) -> str:
+        if item.type == "activities":
+            return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before.name}` ⟶ `{item.after.name}`"
+        elif item.type == "premium_since":
+            return f"{item.type.replace('_', ' ').title()}\n> Nitro Boosted this server"
+        elif "status" in item.type:
+            pass
+        elif item.type == "voice":
+            return f"{item.type.replace('_', ' ').title()}\n> {f'Connected to voice channel {item.after.channel.name}'}" \
+                if item.after.channel else f"Disconnected from voice channel `{item.before.channel.name}`'"
+        else:
+            return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before}` ⟶ `{item.after}`"
+
     async def member_membership_update(self, member: discord.Member, event_type: str):
-        log_channel = await self.check_logging_enabled(member.guild, self.min_level)
+        log_channel = await self.check_logging_enabled(member, self.min_level)
         embed = discord.Embed(title=f"Member {event_type.title()}",
                               description=f"{member.mention} has {event_type} {member.guild.name}",
-                              color=discord.Color.blue if event_type == "joined" else discord.Color.dark_red())
+                              color=discord.Color.blue() if event_type == "joined" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
     async def member_update(self, member: discord.Member, diff: list):
-        return
+        if not diff:
+            return
+        log_channel = await self.check_logging_enabled(member, self.min_level)
+        description = [await self.update_parser(member, item) for item in diff]
+        embed = discord.Embed(title="Member Updated",
+                              description = f"{member.mention} changed\n" + "\n".join(description),
+                              color=member.color)
+        return await self.dispatch_embed(log_channel, embed)
 
     async def member_ban_update(self, guild: discord.Guild, member: Union[discord.User, discord.Member], event_type: str):
         return
