@@ -1034,7 +1034,7 @@ class Roles(commands.Cog):
         except asyncio.TimeoutError:
             return await self.timeout(ctx, 30, panel)
         if result[0].emoji == reactions[0]:
-            await gcmds.safe_delete(panel)
+            await gcmds.smart_delete(panel)
             return await self.delete_rr_message(ctx, message_id)
         else:
             return await self.user_cancelled(ctx, panel)
