@@ -1,5 +1,5 @@
-import functools
-from collections import namedtuple
+import json
+from collections import namedtuple, ChainMap
 from datetime import datetime
 from typing import Optional, Union
 
@@ -138,7 +138,7 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
     async def guild_role_update(self, role: discord.Role, event_type: str):
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
         embed = discord.Embed(title=f"Role {event_type.title()}",
-                              description=f"Created role {role.mention}" if event_type == "created" else f"Deleted role {role.name}",
+                              description=f"Created role {role.mention}" if event_type == "created" else f"Role Name: `{role.name}`",
                               color=role.color if event_type == "created" else discord.Color.dark_red())
         return await self.dispatch_embed(log_channel, embed)
 
@@ -207,29 +207,85 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         super().__init__(bot)
 
     @enabled
-    async def message_raw_edit(self, message_id: int, channel: int, data: dict):
-        return
+    async def message_raw_edit(self, message_id: int, channel_id: int, data: dict):
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        message = await channel.fetch_message(message_id)
+        log_channel = await self.check_logging_enabled(message.guild, self.min_level)
+        member_data = data.get('member', None)
+        if not member_data:
+            return
+        description = (f"**Edited Content:**\n> {message.content if len(message.content) < 1000 else f'[Click Here]({message.jump_url})'}",
+                       "\n> ".join(("**Message Details:**",
+                                    f"Channel: {channel.mention}",
+                                    f"Jump URL: [Click Here]({message.jump_url})")))
+        embed = discord.Embed(title=f"{message.author} Edited a Message",
+                              description="\n\n".join(description),
+                              color=message.author.color)
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
-    async def message_raw_delete(self, message_id: int, channel_id: int, guild_id: Optional[int]):
-        return
+    async def message_raw_delete(self, message_id: int, channel_id: int):
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
+        embed = discord.Embed(title="Message Deleted",
+                              description=f"A message was deleted in {channel.mention}",
+                              color=discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
-
-class GuildReactionEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
+    @enabled
+    async def message_raw_bulk_delete(self, message_ids: set, channel_id: int):
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
+        embed = discord.Embed(title="Bulk Message Delete",
+                              description=f"{len(message_ids)} {'messages were' if len(message_ids) != 0 else 'message was'} deleted in {channel.mention}",
+                              color=discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def reaction_raw_update(self, message_id: int, emoji: discord.PartialEmoji, user_id: int, channel_id: int, event_type: str):
-        return
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
+        message = await channel.fetch_message(message_id)
+        description = (f"Emoji: {emoji}",
+                       f"Message: [Click Here]({message.jump_url})",
+                       f"Channel: {channel.mention}",
+                       f"User: <@{user_id}>")
+        embed = discord.Embed(title=event_type.title(),
+                              description="> " + "\n> ".join(description),
+                              color=discord.Color.blue() if event_type == "reaction added" else discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def reaction_raw_clear(self, message_id: int, channel_id: int):
-        return
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
+        message = await channel.fetch_message(message_id)
+        embed = discord.Embed(title="Reactions Cleared",
+                              description=f"[This message]({message.jump_url}) had all of its reactions removed",
+                              color=discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def reaction_raw_clear_emoji(self, message_id: int, channel_id: int, emoji: discord.PartialEmoji):
-        return
+        channel = await self.bot.fetch_channel(channel_id)
+        if not channel.guild:
+            return
+        log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
+        message = await channel.fetch_message(message_id)
+        embed = discord.Embed(title="Reaction Emoji Cleared",
+                              description=f"[This message]({message.jump_url}) had all of its reactions with the emoji {emoji} removed",
+                              color=discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
 
 class MemberGenericEventDispatcher(LogDispatcher):
@@ -248,20 +304,37 @@ class MemberGenericEventDispatcher(LogDispatcher):
             before = set(before.name for before in item.before)
             after = set(after.name for after in item.after)
             if before ^ after:
-                return f"{item.type.replace('_', ' ').title()}\n> Changed to {before ^ after}"
+                return f"{item.type.replace('_', ' ').title()}\n> Changed to `{item.after[0].name}`"
             else:
                 pass
         elif item.type == "premium_since":
             return f"{item.type.replace('_', ' ').title()}\n> Nitro Boosted this server"
-        elif "status" in item.type:
+        elif "role" in item.type:
+            return f"{'Acquired Role' if 'add' in item.type else 'Lost Role'}: {item.role.mention}"
+        elif "status" in item.type or item.type == "voice":
             pass
-        elif item.type == "voice":
-            return "{}\n> {}".format(
-                item.type.replace('_', ' ').title(),
-                f'Connected to voice channel {item.after.channel.name}'
-                if item.after.channel else f"Disconnected from voice channel `{item.before.channel.name}`'")
         else:
             return f"{item.type.replace('_', ' ').title()}\n> Changed from `{item.before}` ⟶ `{item.after}`"
+
+    def voice_update_parser(self, member: discord.Member, item: namedtuple) -> str:
+        if item.type == "deaf":
+            return "Server Deafened: `True`" if item.after else "Server Deafened: `False`"
+        elif item.type == "mute":
+            return "Server Muted: `True`" if item.after else "Server Muted: `False`"
+        elif item.type == "self_mute":
+            return "Self Muted: `True`" if item.after else "Self Muted: `False`"
+        elif item.type == "self_deaf":
+            return "Self Deafened: `True`" if item.after else "Self Deafened: `False`"
+        elif item.type == "self_stream":
+            return "Stream Status: `Streaming Live`" if item.after else "Stream Status: `Offline`"
+        elif item.type == "self_video":
+            return "Video Status: `Video On`" if item.after else "Video Status: `No Video`"
+        elif item.type == "afk":
+            return "In AFK Channel: `True`" if item.after else "In AFK Channel: `False`"
+        elif item.type == "channel":
+            return f"Connected To: `{item.after.name}`" if item.after else "Connected To: `None`"
+        else:
+            pass
 
     @enabled
     async def member_membership_update(self, member: discord.Member, event_type: str):
@@ -273,37 +346,36 @@ class MemberGenericEventDispatcher(LogDispatcher):
 
     @enabled
     async def member_update(self, member: discord.Member, diff: list):
-        if not diff:
+        if member.bot:
             return
-        log_channel = await self.check_logging_enabled(member, self.min_level)
+        log_channel = await self.check_logging_enabled(member, LogLevel.HIDEF)
         description = [self.update_parser(member, item) for item in diff if self.update_parser(member, item)]
         if not description:
             return
         embed = discord.Embed(title="Member Updated",
-                              description=f"{member.mention} changed\n" + "\n".join(description),
+                              description=f"{member.mention} changed:\n\n" + "\n".join(description),
                               color=member.color)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def member_ban_update(self, guild: discord.Guild, member: Union[discord.User, discord.Member], event_type: str):
-        return
+        if member.bot:
+            return
+        log_channel = await self.check_logging_enabled(guild, self.min_level)
+        embed = discord.Embed(title=f"User {event_type.title()}",
+                              description=f"The user {member.mention} was {event_type} from {guild.name}",
+                              color=discord.Color.blue() if event_type == "unbanned" else discord.Color.dark_red())
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def member_voice_state_update(self, member: discord.Member, diff: list):
-        return
-
-
-class UserGenericEventDispatcher(LogDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
-        self.min_level = LogLevel.HIDEF
-
-    @enabled
-    async def user_update(self, user: discord.User, diff: list):
-        return
-
-
-class MessageGenericEventDispatcher(LogDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
-        self.min_level = LogLevel.HIDEF
+        if member.bot:
+            return
+        log_channel = await self.check_logging_enabled(member, self.min_level)
+        description = [self.voice_update_parser(member, item) for item in diff]
+        if not description:
+            return
+        embed = discord.Embed(title="Member Voice State Update",
+                              description=f"{member.mention} updated their voice status:\n\n> " + "\n> ".join(description),
+                              color=discord.Color.blue())
+        return await self.dispatch_embed(log_channel, embed)
