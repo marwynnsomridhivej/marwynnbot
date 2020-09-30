@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
@@ -33,81 +34,61 @@ class Roles(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT * FROM base_rr WHERE message_id={int(payload.message_id)}")
-        if not result:
+            type = await con.fetchval(f"SELECT type FROM base_rr WHERE message_id={int(payload.message_id)}")
+        if not type:
             return
 
         member = payload.member
-        if not member:
+        if not member or member.bot:
             return
-        guild_id = payload.guild_id
-        event_type = payload.event_type
 
-        if not member.bot and event_type == "REACTION_ADD":
-            reacted_emoji = payload.emoji
-            message_id = payload.message_id
-            channel_id = payload.channel_id
-            channel = await self.bot.fetch_channel(channel_id)
-            message = await channel.fetch_message(message_id)
-            reactions = message.reactions
-            guild = await self.bot.fetch_guild(guild_id)
-            try:
-                users = [(reaction.emoji, await reaction.users().flatten()) for reaction in reactions]
-                async with self.bot.db.acquire() as con:
-                    role_emoji = await con.fetch(f"SELECT role_id, emoji FROM emoji_rr WHERE message_id={message_id}")
-                type_name = result[0]['type']
-                for item in role_emoji:
-                    role = guild.get_role(int(item['role_id']))
-                    if str(reacted_emoji) == str(item['emoji']):
-                        if type_name == "normal" or type_name == "single_normal":
-                            if role not in member.roles:
-                                await member.add_roles(role)
-                        if type_name == "reverse":
-                            if role in member.roles:
-                                await member.remove_roles(role)
-                    elif str(reacted_emoji) != str(item['emoji']) and type_name == "single_normal":
-                        if role in member.roles:
-                            await member.remove_roles(role)
-                if type_name == "single_normal":
-                    for emoji, user in users:
-                        if str(emoji) != str(reacted_emoji):
-                            for reacted in user:
-                                if member.id == reacted.id:
-                                    await message.remove_reaction(emoji, member)
-            except (discord.Forbidden, discord.NotFound, KeyError):
-                pass
+        with suppress(discord.Forbidden, discord.NotFound, KeyError):
+            async with self.bot.db.acquire() as con:
+                role_id = await con.fetchval(f"SELECT role_id FROM emoji_rr WHERE message_id={payload.message_id} "
+                                             f"AND emoji=$tag${str(payload.emoji)}$tag$")
+                role_emoji = await con.fetch(f"SELECT role_id, emoji FROM emoji_rr WHERE message_id={payload.message_id} "
+                                             f"AND role_id != {role_id}")
+            role = discord.utils.get(member.roles, id=int(role_id))
+            if "normal" in type and not role:
+                await member.add_roles(member.guild.get_role(int(role_id)))
+            if type == "reverse" and role:
+                await member.remove_roles(role)
+            if type == 'single_normal':
+                channel = await self.bot.fetch_channel(payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
+                for role_id, emoji in role_emoji:
+                    role = discord.utils.get(member.roles, id=role_id)
+                    if not role:
+                        continue
+                    with suppress(Exception):
+                        await member.remove_roles(role)
+                    with suppress(Exception):
+                        await message.remove_reaction(emoji, member)
+        return
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            result = await con.fetch(f"SELECT * FROM base_rr WHERE message_id={payload.message_id}")
-        if not result:
+            type = await con.fetchval(f"SELECT type FROM base_rr WHERE message_id={payload.message_id}")
+        if not type:
             return
 
-        guild_id = payload.guild_id
-        guild = await self.bot.fetch_guild(guild_id)
-        member_id = payload.user_id
-        member = await guild.fetch_member(member_id)
-        event_type = payload.event_type
-        if not member.bot and event_type == "REACTION_REMOVE":
-            reacted_emoji = payload.emoji
-            message_id = payload.message_id
-            try:
-                async with self.bot.db.acquire() as con:
-                    role_emoji = await con.fetch(f"SELECT role_id, emoji FROM emoji_rr WHERE message_id={message_id}")
-                type_name = result[0]['type']
-                for item in role_emoji:
-                    role = guild.get_role(int(item['role_id']))
-                    if str(reacted_emoji) == str(item['emoji']):
-                        if type_name == "normal" or type_name == "single_normal":
-                            if role in member.roles:
-                                await member.remove_roles(role)
-                        if type_name == "reverse":
-                            if role not in member.roles:
-                                await member.add_roles(role)
-            except (discord.Forbidden, discord.NotFound, KeyError):
-                pass
+        guild = await self.bot.fetch_guild(payload.guild_id)
+        member = await guild.fetch_member(payload.user_id)
+        if member.bot:
+            return
+
+        with suppress(discord.Forbidden, discord.NotFound, KeyError):
+            async with self.bot.db.acquire() as con:
+                role_id = await con.fetchval(f"SELECT role_id FROM emoji_rr WHERE message_id={payload.message_id} "
+                                             f"AND emoji=$tag${str(payload.emoji)}$tag$")
+            role = discord.utils.get(member.roles, id=int(role_id))
+            if "normal" in type and role:
+                await member.remove_roles(role)
+            if type == "reverse" and not role:
+                await member.add_roles(guild.get_role(int(role_id)))
+        return
 
     async def check_panel(self, panel: discord.Message) -> discord.Message:
         return panel
