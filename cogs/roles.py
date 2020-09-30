@@ -26,7 +26,8 @@ class Roles(commands.Cog):
     async def init_roles(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, type text, author_id bigint, guild_id bigint, jump_url text)")
+            await con.execute("CREATE TABLE IF NOT EXISTS base_rr(message_id bigint PRIMARY KEY, channel_id bigint, "
+                              "type text, author_id bigint, guild_id bigint, jump_url text)")
             await con.execute("CREATE TABLE IF NOT EXISTS emoji_rr(message_id bigint, role_id bigint PRIMARY KEY, emoji text)")
             await con.execute("CREATE TABLE IF NOT EXISTS autoroles(role_id bigint, type text, guild_id bigint, author_id bigint)")
 
@@ -182,8 +183,9 @@ class Roles(commands.Cog):
                               role_emoji: list, type_name: str):
         rr_message = await channel.send(embed=send_embed)
         async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO base_rr(message_id, type, author_id, guild_id, jump_url) VALUES "
-                              f"({rr_message.id}, $tag${type_name}$tag$, {ctx.author.id}, {ctx.guild.id}, '{rr_message.jump_url}')")
+            await con.execute(f"INSERT INTO base_rr(message_id, channel_id, type, author_id, guild_id, jump_url) VALUES "
+                              f"({rr_message.id}, {channel.id}, $tag${type_name}$tag$, {ctx.author.id}, {ctx.guild.id},"
+                              f" '{rr_message.jump_url}')")
             for role, emoji in role_emoji:
                 await rr_message.add_reaction(emoji)
                 await con.execute(f"INSERT INTO emoji_rr(message_id, role_id, emoji) VALUES ({rr_message.id}, {int(role)}, $tag${emoji}$tag$)")
@@ -260,15 +262,14 @@ class Roles(commands.Cog):
             return None
 
     async def delete_rr_message(self, ctx, message_id: int):
-        try:
-            message = await ctx.channel.fetch_message(message_id)
-            await gcmds.smart_delete(message)
-        except Exception:
-            pass
-
         async with self.bot.db.acquire() as con:
-            await con.execute(f"DELETE FROM base_rr WHERE message_id={message_id}")
+            channel_id = await con.fetchval(f"DELETE FROM base_rr WHERE message_id={message_id} RETURNING channel_id")
             await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message_id}")
+
+        with suppress(Exception):
+            channel = await self.bot.get_channel(int(channel_id))
+            message = await channel.fetch_message(message_id)
+            await gcmds.smart_delete(message)
 
         embed = discord.Embed(title="Successfully Deleted Reaction Role",
                               description=f"{ctx.author.mention}, I have deleted the reaction roles panel and cleared the record from "
