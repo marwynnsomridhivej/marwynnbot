@@ -450,7 +450,7 @@ class Logging(commands.Cog):
     @logging_level.command(aliases=['3'])
     @commands.is_owner()
     async def hidef(self, ctx):
-        return await self.set_logging_level(ctx, 2)
+        return await self.set_logging_level(ctx, 3)
 
     @logging.command(aliases=['bl', 'blacklist'])
     async def logging_blacklist(self, ctx, guild: discord.Guild = None):
