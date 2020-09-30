@@ -381,9 +381,10 @@ class Logging(commands.Cog):
     @logging.command(aliases=['lvl', 'level', 'levels'])
     @commands.has_permissions(manage_guild=True)
     async def logging_level(self, ctx, level):
+        print(level)
         try:
             if level.lower() == "server":
-                level == "guild"
+                level = "guild"
             level_int = LogLevel[level.upper()]
         except KeyError:
             raise customerrors.LoggingLevelInvalid(level)
