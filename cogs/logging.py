@@ -310,11 +310,6 @@ class Logging(commands.Cog):
             embed.color = discord.Color.dark_red()
         return await ctx.channel.send(embed=embed)
 
-    async def check_logging_level_updatable(self, ctx, level):
-        if not await premium.check_guild_premium(ctx.guild):
-            raise customerrors.NotPremiumGuild(ctx.guild)
-        return
-
     async def set_logging_level(self, ctx, level_int):
         embed = discord.Embed()
         try:
@@ -378,18 +373,26 @@ class Logging(commands.Cog):
         else:
             return await gcmds.cancelled(ctx, "logging disable")
 
-    @logging.command(aliases=['lvl', 'level', 'levels'])
+    @logging.group(invoke_without_command=True, aliases=['lvl', 'level', 'levels'])
     @commands.has_permissions(manage_guild=True)
     async def logging_level(self, ctx, level):
-        print(level)
-        try:
-            if level.lower() == "server":
-                level = "guild"
-            level_int = LogLevel[level.upper()]
-        except KeyError:
-            raise customerrors.LoggingLevelInvalid(level)
-        await self.check_logging_level_updatable(ctx, level_int)
-        return await self.set_logging_level(ctx, level_int)
+        return
+
+    @logging_level.command(aliases=['0'])
+    @commands.has_permissions(manage_guild=True)
+    async def basic(self, ctx):
+        return await self.set_logging_level(ctx, 1)
+
+    @premium.is_premium(req_guild=True)
+    @logging_level.command(aliases=['server', '1'])
+    @commands.has_permissions(manage_guild=True)
+    async def guild(self, ctx):
+        return await self.set_logging_level(ctx, 2)
+
+    @logging_level.command(aliases=['3'])
+    @commands.is_owner()
+    async def hidef(self, ctx):
+        return await self.set_logging_level(ctx, 2)
 
     @logging.command(aliases=['bl', 'blacklist'])
     async def logging_blacklist(self, ctx, guild: discord.Guild = None):
