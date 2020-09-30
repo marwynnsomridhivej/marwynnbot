@@ -56,14 +56,15 @@ class Roles(commands.Cog):
             if type == 'single_normal':
                 channel = await self.bot.fetch_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
+                roles = []
                 for role_id, emoji in role_emoji:
                     role = discord.utils.get(member.roles, id=role_id)
                     if not role:
                         continue
-                    with suppress(Exception):
-                        await member.remove_roles(role)
+                    roles.append(role)
                     with suppress(Exception):
                         await message.remove_reaction(emoji, member)
+                await member.remove_roles(*roles)
         return
 
     @commands.Cog.listener()
