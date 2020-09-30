@@ -315,7 +315,8 @@ class Bot(commands.AutoShardedBot):
             else:
                 op = [f'"{command.name}": 0' for command in self.commands]
                 op_string = "'{" + ", ".join(op) + "}'"
-                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix, counter) VALUES ('{guild.id}', 'm!', {op_string})")
+                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix, counter) VALUES ('{guild.id}', 'm!', {op_string})"
+                                  " ON CONFLICT DO NOTHING")
 
     async def on_guild_remove(self, guild):
         async with self.db.acquire() as con:
