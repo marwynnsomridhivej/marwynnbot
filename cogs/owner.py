@@ -97,7 +97,7 @@ class Owner(commands.Cog):
             raise customerrors.GuildPremiumException(guild)
         return
 
-    @commands.group(aliases=['g'])
+    @commands.group(invoke_without_command=True, aliases=['g'])
     @commands.is_owner()
     async def git(self, ctx, *, args: str):
         embed = discord.Embed(title="Git Output")
