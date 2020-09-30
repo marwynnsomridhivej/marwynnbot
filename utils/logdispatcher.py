@@ -248,7 +248,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"{message.author} Edited a Message",
                               description="\n\n".join(description),
                               color=message.author.color)
-        embed.set_thumbnail(url=channel.guild.icon_url)
+        embed.set_thumbnail(url=message.author.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
