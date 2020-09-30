@@ -233,6 +233,8 @@ class Logging(commands.Cog):
             await con.execute(f"CREATE TABLE IF NOT EXISTS logging{values}")
             for command in sorted(self.bot.commands, key=lambda x: x.name):
                 await con.execute(f"ALTER TABLE logging ADD COLUMN IF NOT EXISTS \"{command.name.lower()}\" boolean DEFAULT FALSE ")
+            for guild in self.bot.guilds:
+                await con.execute(f"INSERT INTO logging(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
         return
 
     async def send_logging_help(self, ctx):
