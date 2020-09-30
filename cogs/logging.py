@@ -40,7 +40,8 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx):
-        await self.guild_gen_event_dispatcher.guild_command_completed(ctx)
+        name = ctx.command.root_parent.name.lower() if ctx.command.root_parent else ctx.command.name.lower()
+        await self.guild_gen_event_dispatcher.guild_command_completed(ctx, name)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
@@ -225,7 +226,7 @@ class Logging(commands.Cog):
     async def init_logging(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            values = "(guild_id bigint PRIMARY KEY, log_level text DEFAULT 'basic', \"" + \
+            values = "(guild_id bigint PRIMARY KEY, \"" + \
                 '\" boolean DEFAULT FALSE, \"'.join(command.name.lower() for command in sorted(self.bot.commands,
                                                                                                key=lambda x: x.name)) + \
                 "\" boolean DEFAULT FALSE)"
@@ -254,23 +255,29 @@ class Logging(commands.Cog):
                        "privacy, so this logging will only be reserved for those that have been pre-approved to access "
                        "this feature\n",
                        "Here are all the subcommands")
-        lset = (f"**Usage:** `{pfx} set [#channel]`",
+        lset = (f"**Usage:** `{pfx}set [#channel]`",
                 "**Returns:** An embed that confirms that you have successfully set the logging channel",
                 "**Aliases:** `-s` `use`",
                 "**Special Cases:** `[#channel]` should be a channel tag or channel ID")
-        llist = (f"**Usage:** `{pfx} list`",
+        lcommand = (f"**Usage:** `{pfx}command [command]`",
+                    "**Returns:** An embed that confirms you have successfully toggled logging status for that command",
+                    "**Aliases:** `toggle` `cmd`",
+                    "**Special Cases:** `[command]` must be a command name, not an alias *(`help` instead of `h`)*. Enter "
+                    "*\"all\"* to toggle all")
+        llist = (f"**Usage:** `{pfx}list (command)`",
                  "**Returns:** An embed that displays the current logging channel and logging level, if set",
                  "**Aliases:** `-ls` `show` `display`",
-                 "**Special Cases:** This will return an error message if no logging channel is set")
-        ldisable = (f"**Usage:** `{pfx} disable`",
+                 "**Special Cases:** This will return an error message if no logging channel is set. If `(command)` is "
+                 "specified, it will display the logging status for that command if it is a valid command")
+        ldisable = (f"**Usage:** `{pfx}disable`",
                     "**Returns:** A confirmation embed that once confirmed, will disable logging on this server",
                     "**Aliases:** `-rm` `delete` `reset` `clear` `remove`")
-        llevel = (f"**Usage:** `{pfx} level [level]`",
+        llevel = (f"**Usage:** `{pfx}level [level]`",
                   "**Returns:** An embed that confirms the server's log level was changed",
                   "**Aliases:** `lvl` `levels`",
                   "**Special Cases:** This command can only be used if your server is a MarwynnBot Premium Server. "
                   "`[level]` must be either \"basic\", \"server\", or \"hidef\"")
-        lblacklist = (f"**Usage:** `{pfx} blacklist (guild)`",
+        lblacklist = (f"**Usage:** `{pfx}blacklist (guild)`",
                       "**Returns:** An embed that confirms the blacklist has been set for `(guild)`",
                       "**Aliases:** `bl`",
                       "**Special Cases:** This is an owner only command. `(guild)` will default to the current server "
@@ -324,6 +331,35 @@ class Logging(commands.Cog):
             embed.color = discord.Color.dark_red()
         return await ctx.channel.send(embed=embed)
 
+    async def toggle_logging_command(self, ctx, name: str):
+        if not name in [command.name.lower() for command in self.bot.commands]:
+            if not name == "all":
+                raise customerrors.LoggingCommandNameInvalid(name)
+        try:
+            if not name == "all":
+                async with self.bot.db.acquire() as con:
+                    update_bool = await con.fetchval(f"UPDATE logging SET \"{name}\"=NOT \"{name}\" WHERE guild_id={ctx.guild.id} RETURNING \"{name}\"")
+                embed = discord.Embed(title=f"{name.title()} Toggle Set",
+                                      description=f"{ctx.author.mention}, logging for the command `{name}` is now "
+                                      f"{'enabled' if update_bool else 'disabled'}",
+                                      color=discord.Color.blue())
+            else:
+                async with self.bot.db.acquire() as con:
+                    update_bool = await con.fetchval(f"SELECT help FROM logging WHERE guild_id={ctx.guild.id}")
+                    for command in self.bot.commands:
+                        await con.execute(f"UPDATE logging SET \"{command.name.lower()}\"={not update_bool} WHERE guild_id={ctx.guild.id}")
+                embed = discord.Embed(title="Command Toggles Set",
+                                      description=f"{ctx.author.mention}, logging for all commands were ""{}"
+                                      .format("enabled" if not update_bool else "disabled"),
+                                      color=discord.Color.blue())
+        except Exception as e:
+            raise e
+            embed = discord.Embed(title="Toggle Set Failed",
+                                  description=f"{ctx.author.mention}, I could not toggle logging status for the command `{name}`",
+                                  color=discord.Color.dark_red())
+        finally:
+            return await ctx.channel.send(embed=embed)
+
     @commands.group(invoke_without_command=True, aliases=['lg', 'log'])
     async def logging(self, ctx):
         return await self.send_logging_help(ctx)
@@ -333,15 +369,35 @@ class Logging(commands.Cog):
     async def logging_set(self, ctx, channel: discord.TextChannel):
         return await self.set_logging_channel(ctx, channel)
 
-    @logging.command(aliases=['ls', 'show', 'display', 'list'])
-    async def logging_list(self, ctx):
+    @logging.command(aliases=['toggle', 'cmd', 'command'])
+    async def logging_command(self, ctx, name: str):
+        return await self.toggle_logging_command(ctx, name.lower())
+
+    @logging.group(invoke_without_command=True, aliases=['ls', 'show', 'display', 'list'])
+    async def logging_list(self, ctx, *, name: str):
+        if name:
+            return await self.logging_list_command(ctx, name)
         async with self.bot.db.acquire() as con:
             log_channel = await con.fetchval(f"SELECT log_channel FROM guild WHERE guild_id={ctx.guild.id}")
             log_level = LogLevel(await con.fetchval(f"SELECT log_level FROM guild WHERE guild_id={ctx.guild.id}"))
+        if not log_channel or not log_level:
+            raise customerrors.LoggingNotEnabled()
         embed = discord.Embed(title="Logging Details",
                               description=f"**Logging Channel:** {f'<#{log_channel}>' if log_channel else '`None Set`'}\n"
                               f"**Logging Level:** `{log_level}`",
                               color=discord.Color.blue() if log_channel else discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
+
+    @logging_list.command(aliases=['command', 'cmd'])
+    async def logging_list_command(self, ctx, name: str):
+        if not name.lower() in [command.name.lower() for command in self.bot.commands]:
+            raise customerrors.LoggingCommandNameInvalid(name)
+        async with self.bot.db.acquire() as con:
+            status = await con.fetchval(f"SELECT {name.lower()} FROM logging WHERE guild_id={ctx.guild.id}")
+        embed = discord.Embed(title="Command Logging Details",
+                                description=f"Logging for the command `{name.lower()}` is ""**{}**"
+                                .format('enabled' if status else 'disabled'),
+                                color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
     @logging.command(aliases=['rm', 'delete', 'reset', 'clear', 'remove', 'disable'])

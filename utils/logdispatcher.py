@@ -32,7 +32,7 @@ class LogDispatcher():
         self.min_level = LogLevel.BASIC
         self.gcmds = globalcommands.GlobalCMDS(self.bot)
 
-    async def check_logging_enabled(self, guild, min_level):
+    async def check_logging_enabled(self, guild, min_level: LogLevel):
         async with self.bot.db.acquire() as con:
             log_channel = await con.fetchval(f"SELECT log_channel FROM guild WHERE guild_id={guild.id}")
             log_level = await con.fetchval(f"SELECT log_level FROM guild WHERE guild_id={guild.id}")
@@ -54,15 +54,22 @@ class GuildGenericEventDispatcher(LogDispatcher):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
 
+    async def check_command_logging_enabled(self, guild: discord.Guild, min_level: LogLevel, name: str):
+        log_channel = await super().check_logging_enabled(guild, min_level)
+        async with self.bot.db.acquire() as con:
+            command_enabled = await con.fetchval(f"SELECT {name} FROM logging WHERE guild_id={guild.id}")
+        if command_enabled:
+            return log_channel
+        else:
+            raise customerrors.LoggingNotEnabled()
+
     @enabled
-    async def guild_command_completed(self, ctx):
-        log_channel = await self.check_logging_enabled(ctx.guild, LogLevel.BASIC)
+    async def guild_command_completed(self, ctx, name: str):
+        log_channel = await self.check_command_logging_enabled(ctx.guild, LogLevel.BASIC, name)
         description = (f"Executed by: {ctx.author.mention}",
                        f"Channel: {ctx.channel.mention}",
                        f"Invoked with: `{ctx.message.content}`")
-        embed = discord.Embed(title="Command Used: {}"
-                              .format(ctx.command.root_parent.name.lower()
-                                      if ctx.command.root_parent else ctx.command.name.lower()),
+        embed = discord.Embed(title=f"Command Used: {name}",
                               description="> " + "\n> ".join(description),
                               color=discord.Color.blue())
         embed.set_thumbnail(url=ctx.author.avatar_url)
