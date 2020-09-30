@@ -59,6 +59,7 @@ class Roles(commands.Cog):
                 message = await channel.fetch_message(payload.message_id)
                 roles = []
                 for role_id, emoji in role_emoji:
+                    await asyncio.sleep(0)
                     role = discord.utils.get(member.roles, id=role_id)
                     if not role:
                         continue
