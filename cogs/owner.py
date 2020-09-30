@@ -97,7 +97,7 @@ class Owner(commands.Cog):
             raise customerrors.GuildPremiumException(guild)
         return
 
-    @commands.group()
+    @commands.group(aliases=['g'])
     @commands.is_owner()
     async def git(self, ctx, *, args: str):
         embed = discord.Embed(title="Git Output")
@@ -117,6 +117,16 @@ class Owner(commands.Cog):
             stdout_file = discord.File(BytesIO(output), filename=f"{ctx.author.display_name.upper()}{datetime.now()}.txt")
             await ctx.channel.send(embed=embed)
             return await ctx.channel.send(file=stdout_file)
+
+    @git.command(aliases=['gpod'])
+    @commands.is_owner()
+    async def git_gpod(self, ctx):
+        return await self.git(ctx, "pull origin development")
+
+    @git.command(aliases=['gpom'])
+    @commands.is_owner()
+    async def git_gpom(self, ctx):
+        return await self.git(ctx, "pull origin master")
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
@@ -203,6 +213,7 @@ class Owner(commands.Cog):
         return
 
     @balanceAdmin.command()
+    @commands.is_owner()
     async def set(self, ctx, user: discord.Member, amount):
         try:
             user.id
@@ -237,6 +248,7 @@ class Owner(commands.Cog):
         await ctx.channel.send(embed=setEmbed)
 
     @balanceAdmin.command()
+    @commands.is_owner()
     async def give(self, ctx, user: discord.Member, amount):
         try:
             user.id
@@ -277,6 +289,7 @@ class Owner(commands.Cog):
         await ctx.channel.send(embed=giveEmbed)
 
     @balanceAdmin.command()
+    @commands.is_owner()
     async def remove(self, ctx, user: discord.Member, amount):
         try:
             user.id
@@ -325,6 +338,7 @@ class Owner(commands.Cog):
         return
 
     @blacklist.command(aliases=['member', 'user'])
+    @commands.is_owner()
     async def _user(self, ctx, operation, user: discord.Member = None):
         if not user:
             invalid = discord.Embed(title="Invalid User",
@@ -364,6 +378,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=invalid)
 
     @blacklist.command(aliases=['server', 'guild'])
+    @commands.is_owner()
     async def _guild(self, ctx, operation, *, server_id: int = None):
         if server_id is None:
             invalid = discord.Embed(title="Invalid Guild ID",
@@ -431,6 +446,7 @@ class Owner(commands.Cog):
         return
 
     @set_premium.command(aliases=['user', '-u'])
+    @commands.is_owner()
     async def users(self, ctx, user: discord.User, pm: bool = False):
         op = "set" if pm else "remove"
         title = f"{user} is now MarwynnBot Premium!" if pm else f"{user} is no longer MarwynnBot Premium"
@@ -442,6 +458,7 @@ class Owner(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @set_premium.command(aliases=['guild', '-g'])
+    @commands.is_owner()
     async def guilds(self, ctx, pm: bool = False):
         op = "set" if pm else "remove"
         title = f"{ctx.guild.name} is now MarwynnBot Premium!" if pm else f"{ctx.guild.name} is no longer MarwynnBot Premium"
@@ -453,10 +470,12 @@ class Owner(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @premium.group(invoke_without_command=True, aliases=['list', '-l', '-ls'])
+    @commands.is_owner()
     async def list_premium(self, ctx):
         return
 
     @list_premium.command(aliases=['users', '-u'])
+    @commands.is_owner()
     async def user(self, ctx, source: str = "guild"):
         op = source if source == "guild" else "global"
         entries = [f"{user.mention} - {user.name}" for user in await self.get_premium_users(ctx.guild, op)]
@@ -465,6 +484,7 @@ class Owner(commands.Cog):
         return await pag.paginate()
 
     @list_premium.command(aliases=['guilds', '-g'])
+    @commands.is_owner()
     async def guild(self, ctx):
         entries = [f"{guild.name}" for guild in await self.get_premium_guilds()]
         pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
