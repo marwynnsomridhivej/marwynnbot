@@ -39,6 +39,10 @@ class Logging(commands.Cog):
         self.member_gen_event_dispatcher = MemberGenericEventDispatcher(self.bot)
 
     @commands.Cog.listener()
+    async def on_command_completion(self, ctx):
+        await self.guild_gen_event_dispatcher.guild_command_completed(ctx)
+
+    @commands.Cog.listener()
     async def on_guild_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
         set_after = set([(attr, getattr(after, attr)) for attr in after.__slots__
                          if not attr.startswith("_")
