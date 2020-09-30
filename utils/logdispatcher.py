@@ -6,7 +6,7 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-from utils import customerrors, premium
+from utils import customerrors, globalcommands, premium
 from utils.enums import ChannelEmoji as CE
 from utils.enums import LogLevel
 
@@ -30,6 +30,7 @@ class LogDispatcher():
         super().__init__()
         self.bot = bot
         self.min_level = LogLevel.BASIC
+        self.gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def check_logging_enabled(self, guild, min_level):
         async with self.bot.db.acquire() as con:
@@ -44,7 +45,7 @@ class LogDispatcher():
             return self.bot.get_channel(log_channel)
 
     async def dispatch_embed(self, channel: discord.TextChannel, embed: discord.Embed):
-        embed.set_footer(text="{:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+        embed.set_footer(text="{:%m/%d/%Y %H:%M:%S}".format(datetime.now()), icon_url=self.bot.user.avatar_url)
         return await channel.send(embed=embed)
 
 
@@ -52,6 +53,20 @@ class GuildGenericEventDispatcher(LogDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
+
+    @enabled
+    async def guild_command_completed(self, ctx):
+        log_channel = await self.check_logging_enabled(ctx.guild, LogLevel.BASIC)
+        description = (f"Executed by: {ctx.author.mention}",
+                       f"Channel: {ctx.channel.mention}",
+                       f"Invoked with: `{ctx.message.content}`")
+        embed = discord.Embed(title="Command Used: {}"
+                              .format(ctx.command.root_parent.name.lower()
+                                      if ctx.command.root_parent else ctx.command.name.lower()),
+                              description="> " + "\n> ".join(description),
+                              color=discord.Color.blue())
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        return await self.dispatch_embed(log_channel, embed)
 
     @enabled
     async def guild_update(self, guild: discord.Guild, diff: list):
@@ -68,6 +83,7 @@ class GuildGenericEventDispatcher(LogDispatcher):
                        )
                        for item in diff if diff]
         embed.description = "\n".join(description)
+        embed.set_thumbnail(url=guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -76,6 +92,7 @@ class GuildGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title="Server Integrations Updated",
                               description=f"The integrations for {guild.name} were updated",
                               color=discord.Color.blue())
+        embed.set_thumbnail(url=guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -101,6 +118,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
                        )
                        for item in diff if diff]
         embed.description = f"{self.get_channel_string(channel)}\n\n" + "\n".join(description)
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -109,6 +127,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"Channel {event_type.title()}",
                               description=f"{self.get_channel_string(channel, event_type)} was {event_type.lower()}",
                               color=discord.Color.blue() if event_type == "created" else discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -119,6 +138,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"Channel Pins Updated",
                               description=f"The pins for {channel.mention} were updated\n\n**Most Recent Pin:** {last_pin}",
                               color=discord.Color.blue())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -127,6 +147,7 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"Channel Webhooks Updated",
                               description=f"The webhooks in {channel.mention} were updated",
                               color=discord.Color.blue())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -140,6 +161,7 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"Role {event_type.title()}",
                               description=f"Created role {role.mention}" if event_type == "created" else f"Role Name: `{role.name}`",
                               color=role.color if event_type == "created" else discord.Color.dark_red())
+        embed.set_thumbnail(url=role.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -157,6 +179,7 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
                        )
                        for item in diff if diff]
         embed.description = f"{role.mention}\n\n" + "\n".join(description)
+        embed.set_thumbnail(url=role.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -170,6 +193,7 @@ class GuildEmojiEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"Emojis {event_type.title()}", color=discord.Color.blue()
                               if event_type == "added" else discord.Color.dark_red())
         embed.description = "\n".join([f"> {str(emoji)} `<:{emoji.name}:{emoji.id}>`" for emoji in diff])
+        embed.set_thumbnail(url=guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -199,6 +223,7 @@ class GuildInviteEventDispatcher(GuildGenericEventDispatcher):
                               description=description,
                               color=discord.Color.blue() if event_type == "created" else discord.Color.dark_red(),
                               url=invite.url if event_type == "created" else None)
+        embed.set_thumbnail(url=invite.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -223,6 +248,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=f"{message.author} Edited a Message",
                               description="\n\n".join(description),
                               color=message.author.color)
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -234,6 +260,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title="Message Deleted",
                               description=f"A message was deleted in {channel.mention}",
                               color=discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -245,6 +272,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title="Bulk Message Delete",
                               description=f"{len(message_ids)} {'messages were' if len(message_ids) != 0 else 'message was'} deleted in {channel.mention}",
                               color=discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -261,6 +289,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title=event_type.title(),
                               description="> " + "\n> ".join(description),
                               color=discord.Color.blue() if event_type == "reaction added" else discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -273,6 +302,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title="Reactions Cleared",
                               description=f"[This message]({message.jump_url}) had all of its reactions removed",
                               color=discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -285,6 +315,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         embed = discord.Embed(title="Reaction Emoji Cleared",
                               description=f"[This message]({message.jump_url}) had all of its reactions with the emoji {emoji} removed",
                               color=discord.Color.dark_red())
+        embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
 
@@ -342,6 +373,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title=f"Member {event_type.title()}",
                               description=f"{member.mention} has {event_type} {member.guild.name}",
                               color=discord.Color.blue() if event_type == "joined" else discord.Color.dark_red())
+        embed.set_thumbnail(url=member.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -355,6 +387,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title="Member Updated",
                               description=f"{member.mention} changed:\n\n" + "\n".join(description),
                               color=member.color)
+        embed.set_thumbnail(url=member.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -365,6 +398,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title=f"User {event_type.title()}",
                               description=f"The user {member.mention} was {event_type} from {guild.name}",
                               color=discord.Color.blue() if event_type == "unbanned" else discord.Color.dark_red())
+        embed.set_thumbnail(url=member.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -378,4 +412,5 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title="Member Voice State Update",
                               description=f"{member.mention} updated their voice status:\n\n> " + "\n> ".join(description),
                               color=discord.Color.blue())
+        embed.set_thumbnail(url=member.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
