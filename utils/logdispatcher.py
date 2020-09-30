@@ -342,7 +342,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
             before = set(before.name for before in item.before)
             after = set(after.name for after in item.after)
             if before ^ after:
-                return f"{item.type.replace('_', ' ').title()}\n> Changed to `{item.after[0].name}`"
+                return f"{item.type.replace('_', ' ').title()}\n> Changed to ```{item.after[0].name}```"
             else:
                 pass
         elif item.type == "premium_since":
