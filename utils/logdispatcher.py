@@ -380,7 +380,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title=f"Member {event_type.title()}",
                               description=f"{member.mention} has {event_type} {member.guild.name}",
                               color=discord.Color.blue() if event_type == "joined" else discord.Color.dark_red())
-        embed.set_thumbnail(url=member.guild.icon_url)
+        embed.set_thumbnail(url=member.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -394,7 +394,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title="Member Updated",
                               description=f"{member.mention} changed:\n\n" + "\n".join(description),
                               color=member.color)
-        embed.set_thumbnail(url=member.guild.icon_url)
+        embed.set_thumbnail(url=member.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -405,7 +405,7 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title=f"User {event_type.title()}",
                               description=f"The user {member.mention} was {event_type} from {guild.name}",
                               color=discord.Color.blue() if event_type == "unbanned" else discord.Color.dark_red())
-        embed.set_thumbnail(url=member.guild.icon_url)
+        embed.set_thumbnail(url=member.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
@@ -419,5 +419,5 @@ class MemberGenericEventDispatcher(LogDispatcher):
         embed = discord.Embed(title="Member Voice State Update",
                               description=f"{member.mention} updated their voice status:\n\n> " + "\n> ".join(description),
                               color=discord.Color.blue())
-        embed.set_thumbnail(url=member.guild.icon_url)
+        embed.set_thumbnail(url=member.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
