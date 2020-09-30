@@ -121,12 +121,12 @@ class Owner(commands.Cog):
     @git.command(aliases=['gpod'])
     @commands.is_owner()
     async def git_gpod(self, ctx):
-        return await self.git(ctx, "pull origin development")
+        return await self.git(ctx, args="pull origin development")
 
     @git.command(aliases=['gpom'])
     @commands.is_owner()
     async def git_gpom(self, ctx):
-        return await self.git(ctx, "pull origin master")
+        return await self.git(ctx, args="pull origin master")
 
     @commands.command(aliases=['l', 'ld'])
     @commands.is_owner()
