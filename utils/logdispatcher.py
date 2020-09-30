@@ -244,10 +244,9 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         if not channel.guild:
             return
         message = await channel.fetch_message(message_id)
-        log_channel = await self.check_logging_enabled(message.guild, self.min_level)
-        member_data = data.get('member', None)
-        if not member_data:
+        if message.author.bot:
             return
+        log_channel = await self.check_logging_enabled(message.guild, self.min_level)
         description = (f"**Edited Content:**\n> {message.content if len(message.content) < 1000 else f'[Click Here]({message.jump_url})'}",
                        "\n> ".join(("**Message Details:**",
                                     f"Channel: {channel.mention}",
