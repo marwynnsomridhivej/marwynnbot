@@ -282,14 +282,15 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         message = await channel.fetch_message(message_id)
+        user = await self.bot.fetch_user(user_id)
         description = (f"Emoji: {emoji}",
                        f"Message: [Click Here]({message.jump_url})",
                        f"Channel: {channel.mention}",
-                       f"User: <@{user_id}>")
+                       f"User: {user.mention}")
         embed = discord.Embed(title=event_type.title(),
                               description="> " + "\n> ".join(description),
                               color=discord.Color.blue() if event_type == "reaction added" else discord.Color.dark_red())
-        embed.set_thumbnail(url=channel.guild.icon_url)
+        embed.set_thumbnail(url=user.avatar_url)
         return await self.dispatch_embed(log_channel, embed)
 
     @enabled
