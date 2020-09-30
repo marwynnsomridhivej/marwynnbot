@@ -7,7 +7,10 @@ class LoggingError(commands.CommandError):
 
 
 class LoggingNotEnabled(LoggingError):
-    pass
+    def __init__(self):
+        self.embed = discord.Embed(title="Logging Not Enabled",
+                                   description="Logging is not enabled on this server",
+                                   color=discord.Color.dark_red())
 
 
 class LoggingLevelInsufficient(LoggingError):
@@ -23,6 +26,13 @@ class LoggingLevelInvalid(LoggingError):
         self.embed = discord.Embed(title="Invalid Logging Level",
                                    description=f"The logging level `{level}` is not a valid logging level. Please enter "
                                    "either `basic`, `server`, or `hidef`",
+                                   color=discord.Color.dark_red())
+
+
+class LoggingCommandNameInvalid(LoggingError):
+    def __init(self, name: str):
+        self.embed = discord.Embed(title="Invalid Command Name",
+                                   description=f"No command is registered under the name `{name}`",
                                    color=discord.Color.dark_red())
 
 
