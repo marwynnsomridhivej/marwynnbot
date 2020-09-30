@@ -33,7 +33,7 @@ class Help(commands.Cog):
             embed.add_field(name="Output",
                             value=exampleOutput,
                             inline=False)
-        cmdName = self.bot.get_command(ctx.command.name)
+        cmdName = self.bot.get_command(ctx.command.qualified_name)
         aliases = cmdName.aliases
         if aliases:
             embed.add_field(name="Aliases",
