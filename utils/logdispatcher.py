@@ -49,7 +49,7 @@ class LogDispatcher():
         return await channel.send(embed=embed)
 
 
-class GuildGenericEventDispatcher(LogDispatcher):
+class GuildDispatcher(LogDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
@@ -102,11 +102,6 @@ class GuildGenericEventDispatcher(LogDispatcher):
         embed.set_thumbnail(url=guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
-
-class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
-
     def get_channel_string(self, channel: discord.abc.GuildChannel, event_type: str = "none"):
         return (f"Channel {CE[str(channel.type)]}"
                 f"{channel.mention if event_type != 'deleted' and str(channel.type) == 'text' else f'`{channel.name}`'}")
@@ -158,11 +153,6 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         embed.set_thumbnail(url=channel.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
-
-class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
-
     @enabled
     async def guild_role_update(self, role: discord.Role, event_type: str):
         log_channel = await self.check_logging_enabled(role.guild, self.min_level)
@@ -190,11 +180,6 @@ class GuildRoleEventDispatcher(GuildGenericEventDispatcher):
         embed.set_thumbnail(url=role.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
 
-
-class GuildEmojiEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
-
     @enabled
     async def guild_emoji_update(self, guild, event_type: str, diff: list):
         log_channel = await self.check_logging_enabled(guild, self.min_level)
@@ -203,11 +188,6 @@ class GuildEmojiEventDispatcher(GuildGenericEventDispatcher):
         embed.description = "\n".join([f"> {str(emoji)} `<:{emoji.name}:{emoji.id}>`" for emoji in diff])
         embed.set_thumbnail(url=guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
-
-
-class GuildInviteEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
 
     @enabled
     async def guild_invite_update(self, invite: discord.Invite, event_type: str):
@@ -233,11 +213,6 @@ class GuildInviteEventDispatcher(GuildGenericEventDispatcher):
                               url=invite.url if event_type == "created" else None)
         embed.set_thumbnail(url=invite.guild.icon_url)
         return await self.dispatch_embed(log_channel, embed)
-
-
-class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
-    def __init__(self, bot: commands.AutoShardedBot):
-        super().__init__(bot)
 
     @enabled
     async def message_raw_edit(self, message_id: int, channel_id: int, data: dict):
@@ -327,7 +302,7 @@ class GuildMessageEventDispatcher(GuildGenericEventDispatcher):
         return await self.dispatch_embed(log_channel, embed)
 
 
-class MemberGenericEventDispatcher(LogDispatcher):
+class MemberDispatcher(LogDispatcher):
     def __init__(self, bot: commands.AutoShardedBot):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
@@ -418,7 +393,8 @@ class MemberGenericEventDispatcher(LogDispatcher):
         if not description:
             return
         embed = discord.Embed(title="Member Voice State Update",
-                              description=f"{member.mention} updated their voice status:\n\n> " + "\n> ".join(description),
+                              description=f"{member.mention} updated their voice status:\n\n> " +
+                              "\n> ".join(description),
                               color=discord.Color.blue())
         embed.set_thumbnail(url=member.avatar_url)
         return await self.dispatch_embed(log_channel, embed)

@@ -6,15 +6,8 @@ from typing import Optional, Sequence, Union
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, premium
+from utils import customerrors, globalcommands, premium, logdispatcher
 from utils.enums import ConfirmReactions, LogLevel
-from utils.logdispatcher import (GuildChannelEventDispatcher,
-                                 GuildEmojiEventDispatcher,
-                                 GuildGenericEventDispatcher,
-                                 GuildInviteEventDispatcher,
-                                 GuildMessageEventDispatcher,
-                                 GuildRoleEventDispatcher,
-                                 MemberGenericEventDispatcher)
 
 gcmds = globalcommands.GlobalCMDS()
 GuildDiff = namedtuple("GuildAttributeDiff", ['type', 'before', 'after'])
@@ -30,18 +23,13 @@ class Logging(commands.Cog):
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_logging())
-        self.guild_gen_event_dispatcher = GuildGenericEventDispatcher(self.bot)
-        self.guild_channel_event_dispatcher = GuildChannelEventDispatcher(self.bot)
-        self.guild_role_event_dispatcher = GuildRoleEventDispatcher(self.bot)
-        self.guild_emoji_event_dispatcher = GuildEmojiEventDispatcher(self.bot)
-        self.guild_invite_event_dispatcher = GuildInviteEventDispatcher(self.bot)
-        self.guild_message_event_dispatcher = GuildMessageEventDispatcher(self.bot)
-        self.member_gen_event_dispatcher = MemberGenericEventDispatcher(self.bot)
+        self.guild_dispatch = logdispatcher.GuildDispatcher(self.bot)
+        self.member_dispatch = logdispatcher.MemberDispatcher(self.bot)
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx):
         name = ctx.command.root_parent.name.lower() if ctx.command.root_parent else ctx.command.name.lower()
-        await self.guild_gen_event_dispatcher.guild_command_completed(ctx, name)
+        await self.guild_dispatch.guild_command_completed(ctx, name)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
@@ -52,15 +40,15 @@ class Logging(commands.Cog):
                           if not attr.startswith("_")
                           and not type(getattr(before, attr)) == list])
         diff_list = [GuildDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
-        await self.guild_gen_event_dispatcher.guild_update(after, diff_list)
+        await self.guild_dispatch.guild_update(after, diff_list)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel: discord.abc.GuildChannel):
-        await self.guild_channel_event_dispatcher.guild_channels_update(channel, "created")
+        await self.guild_dispatch.guild_channels_update(channel, "created")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
-        await self.guild_channel_event_dispatcher.guild_channels_update(channel, "deleted")
+        await self.guild_dispatch.guild_channels_update(channel, "deleted")
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before: discord.abc.GuildChannel, after: discord.abc.GuildChannel):
@@ -71,19 +59,19 @@ class Logging(commands.Cog):
                           if not attr.startswith("_")
                           and not type(getattr(before, attr)) == list])
         diff_list = [ChannelDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
-        await self.guild_channel_event_dispatcher.guild_channel_attr_update(after, diff_list)
+        await self.guild_dispatch.guild_channel_attr_update(after, diff_list)
 
     @commands.Cog.listener()
     async def on_guild_channel_pins_update(self, channel: discord.abc.GuildChannel, last_pin: Optional[datetime]):
-        await self.guild_channel_event_dispatcher.channel_pins_update(channel)
+        await self.guild_dispatch.channel_pins_update(channel)
 
     @commands.Cog.listener()
     async def on_guild_role_create(self, role: discord.Role):
-        await self.guild_role_event_dispatcher.guild_role_update(role, "created")
+        await self.guild_dispatch.guild_role_update(role, "created")
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role: discord.Role):
-        await self.guild_role_event_dispatcher.guild_role_update(role, "deleted")
+        await self.guild_dispatch.guild_role_update(role, "deleted")
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before: discord.Role, after: discord.Role):
@@ -94,29 +82,29 @@ class Logging(commands.Cog):
                           if not attr.startswith("_")
                           and not type(getattr(before, attr)) == list])
         diff_list = [ChannelDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
-        await self.guild_role_event_dispatcher.guild_role_attr_update(after, diff_list)
+        await self.guild_dispatch.guild_role_attr_update(after, diff_list)
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild: discord.Guild, before: Sequence[discord.Emoji], after: Sequence[discord.Emoji]):
         event_type = "added" if len(before) < len(after) else "removed"
         diff_list = set(after) ^ set(before)
-        await self.guild_emoji_event_dispatcher.guild_emoji_update(guild, event_type, diff_list)
+        await self.guild_dispatch.guild_emoji_update(guild, event_type, diff_list)
 
     @commands.Cog.listener()
     async def on_guild_integrations_update(self, guild: discord.Guild):
-        await self.guild_gen_event_dispatcher.guild_integrations_update(guild)
+        await self.guild_dispatch.guild_integrations_update(guild)
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel: discord.abc.GuildChannel):
-        await self.guild_channel_event_dispatcher.channel_webhooks_update(channel)
+        await self.guild_dispatch.channel_webhooks_update(channel)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        await self.member_gen_event_dispatcher.member_membership_update(member, "joined")
+        await self.member_dispatch.member_membership_update(member, "joined")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        await self.member_gen_event_dispatcher.member_membership_update(member, "left")
+        await self.member_dispatch.member_membership_update(member, "left")
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
@@ -136,15 +124,15 @@ class Logging(commands.Cog):
             diff_list = [MemberRoleDiff(role_type, value) for value in role_set_after ^ role_set_before]
             if not diff_list:
                 return
-        await self.member_gen_event_dispatcher.member_update(after, diff_list)
+        await self.member_dispatch.member_update(after, diff_list)
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: Union[discord.User, discord.Member]):
-        await self.member_gen_event_dispatcher.member_ban_update(guild, user, "banned")
+        await self.member_dispatch.member_ban_update(guild, user, "banned")
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
-        await self.member_gen_event_dispatcher.member_ban_update(guild, user, "unbanned")
+        await self.member_dispatch.member_ban_update(guild, user, "unbanned")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
@@ -156,19 +144,19 @@ class Logging(commands.Cog):
                           and not type(getattr(before, attr)) == list])
         diff_list = [MemberDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
         print(diff_list)
-        await self.member_gen_event_dispatcher.member_voice_state_update(member, diff_list)
+        await self.member_dispatch.member_voice_state_update(member, diff_list)
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite: discord.Invite):
-        await self.guild_invite_event_dispatcher.guild_invite_update(invite, "created")
+        await self.guild_dispatch.guild_invite_update(invite, "created")
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite: discord.Invite):
-        await self.guild_invite_event_dispatcher.guild_invite_update(invite, "deleted")
+        await self.guild_dispatch.guild_invite_update(invite, "deleted")
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        await self.guild_message_event_dispatcher.message_raw_edit(
+        await self.guild_dispatch.message_raw_edit(
             payload.message_id,
             payload.channel_id,
             payload.data
@@ -176,21 +164,21 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
-        await self.guild_message_event_dispatcher.message_raw_delete(
+        await self.guild_dispatch.message_raw_delete(
             payload.message_id,
             payload.channel_id
         )
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
-        await self.guild_message_event_dispatcher.message_raw_bulk_delete(
+        await self.guild_dispatch.message_raw_bulk_delete(
             payload.message_ids,
             payload.channel_id
         )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        await self.guild_message_event_dispatcher.reaction_raw_update(
+        await self.guild_dispatch.reaction_raw_update(
             payload.message_id,
             payload.emoji,
             payload.user_id,
@@ -200,7 +188,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        await self.guild_message_event_dispatcher.reaction_raw_update(
+        await self.guild_dispatch.reaction_raw_update(
             payload.message_id,
             payload.emoji,
             payload.user_id,
@@ -210,14 +198,14 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_clear(self, payload: discord.RawReactionClearEvent):
-        await self.guild_message_event_dispatcher.reaction_raw_clear(
+        await self.guild_dispatch.reaction_raw_clear(
             payload.message_id,
             payload.channel_id
         )
 
     @commands.Cog.listener()
     async def on_raw_reaction_clear_emoji(self, payload: discord.RawReactionClearEmojiEvent):
-        await self.guild_message_event_dispatcher.reaction_raw_clear_emoji(
+        await self.guild_dispatch.reaction_raw_clear_emoji(
             payload.message_id,
             payload.channel_id,
             payload.emoji
