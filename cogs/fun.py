@@ -10,6 +10,7 @@ from discord.ext.commands import CommandInvokeError
 from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
+SLEEP_TIME = 1.2
 
 
 class Fun(commands.Cog):
@@ -19,117 +20,17 @@ class Fun(commands.Cog):
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
-    async def imageSend(self, ctx, path, url=None, toSend=None):
-        path = path
-        sleepTime = 1.0
-
-        if "imgur" in path:
-            local = False
-            title = f"{path[5:].capitalize()} from Imgur"
-            url = url
-            color = discord.Color.blue()
-            cmdName = "imgurSearch"
-        elif "tenor" in path:
-            local = False
-            title = f"{path[5:].capitalize()} from Tenor"
-            url = url
-            color = discord.Color.blue()
-            cmdName = "gifSearch"
-        elif path == "cat":
-            local = False
-            title = "Cat"
-            url = url
-            color = discord.Color.blue()
-            cmdName = "randomCat"
-        elif path == "dog":
-            local = False
-            title = "Dog"
-            url = url
-            color = discord.Color.blue()
-            cmdName = "randomDog"
+    async def imageSend(self, ctx, path, url=None, toSend: str = ""):
+        if not url:
+            with open(f"{path}/{random.choice(os.listdir(path))}", "rb") as bin_file:
+                picture = discord.File(bin_file, filename="image.png")
+            embed = discord.Embed(title=f"{path[2:].title()} {toSend}", color=discord.Color.blue())
+            embed.set_image(url=f"attachment://image.png")
+            return await ctx.channel.send(file=picture, embed=embed)
         else:
-            local = True
-            files = os.listdir(path)
-            if toSend is not None:
-                counter = 0
-                name = []
-                d = []
-                while counter < toSend:
-                    name.append(random.choice(files))
-                    counter += 1
-            else:
-                name = random.choice(files)
-                d = f'{path}/{name}'
-
-            if path == "./toad":
-                title = "Toad️ ️❤️❤️❤️❤️❤️❤️"
-                color = discord.Color.red()
-                if toSend is not None:
-                    url = []
-                    for fn in name:
-                        url.append(f"attachment://toad_{fn}")
-                else:
-                    url = f"attachment://toad_{name}"
-                cmdName = "toad"
-            if path == "./isabelle":
-                title = "Isabelle"
-                color = discord.Color.blue()
-                if toSend is not None:
-                    url = []
-                    for fn in name:
-                        url.append(f"attachment://isabelle_{fn}")
-                else:
-                    url = f"attachment://isabelle_{name}"
-                cmdName = "isabelle"
-            if path == "./peppa":
-                title = "Peppa"
-                color = discord.Color.blue()
-                if toSend is not None:
-                    url = []
-                    for fn in name:
-                        url.append(f"attachment://peppa_{fn}")
-                else:
-                    url = f"attachment://peppa_{name}"
-                cmdName = "peppa"
-
-            if (toSend is not None) and local:
-                count = 0
-                for filename in name:
-                    d = f'{path}/{filename}'
-                    with open(d, 'rb') as f:
-                        picture = discord.File(f, d)
-                        multipleEmbed = discord.Embed(title=f"{title} [{count + 1}/{len(url)}]",
-                                                      color=color)
-                        multipleEmbed.set_image(url=url[count])
-                        multipleEmbed.set_footer(text=f"Filename: {filename}")
-                        await ctx.channel.send(file=picture, embed=multipleEmbed)
-                        await asyncio.sleep(sleepTime)
-                        count += 1
-                return
-            else:
-                with open(d, 'rb') as f:
-                    picture = discord.File(f, d)
-        if (toSend is not None) and not local:
-            count = 0
-            for i in url:
-                count += 1
-                multipleEmbed = discord.Embed(title=f"{title} [{count}/{len(url)}]",
-                                              color=color)
-                multipleEmbed.set_image(url=i)
-                await ctx.channel.send(embed=multipleEmbed)
-                await asyncio.sleep(sleepTime)
-            return
-        else:
-            pictureEmbed = discord.Embed(title=title,
-                                         color=color)
-            pictureEmbed.set_image(url=url)
-
-        if local:
-            pictureEmbed.set_footer(text=f'Filename: {name}')
-            await ctx.channel.send(file=picture,
-                                   embed=pictureEmbed)
-        else:
-            await ctx.channel.send(embed=pictureEmbed)
+            embed = discord.Embed(title=f"{path} {toSend}", color=discord.Color.blue())
+            embed.set_image(url=url)
+            return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['dailyastro'])
     async def apod(self, ctx):
@@ -181,8 +82,8 @@ class Fun(commands.Cog):
                               value=random.choice(choices.replace("?", "").split(" or ")))
         await ctx.channel.send(embed=chooseEmbed)
 
-    @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
-    async def gifSearch(self, ctx, toSend: typing.Optional[int] = None, *, query=None):
+    @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs', 'tenor'])
+    async def gifSearch(self, ctx, toSend: typing.Optional[int] = 1, *, query: str):
         api_key = gcmds.env_check("TENOR_API")
         if not api_key:
             title = "Missing API Key"
@@ -193,62 +94,43 @@ class Fun(commands.Cog):
                                   color=color)
             return await ctx.channel.send(embed=embed)
 
-        bool_check = True
-        if not query:
-            if toSend:
-                query = str(toSend)
-            else:
-                title = "No Search Term Specified"
-                description = f"{ctx.author.mention}, you must specify at least one search term. " \
-                              f"`Do {await gcmds.prefix(ctx)}help gifsearch` for command info"
-                color = discord.Color.dark_red()
-                bool_check = False
-
-        if bool_check:
-            query = str(query)
-            url = "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 50)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as r:
-                    results = await r.json()
-            if r.status == 200 or r.status == 202:
-                getURL = []
-                for i in range(len(results['results'])):
-                    getURL.append(results['results'][i]['media'][0]['gif']['url'])
-                if toSend:
-                    count = 0
-                    url = []
-                    while count < toSend:
-                        url.append(random.choice(getURL))
-                        count += 1
-                else:
-                    url = random.choice(getURL)
-                path = f"tenor{str(query)}"
-                return await self.imageSend(ctx, path, url=url, toSend=toSend)
-            elif r.status == 429:
-                title = "Error Code 429"
-                description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
-                color = discord.Color.dark_red()
-            elif 300 <= r.status < 400:
-                title = f"Error Code {r.status}"
-                description = "**HTTP ERROR:** Redirect"
-                color = discord.Color.dark_red()
-            elif r.status == 404:
-                title = "Error Code 404"
-                description = "**HTTP ERROR:** Not found - bad resource"
-                color = discord.Color.dark_red()
-            elif 500 <= r.status < 600:
-                title = f"Error Code {r.status}"
-                description = "**HTTP ERROR:** Unexpected server error"
-                color = discord.Color.dark_red()
+        url = "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, toSend if toSend <= 50 else 50)
+        path = f"{query} from Tenor"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as r:
+                results = await r.json()
+        if r.status == 200 or r.status == 202:
+            getURL = [results['results'][i]['media'][0]['gif']['url'] for i in range(len(results['results']))]
+            for counter in range(toSend):
+                url = random.choice(getURL)
+                await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+                await asyncio.sleep(SLEEP_TIME)
+            return
+        elif r.status == 429:
+            title = "Error Code 429"
+            description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
+            color = discord.Color.dark_red()
+        elif 300 <= r.status < 400:
+            title = f"Error Code {r.status}"
+            description = "**HTTP ERROR:** Redirect"
+            color = discord.Color.dark_red()
+        elif r.status == 404:
+            title = "Error Code 404"
+            description = "**HTTP ERROR:** Not found - bad resource"
+            color = discord.Color.dark_red()
+        elif 500 <= r.status < 600:
+            title = f"Error Code {r.status}"
+            description = "**HTTP ERROR:** Unexpected server error"
+            color = discord.Color.dark_red()
 
         embed = discord.Embed(title=title,
                               description=description,
                               color=color)
 
-        await ctx.channel.send(embed=embed)
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['imgur', 'imgursearch'])
-    async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query):
+    async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query: str):
         bot_id = gcmds.env_check("IMGUR_API")
         if not bot_id:
             title = "Missing Client ID"
@@ -259,8 +141,7 @@ class Fun(commands.Cog):
                                   color=color)
             return await ctx.channel.send(embed=embed)
 
-        path = f"imgur{str(query)}"
-        query = str(query)
+        path = f"{query} from Imgur"
         reqURL = f"https://api.imgur.com/3/gallery/search/?q_all={query}"
         headers = {'Authorization': f'Client-ID {bot_id}'}
         async with aiohttp.ClientSession(headers=headers) as session:
@@ -279,35 +160,35 @@ class Fun(commands.Cog):
                                 images.append(str(results['data'][i]['images'][j]['link']))
                     except KeyError:
                         images.append(str(results['data'][i]['link']))
-        if images is []:
+        if not images:
             none = discord.Embed(title="No Images Found",
                                  description=f"{ctx.author.mention},there were no images that matched your query: `{query}`",
                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=none)
-            return
-        elif (toSend is not None) and (toSend != 0):
-            url = []
-            count = 0
-            while count < toSend:
-                url.append(random.choice(images))
-                count += 1
-        else:
+            return await ctx.channel.send(embed=none)
+        for counter in range(toSend):
             url = random.choice(images)
-
-        await self.imageSend(ctx, path, url=url, toSend=toSend)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
 
     @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
-    async def isabelle(self, ctx, toSend: typing.Optional[int] = None):
+    async def isabelle(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./isabelle"
-        await self.imageSend(ctx, path, toSend=toSend)
+        for counter in range(toSend):
+            await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
 
     @commands.command(aliases=['peppapic', 'ppic', 'ppig'])
-    async def peppa(self, ctx, toSend: typing.Optional[int] = None):
+    async def peppa(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./peppa"
-        await self.imageSend(ctx, path, toSend=toSend)
+        for counter in range(toSend):
+            await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
 
     @commands.command(aliases=['randomcat', 'cat'])
-    async def randomCat(self, ctx, toSend: typing.Optional[int] = None):
+    async def randomCat(self, ctx, toSend: typing.Optional[int] = 1):
         api_key = gcmds.env_check("CAT_API")
         if not api_key:
             title = "Missing API Key"
@@ -318,47 +199,31 @@ class Fun(commands.Cog):
                                   color=color)
             return await ctx.channel.send(embed=embed)
 
+        path = "cat"
         headers = {"x-api-key": api_key}
-
-        if toSend is None:
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get("https://api.thecatapi.com/v1/images/search") as image:
                     response = await image.json()
-                    search = response[0]
-                    url = search['url']
-        else:
-            if toSend > 50:
-                toSend = 50
-            url = []
-            for _ in range(toSend):
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get("https://api.thecatapi.com/v1/images/search") as image:
-                        response = await image.json()
-                        search = response[0]
-                        url.append(search['url'])
-        path = "cat"
-        await self.imageSend(ctx, path, url=url, toSend=toSend)
+                    url= response[0]['url']
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
         return
 
     @commands.command(aliases=['woof', 'dog', 'doggo', 'randomdog'])
-    async def randomDog(self, ctx, toSend: typing.Optional[int] = None):
-        if toSend is None:
-            req_url = "https://dog.ceo/api/breeds/image/random"
-        else:
-            if toSend < 2:
-                req_url = "https://dog.ceo/api/breeds/image/random"
-            elif toSend > 50:
-                toSend = 50
-                req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
-            else:
-                req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(req_url) as image:
-                response = await image.json()
-                url = response["message"]
+    async def randomDog(self, ctx, toSend: typing.Optional[int] = 1):
+        req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
         path = "dog"
-        await self.imageSend(ctx, path, url=url, toSend=toSend)
+
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(req_url) as image:
+                    response = await image.json()
+                    url = response["message"]
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
         return
 
     @commands.command()
@@ -368,9 +233,12 @@ class Fun(commands.Cog):
         await ctx.channel.send(embed=sayEmbed)
 
     @commands.command(aliases=['toadpic', 'toademote'])
-    async def toad(self, ctx, toSend: typing.Optional[int] = None):
+    async def toad(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./toad"
-        await self.imageSend(ctx, path, toSend=toSend)
+        for counter in range(toSend):
+            await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
 
     @commands.command()
     async def tts(self, ctx, *, args):
