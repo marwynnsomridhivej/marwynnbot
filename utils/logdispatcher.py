@@ -108,7 +108,8 @@ class GuildChannelEventDispatcher(GuildGenericEventDispatcher):
         super().__init__(bot)
 
     def get_channel_string(self, channel: discord.abc.GuildChannel, event_type: str = "none"):
-        return f"Channel {CE[str(channel.type)]}{channel.mention if event_type != 'deleted' and str(channel.type) == 'text' else channel.name}"
+        return (f"Channel {CE[str(channel.type)]}"
+                f"{channel.mention if event_type != 'deleted' and str(channel.type) == 'text' else f'`{channel.name}`'}")
 
     @enabled
     async def guild_channel_attr_update(self, channel: discord.abc.GuildChannel, diff: list):
