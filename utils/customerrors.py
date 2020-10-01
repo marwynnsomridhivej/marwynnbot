@@ -13,6 +13,14 @@ class LoggingNotEnabled(LoggingError):
                                    color=discord.Color.dark_red())
 
 
+class LoggingBlacklisted(LoggingError):
+    def __init__(self, guild: discord.Guild):
+        self.embed = discord.Embed(title=f"{guild.name} Blacklisted",
+                                   description="This server is blacklisted from using any logging functionality",
+                                   color=discord.Color.dark_red())
+        self.embed.set_footer(text="Please contact MS Arranges#3060 if you think this is a mistake")
+
+
 class LoggingLevelInsufficient(LoggingError):
     pass
 
@@ -89,6 +97,35 @@ class NoLocksExist(LockException):
     def __init__(self):
         super().__init__()
         self.embed.description = "No need to unlock anything! No channels are currently locked."
+
+
+class ServerLinkException(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="An Error Occurred",
+                                   description="An error occurred while processing ServerLink data",
+                                   color=discord.Color.dark_red())
+
+
+class ServerLinkChannelLimitExceeded(ServerLinkException):
+    def __init__(self, guild: discord.Guild):
+        super().__init__()
+        self.embed.title = "ServerLink Channel Limit Reached"
+        self.embed.description = (f"{guild.name} can only register one ServerLink channel. To remove this restriction, "
+                                  "upgrade to a MarwynnBot Premium Server subscription")
+
+
+class ServerLinkNoRegisteredChannels(ServerLinkException):
+    def __init__(self, guild: discord.Guild):
+        super().__init__()
+        self.embed.title = "No Registered Channels"
+        self.embed.description = f"{guild.name} does not have any registered ServerLink channels"
+
+
+class ServerLinkInvalidGuild(ServerLinkException):
+    def __init__(self, name: str):
+        super().__init__()
+        self.embed.title = "Invalid Server Name"
+        self.embed.description = f"No server was found with the name `{name}`"
 
 
 class StarboardException(PostgreSQLError):
