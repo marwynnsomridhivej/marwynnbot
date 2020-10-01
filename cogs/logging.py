@@ -278,8 +278,15 @@ class Logging(commands.Cog):
             embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
         return await ctx.channel.send(embed=embed)
 
+    async def check_loggable(self, ctx):
+        async with self.bot.db.acquire() as con:
+            on_blacklist = await con.fetch(f"SELECT * FROM guild WHERE guild_id={ctx.guild.id} AND log_channel=-1")
+        if on_blacklist:
+            raise customerrors.LoggingBlacklisted(ctx.guild)
+
     async def set_logging_channel(self, ctx, channel: discord.TextChannel) -> discord.Message:
         embed = discord.Embed()
+        await self.check_loggable(ctx)
         try:
             async with self.bot.db.acquire() as con:
                 await con.execute(f"UPDATE guild SET log_channel={channel.id} WHERE guild_id={ctx.guild.id}")
@@ -360,6 +367,7 @@ class Logging(commands.Cog):
         return await self.set_logging_channel(ctx, channel)
 
     @logging.command(aliases=['toggle', 'cmd', 'command'])
+    @commands.has_permissions(manage_guild=True)
     async def logging_command(self, ctx, name: str):
         return await self.toggle_logging_command(ctx, name.lower())
 
@@ -441,11 +449,12 @@ class Logging(commands.Cog):
         return await self.set_logging_level(ctx, 3)
 
     @logging.command(aliases=['bl', 'blacklist'])
+    @commands.is_owner()
     async def logging_blacklist(self, ctx, guild: discord.Guild = None):
         if not guild:
             guild = ctx.guild
         async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET log_channel=$tag$DISABLED$tag$, log_level=-1 WHERE guild_id={guild.id}")
+            await con.execute(f"UPDATE guild SET log_channel=-1, log_level=-1 WHERE guild_id={guild.id}")
         embed = discord.Embed(title="Server Logging Blacklisted",
                               description=f"{ctx.author.mention}, the server {guild.name} can no longer utilise any "
                               "logging functionality",
