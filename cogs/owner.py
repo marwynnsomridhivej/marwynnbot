@@ -198,7 +198,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=reloadEmbed)
             print("==========================")
 
-    @commands.command(aliases=['taskkill'])
+    @commands.command(aliases=['taskkill', 'sd'])
     @commands.is_owner()
     async def shutdown(self, ctx):
         shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
