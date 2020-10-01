@@ -1,13 +1,10 @@
 import asyncio
-import json
 import os
 import random
-import re
 import typing
 
 import aiohttp
 import discord
-import requests
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
 from utils import globalcommands
@@ -177,14 +174,11 @@ class Fun(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.command()
-    async def choose(self, ctx, *, choices):
-        remQuestion = re.sub('[?]', '', str(choices))
-        options = remQuestion.split(' or ')
-        answer = random.choice(options)
+    async def choose(self, ctx, *, choices: str):
         chooseEmbed = discord.Embed(title='Choose One',
                                     color=discord.Color.blue())
         chooseEmbed.add_field(name=f'{ctx.author} asked: {choices}',
-                              value=answer)
+                              value=random.choice(choices.replace("?", "").split(" or ")))
         await ctx.channel.send(embed=chooseEmbed)
 
     @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs'])
@@ -199,28 +193,28 @@ class Fun(commands.Cog):
                                   color=color)
             return await ctx.channel.send(embed=embed)
 
-        if query is None:
+        bool_check = True
+        if not query:
             if toSend:
                 query = str(toSend)
-                bool_check = True
             else:
                 title = "No Search Term Specified"
                 description = f"{ctx.author.mention}, you must specify at least one search term. " \
                               f"`Do {await gcmds.prefix(ctx)}help gifsearch` for command info"
                 color = discord.Color.dark_red()
                 bool_check = False
-        else:
-            bool_check = True
 
         if bool_check:
             query = str(query)
-            r = requests.get("https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 50))
-            if r.status_code == 200 or r.status_code == 202:
-                results = json.loads(r.content)
+            url = "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, 50)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as r:
+                    results = await r.json()
+            if r.status == 200 or r.status == 202:
                 getURL = []
                 for i in range(len(results['results'])):
                     getURL.append(results['results'][i]['media'][0]['gif']['url'])
-                if toSend is not None:
+                if toSend:
                     count = 0
                     url = []
                     while count < toSend:
@@ -230,20 +224,20 @@ class Fun(commands.Cog):
                     url = random.choice(getURL)
                 path = f"tenor{str(query)}"
                 return await self.imageSend(ctx, path, url=url, toSend=toSend)
-            elif r.status_code == 429:
+            elif r.status == 429:
                 title = "Error Code 429"
                 description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
                 color = discord.Color.dark_red()
-            elif 300 <= r.status_code < 400:
-                title = f"Error Code {r.status_code}"
+            elif 300 <= r.status < 400:
+                title = f"Error Code {r.status}"
                 description = "**HTTP ERROR:** Redirect"
                 color = discord.Color.dark_red()
-            elif r.status_code == 404:
+            elif r.status == 404:
                 title = "Error Code 404"
                 description = "**HTTP ERROR:** Not found - bad resource"
                 color = discord.Color.dark_red()
-            elif 500 <= r.status_code < 600:
-                title = f"Error Code {r.status_code}"
+            elif 500 <= r.status < 600:
+                title = f"Error Code {r.status}"
                 description = "**HTTP ERROR:** Unexpected server error"
                 color = discord.Color.dark_red()
 
@@ -269,13 +263,14 @@ class Fun(commands.Cog):
         query = str(query)
         reqURL = f"https://api.imgur.com/3/gallery/search/?q_all={query}"
         headers = {'Authorization': f'Client-ID {bot_id}'}
-        r = requests.request("GET", reqURL, headers=headers)
-        results = json.loads(r.content)
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(reqURL) as result:
+                results = await result.json()
 
         images = []
         data = int(len(results['data']))
 
-        if r.status_code == 200:
+        if result.status == 200:
             for i in range(data):
                 if "false" != str(results['data'][i]['nsfw']):
                     try:
@@ -376,6 +371,10 @@ class Fun(commands.Cog):
     async def toad(self, ctx, toSend: typing.Optional[int] = None):
         path = "./toad"
         await self.imageSend(ctx, path, toSend=toSend)
+
+    @commands.command()
+    async def tts(self, ctx, *, args):
+        return await ctx.channel.send(content=args, tts=True)
 
 
 def setup(bot):
