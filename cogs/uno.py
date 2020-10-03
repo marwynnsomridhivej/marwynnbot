@@ -6,7 +6,7 @@ from random import randint, shuffle
 import discord
 from discord.ext import commands
 from num2words import num2words
-from utils import globalcommands
+from utils import cards, globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 COLORS = ['red', 'yellow', 'green', 'blue']
@@ -93,137 +93,7 @@ class UnoPile:
 
     def top_thumbnail(self):
         top_card = self.pile[-1]
-        url = ""
-        if top_card.color == "red":
-            if top_card.card_type == 0:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903129520177162/0_r.png"
-            if top_card.card_type == 1:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903130770079834/1_r.png"
-            if top_card.card_type == 2:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903132061925386/2_r.png"
-            if top_card.card_type == 3:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903133479600129/3_r.png"
-            if top_card.card_type == 4:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903135027560498/4_r.png"
-            if top_card.card_type == 5:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903136394903672/5_r.png"
-            if top_card.card_type == 6:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903137812316170/6_r.png"
-            if top_card.card_type == 7:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903139213213696/7_r.png"
-            if top_card.card_type == 8:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903140677025873/8_r.png"
-            if top_card.card_type == 9:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903141801099364/9_r.png"
-            if top_card.card_type == "block":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903209803612200/block_r.png"
-            if top_card.card_type == "+2":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903214475804742/plus2_r.png"
-            if top_card.card_type == "reverse":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903217789305003/rev_r.png"
-            if top_card.card_type == "wild":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
-            if top_card.card_type == "+4":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
-        if top_card.color == "blue":
-            if top_card.card_type == 0:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903614616600576/0_b.png"
-            if top_card.card_type == 1:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903618274033824/1_b.png"
-            if top_card.card_type == 2:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903621931466822/2_b.png"
-            if top_card.card_type == 3:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903625534373958/3_b.png"
-            if top_card.card_type == 4:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903629716226119/4_b.png"
-            if top_card.card_type == 5:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903633751146706/5_b.png"
-            if top_card.card_type == 6:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903638335520788/6_b.png"
-            if top_card.card_type == 7:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903642475167814/7_b.png"
-            if top_card.card_type == 8:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903646292115456/8_b.png"
-            if top_card.card_type == 9:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903650356265050/9_b.png"
-            if top_card.card_type == "block":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903705465487410/block_b.png"
-            if top_card.card_type == "+2":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903708946628689/plus2_b.png"
-            if top_card.card_type == "reverse":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739903711450628256/rev_b.png"
-            if top_card.card_type == "wild":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
-            if top_card.card_type == "+4":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
-        if top_card.color == "green":
-            if top_card.card_type == 0:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904049163272382/0_g.png"
-            if top_card.card_type == 1:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904054024470598/1_g.png"
-            if top_card.card_type == 2:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904052950990929/2_g.png"
-            if top_card.card_type == 3:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904054850748536/3_g.png"
-            if top_card.card_type == 4:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904057128255568/4_g.png"
-            if top_card.card_type == 5:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904059330527242/5_g.png"
-            if top_card.card_type == 6:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904061461102652/6_g.png"
-            if top_card.card_type == 7:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904064107708456/7_g.png"
-            if top_card.card_type == 8:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904065747550218/8_g.png"
-            if top_card.card_type == 9:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739904072030879786/9_g.png"
-            if top_card.card_type == "block":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739905458776703049/block_g.png"
-            if top_card.card_type == "+2":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739905462836658197/plus2_g.png"
-            if top_card.card_type == "reverse":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739905465076547654/rev_g.png"
-            if top_card.card_type == "wild":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
-            if top_card.card_type == "+4":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
-        if top_card.color == "yellow":
-            if top_card.card_type == 0:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906035107627058/0_y.png"
-            if top_card.card_type == 1:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906040187060234/1_y.png"
-            if top_card.card_type == 2:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906044641280050/2_y.png"
-            if top_card.card_type == 3:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906048306970725/3_y.png"
-            if top_card.card_type == 4:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906053117837342/4_y.png"
-            if top_card.card_type == 5:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906056947368036/5_y.png"
-            if top_card.card_type == 6:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906061737132072/6_y.png"
-            if top_card.card_type == 7:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906066481021049/7_y.png"
-            if top_card.card_type == 8:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906070851354735/8_y.png"
-            if top_card.card_type == 9:
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906075280539748/9_y.png"
-            if top_card.card_type == "block":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906086102106142/block_y.png"
-            if top_card.card_type == "+2":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906090023518269/plus2_y.png"
-            if top_card.card_type == "reverse":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906094318485665/rev_y.png"
-            if top_card.card_type == "wild":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
-            if top_card.card_type == "+4":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
-        if top_card.color == "black":
-            if top_card.card_type == "wild":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906512671211661/wild.png"
-            if top_card.card_type == "+4":
-                url += "https://cdn.discordapp.com/attachments/734962101432615006/739906507730321439/plus4.png"
-        return url
+        return cards.uno_thumbnail[str(top_card.card_type)][top_card.color]
 
 
 class UnoPlayer:
@@ -325,131 +195,14 @@ class UnoGame:
 
 
 def emoji_to_player(player: UnoPlayer):
-    string = ""
-    index = 1
-    for card in player.get_hand():
-        string += f"{str(index)}. "
-        if card.color == "red":
-            if card.card_type == 0:
-                string += "<:0_r:739620092597370881>"
-            if card.card_type == 1:
-                string += "<:1_r:739620093109207150>"
-            if card.card_type == 2:
-                string += "<:2_r:739620093281042492>"
-            if card.card_type == 3:
-                string += "<:3_r:739620094266572811>"
-            if card.card_type == 4:
-                string += "<:4_r:739620093956194345>"
-            if card.card_type == 5:
-                string += "<:5_r:739620094644191272>"
-            if card.card_type == 6:
-                string += "<:6_r:739620094287544401>"
-            if card.card_type == 7:
-                string += "<:7_r:739620094392402040>"
-            if card.card_type == 8:
-                string += "<:8_r:739620094539333692>"
-            if card.card_type == 9:
-                string += "<:9_r:739620094325424191>"
-            if card.card_type == "block":
-                string += "<:block_r:739620094317035522>"
-            if card.card_type == "+2":
-                string += "<:plus2_r:739620094476288060>"
-            if card.card_type == "reverse":
-                string += "<:rev_r:739620094455578765>"
-        if card.color == "blue":
-            if card.card_type == 0:
-                string += "<:0_b:739620128395755542>"
-            if card.card_type == 1:
-                string += "<:1_b:739620128190234726>"
-            if card.card_type == 2:
-                string += "<:2_b:739620128718585856>"
-            if card.card_type == 3:
-                string += "<:3_b:739620128416727080>"
-            if card.card_type == 4:
-                string += "<:4_b:739620128244760607>"
-            if card.card_type == 5:
-                string += "<:5_b:739620128412401684>"
-            if card.card_type == 6:
-                string += "<:6_b:739620128475447396>"
-            if card.card_type == 7:
-                string += "<:7_b:739620128320127046>"
-            if card.card_type == 8:
-                string += "<:8_b:739620128626442371>"
-            if card.card_type == 9:
-                string += "<:9_b:739620128433373244>"
-            if card.card_type == "block":
-                string += "<:block_b:739620128550813807>"
-            if card.card_type == "+2":
-                string += "<:plus2_b:739620128014204960>"
-            if card.card_type == "reverse":
-                string += "<:rev_b:739620128123125893>"
-        if card.color == "green":
-            if card.card_type == 0:
-                string += "<:0_g:739620167956430958>"
-            if card.card_type == 1:
-                string += "<:1_g:739620167700578412>"
-            if card.card_type == 2:
-                string += "<:2_g:739620167717224470>"
-            if card.card_type == 3:
-                string += "<:3_g:739620168199700591>"
-            if card.card_type == 4:
-                string += "<:4_g:739620167897579571>"
-            if card.card_type == 5:
-                string += "<:5_g:739620168212414464>"
-            if card.card_type == 6:
-                string += "<:6_g:739620167725613098>"
-            if card.card_type == 7:
-                string += "<:7_g:739620167541194803>"
-            if card.card_type == 8:
-                string += "<:8_g:739620167692320801>"
-            if card.card_type == 9:
-                string += "<:9_g:739620167918813375>"
-            if card.card_type == "block":
-                string += "<:block_g:739620168019476561>"
-            if card.card_type == "+2":
-                string += "<:plus2_g:739620167973077002>"
-            if card.card_type == "reverse":
-                string += "<:rev_g:739620168048705656>"
-        if card.color == "yellow":
-            if card.card_type == 0:
-                string += "<:0_y:739626572675416245>"
-            if card.card_type == 1:
-                string += "<:1_y:739626572444598322>"
-            if card.card_type == 2:
-                string += "<:2_y:739626572461375520>"
-            if card.card_type == 3:
-                string += "<:3_y:739626572734267462>"
-            if card.card_type == 4:
-                string += "<:4_y:739626572184813700>"
-            if card.card_type == 5:
-                string += "<:5_y:739626572759302324>"
-            if card.card_type == 6:
-                string += "<:6_y:739626572767821824>"
-            if card.card_type == 7:
-                string += "<:7_y:739626572457443429>"
-            if card.card_type == 8:
-                string += "<:8_y:739626572499124355>"
-            if card.card_type == 9:
-                string += "<:9_y:739626572931268640>"
-            if card.card_type == "block":
-                string += "<:block_y:739626573103366154>"
-            if card.card_type == "+2":
-                string += "<:plus2_y:739626572692062338>"
-            if card.card_type == "reverse":
-                string += "<:rev_y:739626572616564797>"
-        if card.color == "black":
-            if card.card_type == "wild":
-                string += "<:wild:739620056551653537>"
-            if card.card_type == "+4":
-                string += "<:plus4:739620056446795946>"
-        string += f" `[{card.color} {card.card_type}]`\n"
-        index += 1
+    string = "\n".join(
+        f"{counter}. {cards.uno_cards[str(card.card_type)][card.color]} `[{card.color} {card.card_type}]`"
+                       for counter, card in enumerate(player.get_hand(), 1))
     return string
 
 
 def emoji_to_game(player: UnoPlayer):
-    string = "<:unoback:739620076180865062>"
-    return string * int(len(player.hand))
+    return "<:unoback:739620076180865062>" * len(player.hand)
 
 
 async def win(player: UnoPlayer, bot: commands.AutoShardedBot):
