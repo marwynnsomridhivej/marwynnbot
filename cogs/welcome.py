@@ -271,7 +271,7 @@ class Welcome(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def create_leaver(self, ctx) -> bool:
-        if not await self.has_leaver(ctx):
+        if await self.has_leaver(ctx):
             return False
         else:
             try:
