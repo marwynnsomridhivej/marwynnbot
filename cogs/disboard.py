@@ -11,7 +11,7 @@ gcmds = globalcommands.GlobalCMDS()
 disboard_bot_id = 302050872383242240
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
-timeout = 60
+timeout = 120
 
 
 class Disboard(commands.Cog):
