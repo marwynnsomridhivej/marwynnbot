@@ -214,16 +214,12 @@ class Utility(commands.Cog):
         for emoji in ctx.guild.emojis:
             if search is not None:
                 if search in emoji.name:
-                    description.append(f"\n**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
+                    description.append(f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
             else:
-                description.append(f"\n**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
-        sort = sorted(description)
-        description = ""
-        for string in sort:
-            description += string
+                description.append(f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
 
         emojiEmbed = discord.Embed(title="Server Custom Emotes:",
-                                   description=description,
+                                   description="\n".join(sorted(description)),
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=emojiEmbed)
 

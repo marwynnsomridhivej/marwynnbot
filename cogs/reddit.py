@@ -18,27 +18,25 @@ class Reddit(commands.Cog):
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
     async def get_id_secret(self, ctx):
-        bot_id = gcmds.env_check("REDDIT_CLIENT_ID")
-        bot_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")
+        client_id = gcmds.env_check("REDDIT_CLIENT_ID")
+        client_secret = gcmds.env_check("REDDIT_CLIENT_SECRET")
         user_agent = gcmds.env_check("USER_AGENT")
-        if not bot_id or not bot_secret or not user_agent:
+        if not all([client_id, client_secret, user_agent]):
             title = "Missing Reddit Client ID or Client Secret or User Agent"
             description = "Insert your Reddit Client ID, Client Secret, and User Agent in the `.env` file"
             embed = discord.Embed(title=title,
                                   description=description,
                                   color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=embed)
-        return [bot_id, bot_secret, user_agent]
+            await ctx.channel.send(embed=embed)
+        return client_id, client_secret, user_agent
 
     async def embed_template(self, ctx):
-        info = await self.get_id_secret(ctx)
+        client_id, client_secret, user_agent = await self.get_id_secret(ctx)
 
-        if not info:
+        if not all([client_id, client_secret, user_agent]):
             return
 
-        reddit = praw.Reddit(bot_id=info[0],
-                             bot_secret=info[1],
-                             user_agent=info[2])
+        reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent)
         picture_search = reddit.subreddit(ctx.command.name).hot()
 
         submissions = []
@@ -52,34 +50,25 @@ class Reddit(commands.Cog):
         picture = random.choice(submissions)
 
         web_link = f"https://www.reddit.com/{picture.permalink}"
-        url = picture.url
-        author = picture.author
-        author_url = f"https://www.reddit.com/user/{author}/"
+        author_url = f"https://www.reddit.com/user/{picture.author}/"
         author_icon_url = picture.author.icon_img
-        created_timestamp = datetime.fromtimestamp(picture.created_utc)
-        real_timestamp = created_timestamp.strftime("%d/%m/%Y %H:%M:%S")
-        num_comments = picture.num_comments
-        upvotes = picture.score
+        real_timestamp = datetime.fromtimestamp(picture.created_utc).strftime("%d/%m/%Y %H:%M:%S")
         ratio = picture.upvote_ratio * 100
         sub_name = picture.subreddit_name_prefixed
-        embed = discord.Embed(title=sub_name,
-                              url=web_link,
-                              color=discord.Color.blue())
-        embed.set_author(name=author, url=author_url, icon_url=author_icon_url)
-        embed.set_image(url=url)
+        embed = discord.Embed(title=sub_name, url=web_link, color=discord.Color.blue())
+        embed.set_author(name=picture.author, url=author_url, icon_url=author_icon_url)
+        embed.set_image(url=picture.url)
         embed.set_footer(
-            text=f"⬆️{upvotes}️ ({ratio}%)\n💬{num_comments}\n🕑{real_timestamp}\n"
+            text=f"⬆️{picture.score}️ ({ratio}%)\n💬{picture.num_comments}\n🕑{real_timestamp}\n"
                  f"Copyrights belong to their respective owners")
-        await ctx.channel.send(embed=embed)
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['reddithelp'])
     async def reddit(self, ctx, cmdName=None):
-        CMDLIST = self.get_commands()
-        del CMDLIST[0]
-        CMDNAMES = [i.name for i in CMDLIST]
+        CMDNAMES = [command.name for command in self.get_commands() if command.name != "reddit"]
         description = f"Do `{await gcmds.prefix(ctx)}reddit [cmdName]` to get the usage of that particular " \
-                      f"command.\n\n**List of all {len(CMDLIST)} reddit commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
-        if cmdName is None or cmdName == "reddit":
+                      f"command.\n\n**List of all {len(CMDNAMES)} reddit commands:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
+        if not cmdName or cmdName == "reddit":
             helpEmbed = discord.Embed(title="Reddit Commands Help",
                                       description=description,
                                       color=discord.Color.blue())
@@ -92,118 +81,95 @@ class Reddit(commands.Cog):
                 helpEmbed.add_field(name="Usage",
                                     value=f"`{await gcmds.prefix(ctx)}{cmdName}`",
                                     inline=False)
-                pot_alias = self.bot.get_command(name=cmdName)
-                aliases = [g for g in pot_alias.aliases]
+                aliases = self.bot.get_command(name=cmdName).aliases
                 if aliases:
                     value = "`" + "` `".join(sorted(aliases)) + "`"
-                    helpEmbed.add_field(name="Aliases",
-                                        value=value,
-                                        inline=False)
+                    helpEmbed.add_field(name="Aliases", value=value, inline=False)
             else:
                 helpEmbed = discord.Embed(title="Command Not Found",
                                           description=f"{ctx.author.mention}, {cmdName} is not a valid reddit command",
                                           color=discord.Color.blue())
-        await ctx.channel.send(embed=helpEmbed)
+        return await ctx.channel.send(embed=helpEmbed)
 
     @commands.command(aliases=['abj', 'meananimals'])
     async def animalsbeingjerks(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['anime'])
     async def awwnime(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['car', 'cars', 'carpics'])
     async def carporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command()
     async def cosplay(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['earth', 'earthpics'])
     async def earthporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['food', 'foodpics'])
     async def foodporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['animemes'])
     async def goodanimemes(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['history', 'historypics'])
     async def historyporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['pic', 'itap'])
     async def itookapicture(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['map', 'maps', 'mappics'])
     async def mapporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['interesting', 'mi'])
     async def mildlyinteresting(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command()
     async def pareidolia(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['ptiming'])
     async def perfecttiming(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['psbattle'])
     async def photoshopbattles(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['quotes'])
     async def quotesporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['room', 'rooms', 'roompics'])
     async def roomporn(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command()
     async def tumblr(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command()
     async def unexpected(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['wallpaper'])
     async def wallpapers(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
     @commands.command(aliases=['woah'])
     async def woahdude(self, ctx):
-        await self.embed_template(ctx)
-        return
+        return await self.embed_template(ctx)
 
 
 def setup(bot):

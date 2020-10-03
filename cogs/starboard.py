@@ -25,11 +25,11 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
 
-        user = self.bot.get_user(payload.user_id)
+        user = self.bot.fetch_user(payload.user_id)
         if user.bot:
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = self.bot.fetch_channel(payload.channel_id)
         if not channel.guild:
             return
 
@@ -45,11 +45,11 @@ class Starboard(commands.Cog):
         if str(emoji) != registered_emoji:
             return
         elif not (orig or on_sb):
-            sbc = self.bot.get_channel(sbc)
+            sbc = self.bot.fetch_channel(sbc)
             return (await self.push_starboard(message, sbc, emoji=emoji) if sbc
                     else await self.push_starboard(message, emoji=emoji))
         else:
-            sbc = self.bot.get_channel(sbc)
+            sbc = self.bot.fetch_channel(sbc)
             on_sb = await sbc.fetch_message(on_sb)
             return await self.update_starboard(on_sb, sbc, "add", emoji)
 
@@ -57,11 +57,11 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
 
-        user = self.bot.get_user(payload.user_id)
+        user = self.bot.fetch_user(payload.user_id)
         if user.bot:
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = self.bot.fetch_channel(payload.channel_id)
         if not channel.guild:
             return
 
@@ -77,7 +77,7 @@ class Starboard(commands.Cog):
             return
         else:
             if sbc:
-                sbc = self.bot.get_channel(sbc)
+                sbc = self.bot.fetch_channel(sbc)
                 on_sb = await sbc.fetch_message(on_sb)
             return await self.update_starboard(on_sb, sbc, "remove", emoji)
 

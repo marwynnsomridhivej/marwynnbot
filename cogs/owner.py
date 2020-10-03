@@ -221,8 +221,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         try:
             amount = int(amount)
@@ -230,8 +229,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Amount",
                                     description=f"{ctx.author.mention}, please specify a valid credit amount",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         op = (f"INSERT INTO balance(user_id, amount) VALUES ({user.id}, {amount}) ON CONFLICT (user_id) "
               f"DO UPDATE SET amount = {amount} WHERE balance.user_id = {user.id}")
@@ -245,7 +243,7 @@ class Owner(commands.Cog):
         setEmbed = discord.Embed(title="Balance Set",
                                  description=f"The balance for {user.mention} is now set to ```{amount} {spell}```",
                                  color=discord.Color.blue())
-        await ctx.channel.send(embed=setEmbed)
+        return await ctx.channel.send(embed=setEmbed)
 
     @balanceAdmin.command()
     @commands.is_owner()
@@ -256,8 +254,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         try:
             amount = int(amount)
@@ -265,8 +262,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Amount",
                                     description=f"{ctx.author.mention}, please specify a valid credit amount",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         op = (f"UPDATE balance SET amount = amount + {amount} WHERE user_id = {user.id}")
         await gcmds.balance_db(op)
@@ -286,7 +282,7 @@ class Owner(commands.Cog):
                                   description=f"{user.mention} has been given `{amount} {spell_amt}`. \nTheir balance "
                                               f"is now ```{balance} {spell}```",
                                   color=discord.Color.blue())
-        await ctx.channel.send(embed=giveEmbed)
+        return await ctx.channel.send(embed=giveEmbed)
 
     @balanceAdmin.command()
     @commands.is_owner()
@@ -297,8 +293,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         try:
             amount = int(amount)
@@ -306,8 +301,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Amount",
                                     description=f"{ctx.author.mention}, please specify a valid credit amount",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         op = (f"UPDATE balance SET amount = amount - {amount} WHERE user_id = {user.id}")
         await gcmds.balance_db(op)
@@ -330,9 +324,9 @@ class Owner(commands.Cog):
                                     description=f"{user.mention} has had `{amount} {spell_amt}` removed. \nTheir "
                                                 f"balance is now ```{balance} {spell}```",
                                     color=discord.Color.blue())
-        await ctx.channel.send(embed=removeEmbed)
+        return await ctx.channel.send(embed=removeEmbed)
 
-    @commands.group(aliases=['blist'])
+    @commands.group(invoke_without_command=True, aliases=['blist'])
     @commands.is_owner()
     async def blacklist(self, ctx):
         return
@@ -344,8 +338,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         try:
             user_id = user.id
@@ -353,8 +346,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid User",
                                     description=f"{ctx.author.mention}, please specify a valid user",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
         if operation == "add":
             op = f"INSERT INTO blacklist(type, id) VALUES('user', {user.id}) ON CONFLICT DO NOTHING"
             await gcmds.blacklist_db(op)
@@ -384,8 +376,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Guild ID",
                                     description=f"{ctx.author.mention}, please provide a valid guild ID",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
 
         try:
             guild = await self.bot.fetch_guild(int(server_id))
@@ -393,8 +384,7 @@ class Owner(commands.Cog):
             invalid = discord.Embed(title="Invalid Guild ID",
                                     description=f"{ctx.author.mention}, please specify a valid guild ID",
                                     color=discord.Color.dark_red())
-            await ctx.channel.send(embed=invalid)
-            return
+            return await ctx.channel.send(embed=invalid)
         if operation == "add":
             op = f"INSERT INTO blacklist(type, id) VALUES('guild', {guild.id}) ON CONFLICT DO NOTHING"
             await gcmds.blacklist_db(op)
@@ -501,7 +491,7 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=no_id)
 
         try:
-            user = commands.AutoShardedBot.get_user(self.bot, id=userID)
+            user = self.bot.get_user(id=userID)
         except commands.BadArgument:
             bad_id = discord.Embed(title="Invalid User ID Specified",
                                    description=f"{ctx.author.mention}, please specify a valid user ID",
