@@ -4,7 +4,7 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands
+from utils import customerrors, globalcommands, objects
 
 converter = commands.MemberConverter()
 gcmds = globalcommands.GlobalCMDS()
@@ -30,10 +30,7 @@ class Actions(commands.Cog):
     async def get_count_user(self, ctx, user):
         try:
             user = await converter.convert(ctx, user)
-            if user != ctx.author:
-                user_specified = True
-            else:
-                user_specified = False
+            user_specified = True if user != ctx.author else False
         except (commands.BadArgument, TypeError):
             user = ctx.author
             user_specified = False
@@ -123,34 +120,28 @@ class Actions(commands.Cog):
                                    description="Insert your Tenor API Key in the `.env` file",
                                    color=discord.Color.dark_red())
             return await ctx.channel.send(embed=no_api)
-        cmdNameQuery = ctx.command.name
-        query = f"anime {cmdNameQuery}"
+
+        query = f"anime {ctx.command.name}"
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     "https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (query, api_key, 6)) as image:
                 response = await image.json()
-                getURL = []
-                for i in range(len(response['results'])):
-                    for j in range(len(response['results'][i]['media'])):
-                        getURL.append(response['results'][i]['media'][j]['gif']['url'])
-                url = random.choice(getURL)
-                await session.close()
+        url = random.choice([response['results'][i]['media'][j]['gif']['url']
+                             for i in range(len(response['results']))
+                             for j in range(len(response['results'][i]['media']))])
 
-        embed = discord.Embed(title=title,
-                              color=discord.Color.blue())
+        embed = discord.Embed(title=title, color=discord.Color.blue())
         embed.set_image(url=url)
         embed.set_footer(text=footer)
 
-        await ctx.channel.send(embed=embed)
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['action'])
     async def actions(self, ctx, cmdName=None):
-        CMDLIST = self.get_commands()
-        del CMDLIST[0]
-        CMDNAMES = [i.name for i in CMDLIST]
+        cmd_names = [command.name for command in self.get_commands() if command.name != "actions"]
         description = f"Do `{await gcmds.prefix(ctx)}actions [cmdName]` to get the usage of that particular " \
-                      f"command.\n\n**List of all {len(CMDLIST)} actions:**\n\n `{'` `'.join(sorted(CMDNAMES))}` "
-        if cmdName is None or cmdName == "actions":
+                      f"command.\n\n**List of all {len(cmd_names)} actions:**\n\n `{'` `'.join(sorted(cmd_names))}`"
+        if not cmdName or cmdName == "actions":
             helpEmbed = discord.Embed(title="Actions Help",
                                       description=description,
                                       color=discord.Color.blue())
@@ -159,15 +150,14 @@ class Actions(commands.Cog):
                                 "can be \"all\" to block everyone in the server*",
                                 inline=False)
         else:
-            if cmdName in CMDNAMES:
+            if cmdName in cmd_names:
                 action = cmdName.capitalize()
                 helpEmbed = discord.Embed(title=f"Action - {action}",
                                           color=discord.Color.blue())
                 helpEmbed.add_field(name="Usage",
                                     value=f"`{await gcmds.prefix(ctx)}{cmdName} [optional user @mention]`",
                                     inline=False)
-                pot_alias = self.bot.get_command(name=cmdName)
-                aliases = [g for g in pot_alias.aliases]
+                aliases = self.bot.get_command(name=cmdName).aliases
                 if aliases:
                     value = "`" + "` `".join(sorted(aliases)) + "`"
                     helpEmbed.add_field(name="Aliases",
@@ -246,10 +236,7 @@ class Actions(commands.Cog):
         title = f"{action_by} bit {action_to}"
         footer = f"{action_to} was bitten {receive} times and bit others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['BLUSH'])
     async def blush(self, ctx, user=None):
@@ -265,10 +252,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was blushed at {receive} times and blushed at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['BONK'])
     async def bonk(self, ctx, user=None):
@@ -284,10 +268,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was bonked {receive} times and bonked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['BOOP'])
     async def boop(self, ctx, user=None):
@@ -303,10 +284,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was booped {receive} times and booped others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['BORED'])
     async def bored(self, ctx, user=None):
@@ -322,10 +300,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was bored {receive} times and bored others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CHASE'])
     async def chase(self, ctx, user=None):
@@ -341,10 +316,7 @@ class Actions(commands.Cog):
         title = f"{action_by} chased {action_to}"
         footer = f"{action_to} was chased {receive} times and chased others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CHEER'])
     async def cheer(self, ctx, user=None):
@@ -360,10 +332,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was cheered for {receive} times and cheered for others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['COMFORT'])
     async def comfort(self, ctx, user=None):
@@ -379,10 +348,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was comforted {receive} times and comforted others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CRINGE'])
     async def cringe(self, ctx, user=None):
@@ -398,10 +364,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was cringed at {receive} times and cringed at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CRY'])
     async def cry(self, ctx, user=None):
@@ -417,10 +380,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was cried at {receive} times and cried at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CUDDLE'])
     async def cuddle(self, ctx, user=None):
@@ -436,10 +396,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was cuddled {receive} times and cuddled others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['CUT'])
     async def cut(self, ctx, user=None):
@@ -455,10 +412,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was cut {receive} times and cut others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['DAB'])
     async def dab(self, ctx, user=None):
@@ -474,10 +428,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was dabbed on {receive} times and dabbed on others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['DANCE'])
     async def dance(self, ctx, user=None):
@@ -493,10 +444,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was danced with {receive} times and danced with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['DESTROY'])
     async def destroy(self, ctx, user=None):
@@ -512,10 +460,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was destroyed {receive} times and destroyed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['DIE'])
     async def die(self, ctx, user=None):
@@ -531,10 +476,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} died {receive} times and made others die {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['DROWN'])
     async def drown(self, ctx, user=None):
@@ -550,10 +492,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was drowned {receive} times and drowned others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['EAT'])
     async def eat(self, ctx, user=None):
@@ -569,10 +508,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was eaten {receive} times and ate others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FACEPALM'])
     async def facepalm(self, ctx, user=None):
@@ -588,10 +524,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} facepalmed {receive} times and made others facepalm {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FEED'])
     async def feed(self, ctx, user=None):
@@ -607,10 +540,7 @@ class Actions(commands.Cog):
         title = f"{action_by} fed {action_to}"
         footer = f"{action_to} was fed {receive} times and fed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FLIP'])
     async def flip(self, ctx, user=None):
@@ -626,10 +556,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was flipped {receive} times and flipped others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FLIRT'])
     async def flirt(self, ctx, user=None):
@@ -645,10 +572,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FORGET'])
     async def forget(self, ctx, user=None):
@@ -664,10 +588,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was forgotten {receive} times and forgot others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['FRIEND'])
     async def friend(self, ctx, user=None):
@@ -683,10 +604,7 @@ class Actions(commands.Cog):
         title = f"{action_by} friended {action_to}"
         footer = f"{action_to} was friended {receive} times and friended others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['GLOMP'])
     async def glomp(self, ctx, user=None):
@@ -702,10 +620,7 @@ class Actions(commands.Cog):
         title = f"{action_by} glomped {action_to}"
         footer = f"{action_to} was glomped {receive} times and glomped others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['HANDHOLD'])
     async def handhold(self, ctx, user=None):
@@ -721,10 +636,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was held hands with {receive} times and held hands with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['HAPPY'])
     async def happy(self, ctx, user=None):
@@ -740,10 +652,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was happy {receive} times and made others happy {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['HATE'])
     async def hate(self, ctx, user=None):
@@ -759,10 +668,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was hated {receive} times and hated others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['HIGHFIVE'])
     async def highfive(self, ctx, user=None):
@@ -778,10 +684,7 @@ class Actions(commands.Cog):
         title = f"{action_by} highfived {action_to}"
         footer = f"{action_to} was highfived {receive} times and highfived others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['HUG'])
     async def hug(self, ctx, user=None):
@@ -797,10 +700,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was hugged {receive} times and hugged others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['KILL'])
     async def kill(self, ctx, user=None):
@@ -816,10 +716,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was killed {receive} times and killed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['KISS'])
     async def kiss(self, ctx, user=None):
@@ -835,10 +732,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was kissed {receive} times and kissed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['LAUGH'])
     async def laugh(self, ctx, user=None):
@@ -854,10 +748,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was laughed at {receive} times and laughed at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['LICK'])
     async def lick(self, ctx, user=None):
@@ -873,10 +764,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was licked {receive} times and licked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['LOVE'])
     async def love(self, ctx, user=None):
@@ -892,10 +780,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was loved {receive} times and loved others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['LURK'])
     async def lurk(self, ctx, user=None):
@@ -911,10 +796,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was lurked at {receive} times and lurked at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['MARRY'])
     async def marry(self, ctx, user=None):
@@ -930,10 +812,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was married {receive} times and married others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['MISS'])
     async def miss(self, ctx, user=None):
@@ -949,10 +828,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was missed {receive} times and missed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['NERVOUS'])
     async def nervous(self, ctx, user=None):
@@ -968,10 +844,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was nervous {receive} times and made others nervous {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['NO'])
     async def no(self, ctx, user=None):
@@ -988,10 +861,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was said no to {receive} times and said no to others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['NOM'])
     async def nom(self, ctx, user=None):
@@ -1007,10 +877,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was nommed {receive} times and nommed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['NUZZLE'])
     async def nuzzle(self, ctx, user=None):
@@ -1026,10 +893,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was nuzzled {receive} times and nuzzled others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['PANIC'])
     async def panic(self, ctx, user=None):
@@ -1045,10 +909,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was panicked {receive} times and panicked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['PAT'])
     async def pat(self, ctx, user=None):
@@ -1064,10 +925,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was pat {receive} times and pat others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['PECK'])
     async def peck(self, ctx, user=None):
@@ -1083,10 +941,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was pecked {receive} times and pecked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['POKE'])
     async def poke(self, ctx, user=None):
@@ -1102,10 +957,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was poked {receive} times and poked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['POUT'])
     async def pout(self, ctx, user=None):
@@ -1121,10 +973,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was pouted at {receive} times and pouted at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['PUNT'])
     async def punt(self, ctx, user=None):
@@ -1140,10 +989,7 @@ class Actions(commands.Cog):
         title = f"{action_by} punted {action_to}"
         footer = f"{action_to} was punted {receive} times and punted others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['RUN'])
     async def run(self, ctx, user=None):
@@ -1159,10 +1005,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was ran from {receive} times and ran from others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['RACE'])
     async def race(self, ctx, user=None):
@@ -1178,10 +1021,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was raced with {receive} times and raced with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SAD'])
     async def sad(self, ctx, user=None):
@@ -1197,10 +1037,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was saddened {receive} times and saddened others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SHOOT'])
     async def shoot(self, ctx, user=None):
@@ -1216,10 +1053,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was shot {receive} times and shot others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SHRUG'])
     async def shrug(self, ctx, user=None):
@@ -1235,10 +1069,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was shrugged at {receive} times and shrugged at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SIP'])
     async def sip(self, ctx, user=None):
@@ -1254,10 +1085,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was sipped {receive} times and sipped others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SLAP'])
     async def slap(self, ctx, user=None):
@@ -1273,10 +1101,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was slapped {receive} times and slapped others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SLEEP'])
     async def sleep(self, ctx, user=None):
@@ -1292,10 +1117,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was made to sleep {receive} times and made others sleep {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SLICE'])
     async def slice(self, ctx, user=None):
@@ -1311,10 +1133,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was sliced {receive} times and sliced others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['SMUG'])
     async def smug(self, ctx, user=None):
@@ -1330,10 +1149,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was smug {receive} times and was smug to others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['STAB'])
     async def stab(self, ctx, user=None):
@@ -1349,10 +1165,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was stabbed {receive} times and stabbed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['STARE'])
     async def stare(self, ctx, user=None):
@@ -1368,10 +1181,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was stared at {receive} times and stared at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TACKLE'])
     async def tackle(self, ctx, user=None):
@@ -1387,22 +1197,16 @@ class Actions(commands.Cog):
         title = f"{action_by} tackled {action_to}"
         footer = f"{action_to} was tackled {receive} times and tackled others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TAP'])
     async def tap(self, ctx, user=None):
         give, receive, user, info = await self.get_count_user(ctx, user)
 
-        parts = ['head', 'neck', 'face', 'nose', 'forehead', 'shoulder', 'chest', 'arm', 'elbow', 'hand', 'stomach',
-                 'leg', 'knee', 'foot', 'toe', 'ankle']
-
         if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
-            body = random.choice(parts)
+            body = objects.get_random_body_part()
             title = f"{action_by} tapped {action_to} on their {body}"
         else:
             action_to = ctx.author.display_name
@@ -1410,10 +1214,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TASTE'])
     async def taste(self, ctx, user=None):
@@ -1429,10 +1230,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was tasted {receive} times and tasted others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TALK'])
     async def talk(self, ctx, user=None):
@@ -1448,10 +1246,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was talked with {receive} times and talked with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TAUNT'])
     async def taunt(self, ctx, user=None):
@@ -1467,10 +1262,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was taunted at {receive} times and taunted at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TEASE'])
     async def tease(self, ctx, user=None):
@@ -1486,10 +1278,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was teased {receive} times and teased others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['THANK'])
     async def thank(self, ctx, user=None):
@@ -1508,10 +1297,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was thanked {receive} times and thanked others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['THINK'])
     async def think(self, ctx, user=None):
@@ -1527,23 +1313,11 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was thought about {receive} times and thought about others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['THROW'])
     async def throw(self, ctx, user=None):
         give, receive, user, info = await self.get_count_user(ctx, user)
-
-        objlist = ['an apple', 'an orange', 'a banana', 'a singular grape', 'a bunch of grapes', 'some hands',
-                   'a spear', 'a trident', 'some water balloons', 'some eggs', 'a stuffed toad plushie',
-                   'a computer out the window', 'a fridge at their neighbor', 'away the trash',
-                   'a loaded gun instead of shooting it', 'their last brain cell out the window', 'a paper airplane',
-                   'a plate', 'a blanket', 'a couch', 'a frustratingly long book', 'a knife', 'a samurai sword',
-                   'a baseball', 'a football', 'a water polo ball', 'a pool ball', 'a beach ball', 'some poop',
-                   'an exception', 'an error', 'their phone at the wall', 'a sharp stone', 'a shot put', 'a discus',
-                   'away their chances at a relationship']
 
         if info:
             action_by = ctx.author.display_name
@@ -1551,15 +1325,11 @@ class Actions(commands.Cog):
             title = f"{action_by} threw {action_to}"
         else:
             action_to = ctx.author.display_name
-            obj = random.choice(objlist)
-            title = f"{action_to} is throwing {obj}"
+            title = f"{action_to} is throwing {objects.get_random_object()}"
 
         footer = f"{action_to} was flirted with {receive} times and flirted with others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['THUMBSDOWN'])
     async def thumbsdown(self, ctx, user=None):
@@ -1575,10 +1345,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was given a thumbs down {receive} times and gave others a thumbs down {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['THUMBSUP'])
     async def thumbsup(self, ctx, user=None):
@@ -1594,10 +1361,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was given a thumbs up {receive} times and gave others a thumbs up {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TICKLE'])
     async def tickle(self, ctx, user=None):
@@ -1613,10 +1377,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was tickled {receive} times and tickled others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TOUCH'])
     async def touch(self, ctx, user=None):
@@ -1632,10 +1393,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was touched {receive} times and touched others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['TRASH'])
     async def trash(self, ctx, user=None):
@@ -1651,10 +1409,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was trashed {receive} times and trashed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['triggered'])
     async def trigger(self, ctx, user=None):
@@ -1670,10 +1425,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was triggered {receive} times and triggered others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['UPSET'])
     async def upset(self, ctx, user=None):
@@ -1689,10 +1441,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was upset {receive} times and upset others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WAG'])
     async def wag(self, ctx, user=None):
@@ -1708,10 +1457,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was wagged at {receive} times and wagged at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WAIT'])
     async def wait(self, ctx, user=None):
@@ -1727,10 +1473,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was waited for {receive} times and waited for others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WAKEUP'])
     async def wakeup(self, ctx, user=None):
@@ -1746,10 +1489,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was woken up {receive} times and woke up others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WASH'])
     async def wash(self, ctx, user=None):
@@ -1765,10 +1505,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was washed {receive} times and washed others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WAVE'])
     async def wave(self, ctx, user=None):
@@ -1784,10 +1521,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was waved at {receive} times and waved at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WHINE'])
     async def whine(self, ctx, user=None):
@@ -1803,10 +1537,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was whined at {receive} times and whined at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WHISPER'])
     async def whisper(self, ctx, user=None):
@@ -1822,10 +1553,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was whispered to {receive} times and whispered to others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WINK'])
     async def wink(self, ctx, user=None):
@@ -1841,10 +1569,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was winked at {receive} times and winked at others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['WORRY'])
     async def worry(self, ctx, user=None):
@@ -1860,10 +1585,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was worried about {receive} times and worried about others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
     @commands.command(aliases=['YES'])
     async def yes(self, ctx, user=None):
@@ -1880,10 +1602,7 @@ class Actions(commands.Cog):
 
         footer = f"{action_to} was said yes to {receive} times and said yes to others {give} times"
 
-        await self.embed_template(ctx,
-                                  title=title,
-                                  footer=footer)
-        return
+        return await self.embed_template(ctx, title=title, footer=footer)
 
 
 def setup(bot):
