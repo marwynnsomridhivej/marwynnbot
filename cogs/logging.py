@@ -143,7 +143,6 @@ class Logging(commands.Cog):
                           if not attr.startswith("_")
                           and not type(getattr(before, attr)) == list])
         diff_list = [MemberDiff(attr, getattr(before, attr), value) for attr, value in set_after - set_before]
-        print(diff_list)
         await self.member_dispatch.member_voice_state_update(member, diff_list)
 
     @commands.Cog.listener()
