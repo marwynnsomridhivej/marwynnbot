@@ -28,7 +28,7 @@ class Music(commands.Cog):
             ip = gcmds.env_check("LAVALINK_IP")
             port = gcmds.env_check("LAVALINK_PORT")
             password = gcmds.env_check("LAVALINK_PASSWORD")
-            if not ip or not port or not password:
+            if not all([ip, port, password]):
                 print("Make sure your server IP, port, and password are in the .env file")
             else:
                 self.bot.lavalink = lavalink.Client(self.bot.user.id)
