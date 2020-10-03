@@ -38,11 +38,36 @@ obj_list = [
     'some poop',
     'some water balloons',
     'their last brain cell out the window',
-    'their phone at the wall'
+    'their phone at the wall',
 ]
 
+parts_list = [
+    'ankle',
+    'arm',
+    'chest',
+    'elbow',
+    'face',
+    'foot',
+    'forehead',
+    'hand',
+    'head',
+    'knee',
+    'leg',
+    'neck',
+    'nose',
+    'shoulder',
+    'stomach',
+    'toe',
+]
+
+
 def get_random_object():
-    return random.choose(obj_list)
+    return random.choice(obj_list)
+
+
+def get_random_body_part():
+    return random.choice(parts_list)
+
 
 if __name__ == "__main__":
     raise ImportError("objects.py must be imported, not run directly")
