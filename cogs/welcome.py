@@ -182,15 +182,19 @@ class Welcome(commands.Cog):
         except Exception:
             return False
 
-    async def create_welcomer(self, ctx, channel_id: int, title: str = None, description: str = None,
-                              media: list = None) -> bool:
-        title = f"'{title}'" if title else "'New Member Joined!'"
-        description = f"'{description}'" if description else "'Welcome to {server_name}! {user_mention} is our {member_count_ord} member!'"
-        media = "'{" + '", "'.join(media) + "}'::text[]" if media else None
-        values = f"VALUES ({ctx.guild.id}, {channel_id}, {title}, {description}, {media}, false)"
+    async def create_welcomer(self, ctx, channel_id: int, title: str = None,
+                              description: str = None, media: list = None) -> bool:
+        try:
+            title = f"'{title}'" if title else "'New Member Joined!'"
+            description = f"'{description}'" if description else "'Welcome to {server_name}! {user_mention} is our {member_count_ord} member!'"
+            media = "'{" + '", "'.join(media) + "}'::text[]" if media else "NULL"
+            values = f"VALUES ({ctx.guild.id}, {channel_id}, {title}, {description}, {media}, false)"
 
-        async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO welcomers(guild_id, channel_id, title, description, media, leaver) {values}")
+            async with self.bot.db.acquire() as con:
+                await con.execute(f"INSERT INTO welcomers(guild_id, channel_id, title, description, media, leaver) {values}")
+            return True
+        except Exception:
+            return False
 
     async def has_welcomer(self, ctx):
         async with self.bot.db.acquire() as con:
