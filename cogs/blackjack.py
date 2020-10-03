@@ -2,7 +2,7 @@ import asyncio
 import random
 import discord
 from discord.ext import commands
-from utils import globalcommands
+from utils import cards, globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 suits = {'Hearts', 'Diamonds', 'Spades', 'Clubs'}
@@ -24,23 +24,16 @@ class Card:
 class Deck:
 
     def __init__(self):
-        self.deck = []
-        for suit in suits:
-            for rank in ranks:
-                self.deck.append(Card(suit, rank))
+        self.deck = [Card(suit, rank) for rank in ranks for suit in suits]
 
     def __str__(self):
-        deck_comp = ""
-        for card in self.deck:
-            deck_comp += "\n " + card.__str__()
-        return "The deck has:" + deck_comp
+        return "The deck has:\n" + "\n".join([card.__str__() for card in self.deck])
 
     def shuffle(self):
         random.shuffle(self.deck)
 
     def deal(self):
-        single_card = self.deck.pop()
-        return single_card
+        return self.deck.pop()
 
 
 class Hand:
@@ -65,7 +58,7 @@ class Hand:
 
     def list_hand(self, isDealer=False, gameEnd=False):
         string = ""
-        if isDealer is False:
+        if not isDealer:
             for card in self.cards:
                 if self.value > 21:
                     if card.rank == "Ace" and (self.aces >= 1 or self.acecount >= 1):
@@ -150,11 +143,10 @@ def hit(deck, hand):
 
 
 def hit_or_stand(deck, hand, choice):
-    x = choice
-    if x == 'hit':
+    if choice == 'hit':
         hit(deck, hand)
         return True
-    elif x == 'stand':
+    else:
         return False
 
 
@@ -217,148 +209,18 @@ async def _blackjack(player, dealer, chips, ctx):
 
 def show_dealer(dealer, won):
     if won:
-        index = 0
-        string = ""
-        while index < len(dealer.cards):
-            string += emoji(dealer.cards[index])
-            index += 1
-        return string
+        return "".join(emoji(card) for card in dealer.cards)
     else:
-        index = 1
-        string = "<:cardback:738063418832978070>"
-        while index < len(dealer.cards):
-            string += emoji(dealer.cards[index])
-            index += 1
-        return string
+        return "<:cardback:738063418832978070>" + \
+            "".join(emoji(dealer.cards[index + 1]) for index in range(len(dealer.cards) - 1))
 
 
 def show_player(player):
-    index = 0
-    string = ""
-    while index < len(player.cards):
-        string += emoji(player.cards[index])
-        index += 1
-    return string
+    return "".join(emoji(card) for card in player.cards)
 
 
 def emoji(card):
-    if card.rank == "Two":
-        if card.suit == "Hearts":
-            return "<:2H:738096935692402819>"
-        if card.suit == "Diamonds":
-            return "<:2D:738096998644973648>"
-        if card.suit == "Spades":
-            return "<:2S:738097035584077856>"
-        if card.suit == "Clubs":
-            return "<:2C:738097069637763092>"
-    if card.rank == "Three":
-        if card.suit == "Hearts":
-            return "<:3H:738096936308965446>"
-        if card.suit == "Diamonds":
-            return "<:3D:738096998410092655>"
-        if card.suit == "Spades":
-            return "<:3S:738097035466637403>"
-        if card.suit == "Clubs":
-            return "<:3C:738097069675511848>"
-    if card.rank == "Four":
-        if card.suit == "Hearts":
-            return "<:4H:738096936040792076>"
-        if card.suit == "Diamonds":
-            return "<:4D:738096998758088704>"
-        if card.suit == "Spades":
-            return "<:4S:738097035529683045>"
-        if card.suit == "Clubs":
-            return "<:4C:738097069738295306>"
-    if card.rank == "Five":
-        if card.suit == "Hearts":
-            return "<:5H:738096936447508591>"
-        if card.suit == "Diamonds":
-            return "<:5D:738096998938574991>"
-        if card.suit == "Spades":
-            return "<:5S:738097035856576542>"
-        if card.suit == "Clubs":
-            return "<:5C:738097070228897793>"
-    if card.rank == "Six":
-        if card.suit == "Hearts":
-            return "<:6H:738096936485388319>"
-        if card.suit == "Diamonds":
-            return "<:6D:738096999358005310>"
-        if card.suit == "Spades":
-            return "<:6S:738097036037193839>"
-        if card.suit == "Clubs":
-            return "<:6C:738097070094680127>"
-    if card.rank == "Seven":
-        if card.suit == "Hearts":
-            return "<:7H:738096936586051684>"
-        if card.suit == "Diamonds":
-            return "<:7D:738096999173193838>"
-        if card.suit == "Spades":
-            return "<:7S:738097036104171520>"
-        if card.suit == "Clubs":
-            return "<:7C:738097070358921597>"
-    if card.rank == "Eight":
-        if card.suit == "Hearts":
-            return "<:8H:738096936657223850>"
-        if card.suit == "Diamonds":
-            return "<:8D:738096999282376774>"
-        if card.suit == "Spades":
-            return "<:8S:738097035621695530>"
-        if card.suit == "Clubs":
-            return "<:8C:738097070530887760>"
-    if card.rank == "Nine":
-        if card.suit == "Hearts":
-            return "<:9H:738096936728395837>"
-        if card.suit == "Diamonds":
-            return "<:9D:738096999026524231>"
-        if card.suit == "Spades":
-            return "<:9S:738097035936268289>"
-        if card.suit == "Clubs":
-            return "<:9C:738097070489206925>"
-    if card.rank == "Ten":
-        if card.suit == "Hearts":
-            return "<:10H:738096936363491330>"
-        if card.suit == "Diamonds":
-            return "<:10D:738096999139639377>"
-        if card.suit == "Spades":
-            return "<:10S:738097035772690534>"
-        if card.suit == "Clubs":
-            return "<:10C:738097159647264769>"
-    if card.rank == "Jack":
-        if card.suit == "Hearts":
-            return "<:JH:738096936703492243>"
-        if card.suit == "Diamonds":
-            return "<:JD:738096998959284347>"
-        if card.suit == "Spades":
-            return "<:JS:738097037379371038>"
-        if card.suit == "Clubs":
-            return "<:JC:738097070476361779>"
-    if card.rank == "Queen":
-        if card.suit == "Hearts":
-            return "<:QH:738096936262828073>"
-        if card.suit == "Diamonds":
-            return "<:QD:738096999190233178>"
-        if card.suit == "Spades":
-            return "<:QS:738097036041257100>"
-        if card.suit == "Clubs":
-            return "<:QC:738097070530887770>"
-    if card.rank == "King":
-        if card.suit == "Hearts":
-            return "<:KH:738096936615149578>"
-        if card.suit == "Diamonds":
-            return "<:KD:738096999353549067>"
-        if card.suit == "Spades":
-            return "<:KS:738097035818827877>"
-        if card.suit == "Clubs":
-            return "<:KC:738097159764967495>"
-    if card.rank == "Ace":
-        if card.suit == "Hearts":
-            return "<:AH:738096936644771931>"
-        if card.suit == "Diamonds":
-            return "<:AD:738096999278051448>"
-        if card.suit == "Spades":
-            return "<:AS:738097037186170921>"
-        if card.suit == "Clubs":
-            return "<:AC:738097070233092208>"
+    return cards.playing_cards[card.rank][card.suit]
 
 
 class Blackjack(commands.Cog):
