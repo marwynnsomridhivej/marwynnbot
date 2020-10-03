@@ -421,7 +421,7 @@ class Logging(commands.Cog):
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, "logging disable", 30)
         await gcmds.smart_delete(panel)
-        if result == reactions[0]:
+        if result[0].emoji == reactions[0]:
             return await self.remove_logging(ctx)
         else:
             return await gcmds.cancelled(ctx, "logging disable")
