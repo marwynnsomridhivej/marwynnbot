@@ -350,7 +350,7 @@ class Reminders(commands.Cog):
             return False
 
     @commands.group(invoke_without_command=True,
-                    aliases=['reminder'],
+                    aliases=['reminder', 'reminders'],
                     desc="Sets a reminder",
                     usage="remind (message)",
                     note="A time should be specified as a part of `(message)`. If that is not the case, the help "
