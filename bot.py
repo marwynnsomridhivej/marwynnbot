@@ -20,6 +20,17 @@ gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
+ALL_CUSTOMERRORS = [
+    customerrors.TagError,
+    customerrors.PremiumError,
+    customerrors.GameStatsError,
+    customerrors.BlacklistOperationError,
+    customerrors.PostgreSQLError,
+    customerrors.MathError,
+    customerrors.LoggingError,
+    customerrors.SilentActionError,
+    customerrors.CommandNotFound,
+]
 token_rx = re.compile(r'[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}')
 version = f"Running MarwynnBot {gcmds.version}"
 
@@ -268,21 +279,7 @@ class Bot(commands.AutoShardedBot):
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=cooldown)
-        elif isinstance(error, customerrors.TagError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.PremiumError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.GameStatsError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.BlacklistOperationError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.PostgreSQLError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.MathError):
-            return await ctx.channel.send(embed=error.embed)
-        elif isinstance(error, customerrors.SilentActionError):
-            pass
-        elif isinstance(error, customerrors.LoggingError):
+        elif type(error) in ALL_CUSTOMERRORS:
             if hasattr(error, "embed"):
                 return await ctx.channel.send(embed=error.embed)
             else:
@@ -292,14 +289,14 @@ class Bot(commands.AutoShardedBot):
         elif hasattr(error, "original"):
             if isinstance(error.original, NodeException):
                 embed = discord.Embed(title="Music Error",
-                                  description="NodeException: " + str(error.original),
-                                  color=discord.Color.dark_red())
+                                      description="NodeException: " + str(error.original),
+                                      color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
             elif isinstance(error.original, discord.Forbidden):
                 forbidden = discord.Embed(title="403 Forbidden",
-                                            description=f"{ctx.author.mention}, I cannot execute this command because I lack "
-                                            f"the permissions to do so, or my role is lower in the hierarchy.",
-                                            color=discord.Color.dark_red())
+                                          description=f"{ctx.author.mention}, I cannot execute this command because I lack "
+                                          f"the permissions to do so, or my role is lower in the hierarchy.",
+                                          color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=forbidden)
             else:
                 raise error
