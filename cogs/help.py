@@ -36,7 +36,7 @@ class Help(commands.Cog):
                 value = f"`{'` `'.join(kwargs[attr])}`"
             elif attr == 'aliases':
                 name = attr.title()
-                value = f"`{'` `'.join(kwargs[attr])}`"
+                value = f"`{'` `'.join([alias for alias in command.aliases if alias != command.name.lower()])}`"
             elif attr == 'note':
                 name = attr.title()
                 value = f"*{kwargs[attr]}*"
