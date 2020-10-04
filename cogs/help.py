@@ -76,9 +76,8 @@ class Help(commands.Cog):
         embed = discord.Embed(title="MarwynnBot Help Menu",
                               color=discord.Color.blue(),
                               url=SUPPORT_SERVER_INVITE,
-                              description="These are all the commands I currently support! Type"
-                              f"\n```{await gcmds.prefix(ctx)}help [command]```\n to get help on "
-                              f"that specific command")
+                              description="These are all the commands I currently support! "
+                              f"To get help on a specific command, type:```{await gcmds.prefix(ctx)}help (command)```")
         embed.set_thumbnail(url=DEFAULT_THUMBNAIL)
         embed.set_author(name="MarwynnBot", icon_url=ctx.me.avatar_url)
         embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
