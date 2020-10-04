@@ -9,6 +9,14 @@ class CommandNotFound(commands.CommandError):
                                    color=discord.Color.dark_red())
 
 
+class CommandHelpDirectlyCalled(CommandNotFound):
+    def __init__(self, name):
+        super().__init__(name)
+        self.embed.title = "Use Parent Help"
+        self.embed.description = ("The help for this command cannot be accessed directly. "
+                                  "Please use the help command for the category this command is in")
+
+
 class LoggingError(commands.CommandError):
     pass
 
