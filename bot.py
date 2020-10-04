@@ -279,13 +279,6 @@ class Bot(commands.AutoShardedBot):
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
             return await ctx.channel.send(embed=cooldown)
-        elif type(error) in ALL_CUSTOMERRORS:
-            if hasattr(error, "embed"):
-                return await ctx.channel.send(embed=error.embed)
-            else:
-                pass
-        elif isinstance(error, commands.CheckFailure):
-            pass
         elif hasattr(error, "original"):
             if isinstance(error.original, NodeException):
                 embed = discord.Embed(title="Music Error",
@@ -301,7 +294,20 @@ class Bot(commands.AutoShardedBot):
             else:
                 raise error
         else:
-            raise error
+            for error_type in ALL_CUSTOMERRORS:
+                if isinstance(error, error_type):
+                    if hasattr(error, "embed"):
+                        return await ctx.channel.send(embed=error.embed)
+                    else:
+                        pass
+                    break
+                else:
+                    continue
+            else:
+                if isinstance(error, commands.CheckFailure):
+                    pass
+                else:
+                    raise error
 
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
