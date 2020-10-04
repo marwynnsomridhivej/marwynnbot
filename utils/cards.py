@@ -104,7 +104,7 @@ uno_thumbnail = {
         "blue": "https://cdn.discordapp.com/attachments/734962101432615006/739903625534373958/3_b.png",
         "green": "https://cdn.discordapp.com/attachments/734962101432615006/739904054850748536/3_g.png",
         "yellow": "https://cdn.discordapp.com/attachments/734962101432615006/739906048306970725/3_y.png",
-    }
+    },
     "4": {
         "red": "https://cdn.discordapp.com/attachments/734962101432615006/739903135027560498/4_r.png",
         "blue": "https://cdn.discordapp.com/attachments/734962101432615006/739903629716226119/4_b.png",
@@ -200,7 +200,7 @@ uno_cards = {
         "blue": "<:3_b:739620128416727080>",
         "green": "<:3_g:739620168199700591>",
         "yellow": "<:3_y:739626572734267462>",
-    }
+    },
     "4": {
         "red": "<:4_r:739620093956194345>",
         "blue": "<:4_b:739620128244760607>",
