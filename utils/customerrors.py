@@ -2,6 +2,13 @@ import discord
 from discord.ext import commands
 
 
+class CommandNotFound(commands.CommandError):
+    def __init__(self, name: str):
+        self.embed = discord.Embed(title="Command Not Found",
+                                   description=f"`{name}` is not a valid command",
+                                   color=discord.Color.dark_red())
+
+
 class LoggingError(commands.CommandError):
     pass
 
@@ -38,7 +45,7 @@ class LoggingLevelInvalid(LoggingError):
 
 
 class LoggingCommandNameInvalid(LoggingError):
-    def __init(self, name: str):
+    def __init__(self, name: str):
         self.embed = discord.Embed(title="Invalid Command Name",
                                    description=f"No command is registered under the name `{name}`",
                                    color=discord.Color.dark_red())
