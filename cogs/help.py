@@ -7,6 +7,9 @@ from discord.ext import commands
 from utils import customerrors, globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
+GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
+NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Minecraft', 'Nintendo', 'Pokedex',
+                'Reddit', 'Redirects', 'Serverlink', 'Starboard', 'Tags', 'Todo']
 DEFAULT_THUMBNAIL = "https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png"
 SUPPORT_SERVER_INVITE = "https://discord.gg/78XXt3Q"
 CogCommands = namedtuple("CogCommands", ['cog_name', 'cog'])
@@ -17,15 +20,22 @@ class Help(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        self.mb_cogs = [CogCommands(cog.title(), self.bot.get_cog(cog))
-                        for cog in self.bot.cogs
-                        if cog not in ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']]
+        self.bot.loop.create_task(self.init_cogs_list())
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
+    async def init_cogs_list(self):
+        await self.bot.wait_until_ready()
+        self.mb_cogs = sorted([CogCommands(cog.title(), self.bot.get_cog(cog))
+                               for cog in self.bot.cogs
+                               if cog not in GAMES])
+        return
+
     async def dispatch(self, ctx, command: commands.Command):
+        timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         pfx = await gcmds.prefix(ctx)
         kwargs = command.__original_kwargs__
-        embed = discord.Embed(title=command.name.title(), description=f"```{kwargs['desc']}```", color=discord.Color.blue())
+        embed = discord.Embed(title=f"Detailed Help ⟶ {command.name.title()}",
+                              description=f"```{kwargs['desc']}```", color=discord.Color.blue())
         embed.add_field(name="Usage", value=f"```{pfx}{command.usage}```", inline=False)
         for attr in [key for key in kwargs.keys() if not key in ['name', 'desc', 'usage', 'invoke_without_command']]:
             if attr == 'uperms':
@@ -45,6 +55,7 @@ class Help(commands.Cog):
                 value = kwargs[attr]
             embed.add_field(name=name, value=value, inline=False)
         embed.set_thumbnail(url=kwargs.get("thumb", DEFAULT_THUMBNAIL))
+        embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['h'],
@@ -71,6 +82,18 @@ class Help(commands.Cog):
         embed.set_thumbnail(url=DEFAULT_THUMBNAIL)
         embed.set_author(name="MarwynnBot", icon_url=ctx.me.avatar_url)
         embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
+        for name, cog in self.mb_cogs:
+            if name in NON_DETAILED:
+                cog_commands = []
+                value = f"*Do `{await gcmds.prefix(ctx)}{name.lower()}` for more info*"
+            else:
+                cog_commands = cog.get_commands()
+                value = f"`{'` `'.join([command.name.lower() for command in cog_commands])}`"
+            if value == "``":
+                continue
+            else:
+                embed.add_field(name=name, value=value,
+                                inline=False if len(cog_commands) > 3 else True)
         return await ctx.channel.send(embed=embed)
 
 
