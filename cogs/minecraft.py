@@ -69,33 +69,34 @@ class Minecraft(commands.Cog):
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
-    @commands.group(aliases=['mc'])
-    @commands.cooldown(1, 10, commands.BucketType.member)
+    @commands.group(invoke_without_command=True,
+                    aliases=['mc'],
+                    desc="Displays the help command for minecraft",
+                    note="Subcommands can be used once every 10 seconds per member")
     async def minecraft(self, ctx):
-
-        if not ctx.invoked_subcommand:
-            embed = discord.Embed(title="Minecraft Commands Help",
-                                  description=f"Access MarwynnBot's Minecraft commands using "
-                                              f"`{await gcmds.prefix(ctx)}minecraft [option]`. Here is a list of all "
-                                              f"the available options",
-                                  color=discord.Color.blue())
-            embed.add_field(name="Ping",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}minecraft ping [serverIP]`\n"
-                                  f"Returns: The ping of the specified minecraft server\n"
-                                  f"Aliases: `-p`",
-                            inline=False)
-            embed.add_field(name="Details",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}minecraft details [serverIP]`\n"
-                                  f"Returns: Details about the specified minecraft server\n"
-                                  f"Aliases: `-d` `-q` `query`",
-                            inline=False)
-            embed.add_field(name="Special Cases",
-                            value=f"Special Cases: The `[serverIP]` argument can be a domain name, IP address, "
-                                  f"or IP address:port",
-                            inline=False)
-            await ctx.channel.send(embed=embed)
+        embed = discord.Embed(title="Minecraft Commands Help",
+                                description=f"Access MarwynnBot's Minecraft commands using "
+                                            f"`{await gcmds.prefix(ctx)}minecraft [option]`. Here is a list of all "
+                                            f"the available options",
+                                color=discord.Color.blue())
+        embed.add_field(name="Ping",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}minecraft ping [serverIP]`\n"
+                                f"Returns: The ping of the specified minecraft server\n"
+                                f"Aliases: `-p`",
+                        inline=False)
+        embed.add_field(name="Details",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}minecraft details [serverIP]`\n"
+                                f"Returns: Details about the specified minecraft server\n"
+                                f"Aliases: `-d` `-q` `query`",
+                        inline=False)
+        embed.add_field(name="Special Cases",
+                        value=f"Special Cases: The `[serverIP]` argument can be a domain name, IP address, "
+                                f"or IP address:port",
+                        inline=False)
+        await ctx.channel.send(embed=embed)
 
     @minecraft.command(aliases=['-p'])
+    @commands.cooldown(1, 10, commands.BucketType.member)
     async def ping(self, ctx, host: str = None):
         if not host:
             return await ctx.invoke(self.minecraft)
@@ -104,6 +105,7 @@ class Minecraft(commands.Cog):
             return await self.invalid(ctx, host)
 
     @minecraft.command(aliases=['-d', '-q', 'query'])
+    @commands.cooldown(1, 10, commands.BucketType.member)
     async def details(self, ctx, host: str = None):
         if not host:
             return await ctx.invoke(self.minecraft)

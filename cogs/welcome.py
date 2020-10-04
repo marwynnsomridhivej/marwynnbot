@@ -300,7 +300,10 @@ class Welcome(commands.Cog):
         except Exception:
             return False
 
-    @commands.group(invoke_without_command=True, aliases=['welcome'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['welcome'],
+                    desc="Displays the help command for welcomer",
+                    usage="welcomer")
     async def welcomer(self, ctx):
         return await self.get_welcome_help(ctx)
 
@@ -721,12 +724,11 @@ class Welcome(commands.Cog):
     async def test(self, ctx):
         await self.send_welcomer(ctx.author)
 
-    @commands.group()
-    @commands.has_permissions(manage_guild=True)
+    @commands.group(invoke_without_command=True,
+                    desc="Displays the help command for leaver",
+                    usage="leaver")
     async def leaver(self, ctx):
-        
-        if not ctx.invoked_subcommand:
-            return await self.get_leaver_help(ctx)
+        return await self.get_leaver_help(ctx)
 
     @leaver.command(aliases=['-c', 'make', 'start', 'create'])
     @commands.has_permissions(manage_guild=True)

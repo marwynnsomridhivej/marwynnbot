@@ -48,7 +48,11 @@ class Coinflip(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS coinflip(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
                               "NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
-    @commands.command(aliases=['cf'])
+    @commands.command(aliases=['cf'],
+                      desc="Gamble by flipping a coin",
+                      usage="coinflip (bet)",
+                      note="If `(bet)` is not specified, it defaults to 1. "
+                      "You may only bet up to your balance amount")
     async def coinflip(self, ctx, betAmount: typing.Optional[int] = 1, side="heads"):
         balance = await gcmds.get_balance(ctx.author)
         if not balance:

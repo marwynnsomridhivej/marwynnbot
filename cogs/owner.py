@@ -11,6 +11,7 @@ from discord.ext.commands.errors import CommandInvokeError
 from utils import customerrors, globalcommands, paginator
 
 gcmds = globalcommands.GlobalCMDS()
+OWNER_PERM = ["Bot Owner Only"]
 
 
 class Owner(commands.Cog):
@@ -97,7 +98,11 @@ class Owner(commands.Cog):
             raise customerrors.GuildPremiumException(guild)
         return
 
-    @commands.group(invoke_without_command=True, aliases=['g'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['g'],
+                    desc="Git operations",
+                    usage="git [command]",
+                    uperms=OWNER_PERM)
     @commands.is_owner()
     async def git(self, ctx, *, args: str):
         embed = discord.Embed(title="Git Output")
@@ -114,7 +119,8 @@ class Owner(commands.Cog):
             return await ctx.channel.send(embed=embed)
         else:
             embed.description = "```\nSTDOUT longer than 2048 characters. See the file below:\n```"
-            stdout_file = discord.File(BytesIO(output), filename=f"{ctx.author.display_name.upper()}{datetime.now()}.txt")
+            stdout_file = discord.File(
+                BytesIO(output), filename=f"{ctx.author.display_name.upper()}{datetime.now()}.txt")
             await ctx.channel.send(embed=embed)
             return await ctx.channel.send(file=stdout_file)
 
@@ -128,7 +134,10 @@ class Owner(commands.Cog):
     async def git_gpom(self, ctx):
         return await self.git(ctx, args="pull origin master")
 
-    @commands.command(aliases=['l', 'ld'])
+    @commands.command(aliases=['l', 'ld'],
+                      desc="Loads cogs",
+                      usage="load [extension]",
+                      uperms=OWNER_PERM)
     @commands.is_owner()
     async def load(self, ctx, extension):
         try:
@@ -147,7 +156,10 @@ class Owner(commands.Cog):
                                   color=color)
         await ctx.channel.send(embed=loadEmbed)
 
-    @commands.command(aliases=['ul', 'uld'])
+    @commands.command(aliases=['ul', 'uld'],
+                      desc="Unloads cogs",
+                      usage="unload [extension]",
+                      uperms=OWNER_PERM)
     @commands.is_owner()
     async def unload(self, ctx, extension):
         try:
@@ -166,7 +178,10 @@ class Owner(commands.Cog):
                                     color=color)
         await ctx.channel.send(embed=unloadEmbed)
 
-    @commands.command(aliases=['r', 'rl'])
+    @commands.command(aliases=['r', 'rl'],
+                      desc="Reloads cogs",
+                      usage="reload (extension)",
+                      uperms=OWNER_PERM)
     @commands.is_owner()
     async def reload(self, ctx, *, extension=None):
         if extension is None:
@@ -198,7 +213,10 @@ class Owner(commands.Cog):
             await ctx.channel.send(embed=reloadEmbed)
             print("==========================")
 
-    @commands.command(aliases=['taskkill', 'sd'])
+    @commands.command(aliases=['taskkill', 'sd'],
+                      desc="Shuts the bot down",
+                      usage="shutdown",
+                      uperms=OWNER_PERM)
     @commands.is_owner()
     async def shutdown(self, ctx):
         shutdownEmbed = discord.Embed(title="Bot Shutdown Successful",
@@ -207,7 +225,10 @@ class Owner(commands.Cog):
         await ctx.channel.send(embed=shutdownEmbed)
         await self.bot.close()
 
-    @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'])
+    @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'],
+                    desc="Manages all user balances",
+                    usage="balanceadmin (subcommand)",
+                    uperms=OWNER_PERM)
     @commands.is_owner()
     async def balanceAdmin(self, ctx):
         return
@@ -326,7 +347,11 @@ class Owner(commands.Cog):
                                     color=discord.Color.blue())
         return await ctx.channel.send(embed=removeEmbed)
 
-    @commands.group(invoke_without_command=True, aliases=['blist'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['blist'],
+                    desc="Sets the blacklists for users and/or servers",
+                    usage="blacklist (subcommand)",
+                    uperms=OWNER_PERM)
     @commands.is_owner()
     async def blacklist(self, ctx):
         return
@@ -407,7 +432,12 @@ class Owner(commands.Cog):
                                     color=discord.Color.dark_red())
             await ctx.channel.send(embed=invalid)
 
-    @commands.command(aliases=['fleave'])
+    @commands.command(aliases=['fleave'],
+                      desc="Forces the bot to leave a server",
+                      usage="forceleave (server_id)",
+                      uperms=OWNER_PERM,
+                      note="If `(server_id)` is unspecified, the bot will leave the current "
+                      "server the invocation context is in")
     @commands.is_owner()
     async def forceleave(self, ctx, guild_id=None):
         if guild_id is None:
@@ -418,7 +448,9 @@ class Owner(commands.Cog):
                                    color=discord.Color.blue())
         await ctx.author.send(embed=leaveEmbed)
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True,
+                    desc="Displays the premium message",
+                    usage="premium")
     async def premium(self, ctx):
         description = ("MarwynnBot Premium is an optional, subscription based plan that will grant the subscriber complete, unrestricted "
                        "access to all of MarwynnBot's \"premium locked\" features, such as creating and saving playlists, receiving special monthly"
@@ -481,27 +513,16 @@ class Owner(commands.Cog):
         pag.embed.title = "MarwynnBot Premium Servers"
         return await pag.paginate()
 
-    @commands.command(aliases=['dm', 'privatemessage'])
+    @commands.command(aliases=['dm', 'privatemessage'],
+                      desc="Sends a user a DM",
+                      usage="privatemessage [user] [message]")
     @commands.is_owner()
-    async def privateMessage(self, ctx, userID: int = None, *, message):
-        if userID is None:
-            no_id = discord.Embed(title="No User ID Specified",
-                                  description=f"{ctx.author.mention}, you did not specify a user ID",
-                                  color=discord.Color.dark_red())
-            await ctx.channel.send(embed=no_id)
-
-        try:
-            user = self.bot.get_user(id=userID)
-        except commands.BadArgument:
-            bad_id = discord.Embed(title="Invalid User ID Specified",
-                                   description=f"{ctx.author.mention}, please specify a valid user ID",
-                                   color=discord.Color.dark_red())
-            await ctx.channel.send(embed=bad_id)
-
+    async def privateMessage(self, ctx, user: discord.User, *, message):
         dmEmbed = discord.Embed(title="MarwynnBot",
                                 description=message,
                                 color=discord.Color.blue())
         await user.send(embed=dmEmbed)
+        dmEmbed.set_footer(text=f"Copy of DM sent to {user}")
         await ctx.author.send(embed=dmEmbed)
 
 

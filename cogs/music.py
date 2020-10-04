@@ -302,7 +302,9 @@ class Music(commands.Cog):
             await gcmds.smart_delete(volume_message)
             await self.set_value(guild_id, 'volume_message', None)
 
-    @commands.command()
+    @commands.command(desc="Makes MarwynnBot join the same voice channel you're in",
+                      usage="join",
+                      note="You may only use this when you are connected to a voice channel")
     async def join(self, ctx):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
@@ -346,7 +348,10 @@ class Music(commands.Cog):
             await ctx.channel.send(embed=joinError)
             return
 
-    @commands.command()
+    @commands.command(desc="Makes MarwynnBot play a song or the current queue",
+                      usage="play (query)",
+                      note="If there are songs in queue, `(query)` can be unspecified to start playing "
+                      "the first song in the queue")
     async def play(self, ctx, *, query: str = None):
 
         if not await self.ensure_voice(ctx):
@@ -437,7 +442,8 @@ class Music(commands.Cog):
 
         await self.set_value(ctx.guild.id, "queue", queue)
 
-    @commands.command()
+    @commands.command(desc="List the current queue or queue a song",
+                      usage="queue (query)")
     async def queue(self, ctx, *, query: str = None):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
@@ -564,7 +570,11 @@ class Music(commands.Cog):
                 queue_message_sent = await ctx.channel.send(embed=queueEmbed)
             await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
-    @commands.command(aliases=['clearqueue', 'qc'])
+    @commands.command(aliases=['clearqueue', 'qc'],
+                      desc="Clears the current queue",
+                      usage="queueclear",
+                      uperms=["Manage Server"])
+    @commands.has_permissions(manage_guild=True)
     async def queueclear(self, ctx):
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -599,7 +609,10 @@ class Music(commands.Cog):
             queue_message_sent = await ctx.channel.send(embed=cleared)
         await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
 
-    @commands.command()
+    @commands.command(desc="Stops music playback",
+                      usage="stop",
+                      uperms=["Manage Server"])
+    @commands.has_permissions(manage_guild=True)
     async def stop(self, ctx):
         if ctx.author != ctx.guild.owner:
             return await self.not_owner(ctx)
@@ -636,7 +649,8 @@ class Music(commands.Cog):
                                 color=discord.Color.blue())
         await ctx.channel.send(embed=stopped)
 
-    @commands.command()
+    @commands.command(desc="Makes MarwynnBot leave the voice channel it is currently in",
+                      usage="leave")
     async def leave(self, ctx):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
@@ -666,7 +680,8 @@ class Music(commands.Cog):
         disconnected.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         await ctx.channel.send(embed=disconnected)
 
-    @commands.command()
+    @commands.command(desc="Adjusts the music player volume",
+                      usage="volume (1-100)")
     async def volume(self, ctx, amount: int = None):
         if not await self.ensure_voice(ctx):
             return
@@ -704,7 +719,12 @@ class Music(commands.Cog):
         await self.set_value(ctx.guild.id, "volume_message", volume_message_sent)
 
     @premium.is_premium()
-    @commands.group(invoke_without_command=True, aliases=['playlists'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['playlists'],
+                    desc="Shows all your saved playlists",
+                    usage="playlist (subcommand)",
+                    note="This is a premium only feature. Valid `(subcommand)` are "
+                    "\"load\", \"save\", \"add\", and \"remove\"")
     async def playlist(self, ctx):
         await self.init_playlist(ctx)
         playlists = await self.get_playlist(ctx, None)

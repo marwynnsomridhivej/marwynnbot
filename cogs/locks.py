@@ -100,11 +100,16 @@ class Locks(commands.Cog):
                         await con.execute(f"UPDATE locks SET type='unlocked', author_id={ctx.author.id} WHERE channel_id={channel.id}")
         return
 
-    @commands.group(invoke_without_command=True, aliases=['lk'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['lk'],
+                    desc="Displays the help command for locks",
+                    usage="lock",
+                    uperms=["Manage Server"])
     async def lock(self, ctx):
         return await self.locks_help(ctx)
 
     @lock.command(aliases=['-s', 'apply', 'create', 'set'])
+    @commands.has_permissions(manage_guild=True)
     async def lock_set(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, *, flag: str = None):
         if not (channels or flag):
             return await self.locks_help(ctx)
@@ -158,10 +163,16 @@ class Locks(commands.Cog):
             return await pag.paginate()
 
     @lock.command(aliases=['ulk', '-rm', 'remove', 'delete', 'cancel', 'unlock'])
+    @commands.has_permissions(manage_guild=True)
     async def lock_unlock(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, *, flag: str = None):
         return await ctx.invoke(self.unlock, channels=channels, flag=flag)
 
-    @commands.command(aliases=['ulk', '-rm', 'remove', 'delete', 'cancel'])
+    @commands.command(aliases=['ulk', '-rm', 'remove', 'delete', 'cancel'],
+                      desc="Unlock channels that are currently locked",
+                      usage="unlock [#channel]*va",
+                      uperms=["Manage Server"],
+                      note="If `[#channel]*va` is \"all\", all channels will be unlocked")
+    @commands.has_permissions(manage_guild=True)
     async def unlock(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, *, flag: str = None):
         if not (channels or flag):
             return await self.locks_help(ctx)

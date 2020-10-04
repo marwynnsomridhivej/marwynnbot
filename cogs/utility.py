@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -91,7 +92,12 @@ class Utility(commands.Cog):
         async with self.bot.db.acquire() as con:
             await con.execute(f"UPDATE guild SET serverstats=FALSE WHERE guild_id = {guild_id}")
 
-    @commands.command(aliases=['counters', 'used', 'usedcount'])
+    @commands.command(aliases=['counters', 'used', 'usedcount'],
+                      desc="Displays the used counter for commands",
+                      usage="counter (command) (mode)",
+                      note="Valid arguments for `(mode)` are \"server\" and \"global\". "
+                      "If `(command)` is unspecified, it will show the counters for all commands. "
+                      "If `(mode)` is unspecified, it will show the count for only commands executed in this server.")
     async def counter(self, ctx, name=None, mode='server'):
         if name == "server" or name == "global":
             mode = name
@@ -102,11 +108,13 @@ class Utility(commands.Cog):
                     result = (await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter']
                     result_dict = json.loads(result)
                     title = f"Counters for {ctx.guild.name}"
-                    entries = [f"***{key.lower()}:*** *used {result_dict[key]} {'times' if result_dict[key] != 1 else 'time'}*" for key in result_dict.keys()]
+                    entries = [
+                        f"***{key.lower()}:*** *used {result_dict[key]} {'times' if result_dict[key] != 1 else 'time'}*" for key in result_dict.keys()]
                 else:
                     result = (await con.fetch(f"SELECT * from global_counters"))
                     title = "Global Counters"
-                    entries = [f"***{record['command'].lower()}:*** *used {record['amount']} {'times' if record['amount'] != 1 else 'time'}*" for record in result]
+                    entries = [
+                        f"***{record['command'].lower()}:*** *used {record['amount']} {'times' if record['amount'] != 1 else 'time'}*" for record in result]
             pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=20, show_entry_count=True)
             pag.embed.title = title
             return await pag.paginate()
@@ -119,7 +127,7 @@ class Utility(commands.Cog):
                 else:
                     amount = (
                         await con.fetch(
-                        f"SELECT counter->>'{command.name}' from guild WHERE guild_id = {ctx.guild.id}"
+                            f"SELECT counter->>'{command.name}' from guild WHERE guild_id = {ctx.guild.id}"
                         )
                     )[0][0]
                     title = f"Server Counter for {command.name.title()}"
@@ -129,7 +137,8 @@ class Utility(commands.Cog):
                                   color=discord.Color.blue())
             return await ctx.channel.send(embed=embed)
 
-    @commands.command()
+    @commands.command(desc="Displays MarwynnBot's invite link",
+                      usage="invite")
     async def invite(self, ctx):
         embed = discord.Embed(title="MarwynnBot's Invite Link",
                               description=f"{ctx.author.mention}, thank you for using MarwynnBot! Here is MarwynnBot's"
@@ -138,12 +147,14 @@ class Utility(commands.Cog):
                               url=invite_url)
         await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True,
+                    desc="Displays the help command for request",
+                    usage="request")
     async def request(self, ctx):
         menu = discord.Embed(title="Request Options",
-                                description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
-                                            f"to submit a feature request with a 60 second cooldown",
-                                color=discord.Color.blue())
+                             description=f"{ctx.author.mention}, do `{await gcmds.prefix(ctx)}request feature` "
+                             f"to submit a feature request with a 60 second cooldown",
+                             color=discord.Color.blue())
         await ctx.channel.send(embed=menu)
 
     @request.command()
@@ -178,6 +189,7 @@ class Utility(commands.Cog):
         self.add_entry(ctx, message.id, "feature")
 
     @request.command()
+    @commands.is_owner()
     async def reply(self, ctx, message_id: int = None, *, reply_message: str = None):
         if not reply_message or not message_id:
             menu = discord.Embed(title="Request Options",
@@ -208,22 +220,25 @@ class Utility(commands.Cog):
         await ctx.author.send(embed=reply_embed)
         self.remove_entry(message_id)
 
-    @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'])
+    @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'],
+                      desc="Queries emotes that belong to this server",
+                      usage="serveremotes (query)",
+                      note="If `(query)` is unspecified, it will display all the emojis that belong to this server")
     async def serverEmotes(self, ctx, *, search=None):
-        description = []
-        for emoji in ctx.guild.emojis:
-            if search is not None:
-                if search in emoji.name:
-                    description.append(f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
-            else:
-                description.append(f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>")
+        description = [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
+                       for emoji in ctx.guild.emojis] if not search else \
+            [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
+             for emoji in ctx.guild.emojis
+             if search in emoji.name]
 
         emojiEmbed = discord.Embed(title="Server Custom Emotes:",
                                    description="\n".join(sorted(description)),
                                    color=discord.Color.blue())
         await ctx.channel.send(embed=emojiEmbed)
 
-    @commands.command(aliases=['info', 'si', 'serverinfo'])
+    @commands.command(aliases=['info', 'si', 'serverinfo'],
+                      desc="Displays the current server's information",
+                      usage="serverinfo")
     async def serverInfo(self, ctx):
         description = (f"Owner: {ctx.guild.owner.mention}",
                        f"Created At: `{str(ctx.guild.created_at)[:-7]}`",
@@ -235,7 +250,9 @@ class Utility(commands.Cog):
         embed.set_image(url=ctx.guild.icon_url)
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['pfp'])
+    @commands.command(aliases=['pfp'],
+                      desc="Displays a member's profile picture",
+                      usage="profile [@member]")
     async def profile(self, ctx, *, member: discord.Member):
         icon = member.avatar_url_as(static_format="png", size=4096)
         embed = discord.Embed(color=discord.Color.blue())
@@ -243,7 +260,9 @@ class Utility(commands.Cog):
         embed.set_image(url=icon)
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['p', 'checkprefix', 'prefixes'])
+    @commands.command(aliases=['p', 'checkprefix', 'prefixes'],
+                      desc="Displays the server's custom prefix",
+                      usage="prefix")
     async def prefix(self, ctx):
         serverPrefix = await gcmds.prefix(ctx)
         prefixEmbed = discord.Embed(title='Prefixes',
@@ -256,25 +275,34 @@ class Utility(commands.Cog):
                               inline=False)
         await ctx.channel.send(embed=prefixEmbed)
 
-    @commands.command(aliases=['sp', 'setprefix'])
+    @commands.command(aliases=['sp', 'setprefix'],
+                      desc="Sets the server's custom prefix",
+                      usage="setprefix [prefix]",
+                      uperms=["Manage Server"],
+                      note="If `[prefix]` is \"reset\", then the custom prefix will be set to \"m!\"")
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
         async with self.db.acquire() as con:
             if prefix != 'reset':
-                await con.execute(f"UPDATE guild SET custom_prefix = {prefix} WHERE guild_id = {ctx.guild.id}")
+                await con.execute(f"UPDATE guild SET custom_prefix=$tag${prefix}$tag$ WHERE guild_id={ctx.guild.id}")
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
                                             description=f"Server prefix is now set to `{prefix}` \n\n"
                                                         f"You will still be able to use {self.bot.user.mention} "
                                                         f"and `mb ` as prefixes",
                                             color=discord.Color.blue())
             else:
-                await con.execute(f"UPDATE guild SET custom_prefix = 'm!' WHERE guild_id = {ctx.guild.id}")
+                await con.execute(f"UPDATE guild SET custom_prefix='m!' WHERE guild_id={ctx.guild.id}")
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
                                             description=f"Server prefix has been reset to `m!`",
                                             color=discord.Color.blue())
             await ctx.channel.send(embed=prefixEmbed)
 
-    @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'])
+    @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'],
+                      desc="Sets the server's server stats panel",
+                      usage="serverstats (flag)",
+                      uperms=["Manage Server", "Manage Channels"],
+                      bperms=["Manage Server", "Manage Channels"],
+                      note="If `(flag)` is \"rest\", the server stats panel will be deleted")
     @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
     @commands.has_permissions(manage_guild=True, manage_channels=True)
     async def serverStats(self, ctx, reset=None):
@@ -310,18 +338,23 @@ class Utility(commands.Cog):
                                               color=discord.Color.blue())
                 return await ctx.channel.send(embed=created_embed)
 
-    @commands.command(aliases=['tz'])
-    @commands.bot_has_permissions(manage_nicknames=True)
+    @commands.command(aliases=['tz'],
+                      desc="Appends a timezone tag to yourself",
+                      usage="timezone [timezone]",
+                      uperms=["Change Nickname"],
+                      bperms=["Manage Nicknames"],
+                      note="`[timezone]` must be in GMT format. If `[timezone]` is \"reset\" or \"r\", "
+                      "the tag will be removed")
     @commands.has_permissions(change_nickname=True)
-    async def timezone(self, ctx, *, timezoneInput):
-        nameSpace = str(timezoneInput)
-        name = nameSpace.replace(" ", "")
+    @commands.bot_has_permissions(manage_nicknames=True)
+    async def timezone(self, ctx, *, timezoneInput: str):
+        name = timezoneInput.replace(" ", "")
         if name == 'reset' or name == 'r':
             await ctx.author.edit(nick=f"{ctx.author.name}")
             title = "Timezone Reset Success"
             description = f"{ctx.author.mention}'s timezone has been removed from their name"
             color = discord.Color.blue()
-        elif name is not None:
+        elif name:
             if "GMT" in name:
                 nick = f"{ctx.author.display_name} [{name}]"
                 await ctx.author.edit(nick=nick)
@@ -342,7 +375,8 @@ class Utility(commands.Cog):
                             color=color)
         await ctx.channel.send(embed=gmt)
 
-    @commands.command()
+    @commands.command(desc="Displays MarwynnBot's uptime since the last restart",
+                      usage="uptime")
     async def uptime(self, ctx):
         time_now = int(datetime.now().timestamp())
         td = timedelta(seconds=time_now - self.bot.uptime)

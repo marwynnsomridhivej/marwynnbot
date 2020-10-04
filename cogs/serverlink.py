@@ -81,7 +81,10 @@ class ServerLink(commands.Cog):
         async with self.bot.db.acquire() as con:
             self_status = await con.fetchval(f"SELECT channel_id")
 
-    @commands.group(invoke_without_command=True, aliases=['sl', 'link'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['sl', 'link'],
+                    desc="Displays the help command for serverlink",
+                    usage="serverlink")
     async def serverlink(self, ctx):
         return await self.send_serverlink_about(ctx)
 

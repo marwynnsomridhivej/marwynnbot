@@ -158,7 +158,10 @@ class Todo(commands.Cog):
         except Exception:
             raise customerrors.ToDoRemoveError()
 
-    @commands.group(invoke_without_command=True, aliases=['td', 'todos'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['td', 'todos'],
+                    desc="Displays the help command for todo",
+                    usage="todo")
     async def todo(self, ctx):
         return await self.todo_help(ctx)
 

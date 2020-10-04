@@ -313,7 +313,10 @@ class Roles(commands.Cog):
             embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
         return await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['ar', 'autoroles'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['ar', 'autoroles'],
+                    desc="Displays the help command for autorole",
+                    usage="autorole")
     async def autorole(self, ctx):
         return await self.ar_help(ctx)
 
@@ -505,7 +508,10 @@ class Roles(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['rr'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['rr'],
+                    desc="Displays the help command for reactionrole",
+                    usage="reactionrole")
     async def reactionrole(self, ctx):
         return await self.rr_help(ctx)
 

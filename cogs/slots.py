@@ -169,16 +169,17 @@ class Slots(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS slots(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
                               "NUMERIC DEFAULT 0, jackpot NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
-    @commands.command(aliases=['slot'])
+    @commands.command(aliases=['slot'],
+                      desc="A slot machine in Discord!",
+                      usage="slots (bet)",
+                      note="If `(bet)` is \"help\", it will display the payouts. Anything otherwise will default to 1 "
+                      "unless a valid integer is entered"
+                      )
     async def slots(self, ctx, betAmount=None):
-        if betAmount is None:
+        if not betAmount:
             betAmount = 1
-        try:
-            betAmount = int(betAmount)
-        except (TypeError, ValueError):
-            betAmount = ""
 
-        if isinstance(betAmount, str):
+        if isinstance(betAmount, str) and betAmount == "help":
             rates = discord.Embed(title="Slots Payout",
                                   description=f"The following are instances where the player can win when playing slots:",
                                   color=discord.Color.blue())
@@ -199,8 +200,10 @@ class Slots(commands.Cog):
                             value=":free: - can substitute any category\n"
                                   ":pirate_flag: - will immediately cause you to lose your bet",
                             inline=False)
-            await ctx.channel.send(embed=rates)
-            return
+            return await ctx.channel.send(embed=rates)
+
+        if not isinstance(betAmount, int):
+            betAmount = 1
 
         balance = await gcmds.get_balance(ctx.author)
         if not balance:

@@ -349,18 +349,16 @@ class Reminders(commands.Cog):
         except Exception:
             return False
 
-    @commands.group(aliases=['reminder'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['reminder'],
+                    desc="Sets a reminder",
+                    usage="remind (message)",
+                    note="A time should be specified as a part of `(message)`. If that is not the case, the help "
+                    "command for remind will be displayed")
     async def remind(self, ctx, *, message_with_time: str = None):
 
         if not message_with_time:
             return await self.send_remind_help(ctx)
-
-        if message_with_time in ["-e", 'edit']:
-            await ctx.invoke(self.edit)
-            return
-        elif message_with_time in ["-rm", "trash", "delete"]:
-            await ctx.invoke(self.delete)
-            return
 
         dates = search_dates(text=message_with_time, settings={
                              'PREFER_DATES_FROM': "future"})

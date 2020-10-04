@@ -203,7 +203,11 @@ class ConnectFour(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS connectfour(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
                               "NUMERIC DEFAULT 0, tie NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
-    @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'])
+    @commands.command(aliases=['connectfour', 'c4', 'conn', 'connect'],
+                      desc="Connect Four in Discord!",
+                      usage="connectfour (bet)",
+                      note="If `(bet)` is not specified, it defaults to 1. "
+                      "You may only bet up to your balance amount")
     async def connectFour(self, ctx, member: discord.Member = None):
         if member is None:
             error = discord.Embed(title="No Opponent Selected",

@@ -229,44 +229,45 @@ class Pokedex(commands.Cog):
             type_move_damage_class = f"Damage Class: `{value.move_damage_class.name.capitalize()}`"
         return type_name, type_interactions, type_move_damage_class
 
-    @commands.group(aliases=['dex'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['dex'],
+                    desc="Displays the help command for the pokedex",
+                    usage="pokedex")
     async def pokedex(self, ctx):
-
-        if not ctx.invoked_subcommand:
-            panel = discord.Embed(title="Pokedex Commands",
-                                  description=f"Access MarwynnBot's Pokédex using `{await gcmds.prefix(ctx)}pokedex "
-                                              f"[option]`. Please note that in order to avoid discrepancies in "
-                                              f"versions, I have not included many of the game specific data.\n Here "
-                                              f"is a list of all available `pokedex` options",
-                                  color=discord.Color.blue())
-            panel.add_field(name="Pokémon",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}pokedex pokemon [name]`\n"
-                                  f"Returns: Details about the specified Pokémon\n"
-                                  f"Aliases: `-p`",
-                            inline=False)
-            panel.add_field(name="Move",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}pokedex move [name]`\n"
-                                  f"Returns: Details about the move\n"
-                                  f"Aliases: `moves` `-m`",
-                            inline=False)
-            panel.add_field(name="Ability",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}pokedex ability [name] [optional flag]`\n"
-                                  f"Returns: Details about the specified ability\n"
-                                  f"Flag: `-de` `-en` or blank *(defaults to english)*\n"
-                                  f"Aliases: `-a`",
-                            inline=False)
-            panel.add_field(name="Item",
-                            value=f"Usage: `{await gcmds.prefix(ctx)} pokedex item [name]`\n"
-                                  f"Returns: Details about the item"
-                                  f"Aliases: `-i`",
-                            inline=False)
-            panel.add_field(name="Type",
-                            value=f"Usage: `{await gcmds.prefix(ctx)}pokedex type [name]`\n"
-                                  f"Returns: Details about that type"
-                                  f"Flag: `-p` `-m` or blank *(defaults to none)*"
-                                  f"Aliases: `-t`",
-                            inline=False)
-            return await ctx.channel.send(embed=panel)
+        panel = discord.Embed(title="Pokedex Commands",
+                              description=f"Access MarwynnBot's Pokédex using `{await gcmds.prefix(ctx)}pokedex "
+                              f"[option]`. Please note that in order to avoid discrepancies in "
+                              f"versions, I have not included many of the game specific data.\n Here "
+                              f"is a list of all available `pokedex` options",
+                              color=discord.Color.blue())
+        panel.add_field(name="Pokémon",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}pokedex pokemon [name]`\n"
+                        f"Returns: Details about the specified Pokémon\n"
+                        f"Aliases: `-p`",
+                        inline=False)
+        panel.add_field(name="Move",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}pokedex move [name]`\n"
+                        f"Returns: Details about the move\n"
+                        f"Aliases: `moves` `-m`",
+                        inline=False)
+        panel.add_field(name="Ability",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}pokedex ability [name] [optional flag]`\n"
+                        f"Returns: Details about the specified ability\n"
+                        f"Flag: `-de` `-en` or blank *(defaults to english)*\n"
+                        f"Aliases: `-a`",
+                        inline=False)
+        panel.add_field(name="Item",
+                        value=f"Usage: `{await gcmds.prefix(ctx)} pokedex item [name]`\n"
+                        f"Returns: Details about the item"
+                        f"Aliases: `-i`",
+                        inline=False)
+        panel.add_field(name="Type",
+                        value=f"Usage: `{await gcmds.prefix(ctx)}pokedex type [name]`\n"
+                        f"Returns: Details about that type"
+                        f"Flag: `-p` `-m` or blank *(defaults to none)*"
+                        f"Aliases: `-t`",
+                        inline=False)
+        return await ctx.channel.send(embed=panel)
 
     @pokedex.command(aliases=['-p'])
     async def pokemon(self, ctx, *, pokemon_name: str):

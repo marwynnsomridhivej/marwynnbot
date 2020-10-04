@@ -63,7 +63,10 @@ class Nintendo(commands.Cog):
             embed.description = f"{member.mention} has not registered their profile"
         return await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['ntd'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['ntd'],
+                    desc="Displays the help command for nintendo",
+                    usage="nintendo")
     async def nintendo(self, ctx):
         return await self.send_nintendo_help(ctx)
 

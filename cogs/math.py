@@ -17,7 +17,9 @@ class Math(commands.Cog):
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
-    @commands.command()
+    @commands.command(desc="Renders image given a latex string",
+                      usage="latex [equation]",
+                      note="Most, but not all latex formatting is supported")
     async def latex(self, ctx, *, eq: str):
         cleaned = await commands.clean_content().convert(ctx, eq)
         raw_eq = r"{}".format(cleaned)

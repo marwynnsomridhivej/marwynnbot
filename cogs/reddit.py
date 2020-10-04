@@ -63,7 +63,10 @@ class Reddit(commands.Cog):
                  f"Copyrights belong to their respective owners")
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['reddithelp'])
+    @commands.command(aliases=['reddithelp'],
+                      desc="Displays the help command for reddit",
+                      usage="reddit (subreddit)",
+                      note="Valid subreddit names are listed in the help command")
     async def reddit(self, ctx, cmdName=None):
         CMDNAMES = [command.name for command in self.get_commands() if command.name != "reddit"]
         description = f"Do `{await gcmds.prefix(ctx)}reddit [cmdName]` to get the usage of that particular " \

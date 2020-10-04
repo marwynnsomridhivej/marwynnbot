@@ -356,7 +356,11 @@ class Logging(commands.Cog):
         finally:
             return await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['lg', 'log'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['lg', 'log'],
+                    desc="Displays the help command for logging",
+                    usage="logging",
+                    uperms=["Manage Server"])
     async def logging(self, ctx):
         return await self.send_logging_help(ctx)
 

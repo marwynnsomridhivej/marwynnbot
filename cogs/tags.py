@@ -216,7 +216,11 @@ class Tags(commands.Cog):
         except (discord.NotFound, discord.Forbidden):
             return False
 
-    @commands.group(invoke_without_command=True, aliases=['tags'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['tags'],
+                    desc="Calls a registered tag's set response",
+                    usage="tag (name)",
+                    note="If `(name)` is unspecified, the help command for tag will be displayed")
     async def tag(self, ctx, *, tag: str = None):
         if not tag:
             return await self.tag_help(ctx)

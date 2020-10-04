@@ -212,7 +212,10 @@ class Disboard(commands.Cog):
         await orig_message.edit(embed=embed)
         return True
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True,
+                    desc="Displays the help command for all disboard commands",
+                    usage='disboard',
+                    uperms=["Manage Server"])
     async def disboard(self, ctx):
         return await self.get_disboard_help(ctx)
 

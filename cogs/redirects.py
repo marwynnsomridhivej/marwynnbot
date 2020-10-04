@@ -62,7 +62,10 @@ class Redirects(commands.Cog):
 
         return await ctx.channel.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['rd'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['rd'],
+                    desc="Displays the help command for redirect",
+                    usage="redirect")
     async def redirect(self, ctx):
         await self.get_redirect_help(ctx)
 

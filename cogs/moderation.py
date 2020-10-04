@@ -222,7 +222,12 @@ class Moderation(commands.Cog):
             await con.execute("INSERT INTO warns(guild_id, user_id, moderator, reason, timestamp) VALUES "
                               f"({ctx.guild.id}, {member.id}, {ctx.author.id}, '{reason}', {int(timestamp)})")
 
-    @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'])
+    @commands.command(aliases=['clear', 'clean', 'chatclear', 'cleanchat', 'clearchat', 'purge'],
+                      desc="Mass clear chat",
+                      usage="chatclean (amount) (@member)",
+                      uperms=["Manage Messages"],
+                      bperms=["Manage Messages"],
+                      note="If `(amount)` is not specified, it defaults to 1")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def chatclean(self, ctx, amount=1, member: discord.Member = None):
@@ -242,7 +247,16 @@ class Moderation(commands.Cog):
             url="https://cdn.discordapp.com/attachments/734962101432615006/734962158290468944/eraser.png")
         await ctx.channel.send(embed=clearEmbed)
 
-    @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'])
+    @commands.command(aliases=['silence', 'stfu', 'shut', 'shush', 'shh', 'shhh', 'shhhh', 'quiet'],
+                      desc="Mutes members from all text channels",
+                      usage="mute [@member]*va (reason)",
+                      uperms=["Manage Roles"],
+                      bperms=["Manage Roles"],
+                      note="Using this command creates a role called \"Muted\" that restricts the ability "
+                      "for members to send messages in all channels. Any overrides to this role may cause this "
+                      "command to not function as planned. Please do not modify the automatically created role."
+                      "You may specify a time or duration the mute should expire by providing it in the `(reason)`. "
+                      "If `(reason)` is unspecified, it defaults to \"unspecified\" and the member is muted indefinitely")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
@@ -287,7 +301,15 @@ class Moderation(commands.Cog):
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
                 await self.set_mute(ctx, member, timestamp)
 
-    @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'])
+    @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'],
+                      desc="Unmutes members from all text channels",
+                      usage="unmute [@member]*va (reason)",
+                      uperms=["Manage Roles"],
+                      bperms=["Manage Roles"],
+                      note="This command removes the \"Muted\" role from the specified users, making "
+                      "them able to chat in all channels again. Modifications to the role may cause the command "
+                      "to not function properly, so please do not modify the automatically generated role in mute."
+                      " If `(reason)` is unspecified, it defaults to \"unspecified\"")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
@@ -313,7 +335,10 @@ class Moderation(commands.Cog):
                 async with self.bot.db.acquire() as con:
                     await con.execute(f"DELETE FROM mutes WHERE user_id = {member.id} AND guild_id = {ctx.guild.id}")
 
-    @commands.command()
+    @commands.command(desc="Kick members from the server",
+                      usage="kick [@member]*va (reason)",
+                      uperms=["Kick Members"],
+                      bperms=["Kick Members"])
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason='Unspecified'):
@@ -328,7 +353,11 @@ class Moderation(commands.Cog):
                                 inline=False)
             await ctx.channel.send(embed=kickEmbed)
 
-    @commands.command()
+    @commands.command(desc="Bans members from the server",
+                      usage="ban [@member]*va (message_delete_days) (reason)",
+                      uperms=["Ban Members"],
+                      bperms=["Ban Members"],
+                      note="If unspecified, `(message_delete_days)` and `(reason)` default to 0 and \"unspecified\" respectively")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, members: commands.Greedy[discord.Member], days: typing.Optional[int] = 0, *,
@@ -350,7 +379,13 @@ class Moderation(commands.Cog):
                                inline=False)
             await ctx.channel.send(embed=banEmbed)
 
-    @commands.command()
+    @commands.command(desc="Unbans users that are banned",
+                      usage="unban [user]*va",
+                      uperms=["Ban Members"],
+                      bperms=["Ban Members"],
+                      note="Since those `[user]` aren't in your server anymore, you can specify by "
+                      "username and discriminator and the bot will attempt to identify which users you are "
+                      "referring to and unban them if found.")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, users: commands.Greedy[discord.User]):
@@ -377,7 +412,12 @@ class Moderation(commands.Cog):
                 await ctx.guild.unban(user, reason="Moderator: " + str(ctx.author))
                 await ctx.channel.send(embed=unban)
 
-    @commands.command()
+    @commands.command(desc="Administers warns for certain users",
+                      usage="warn [@member]*va (reason)",
+                      uperms=["Ban Members"],
+                      bperms=["Ban Members"],
+                      note="If enabled, the automod actions will take place upon warns based on "
+                      "the warn count for each member")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def warn(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
@@ -388,7 +428,10 @@ class Moderation(commands.Cog):
             await self.auto_warn_action(ctx, member, reason, count, timestamp)
         return
 
-    @commands.command()
+    @commands.command(desc="Toggle the automod function for warns",
+                      usage="automod",
+                      uperms=["Ban Members"],
+                      note="**Actions:**\n1st Warn: Nothing\n2nd Warn: 10 minute mute\n3rd Warn: Kick\n4th Warn: Ban")
     @commands.has_permissions(ban_members=True)
     async def automod(self, ctx):
         async with self.bot.db.acquire() as con:
@@ -400,7 +443,11 @@ class Moderation(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['offenses'])
+    @commands.command(aliases=['offenses'],
+                      desc="Lists warns to a given member or warns you have given",
+                      usage="offense (@member)",
+                      note="If `(member)` is unspecified, it will display all the warnings you have "
+                      "given to other members")
     async def offense(self, ctx, member: discord.Member = None):
         async with self.bot.db.acquire() as con:
             result = await con.fetch(f"SELECT guild_id FROM warns WHERE guild_id = {ctx.guild.id}")
@@ -449,7 +496,10 @@ class Moderation(commands.Cog):
                                       color=discord.Color.blue())
         await ctx.channel.send(embed=embed)
 
-    @commands.command()
+    @commands.command(desc="Expunge warns from a member",
+                      usage="expunge [@member]",
+                      uperms=["Ban Members"],
+                      bperms=["Ban Members"])
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def expunge(self, ctx, member: discord.Member = None):
@@ -554,14 +604,17 @@ class Moderation(commands.Cog):
                                   color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'])
+    @commands.command(aliases=['mod', 'mods', 'modsonline', 'mo'],
+                      desc="Displays the moderators that are online",
+                      usage="modsonline",
+                      note="This feature works if the substring \"moderator\" is in the moderator role or its equivalent")
     async def modsOnline(self, ctx):
         modsList = []
         for member in ctx.guild.members:
             if member.status is not discord.Status.offline:
                 if not member.bot:
                     for role in member.roles:
-                        if "moderator" in role.name.casefold() or "e-board" in role.name.casefold():
+                        if "moderator" in role.name.casefold():
                             modsList += [member.mention]
         if modsList:
             title = "Moderators Online"

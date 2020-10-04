@@ -14,7 +14,9 @@ class Games(commands.Cog):
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
 
-    @commands.command(aliases=['bal'])
+    @commands.command(aliases=['bal'],
+                      desc="Check your balance and compare with other people",
+                      usage="balance (member)*va")
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
         if not member:
             balance = await gcmds.get_balance(ctx.author)
@@ -68,7 +70,9 @@ class Games(commands.Cog):
                     "/chips.png")
             await ctx.channel.send(embed=balanceEmbed)
 
-    @commands.command(aliases=['gamestats', 'gs'])
+    @commands.command(aliases=['gamestats', 'gs'],
+                      desc="Check your stats for MarwynnBot's games",
+                      usage="gamestats (member)*va (game_name)")
     async def gameStats(self, ctx, member: typing.Optional[discord.Member] = None, game: str = None):
         if not member:
             member = ctx.author
@@ -107,7 +111,10 @@ class Games(commands.Cog):
                                   color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @commands.command()
+    @commands.command(desc="Transfer credits to other server members",
+                      usage="transfer [amount] (@member)*va",
+                      note="If you specify more than one member, `[amount]` credits will be given to each member. "
+                      "You cannot transfer more credits than you have")
     async def transfer(self, ctx, amount: int = None, member: commands.Greedy[discord.Member] = None):
         cmdExit = False
         if amount is None:

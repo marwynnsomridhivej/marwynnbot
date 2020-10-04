@@ -32,7 +32,9 @@ class Fun(commands.Cog):
             embed.set_image(url=url)
             return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['dailyastro'])
+    @commands.command(aliases=['dailyastro'],
+                      desc="Shows today's NASA Astronomy Photo of the Day",
+                      usage="apod")
     async def apod(self, ctx):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY") as returned:
@@ -44,7 +46,9 @@ class Fun(commands.Cog):
         embed.set_image(url=result['hdurl'])
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['dad', 'father'])
+    @commands.command(aliases=['dad', 'father'],
+                      desc="Makes MarwynnBot say a super funny dad joke",
+                      usage="dadjoke",)
     async def dadjoke(self, ctx):
         async with aiohttp.ClientSession(headers={"Accept": "application/json"}) as session:
             async with session.get("https://icanhazdadjoke.com/") as returned:
@@ -54,7 +58,9 @@ class Fun(commands.Cog):
         embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['8ball', '8b'])
+    @commands.command(aliases=['8ball', '8b'],
+                      desc="MarwynnBot predicts the future with a Magic 8 Ball!",
+                      usage="eightball [question]")
     async def eightball(self, ctx, *, question):
         with open('responses', 'r') as f:
             responses = f.readlines()
@@ -64,7 +70,9 @@ class Fun(commands.Cog):
         embed.add_field(name='Answer', value=f'{random.choice(responses)}', inline=False)
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['affirm'])
+    @commands.command(aliases=['affirm'],
+                      desc="MarwynnBot delivers some words of encouragement!",
+                      usage="encourage")
     async def encourage(self, ctx):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.affirmations.dev/") as returned:
@@ -74,7 +82,9 @@ class Fun(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @commands.command()
+    @commands.command(desc="MarwynnBot chooses between some choices",
+                      usage="choose [choices]",
+                      note="`[choices]` must be separated by \" or \"")
     async def choose(self, ctx, *, choices: str):
         chooseEmbed = discord.Embed(title='Choose One',
                                     color=discord.Color.blue())
@@ -82,7 +92,9 @@ class Fun(commands.Cog):
                               value=random.choice(choices.replace("?", "").split(" or ")))
         await ctx.channel.send(embed=chooseEmbed)
 
-    @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs', 'tenor'])
+    @commands.command(aliases=['gifsearch', 'searchgif', 'searchgifs', 'gif', 'gifs', 'tenor'],
+                      desc="Fetches gifs from Tenor",
+                      usage="gifsearch (amount) [query]",)
     async def gifSearch(self, ctx, toSend: typing.Optional[int] = 1, *, query: str):
         api_key = gcmds.env_check("TENOR_API")
         if not api_key:
@@ -129,7 +141,9 @@ class Fun(commands.Cog):
 
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['imgur', 'imgursearch'])
+    @commands.command(aliases=['imgur', 'imgursearch'],
+                      desc="Fetches images from Imgur",
+                      usage="imgursearch (amount) [query]")
     async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query: str):
         bot_id = gcmds.env_check("IMGUR_API")
         if not bot_id:
@@ -171,7 +185,9 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'])
+    @commands.command(aliases=['isabellepic', 'isabelleemote', 'belle', 'bellepic', 'belleemote'],
+                      desc="Fetches pictures of Isabelle from Animal Crossing",
+                      usage="isabelle (amount)")
     async def isabelle(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./isabelle"
         for counter in range(toSend):
@@ -179,7 +195,9 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command(aliases=['peppapic', 'ppic', 'ppig'])
+    @commands.command(aliases=['peppapic', 'ppic', 'ppig'],
+                      desc="Fetches pictures of Peppa Pig",
+                      usage="peppa (amount)")
     async def peppa(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./peppa"
         for counter in range(toSend):
@@ -187,7 +205,9 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command(aliases=['randomcat', 'cat'])
+    @commands.command(aliases=['randomcat', 'cat'],
+                      desc="Fetches pictures of cats!",
+                      usage="randomcat (amount)")
     async def randomCat(self, ctx, toSend: typing.Optional[int] = 1):
         api_key = gcmds.env_check("CAT_API")
         if not api_key:
@@ -207,12 +227,14 @@ class Fun(commands.Cog):
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get("https://api.thecatapi.com/v1/images/search") as image:
                     response = await image.json()
-                    url= response[0]['url']
+                    url = response[0]['url']
             await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command(aliases=['woof', 'dog', 'doggo', 'randomdog'])
+    @commands.command(aliases=['woof', 'dog', 'doggo', 'randomdog'],
+                      desc="Fetches pictures of dogs!",
+                      usage="randomdog (amount)")
     async def randomDog(self, ctx, toSend: typing.Optional[int] = 1):
         req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
         path = "dog"
@@ -226,13 +248,16 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command()
+    @commands.command(desc="Make MarwynnBot say anything",
+                      usage="say [message]")
     async def say(self, ctx, *, args):
         sayEmbed = discord.Embed(description=args,
                                  color=discord.Color.blue())
         await ctx.channel.send(embed=sayEmbed)
 
-    @commands.command(aliases=['toadpic', 'toademote'])
+    @commands.command(aliases=['toadpic', 'toademote'],
+                      desc="Fetches picture of Toad from Super Mario",
+                      usage="toad (amount)")
     async def toad(self, ctx, toSend: typing.Optional[int] = 1):
         path = "./toad"
         for counter in range(toSend):
@@ -240,7 +265,8 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
-    @commands.command()
+    @commands.command(desc="Make MarwynnBot say anything, but in text to speech",
+                      usage="tts [message]")
     async def tts(self, ctx, *, args):
         return await ctx.channel.send(content=args, tts=True)
 

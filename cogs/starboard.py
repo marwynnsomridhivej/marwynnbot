@@ -226,7 +226,10 @@ class Starboard(commands.Cog):
             await con.execute(f"UPDATE guild SET starboard_emoji=NULL WHERE guild_id={ctx.guild.id}")
         return
 
-    @commands.group(invoke_without_command=True, aliases=['sb'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['sb'],
+                    desc="Displays the help command for starboard",
+                    usage="starboard")
     async def starboard(self, ctx):
         return await self.starboard_help(ctx)
 

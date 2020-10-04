@@ -237,7 +237,11 @@ class Blackjack(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS blackjack(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, "
                               "lose NUMERIC DEFAULT 0, tie NUMERIC DEFAULT 0, blackjack NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
-    @commands.command(aliases=['bj', 'Blackjack'])
+    @commands.command(aliases=['bj', 'Blackjack'],
+                      desc="Blackjack in Discord!",
+                      usage="blackjack (bet)",
+                      note="If `(bet)` is not specified, it defaults to 1. "
+                      "You may only bet up to your balance amount")
     async def blackjack(self, ctx, bet=1):
         won = False
         bet = bet

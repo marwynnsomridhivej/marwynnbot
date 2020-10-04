@@ -241,7 +241,9 @@ class UNO(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS uno(user_id bigint PRIMARY KEY, win NUMERIC DEFAULT 0, lose "
                               "NUMERIC DEFAULT 0, ratio NUMERIC DEFAULT 0)")
 
-    @commands.command()
+    @commands.command(desc="Uno in Discord!",
+                      usage="uno [@member]*va",
+                      note="You must specify up to 9 other members")
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
         if members is None:
             noPlayers = discord.Embed(title="No Opponents",

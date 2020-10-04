@@ -33,22 +33,25 @@ class Debug(commands.Cog):
         except (discord.NotFound, discord.HTTPError, discord.Forbidden):
             return await ctx.author.send(embed=embed)
 
-    @commands.command()
+    @commands.command(desc="Displays MarwynnBot's ping in milliseconds (ms)",
+                      usage="ping")
     async def ping(self, ctx):
         ping = discord.Embed(title='Ping', color=discord.Color.blue())
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.bot.latency * 1000)}ms')
         await ctx.send(embed=ping)
 
-    @commands.group(aliases=['flag'])
+    @commands.group(invoke_without_command=True,
+                    aliases=['flag'],
+                    desc="Displays the help command for all of report's subcommands",
+                    usage="report")
     async def report(self, ctx):
-        if not ctx.invoked_subcommand:
-            menu = discord.Embed(title="Report Options",
-                                 description=f"{ctx.author.mention}, here are the options for the report command:\n`["
-                                             f"bug]` - reports a bug\n`[update]` - owner only\n`[userAbuse]` - "
-                                             f"reports user from mention\n`[serverabuse] - reports server from ID`",
-                                 color=discord.Color.blue())
-            await ctx.channel.send(embed=menu)
+        menu = discord.Embed(title="Report Options",
+                                description=f"{ctx.author.mention}, here are the options for the report command:\n`["
+                                            f"bug]` - reports a bug\n`[update]` - owner only\n`[userAbuse]` - "
+                                            f"reports user from mention\n`[serverabuse] - reports server from ID`",
+                                color=discord.Color.blue())
+        await ctx.channel.send(embed=menu)
 
     @report.command(aliases=['issue'])
     async def bug(self, ctx, *, bug_message):
@@ -80,13 +83,8 @@ class Debug(commands.Cog):
         return
 
     @report.command(aliases=['fix', 'patch'])
+    @commands.is_owner()
     async def update(self, ctx, *, update_message=None):
-        if not await self.bot.is_owner(ctx.author):
-            insuf = discord.Embed(title="Insufficient User Permissions",
-                                  description=f"{ctx.author.mention}, you must be the bot owner to use this command",
-                                  color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=insuf)
-
         updates_channel_id = gcmds.env_check("UPDATES_CHANNEL")
         if not updates_channel_id:
             no_channel = discord.Embed(title="No Updates Channel Specified",
@@ -213,7 +211,9 @@ class Debug(commands.Cog):
                 await gcmds.smart_delete(panel)
                 return await self.cancel(ctx, preview)
 
-    @commands.command()
+    @commands.command(desc="Displays what MarwynnBot shard is connected to your server",
+                      usage="shard (flag)",
+                      note="If `(flag)` is \"count\", it will display the total number of shards")
     async def shard(self, ctx, option=None):
         if option != 'count':
             shardDesc = f"This server is running on shard: {ctx.guild.shard_id}"
