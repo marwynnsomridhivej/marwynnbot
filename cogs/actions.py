@@ -709,10 +709,10 @@ class Actions(commands.Cog):
         if info:
             action_by = ctx.author.display_name
             action_to = user.display_name
-            title = f"{action_by} killed {action_to}"
         else:
+            action_by = ctx.me.display_name
             action_to = ctx.author.display_name
-            title = f"{action_to} killed themself"
+        title = f"{action_by} killed {action_to}"
 
         footer = f"{action_to} was killed {receive} times and killed others {give} times"
 
