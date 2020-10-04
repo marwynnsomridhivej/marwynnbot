@@ -23,20 +23,12 @@ that will display all of MarwynnBot's commands. Please stay tuned for its releas
 
 For a guide on all commands and their usages, I will be updating [MarwynnBot's Website](http://www.marwynnbot.tk)
 ## Self Hosting
-As of right now, this bot is nowhere near ready for self hosting. I commit many changes to the bot and there is a high
-chance that after you clone this repository, I will have added a feature or fixed an issue that was present in the
-previous commit.
-
-Upon gaining Discord Verification, this bot's source code will become closed source and I will stop pushing commits to
-this repository. There are are some features that this bot will support that are very resource demanding, and they will
-become premium only commands. Please note that there will be very few commands that fit under this category, so the vast
-majority of the bot's functions will be accessible to anyone.
-
-I would prefer that you do not create an instance of my bot for self hosting purposes. I have made this repository
-public so that anyone who needs an example of a bot written in discord.py can freely look at how I have made it. I do
-realise that my python is garbage, and I am working on improving as this project is developed.
+I would prefer that you not create an instance of this bot/repo for self hosting purposes. This repository is
+public only for educational purposes. If you choose to self host, you are on your own. I will not be providing any
+help or support for those who choose to self host. If you would like to use MarwynnBot, please use the invite
+link provided above
 
 ## Contact Info ![Discord](https://img.shields.io/discord/707981159748993084?color=blue&label=Discord)
 **Discord:** MS Arranges#3060
 
-**Discord Server:** https://discord.gg/fYBTdUp
+**Discord Server:** https://discord.gg/78XXt3Q
