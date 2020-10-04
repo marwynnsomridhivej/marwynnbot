@@ -8,8 +8,8 @@ from utils import customerrors, globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
-NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Minecraft', 'Nintendo', 'Pokedex',
-                'Reddit', 'Redirects', 'Serverlink', 'Starboard', 'Tags', 'Todo']
+NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Minecraft', 'Nintendo', 'Pokedex', 'Reddit',
+                'Redirects', 'Reminders', 'Serverlink', 'Starboard', 'Tags', 'Todo']
 DEFAULT_THUMBNAIL = "https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png"
 SUPPORT_SERVER_INVITE = "https://discord.gg/78XXt3Q"
 CogCommands = namedtuple("CogCommands", ['cog_name', 'cog'])
