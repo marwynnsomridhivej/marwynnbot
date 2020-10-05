@@ -1,11 +1,13 @@
 import asyncio
+import math
 import re
+from contextlib import suppress
 from datetime import datetime
 
 import discord
 import lavalink
 from discord.ext import commands, tasks
-from utils import globalcommands, premium
+from utils import context, customerrors, globalcommands, premium
 
 gcmds = globalcommands.GlobalCMDS()
 url_rx = re.compile(r'https?://(?:www\.)?.+')
@@ -18,9 +20,9 @@ class Music(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
+        for func in [self.lavalink_setup, self.init_playlist, self.init_music]:
+            self.bot.loop.create_task(func())
         gcmds = globalcommands.GlobalCMDS(self.bot)
-        self.info = {}
-        self.bot.loop.create_task(self.lavalink_setup())
 
     async def lavalink_setup(self):
         await self.bot.wait_until_ready()
@@ -38,108 +40,159 @@ class Music(commands.Cog):
         lavalink.add_event_hook(self.track_hook)
         lavalink.add_event_hook(self.update_play)
 
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if not reaction.message.guild or not user.voice or reaction.emoji not in reactions:
-            return
-        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
-        if not user.bot and player and user.voice.channel.id == int(player.fetch('channel')):
-            guild_id = reaction.message.guild.id
-            message = self.info[str(guild_id)]['message']
-            paused = self.info[str(guild_id)]['paused']
-            paused_message = self.info[str(guild_id)]['paused_message']
-            queue = self.info[str(guild_id)]['queue']
-            rewind_message = self.info[str(guild_id)]['rewind_message']
-
-            if message:
-                if message.id == reaction.message.id:
-                    await message.remove_reaction(reaction.emoji, user)
-                    if reaction.emoji == "⏹":
-                        if player.queue:
-                            player.queue.clear()
-                        await player.stop()
-                        await self.del_temp_msgs(reaction.message.guild.id)
-                        stopped = discord.Embed(title="Player Stopped",
-                                                description=f"{user.mention}, I have stoppped the music player and "
-                                                            f"cleared the queue",
-                                                color=discord.Color.blue())
-                        stopped.set_footer(text=f"Executed by {user.display_name} " +
-                                                "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
-                        await reaction.message.channel.send(embed=stopped)
-                    if reaction.emoji == "⏪":
-                        if not queue:
-                            rewind = discord.Embed(title="No Tracks to Rewind",
-                                                   description=f"{user.mention}, there are no tracks to rewind to",
-                                                   color=discord.Color.dark_red())
-                        else:
-                            index = len(queue) - len(player.queue) - 1
-                            if index - 1 < 0:
-                                rewind = discord.Embed(title="Rewind Failed",
-                                                       description=f"{user.mention}, this is the first song in queue",
-                                                       color=discord.Color.dark_red())
-                                try:
-                                    rewind_message_sent = await rewind_message.edit(embed=rewind)
-                                except (discord.NotFound, AttributeError):
-                                    rewind_message_sent = await reaction.message.channel.send(embed=rewind,
-                                                                                              delete_after=5)
-                                await self.set_value(guild_id, 'rewind_message', rewind_message_sent)
-                                return
-                            track = queue[index - 1]
-                            player.add(requester=user.id, track=player.current, index=0)
-                            player.add(requester=user.id, track=track, index=0)
-                            await player.stop()
-                            await player.play()
-                            rewind = discord.Embed(title="Rewind Successful",
-                                                   description=f"**Now Playing:** [{track['title']}](https://www"
-                                                               f".youtube.com/watch?v={track['identifier']})",
-                                                   color=discord.Color.blue())
-                        try:
-                            rewind_message_sent = await rewind_message.edit(embed=rewind)
-                        except (discord.NotFound, AttributeError):
-                            rewind_message_sent = await reaction.message.channel.send(embed=rewind)
-                        await self.set_value(guild_id, 'rewind_message', rewind_message_sent)
-                    if reaction.emoji == "⏯":
-                        paused = not paused
-                        await player.set_pause(paused)
-                        await self.set_value(guild_id, "paused", paused)
-                        if paused:
-                            pause = "Paused"
-                        else:
-                            pause = "Resumed"
-                        pauseEmbed = discord.Embed(title=f"Player {pause}",
-                                                   description=f"{user.mention}, the player has been {pause.lower()}",
-                                                   color=discord.Color.blue())
-                        pauseEmbed.set_footer(text=f"Executed by {user.display_name} " +
-                                                   "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
-                        try:
-                            await paused_message.edit(embed=pauseEmbed)
-                            paused_message_sent = None
-                        except (discord.NotFound, AttributeError):
-                            paused_message_sent = await reaction.message.channel.send(embed=pauseEmbed)
-                        await self.set_value(guild_id, "paused_message", paused_message_sent)
-                    if reaction.emoji == "⏩":
-                        await player.skip()
-                        if not player.current:
-                            skipped = discord.Embed(title="Ended Previous Track",
-                                                    description=f"{user.mention}, I have finished playing all songs "
-                                                                f"in queue",
-                                                    color=discord.Color.blue())
-                        else:
-                            vid_info = f"**Now Playing:** [{player.current['title']}]" \
-                                       f"(https://www.youtube.com/watch?v={player.current['identifier']}) "
-                            skipped = discord.Embed(title="Skipped to Next Track",
-                                                    description=f"{user.mention}, I have skipped to the next track in "
-                                                                f"queue\n\n{vid_info}",
-                                                    color=discord.Color.blue())
-                            skipped.set_footer(text=f"Executed by {user.display_name} " +
-                                                    "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
-                        await reaction.message.channel.send(embed=skipped)
-
     def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
-        self.info = {}
 
-    async def init_playlist(self, ctx):
+    async def cog_check(self, ctx):
+        if ctx.command.name.lower() == "bind":
+            return True
+        return await context.music_bind(ctx)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
+        if user.bot or not reaction.message.guild or not user.voice or reaction.emoji not in reactions:
+            return
+
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        if not player or not user.voice.channel.id == int(player.fetch('channel')):
+            return
+
+        guild_id = reaction.message.guild.id
+
+        if reaction.message.channel.id != await self.fetch_stored(guild_id, 'channel_id'):
+            return
+
+        if reaction.message.id != await self.fetch_stored(guild_id, 'panel_id'):
+            return
+
+        with suppress(Exception):
+            message = reaction.message
+            channel = message.channel
+            voice_channel = user.voice.channel
+            if await self.check_reaction(reaction, voice_channel):
+                if reaction.emoji == "⏹":
+                    await self.reacted_stop(guild_id, player, channel, user)
+                    with suppress(Exception):
+                        await message.delete()
+                elif reaction.emoji == "⏪":
+                    queue = player.fetch("queue", [])
+                    await self.reacted_rewind(guild_id, player, queue, channel, user)
+                elif reaction.emoji == "⏯":
+                    paused = player.fetch("paused", False)
+                    await self.reacted_paused(guild_id, player, message, paused, channel, user)
+                elif reaction.emoji == "⏩":
+                    await self.reacted_fowards(guild_id, player, channel, user)
+                    with suppress(Exception):
+                        await message.delete()
+            return await self.adjust_counter(message, voice_channel)
+
+    @commands.Cog.listener()
+    async def on_reaction_remove(self, reaction: discord.Reaction, user: discord.User):
+        if user.bot or not reaction.message.guild or not user.voice or reaction.emoji not in reactions:
+            return
+
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        if not player or not user.voice.channel.id == int(player.fetch('channel')):
+            return
+
+        guild_id = reaction.message.guild.id
+
+        if reaction.message.channel.id != await self.fetch_stored(guild_id, "channel_id"):
+            return
+
+        if reaction.message.id != await self.fetch_stored(guild_id, 'panel_id'):
+            return
+
+        with suppress(Exception):
+            message = reaction.message
+            return await self.adjust_counter(message, user.voice.channel)
+
+    async def adjust_counter(self, message: discord.Message, voice_channel: discord.VoiceChannel):
+        description = "\n".join(["{} ⟶ {} / {} required votes".format(
+            reaction.emoji, reaction.count - 1, int(math.ceil((len(voice_channel.members) - 1) / 2)))
+            for reaction in message.reactions])
+        counter_message_id = await self.fetch_stored(message.guild.id, 'counter_id')
+        counter_message = await message.channel.fetch_message(counter_message_id)
+        embed = counter_message.embeds[0]
+        embed.description = description
+        return await counter_message.edit(embed=embed)
+
+    async def check_reaction(self, reaction: discord.Reaction, channel: discord.VoiceChannel):
+        raw_count = int(reaction.count) - 1
+        min_count = (len(channel.members) - 1) / 2
+        if raw_count >= math.ceil(min_count):
+            async for user in reaction.users():
+                if user.id != self.bot.user.id:
+                    await reaction.message.remove_reaction(reaction.emoji, user)
+            return True
+        else:
+            return False
+
+    async def reacted_stop(self, guild_id: int, player, channel: discord.TextChannel, user: discord.User):
+        await self.del_temp_msgs(guild_id)
+        stopped = discord.Embed(title="Player Stopped",
+                                description=f"{user.mention}, I have stoppped the music player and "
+                                f"cleared the queue",
+                                color=discord.Color.blue())
+        stopped.set_footer(text=f"Executed by {user.display_name} " +
+                           "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now()))
+        return await channel.send(embed=stopped)
+
+    async def reacted_rewind(self, guild_id: int, player, queue: list,
+                             channel: discord.TextChannel, user: discord.User):
+        if not queue:
+            rewind = discord.Embed(title="No Tracks to Rewind",
+                                   description=f"{user.mention}, there are no tracks to rewind to",
+                                   color=discord.Color.dark_red())
+            return await channel.send(embed=rewind, delete_after=10)
+        else:
+            index = len(queue) - len(player.queue) - 1
+            if index - 1 < 0:
+                rewind = discord.Embed(title="Rewind Failed",
+                                       description=f"{user.mention}, this is the first song in queue",
+                                       color=discord.Color.dark_red())
+                return await channel.send(embed=rewind, delete_after=10)
+            track = queue[index - 1]
+            player.add(requester=user.id, track=player.current, index=0)
+            player.add(requester=user.id, track=track, index=0)
+            await player.stop()
+            await player.play()
+
+    async def reacted_paused(self, guild_id: int, player, message: discord.Message, paused: bool,
+                             channel: discord.TextChannel):
+        player.store("paused", not paused)
+        await player.set_pause(not paused)
+        embed = message.embeds[0]
+        embed.title = "Player is Paused" if not paused else "Now Playing"
+        return await message.edit(embed=embed)
+
+    async def reacted_fowards(self, guild_id: int, player, channel: discord.TextChannel, user: discord.User):
+        await player.skip()
+        if not player.current:
+            embed = discord.Embed(title="Ended Previous Track",
+                                  description=f"{user.mention}, I have finished playing all songs "
+                                  f"in queue",
+                                  color=discord.Color.blue())
+            return await channel.send(embed=embed)
+
+    async def init_music(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, "
+                              "channel_id bigint, panel_id bigint, counter_id bigint)")
+            for guild in self.bot.guilds:
+                await con.execute(f"INSERT INTO music(guild_id) VALUES({guild.id}) ON CONFLICT DO NOTHING")
+
+    async def fetch_stored(self, guild_id: int, key: str):
+        async with self.bot.db.acquire() as con:
+            if key == "all":
+                results = await con.fetch(f"SELECT * FROM music where guild_id={guild_id}")
+            else:
+                results = await con.fetchval(f"SELECT {key} from music WHERE guild_id={guild_id}")
+        return results
+
+    async def init_playlist(self):
+        await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
 
@@ -211,44 +264,60 @@ class Music(commands.Cog):
 
         return True
 
+    async def get_bound_channel(self, guild_id):
+        async with self.bot.db.acquire() as con:
+            channel_id = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={guild_id}")
+        if not channel_id:
+            raise customerrors.NoBoundChannel()
+        return await self.bot.fetch_channel(channel_id)
+
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
-            guild_id = int(event.player.guild_id)
-            await self.connect_to(guild_id, None)
-        if isinstance(event, lavalink.events.NodeConnectedEvent):
+            await self.connect_to(int(event.player.guild_id), None)
+        elif isinstance(event, lavalink.events.NodeConnectedEvent):
             print(f"Connected to Lavalink Node \"{event.node.name}\"@{event.node.host}:{event.node.port}")
-        if isinstance(event, lavalink.events.NodeDisconnectedEvent):
-            print(f"Disconnected from Node {event.node.name} with Code {event.code} for {event.reason}")
+        elif isinstance(event, lavalink.events.NodeDisconnectedEvent):
+            print(f"Disconnected from Node \"{event.node.name}\" with code {str(event.code)} because of {event.reason}")
+        else:
+            pass
 
     async def update_play(self, event):
         if isinstance(event, lavalink.events.TrackStartEvent):
             track = event.track
-            ctx = self.info[str(event.player.guild_id)]['context']
-            timestamp = f"Executed by {ctx.author.display_name} " + \
-                        "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
             embed = discord.Embed(title="Now Playing",
                                   color=discord.Color.blue())
             embed.description = f'[{track["title"]}](https://www.youtube.com/watch?v={track["identifier"]})'
             embed.set_image(url=f"http://img.youtube.com/vi/{track['identifier']}/maxresdefault.jpg")
-            embed.set_footer(text=timestamp)
-            message = self.info[str(event.player.guild_id)]['message']
+            channel = await self.get_bound_channel(event.player.guild_id)
+            voice_channel = await self.bot.fetch_channel(event.player.fetch("channel"))
+            counter_desc = "\n".join(
+                [f"{reaction} ⟶ 0 / {int(math.ceil((len(voice_channel.members) - 1) / 2))} required votes"
+                 for reaction in reactions])
+            counter = discord.Embed(description=counter_desc, color=discord.Color.blue())
             try:
+                message = await channel.fetch_message(await self.fetch_stored(event.player.guild_id, "panel_id"))
+                counter_message = await channel.fetch_message(await self.fetch_stored(message.guild.id, "counter_id"))
                 await message.edit(embed=embed)
-                message_sent = await ctx.channel.fetch_message(message.id)
-            except (discord.NotFound, AttributeError):
-                message_sent = await ctx.channel.send(embed=embed)
-                await self.set_value(event.player.guild_id, 'message', message_sent)
-            await self.add_reaction_panel(message_sent)
+                await counter_message.edit(embed=counter)
+            except Exception:
+                message = await channel.send(embed=embed)
+                counter_message = await channel.send(embed=counter)
+                await self.set_value(message.guild.id, 'panel_id', message.id)
+                await self.set_value(message.guild.id, 'counter_id', counter_message.id)
+            await self.add_reaction_panel(message)
         if isinstance(event, lavalink.events.QueueEndEvent) or isinstance(event, lavalink.events.WebSocketClosedEvent):
-            await self.del_temp_msgs(event.player.guild_id)
+            with suppress(Exception):
+                await self.del_temp_msgs(event.player.guild_id)
 
     async def connect_to(self, guild_id: int, channel_id: str):
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
     async def add_reaction_panel(self, message):
-        for reaction in reactions:
-            await message.add_reaction(reaction)
+        with suppress(Exception):
+            await message.clear_reactions()
+            for reaction in reactions:
+                await message.add_reaction(reaction)
 
     async def no_player(self, ctx):
         invalid = discord.Embed(title="No Music Player Instance",
@@ -263,44 +332,39 @@ class Music(commands.Cog):
                               color=discord.Color.dark_red())
         await ctx.channel.send(embed=embed)
 
-    async def set_value(self, guild_id: int, key: str, value):
-        try:
-            self.info[str(guild_id)][key] = value
-        except KeyError:
-            self.info[str(guild_id)] = {'message': None, 'paused': False, 'paused_message': None, 'queue': [],
-                                        'rewind_message': None, 'queue_message': None, 'volume_message': None}
-            self.info[str(guild_id)][key] = value
+    async def set_value(self, guild_id: int, key: str, value=None):
+        async with self.bot.db.acquire() as con:
+            if key == "all":
+                await con.execute(f"UPDATE music SET panel_id=NULL, counter_id=NULL WHERE guild_id={guild_id}")
+            else:
+                await con.execute(f"UPDATE music SET {key}={value} WHERE guild_id={guild_id}")
 
     async def del_temp_msgs(self, guild_id: int):
-        try:
-            message = self.info[str(guild_id)]['message']
-        except KeyError:
-            return
-        paused = self.info[str(guild_id)]['paused']
-        paused_message = self.info[str(guild_id)]['paused_message']
-        queue = self.info[str(guild_id)]['queue']
-        rewind_message = self.info[str(guild_id)]['rewind_message']
-        queue_message = self.info[str(guild_id)]['queue_message']
-        volume_message = self.info[str(guild_id)]['volume_message']
-        if message:
-            await gcmds.smart_delete(message)
-            await self.set_value(guild_id, 'message', None)
-        if paused:
-            await self.set_value(guild_id, 'paused', False)
-        if paused_message:
-            await gcmds.smart_delete(paused_message)
-            await self.set_value(guild_id, 'paused_message', None)
-        if queue:
-            await self.set_value(guild_id, 'queue', [])
-        if rewind_message:
-            await gcmds.smart_delete(rewind_message)
-            await self.set_value(guild_id, 'rewind_message', None)
-        if queue_message:
-            await gcmds.smart_delete(queue_message)
-            await self.set_value(guild_id, 'queue_message', None)
-        if volume_message:
-            await gcmds.smart_delete(volume_message)
-            await self.set_value(guild_id, 'volume_message', None)
+        channel = await self.get_bound_channel(guild_id)
+        with suppress(Exception):
+            message = await channel.fetch_message(await self.fetch_stored(guild_id, "panel_id"))
+            counter = await channel.fetch_message(await self.fetch_stored(guild_id, "counter_id"))
+            await message.delete()
+            await counter.delete()
+        await self.set_value(guild_id, "all")
+        player = self.bot.lavalink.player_manager.get(guild_id)
+        player.queue.clear()
+        player.store("paused", False)
+        player.store("queue", [])
+        await player.stop()
+
+    @commands.command(desc="Binds the music commands to a channel",
+                      usage="bind (channel)",
+                      uperms=["Manage Server"],
+                      note="If `(channel)` is not specified, the current channel will be used")
+    async def bind(self, ctx, channel: discord.TextChannel = None):
+        if not channel:
+            channel = ctx.channel
+        await self.set_value(ctx.guild.id, "channel_id", channel.id)
+        embed = discord.Embed(title="Music Channel Bound",
+                              description=f"The music channel was bound to {channel.mention}",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Makes MarwynnBot join the same voice channel you're in",
                       usage="join",
@@ -353,11 +417,8 @@ class Music(commands.Cog):
                       note="If there are songs in queue, `(query)` can be unspecified to start playing "
                       "the first song in the queue")
     async def play(self, ctx, *, query: str = None):
-
         if not await self.ensure_voice(ctx):
             return
-
-        await self.set_value(ctx.guild.id, "context", ctx)
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if ctx.author.voice:
@@ -392,11 +453,7 @@ class Music(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blue())
 
-        try:
-            queue = self.info[str(ctx.guild.id)]['queue']
-        except KeyError:
-            await self.set_value(ctx.guild.id, 'queue', [])
-            queue = self.info[str(ctx.guild.id)]['queue']
+        queue = player.fetch("queue", [])
 
         # Valid loadTypes are:
         #   TRACK_LOADED    - single video/direct URL)
@@ -432,15 +489,7 @@ class Music(commands.Cog):
         if not player.is_playing:
             await player.play()
         else:
-            queue_message = self.info[str(ctx.guild.id)]['queue_message']
-            try:
-                await queue_message.edit(embed=embed)
-                queue_message_sent = await ctx.channel.fetch_message(queue_message.id)
-            except (discord.NotFound, AttributeError):
-                queue_message_sent = await ctx.channel.send(embed=embed)
-            await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
-
-        await self.set_value(ctx.guild.id, "queue", queue)
+            await ctx.channel.send(embed=embed)
 
     @commands.command(desc="List the current queue or queue a song",
                       usage="queue (query)")
@@ -475,11 +524,7 @@ class Music(commands.Cog):
 
                     embed = discord.Embed(color=discord.Color.blue())
 
-                    try:
-                        queue = self.info[str(ctx.guild.id)]['queue']
-                    except KeyError:
-                        await self.set_value(ctx.guild.id, 'queue', [])
-                        queue = self.info[str(ctx.guild.id)]['queue']
+                    queue = player.fetch("queue", [])
 
                     # Valid loadTypes are:
                     #   TRACK_LOADED    - single video/direct URL)
@@ -516,13 +561,12 @@ class Music(commands.Cog):
                         player.add(requester=ctx.author.id, track=track)
                         queue.append(track)
 
-                    message = self.info[str(ctx.guild.id)]['message']
-
-                    if message:
-                        message_sent = await message.edit(embed=embed)
-                    else:
-                        message_sent = await ctx.channel.send(embed=embed)
-                    await self.set_value(ctx.guild.id, 'message', message_sent)
+                    try:
+                        message = await ctx.channel.fetch_message(await self.fetch_stored(ctx.guild.id, "panel_id"))
+                        await message.edit(embed=embed)
+                    except Exception:
+                        message = await ctx.channel.send(embed=embed)
+                        await self.set_value(ctx.guild.id, 'panel_id', message.id)
             else:
                 notConn = discord.Embed(title="Error",
                                         description=f"{ctx.author.mention}, you must be connected to a voice channel "
@@ -545,8 +589,8 @@ class Music(commands.Cog):
                 title_append = ": 1 Track"
             else:
                 title_append = f": {q_amt} Tracks"
-            queueEmbed = discord.Embed(title=f"Current Queue{title_append}",
-                                       color=discord.Color.blue())
+            embed = discord.Embed(title=f"Current Queue{title_append}",
+                                  color=discord.Color.blue())
 
             if not player.queue:
                 description.append("Nothing queued")
@@ -555,20 +599,9 @@ class Music(commands.Cog):
                                    f"(https://www.youtube.com/watch?v={item['identifier']})\n")
                 index += 1
 
-            queueEmbed.description = "".join(description)
+            embed.description = "".join(description)
 
-            try:
-                queue_message = self.info[str(ctx.guild.id)]['queue_message']
-            except KeyError:
-                await self.set_value(ctx.guild.id, "queue_message", None)
-                queue_message = self.info[str(ctx.guild.id)]['queue_message']
-
-            try:
-                await queue_message.edit(embed=queueEmbed)
-                queue_message_sent = await ctx.channel.fetch_message(queue_message.id)
-            except (discord.NotFound, AttributeError):
-                queue_message_sent = await ctx.channel.send(embed=queueEmbed)
-            await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
+            return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['clearqueue', 'qc'],
                       desc="Clears the current queue",
@@ -590,24 +623,13 @@ class Music(commands.Cog):
             return await ctx.channel.send(embed=no_queue)
 
         player.queue.clear()
-        await self.set_value(ctx.guild.id, 'queue', [])
+        player.store("queue", [])
 
         cleared = discord.Embed(title="Queue Cleared",
                                 description=f"{ctx.author.mention}, I have cleared the current queue",
                                 color=discord.Color.blue())
 
-        try:
-            queue_message = self.info[str(ctx.guild.id)]['queue_message']
-        except KeyError:
-            await self.set_value(ctx.guild.id, "queue_message", None)
-            queue_message = self.info[str(ctx.guild.id)]['queue_message']
-
-        try:
-            await queue_message.edit(embed=cleared)
-            queue_message_sent = await ctx.channel.fetch_message(queue_message.id)
-        except (discord.NotFound, AttributeError):
-            queue_message_sent = await ctx.channel.send(embed=cleared)
-        await self.set_value(ctx.guild.id, "queue_message", queue_message_sent)
+        return await ctx.channel.send(embed=cleared)
 
     @commands.command(desc="Stops music playback",
                       usage="stop",
@@ -639,15 +661,13 @@ class Music(commands.Cog):
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid)
 
-        player.queue.clear()
-        await player.stop()
         await self.del_temp_msgs(ctx.guild.id)
 
         stopped = discord.Embed(title="Player Stopped",
                                 description=f"{ctx.author.mention}, I have stoppped the music player and cleared the "
                                             f"queue",
                                 color=discord.Color.blue())
-        await ctx.channel.send(embed=stopped)
+        return await ctx.channel.send(embed=stopped)
 
     @commands.command(desc="Makes MarwynnBot leave the voice channel it is currently in",
                       usage="leave")
@@ -669,23 +689,21 @@ class Music(commands.Cog):
                                     color=discord.Color.dark_red())
             return await ctx.channel.send(embed=invalid)
 
-        player.queue.clear()
-        await player.stop()
         await self.connect_to(ctx.guild.id, None)
         await self.del_temp_msgs(ctx.guild.id)
+
         disconnected = discord.Embed(title="Disconnected",
                                      color=discord.Color.blue())
         disconnected.set_thumbnail(url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a"
                                        ".png")
         disconnected.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
-        await ctx.channel.send(embed=disconnected)
+        return await ctx.channel.send(embed=disconnected)
 
     @commands.command(desc="Adjusts the music player volume",
                       usage="volume (1-100)")
     async def volume(self, ctx, amount: int = None):
         if not await self.ensure_voice(ctx):
             return
-
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
             return await self.no_player(ctx)
@@ -693,30 +711,19 @@ class Music(commands.Cog):
         if amount:
             if 1 <= amount <= 100:
                 await player.set_volume(amount)
-                volumeEmbed = discord.Embed(title="Current Player Volume",
-                                            description=f"Current player volume set to: {player.volume}/100",
-                                            color=discord.Color.blue())
+                embed = discord.Embed(title="Current Player Volume",
+                                      description=f"Current player volume set to: {player.volume}/100",
+                                      color=discord.Color.blue())
             else:
-                volumeEmbed = discord.Embed(title="Invalid Volume Setting",
-                                            description=f"{ctx.author.mention}, the volume must be between 1 and 100",
-                                            color=discord.Color.blue())
+                embed = discord.Embed(title="Invalid Volume Setting",
+                                      description=f"{ctx.author.mention}, the volume must be between 1 and 100",
+                                      color=discord.Color.blue())
         else:
-            volumeEmbed = discord.Embed(title="Current Player Volume",
-                                        description=f"Current player volume set to: {player.volume}/100",
-                                        color=discord.Color.blue())
+            embed = discord.Embed(title="Current Player Volume",
+                                  description=f"Current player volume set to: {player.volume}/100",
+                                  color=discord.Color.blue())
 
-        try:
-            volume_message = self.info[str(ctx.guild.id)]['volume_message']
-        except KeyError:
-            await self.set_value(ctx.guild.id, "volume_message", None)
-            volume_message = self.info[str(ctx.guild.id)]['volume_message']
-
-        try:
-            await volume_message.edit(embed=volumeEmbed)
-            volume_message_sent = await ctx.channel.fetch_message(volume_message.id)
-        except (discord.NotFound, AttributeError):
-            volume_message_sent = await ctx.channel.send(embed=volumeEmbed)
-        await self.set_value(ctx.guild.id, "volume_message", volume_message_sent)
+        return await ctx.channel.send(embed=embed)
 
     @premium.is_premium()
     @commands.group(invoke_without_command=True,
@@ -726,7 +733,6 @@ class Music(commands.Cog):
                     note="This is a premium only feature. Valid `(subcommand)` are "
                     "\"load\", \"save\", \"add\", and \"remove\"")
     async def playlist(self, ctx):
-        await self.init_playlist(ctx)
         playlists = await self.get_playlist(ctx, None)
         if not playlists:
             no_plist = discord.Embed(title="No Playlists",
@@ -759,8 +765,6 @@ class Music(commands.Cog):
 
     @playlist.command()
     async def load(self, ctx, *, playlist_name: str = None):
-        await self.set_value(ctx.guild.id, 'queue', [])
-
         if not playlist_name:
             no_name = discord.Embed(title="No Playlist Specified",
                                     description=f"{ctx.author.mention}, please specify a valid playlist name. Do `{await gcmds.prefix(ctx)}playlist` to get a list of your currently saved playlists",
@@ -802,20 +806,18 @@ class Music(commands.Cog):
             track = results['tracks'][0]
             track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
             player.add(requester=ctx.author.id, track=track)
-            self.info[str(ctx.guild.id)]['queue'].append(track)
+            queue = player.fetch("queue", [])
+            player.store("queue", queue.append(track))
 
         loaded = discord.Embed(title="Playlist Loaded",
                                description=f"{ctx.author.mention}, I have loaded all tracks to queue from **{playlist_name}**",
                                color=discord.Color.blue())
-        await ctx.channel.send(embed=loaded)
+        return await ctx.channel.send(embed=loaded)
 
     @playlist.command(aliases=['edit'])
     async def save(self, ctx):
-        await self.init_playlist(ctx)
-        try:
-            queue = self.info[str(ctx.guild.id)]['queue']
-        except KeyError:
-            queue = None
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        queue = player.fetch("queue", [])
 
         if not queue:
             no_queue = discord.Embed(title="No Queue Available for Saving",
@@ -880,10 +882,10 @@ class Music(commands.Cog):
 
         if not details or action == "save":
             try:
-                getName = discord.Embed(title="Specify the Playlist Name",
-                                        description=f"{ctx.author.mention}, please specify what the playlist name should be",
-                                        color=discord.Color.blue())
-                await panel.edit(embed=getName)
+                embed = discord.Embed(title="Specify the Playlist Name",
+                                      description=f"{ctx.author.mention}, please specify what the playlist name should be",
+                                      color=discord.Color.blue())
+                await panel.edit(embed=embed)
             except discord.NotFound:
                 await ctx.channel.send(embed=no_panel)
             while True:
@@ -899,12 +901,12 @@ class Music(commands.Cog):
                     break
             await gcmds.smart_delete(reply)
 
-            saveEmbed = discord.Embed(color=discord.Color.blue())
+            embed = discord.Embed(color=discord.Color.blue())
             plist_name = reply.content
-            saveEmbed.title = "Saved Playlist"
-            saveEmbed.description = f"💽Playlist Name: {plist_name}\n🎶Tracks: {len(queue)}"
+            embed.title = "Saved Playlist"
+            embed.description = f"💽Playlist Name: {plist_name}\n🎶Tracks: {len(queue)}"
             try:
-                await panel.edit(embed=saveEmbed)
+                await panel.edit(embed=embed)
                 await self.save_playlist(ctx, plist_name, urls)
             except discord.NotFound:
                 return await ctx.channel.send(embed=no_panel)
@@ -917,11 +919,11 @@ class Music(commands.Cog):
                     spell = "track"
                 edit_desc += f"**{counter}**: {item[0]} ⟶ 🎶*{len(item[1])} {spell}* [ID: {item[2]}]\n"
             try:
-                getName = discord.Embed(title="Specify the Playlist Name",
-                                        description=f"{ctx.author.mention}, type the name of the playlist you want to "
-                                                    f"edit:\n\n{edit_desc}",
-                                        color=discord.Color.blue())
-                await panel.edit(embed=getName)
+                embed = discord.Embed(title="Specify the Playlist Name",
+                                      description=f"{ctx.author.mention}, type the name of the playlist you want to "
+                                      f"edit:\n\n{edit_desc}",
+                                      color=discord.Color.blue())
+                await panel.edit(embed=embed)
             except discord.NotFound:
                 return await ctx.channel.send(embed=no_panel)
             while True:
@@ -940,12 +942,12 @@ class Music(commands.Cog):
                     break
             await gcmds.smart_delete(reply)
             try:
-                getName = discord.Embed(title="Change Playlist Name",
-                                        description=f"{ctx.author.mention}, please specify what the playlist name "
-                                                    f"should be *(enter \"skip\" to keep the playlist's current "
-                                                    f"name)*\n\n**Current Name:** {info[0]}",
-                                        color=discord.Color.blue())
-                await panel.edit(embed=getName)
+                embed = discord.Embed(title="Change Playlist Name",
+                                      description=f"{ctx.author.mention}, please specify what the playlist name "
+                                      f"should be *(enter \"skip\" to keep the playlist's current "
+                                      f"name)*\n\n**Current Name:** {info[0]}",
+                                      color=discord.Color.blue())
+                await panel.edit(embed=embed)
             except discord.NotFound:
                 await ctx.channel.send(embed=no_panel)
             while True:
@@ -986,7 +988,6 @@ class Music(commands.Cog):
 
     @playlist.command()
     async def add(self, ctx):
-        await self.init_playlist(ctx)
 
         def from_user(message):
             if message.author.id != ctx.author.id:
@@ -1093,7 +1094,6 @@ class Music(commands.Cog):
 
     @playlist.command(aliases=['delete'])
     async def remove(self, ctx):
-        await self.init_playlist(ctx)
 
         def reaction_check(reaction, user):
             if user == ctx.author and reaction.emoji in plist_delete_reactions and reaction.message.id == panel.id:
