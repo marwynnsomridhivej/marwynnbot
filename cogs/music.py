@@ -48,6 +48,18 @@ class Music(commands.Cog):
             return True
         return await context.music_bind(ctx)
 
+    async def init_music(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, "
+                              "channel_id bigint, panel_id bigint, counter_id bigint)")
+        return
+
+    async def init_playlist(self):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         if user.bot or not reaction.message.guild or not user.voice or reaction.emoji not in reactions:
@@ -175,26 +187,6 @@ class Music(commands.Cog):
                                   color=discord.Color.blue())
             return await channel.send(embed=embed)
 
-    async def init_music(self):
-        await self.bot.wait_until_ready()
-        async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, "
-                              "channel_id bigint, panel_id bigint, counter_id bigint)")
-        return
-
-    async def fetch_stored(self, guild_id: int, key: str):
-        async with self.bot.db.acquire() as con:
-            if key == "all":
-                results = await con.fetch(f"SELECT * FROM music where guild_id={guild_id}")
-            else:
-                results = await con.fetchval(f"SELECT {key} from music WHERE guild_id={guild_id}")
-        return results
-
-    async def init_playlist(self):
-        await self.bot.wait_until_ready()
-        async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
-
     async def save_playlist(self, ctx, name: str, urls: list):
         async with self.bot.db.acquire() as con:
             if not urls:
@@ -262,13 +254,6 @@ class Music(commands.Cog):
                 return False
 
         return True
-
-    async def get_bound_channel(self, guild_id):
-        async with self.bot.db.acquire() as con:
-            channel_id = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={guild_id}")
-        if not channel_id:
-            raise customerrors.NoBoundChannel()
-        return await self.bot.fetch_channel(channel_id)
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -338,6 +323,31 @@ class Music(commands.Cog):
             else:
                 await con.execute(f"UPDATE music SET {key}={value} WHERE guild_id={guild_id}")
 
+    async def fetch_stored(self, guild_id: int, key: str):
+        async with self.bot.db.acquire() as con:
+            if key == "all":
+                results = await con.fetch(f"SELECT * FROM music where guild_id={guild_id}")
+            else:
+                results = await con.fetchval(f"SELECT {key} from music WHERE guild_id={guild_id}")
+        return results
+
+    async def set_bind_channel(self, guild_id: int, value: int):
+        async with self.bot.db.acquire() as con:
+            entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={guild_id}")
+            if not entry:
+                op = f"INSERT INTO music(guild_id, channel_id) VALUES ({guild_id}, {value})"
+            else:
+                op = f"UPDATE music SET channel_id={value} WHERE guild_id={guild_id}"
+            await con.execute(op)
+        return
+
+    async def get_bound_channel(self, guild_id):
+        async with self.bot.db.acquire() as con:
+            channel_id = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={guild_id}")
+        if not channel_id:
+            raise customerrors.NoBoundChannel()
+        return await self.bot.fetch_channel(channel_id)
+
     async def del_temp_msgs(self, guild_id: int):
         channel = await self.get_bound_channel(guild_id)
         with suppress(Exception):
@@ -351,16 +361,6 @@ class Music(commands.Cog):
         player.store("paused", False)
         player.store("queue", [])
         await player.stop()
-
-    async def set_bind_channel(self, guild_id: int, value: int):
-        async with self.bot.db.acquire() as con:
-            entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={guild_id}")
-            if not entry:
-                op = f"INSERT INTO music(guild_id, channel_id) VALUES ({guild_id}, {value})"
-            else:
-                op = f"UPDATE music SET channel_id={value} WHERE guild_id={guild_id}"
-            await con.execute(op)
-        return
 
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
