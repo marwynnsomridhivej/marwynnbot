@@ -219,7 +219,10 @@ class GuildDispatcher(LogDispatcher):
         channel = await self.bot.fetch_channel(channel_id)
         if not channel.guild:
             return
-        message = await channel.fetch_message(message_id)
+        try:
+            message = await channel.fetch_message(message_id)
+        except Exception:
+            return
         if message.author.bot:
             return
         log_channel = await self.check_logging_enabled(message.guild, self.min_level)
