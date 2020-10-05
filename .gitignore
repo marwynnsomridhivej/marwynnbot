@@ -9,5 +9,6 @@ pokepy_cache
 *.pyc
 *.log
 *.jar
+*.json
 *.yml
 *.sql
