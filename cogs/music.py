@@ -180,8 +180,7 @@ class Music(commands.Cog):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, "
                               "channel_id bigint, panel_id bigint, counter_id bigint)")
-            for guild in self.bot.guilds:
-                await con.execute(f"INSERT INTO music(guild_id) VALUES({guild.id}) ON CONFLICT DO NOTHING")
+        return
 
     async def fetch_stored(self, guild_id: int, key: str):
         async with self.bot.db.acquire() as con:
