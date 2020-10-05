@@ -17,3 +17,14 @@ async def redirect(ctx):
     if result:
         ctx.channel = await bot.fetch_channel(int(result))
     return True
+
+async def music_bind(ctx):
+    bot = globalcommands.bot
+    db = globalcommands.db
+    async with db.acquire() as con:
+        result = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={ctx.guild.id}")
+    if not result:
+        raise customerrors.NoBoundChannel()
+    if not ctx.channel.id == result:
+        raise customerrors.NotBoundChannel(result)
+    return True
