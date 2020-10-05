@@ -352,6 +352,16 @@ class Music(commands.Cog):
         player.store("queue", [])
         await player.stop()
 
+    async def set_bind_channel(self, guild_id: int, value: int):
+        async with self.bot.db.acquire() as con:
+            entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={guild_id}")
+            if not entry:
+                op = f"INSERT INTO music(guild_id, channel_id) VALUES ({guild_id}, {value})"
+            else:
+                op = f"UPDATE music SET channel_id={value} WHERE guild_id={guild_id}"
+            await con.execute(op)
+        return
+
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
                       uperms=["Manage Server"],
@@ -359,7 +369,7 @@ class Music(commands.Cog):
     async def bind(self, ctx, channel: discord.TextChannel = None):
         if not channel:
             channel = ctx.channel
-        await self.set_value(ctx.guild.id, "channel_id", channel.id)
+        await self.set_bind_channel(ctx.guild.id, channel.id)
         embed = discord.Embed(title="Music Channel Bound",
                               description=f"The music channel was bound to {channel.mention}",
                               color=discord.Color.blue())
