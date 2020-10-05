@@ -73,6 +73,20 @@ class NoPostgreSQL(PostgreSQLError):
                                    color=discord.Color.dark_red())
 
 
+class NoBoundChannel(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="No Music Channel Bound",
+                                   description="You must bind MarwynnBot's music commands to a channel",
+                                   color=discord.Color.dark_red())
+
+
+class NotBoundChannel(PostgreSQLError):
+    def __init__(self, channel_id):
+        self.embed = discord.Embed(title="Not Bound Channel",
+                                   description=f"Execute music commands in <#{channel_id}>",
+                                   color=discord.Color.dark_red())
+
+
 class AutoroleInsertError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Autoroles Error",
