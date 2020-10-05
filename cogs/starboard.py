@@ -25,16 +25,19 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
 
-        user = self.bot.fetch_user(payload.user_id)
+        user = await self.bot.fetch_user(payload.user_id)
         if user.bot:
             return
 
-        channel = self.bot.fetch_channel(payload.channel_id)
+        channel = await self.bot.fetch_channel(payload.channel_id)
         if not channel.guild:
             return
 
         emoji = payload.emoji
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except Exception:
+            return
 
         async with self.bot.db.acquire() as con:
             sbc = await con.fetchval(f"SELECT starboard_channel FROM guild WHERE guild_id={message.guild.id}")
@@ -45,11 +48,11 @@ class Starboard(commands.Cog):
         if str(emoji) != registered_emoji:
             return
         elif not (orig or on_sb):
-            sbc = self.bot.fetch_channel(sbc)
+            sbc = await self.bot.fetch_channel(sbc)
             return (await self.push_starboard(message, sbc, emoji=emoji) if sbc
                     else await self.push_starboard(message, emoji=emoji))
         else:
-            sbc = self.bot.fetch_channel(sbc)
+            sbc = await self.bot.fetch_channel(sbc)
             on_sb = await sbc.fetch_message(on_sb)
             return await self.update_starboard(on_sb, sbc, "add", emoji)
 
@@ -57,16 +60,19 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self.bot.wait_until_ready()
 
-        user = self.bot.fetch_user(payload.user_id)
+        user = await self.bot.fetch_user(payload.user_id)
         if user.bot:
             return
 
-        channel = self.bot.fetch_channel(payload.channel_id)
+        channel = await self.bot.fetch_channel(payload.channel_id)
         if not channel.guild:
             return
 
         emoji = payload.emoji
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except Exception:
+            return
 
         async with self.bot.db.acquire() as con:
             sbc = await con.fetchval(f"SELECT starboard_channel FROM guild WHERE guild_id={message.guild.id}")
@@ -77,7 +83,7 @@ class Starboard(commands.Cog):
             return
         else:
             if sbc:
-                sbc = self.bot.fetch_channel(sbc)
+                sbc = await self.bot.fetch_channel(sbc)
                 on_sb = await sbc.fetch_message(on_sb)
             return await self.update_starboard(on_sb, sbc, "remove", emoji)
 
