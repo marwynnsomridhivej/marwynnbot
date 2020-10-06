@@ -266,7 +266,10 @@ class Moderation(commands.Cog):
             role = await ctx.guild.create_role(name="Muted",
                                                reason="Use for mutes")
             for channel in ctx.guild.channels:
-                await channel.set_permissions(role, overwrite=overwrite)
+                try:
+                    await channel.set_permissions(role, overwrite=overwrite)
+                except Exception:
+                    pass
 
         dates = search_dates(text=reason, settings={'PREFER_DATES_FROM': 'future'})
         if not dates:
