@@ -310,9 +310,9 @@ class MemberDispatcher(LogDispatcher):
         super().__init__(bot)
         self.min_level = LogLevel.GUILD
 
-    async def check_logging_enabled(self, member: discord.Member, min_level: LogLevel):
+    async def check_logging_enabled(self, member: discord.Member, min_level: LogLevel, guild: discord.Guild = None):
         if not member.bot:
-            return await super().check_logging_enabled(member.guild, min_level)
+            return await super().check_logging_enabled(member.guild if hasattr(member, "guild") else guild, min_level)
         else:
             raise customerrors.LoggingNotEnabled()
 
@@ -380,8 +380,7 @@ class MemberDispatcher(LogDispatcher):
     async def member_ban_update(self, guild: discord.Guild, member: Union[discord.User, discord.Member], event_type: str):
         if member.bot:
             return
-        member.guild = guild
-        log_channel = await self.check_logging_enabled(member, self.min_level)
+        log_channel = await self.check_logging_enabled(member, self.min_level, guild=guild)
         embed = discord.Embed(title=f"User {event_type.title()}",
                               description=f"The user {member.mention} was {event_type} from {guild.name}",
                               color=discord.Color.blue() if event_type == "unbanned" else discord.Color.dark_red())
