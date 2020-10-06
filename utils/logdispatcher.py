@@ -217,7 +217,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def message_raw_edit(self, message_id: int, channel_id: int, data: dict):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         try:
             message = await channel.fetch_message(message_id)
@@ -239,7 +239,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def message_raw_delete(self, message_id: int, channel_id: int):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title="Message Deleted",
@@ -251,7 +251,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def message_raw_bulk_delete(self, message_ids: set, channel_id: int):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         embed = discord.Embed(title="Bulk Message Delete",
@@ -263,7 +263,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def reaction_raw_update(self, message_id: int, emoji: discord.PartialEmoji, user_id: int, channel_id: int, event_type: str):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         message = await channel.fetch_message(message_id)
@@ -281,7 +281,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def reaction_raw_clear(self, message_id: int, channel_id: int):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         message = await channel.fetch_message(message_id)
@@ -294,7 +294,7 @@ class GuildDispatcher(LogDispatcher):
     @enabled
     async def reaction_raw_clear_emoji(self, message_id: int, channel_id: int, emoji: discord.PartialEmoji):
         channel = await self.bot.fetch_channel(channel_id)
-        if not channel.guild:
+        if not hasattr(channel, "guild"):
             return
         log_channel = await self.check_logging_enabled(channel.guild, self.min_level)
         message = await channel.fetch_message(message_id)
