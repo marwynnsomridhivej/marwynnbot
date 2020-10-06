@@ -17,7 +17,7 @@ def enabled(func):
         try:
             await func(*args, **kwargs)
         except Exception as e:
-            if isinstance(e, customerrors.LoggingError):
+            if isinstance(e, customerrors.LoggingError) or isinstance(e, discord.DiscordException):
                 pass
             else:
                 raise e
