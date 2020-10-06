@@ -39,11 +39,11 @@ class Fun(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY") as returned:
                 result = await returned.json()
-        embed = discord.Embed(title=result['title'],
+        embed = discord.Embed(title=result.get('title', ''),
                               color=discord.Color.blue())
-        embed.set_author(name=f"NASA Astronomy Photo of the Day {result['date'].replace('-', '/')}")
-        embed.set_footer(text=result['explanation'])
-        embed.set_image(url=result['hdurl'])
+        embed.set_author(name=f"NASA Astronomy Photo of the Day {result.get('date', '').replace('-', '/')}")
+        embed.set_footer(text=result.get('explanation', ''))
+        embed.set_image(url=result.get('hdurl', "https://thumbs.gfycat.com/MisguidedPreciousIguanodon-size_restricted.gif"))
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['dad', 'father'],
