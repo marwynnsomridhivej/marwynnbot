@@ -41,8 +41,7 @@ class Fun(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY") as returned:
                 result = await returned.json()
-        embed = discord.Embed(title=result.get('title', ''),
-                              color=discord.Color.blue())
+        embed = discord.Embed(title=result.get('title', ''), color=discord.Color.blue())
         embed.set_author(name=f"NASA Astronomy Photo of the Day {result.get('date', '').replace('-', '/')}")
         embed.set_footer(text=result.get('explanation', FUNNY_FOOTER))
         embed.set_image(url=result.get('hdurl', FUNNY_URL))
