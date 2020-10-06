@@ -261,11 +261,13 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         role = discord.utils.get(ctx.guild.roles, name="Muted")
+        overwrite = discord.PermissionOverwrite
+        overwrite.send_message = False
         if not role:
             role = await ctx.guild.create_role(name="Muted",
                                                reason="Use for mutes")
             for channel in ctx.guild.channels:
-                await channel.set_permissions(role, send_messages=False)
+                await channel.set_permissions(role, overwrite=overwrite)
 
         dates = search_dates(text=reason, settings={'PREFER_DATES_FROM': 'future'})
         if not dates:
