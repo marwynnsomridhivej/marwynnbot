@@ -13,7 +13,7 @@ invite_url = "https://discord.com/oauth2/authorize?client_id=623317451811061763&
 
 class Utility(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
         self.messages = {}
