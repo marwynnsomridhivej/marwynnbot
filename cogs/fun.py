@@ -11,6 +11,8 @@ from utils import globalcommands
 
 gcmds = globalcommands.GlobalCMDS()
 SLEEP_TIME = 1.2
+FUNNY_URL = "https://thumbs.gfycat.com/MisguidedPreciousIguanodon-size_restricted.gif"
+FUNNY_FOOTER = "Taken directly from Hubble"
 
 
 class Fun(commands.Cog):
@@ -42,8 +44,8 @@ class Fun(commands.Cog):
         embed = discord.Embed(title=result.get('title', ''),
                               color=discord.Color.blue())
         embed.set_author(name=f"NASA Astronomy Photo of the Day {result.get('date', '').replace('-', '/')}")
-        embed.set_footer(text=result.get('explanation', ''))
-        embed.set_image(url=result.get('hdurl', "https://thumbs.gfycat.com/MisguidedPreciousIguanodon-size_restricted.gif"))
+        embed.set_footer(text=result.get('explanation', FUNNY_FOOTER))
+        embed.set_image(url=result.get('hdurl', FUNNY_URL))
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['dad', 'father'],
