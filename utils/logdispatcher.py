@@ -380,7 +380,8 @@ class MemberDispatcher(LogDispatcher):
     async def member_ban_update(self, guild: discord.Guild, member: Union[discord.User, discord.Member], event_type: str):
         if member.bot:
             return
-        log_channel = await self.check_logging_enabled(guild, self.min_level)
+        member.guild = guild
+        log_channel = await self.check_logging_enabled(member, self.min_level)
         embed = discord.Embed(title=f"User {event_type.title()}",
                               description=f"The user {member.mention} was {event_type} from {guild.name}",
                               color=discord.Color.blue() if event_type == "unbanned" else discord.Color.dark_red())
