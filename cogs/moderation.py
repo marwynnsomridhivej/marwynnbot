@@ -261,8 +261,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, members: commands.Greedy[discord.Member], *, reason="Unspecified"):
         role = discord.utils.get(ctx.guild.roles, name="Muted")
-        overwrite = discord.PermissionOverwrite
-        overwrite.send_message = False
+        overwrite = discord.PermissionOverwrite(send_messages=False)
         if not role:
             role = await ctx.guild.create_role(name="Muted",
                                                reason="Use for mutes")
