@@ -299,7 +299,7 @@ class Moderation(commands.Cog):
                 mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
                 mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
-                await self.set_mute(ctx, member, timestamp)
+            await self.set_mute(ctx, member, timestamp)
 
     @commands.command(aliases=['unsilence', 'unstfu', 'unshut', 'unshush', 'unshh', 'unshhh', 'unshhhh', 'unquiet'],
                       desc="Unmutes members from all text channels",
