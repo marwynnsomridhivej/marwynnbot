@@ -22,12 +22,11 @@ class Disboard(commands.Cog):
         self.tasks = []
         gcmds = globalcommands.GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_disboard())
-        self.check_unsent_reminder.start()
+        self.bot.loop.create_task(self.check_unsent_reminder())
 
     def cog_unload(self):
         for task in self.tasks:
             task.cancel()
-        self.check_unsent_reminder.cancel()
 
     async def init_disboard(self):
         await self.bot.wait_until_ready()
@@ -59,11 +58,10 @@ class Disboard(commands.Cog):
                     description = message_content
                 async with self.bot.db.acquire() as con:
                     await con.execute(f"UPDATE disboard SET time = {time_to_send} WHERE guild_id = {message.guild.id}")
+                if not await self.check_queued_reminder(str(message.guild.id)):
+                    self.tasks.append(self.bot.loop.create_task(
+                        self.send_bump_reminder(channel, title, description, sleep_time), name=str(message.guild.id)))
 
-                self.tasks.append(self.bot.loop.create_task(
-                    self.send_bump_reminder(channel, title, description, sleep_time)))
-
-    @tasks.loop(seconds=1, count=1)
     async def check_unsent_reminder(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
@@ -82,8 +80,12 @@ class Disboard(commands.Cog):
             title = "Disboard Bump Available!"
             description = record['message_content'] if record['message_content'] else "The bump cooldown has expired! You can now bump your server using `!d bump`"
             channel = await self.bot.fetch_channel(int(record['channel_id']))
-            self.tasks.append(self.bot.loop.create_task(
-                self.send_bump_reminder(channel, title, description, sleep_time)))
+            if not await self.check_queued_reminder(str(record['guild_id'])):
+                self.tasks.append(self.bot.loop.create_task(
+                    self.send_bump_reminder(channel, title, description, sleep_time), name=str(record['guild_id'])))
+
+    async def check_queued_reminder(self, name: str):
+        return name in [task.get_name() for task in self.tasks]
 
     async def send_bump_reminder(self, channel, title, description, sleep_time) -> discord.Message:
         await asyncio.sleep(sleep_time)
