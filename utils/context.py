@@ -7,8 +7,8 @@ from utils import customerrors, globalcommands
 async def redirect(ctx):
     if not ctx.guild:
         return True
-    bot = globalcommands.bot
-    db = globalcommands.db
+    bot = globalcommands._bot
+    db = globalcommands._db
     cmd = ctx.command.root_parent.name if ctx.command.root_parent else ctx.command.name
     async with db.acquire() as con:
         result = await con.fetchval(f"SELECT channel_id FROM redirects WHERE guild_id={ctx.guild.id} AND command='{cmd}' AND type='override'")
@@ -19,8 +19,7 @@ async def redirect(ctx):
     return True
 
 async def music_bind(ctx):
-    bot = globalcommands.bot
-    db = globalcommands.db
+    db = globalcommands._db
     async with db.acquire() as con:
         result = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={ctx.guild.id}")
     if not result:

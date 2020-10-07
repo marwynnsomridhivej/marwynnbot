@@ -7,7 +7,7 @@ from utils import customerrors, globalcommands
 def is_premium(*args, **kwargs):
 
     async def predicate(ctx, *args, **kwargs):
-        db = globalcommands.db
+        db = globalcommands._db
         if not db:
             raise customerrors.NoPostgreSQL()
         async with db.acquire() as con:
@@ -29,7 +29,7 @@ def is_premium(*args, **kwargs):
 
 
 async def check_user_premium(user: discord.User) -> bool:
-    db = globalcommands.db
+    db = globalcommands._db
     if not db:
         raise customerrors.NoPostgreSQL()
     async with db.acquire() as con:
@@ -38,7 +38,7 @@ async def check_user_premium(user: discord.User) -> bool:
 
 
 async def check_guild_premium(guild: discord.Guild) -> bool:
-    db = globalcommands.db
+    db = globalcommands._db
     if not db:
         raise customerrors.NoPostgreSQL()
     async with db.acquire() as con:

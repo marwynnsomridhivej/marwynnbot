@@ -45,15 +45,20 @@ default_env = ["YOUR_BOT_TOKEN",
                "YOUR_USER_AGENT",
                "API_KEY_FROM_TENOR",
                "PERSONAL_ACCESS_TOKEN"]
+_bot = None
+_db = None
 
 
 class GlobalCMDS:
 
     def __init__(self, bot: commands.AutoShardedBot = None):
+        global _bot, _db
         self.version = "v0.7.0-alpha.1"
         self.bot = bot
         if bot:
             self.db = self.bot.db
+            _bot = bot
+            _db = self.db
 
     def init_env(self):
         if not os.path.exists('.env'):
