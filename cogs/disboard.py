@@ -35,32 +35,35 @@ class Disboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.guild and message.author.id == disboard_bot_id:
-            async with self.bot.db.acquire() as con:
-                result = await con.fetch(f"SELECT channel_id, message_content, time from disboard WHERE guild_id = {message.guild.id}")
-            if not result:
-                return
-            else:
-                result = result[0]
-            message = message
-            disboard_embed = message.embeds[0]
-            if "bump done" in disboard_embed.description.lower():
-                current_timestamp = int(datetime.now().timestamp())
-                time_to_send = 7200 + int(current_timestamp)
-                sleep_time = time_to_send - current_timestamp
+        if not message.guild or not message.author.id == disboard_bot_id:
+            return
+        async with self.bot.db.acquire() as con:
+            result = await con.fetch(f"SELECT channel_id, message_content, time from disboard WHERE guild_id = {message.guild.id}")
+        if not result:
+            return
+        else:
+            result = result[0]
+        message = message
+        disboard_embed = message.embeds[0]
+        if not "bump done" in disboard_embed.description.lower():
+            return
+        current_timestamp = int(datetime.now().timestamp())
+        time_to_send = 7200 + int(current_timestamp)
+        sleep_time = time_to_send - current_timestamp
 
-                channel = await self.bot.fetch_channel(result['channel_id'])
-                title = "Disboard Bump Available!"
-                message_content = result['message_content']
-                if not message_content:
-                    description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
-                else:
-                    description = message_content
-                async with self.bot.db.acquire() as con:
-                    await con.execute(f"UPDATE disboard SET time = {time_to_send} WHERE guild_id = {message.guild.id}")
-                if not await self.check_queued_reminder(str(message.guild.id)):
-                    self.tasks.append(self.bot.loop.create_task(
-                        self.send_bump_reminder(channel, title, description, sleep_time), name=str(message.guild.id)))
+        channel = await self.bot.fetch_channel(result['channel_id'])
+        title = "Disboard Bump Available!"
+        message_content = result['message_content']
+        if not message_content:
+            description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
+        else:
+            description = message_content
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"UPDATE disboard SET time={time_to_send} WHERE guild_id={message.guild.id}")
+        if not await self.check_queued_reminder(str(message.guild.id)):
+            task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+            task.set_name(str(message.guild.id))
+            self.tasks.append(task)
 
     async def check_unsent_reminder(self):
         await self.bot.wait_until_ready()
@@ -81,8 +84,9 @@ class Disboard(commands.Cog):
             description = record['message_content'] if record['message_content'] else "The bump cooldown has expired! You can now bump your server using `!d bump`"
             channel = await self.bot.fetch_channel(int(record['channel_id']))
             if not await self.check_queued_reminder(str(record['guild_id'])):
-                self.tasks.append(self.bot.loop.create_task(
-                    self.send_bump_reminder(channel, title, description, sleep_time), name=str(record['guild_id'])))
+                task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+                task.set_name(str(record['guild_id']))
+                self.tasks.append(task)
 
     async def check_queued_reminder(self, name: str):
         return name in [task.get_name() for task in self.tasks]
