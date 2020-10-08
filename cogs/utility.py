@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -240,12 +240,24 @@ class Utility(commands.Cog):
                       desc="Displays the current server's information",
                       usage="serverinfo")
     async def serverInfo(self, ctx):
-        description = (f"Owner: {ctx.guild.owner.mention}",
-                       f"Created At: `{str(ctx.guild.created_at)[:-7]}`",
-                       f"Members: `{ctx.guild.member_count}`",
-                       f"Roles: `{len(ctx.guild.roles)}`",
-                       f"Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
-                       f"Boosts: `{len(ctx.guild.premium_subscribers)}`")
+        description = ("**Basic Info**",
+                       f"> Owner: {ctx.guild.owner.mention}",
+                       f"> ID: `{ctx.guild.id}`",
+                       f"> Created At: `{str(ctx.guild.created_at)[:-7]}`",
+                       f"> Description: `{ctx.guild.description}`",
+                       f"> Region: `{str(ctx.guild.region).replace('-', ' ')}`",
+                       f"> AFK Timeout: `{int(ctx.guild.afk_timeout / 60)} "
+                       f"{'minutes' if ctx.guild.afk_timeout / 60 > 1 else 'minute'}`",
+                       f"> AFK Channel: `{ctx.guild.afk_channel}`",
+                       "",
+                       "**Stats:**",
+                       f"> Members: `{len([member for member in ctx.guild.members if not member.bot])}`",
+                       f"> Roles: `{len(ctx.guild.roles)}`",
+                       f"> Emojis: `{len(ctx.guild.emojis)} / {ctx.guild.emoji_limit}`",
+                       f"> Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
+                       f"> Boosts: `{len(ctx.guild.premium_subscribers)}`",
+                       f"> Filesize Limit: `{round(ctx.guild.filesize_limit / 1000000)} MB`",
+                       f"> MarwynnBot Shard: `Shard {ctx.guild.shard_id}`",)
         embed = discord.Embed(title=ctx.guild.name, description="\n".join(description), color=discord.Color.blue())
         embed.set_image(url=ctx.guild.icon_url)
         return await ctx.channel.send(embed=embed)
