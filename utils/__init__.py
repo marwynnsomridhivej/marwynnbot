@@ -1,1 +1,1 @@
-from . import *
+from utils.globalcommands import GlobalCMDS
