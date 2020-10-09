@@ -43,7 +43,9 @@ class Debug(commands.Cog):
         ping.add_field(name="MarwynnBot", value=f'{round(self.bot.latency * 1000)}ms')
         await ctx.send(embed=ping)
 
-    @commands.command(aliases=['mb', 'selfinfo', 'about', 'me'])
+    @commands.command(aliases=['mb', 'selfinfo', 'about', 'me'],
+                      desc="Get info about me! Mostly for debug purposes though",
+                      usage="marwynnbot")
     async def marwynnbot(self, ctx):
         async with self.bot.db.acquire() as con:
             command_amount = await con.fetchval("SELECT SUM (amount) FROM global_counters")
