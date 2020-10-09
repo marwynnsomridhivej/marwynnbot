@@ -3,6 +3,7 @@ import datetime
 
 import discord
 import dotenv
+import psutil
 from discord.ext import commands
 from utils import globalcommands
 
@@ -40,6 +41,63 @@ class Debug(commands.Cog):
         ping.set_thumbnail(url='https://cdn1.iconfinder.com/data/icons/travel-and-leisure-vol-1/512/16-512.png')
         ping.add_field(name="MarwynnBot", value=f'{round(self.bot.latency * 1000)}ms')
         await ctx.send(embed=ping)
+
+    @commands.command(aliases=['mb', 'selfinfo', 'about', 'me'])
+    async def marwynnbot(self, ctx):
+        async with self.bot.db.acquire() as con:
+            command_amount = await con.fetchval("SELECT SUM (amount) FROM global_counters")
+        mem = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+        disk = psutil.disk_usage("/")
+        time_now = int(datetime.now().timestamp())
+        td = timedelta(seconds=time_now - self.bot.uptime)
+        description = (f"Hi there! I am a multipurpose Discord Bot made by <@{self.bot.owner_id}> "
+                       "written in Python using the `discord.py` API wrapper. Here are some of my stats:")
+        stats = (f"Servers Joined: {len(self.bot.guilds)}",
+                 f"Users Served: {len(self.bot.users)}",
+                 f"Commands Processed: {command_amount}",
+                 f"Uptime: {str(td)}")
+        cpu_stats = "```{}```".format(
+            "\n".join(
+                    [f"Core {counter}: {int(freq.current)} / {int(freq.max)} MHz"
+                     for counter, freq in enumerate(psutil.cpu_freq(percpu=True), 1)]
+            )
+        )
+        memory_stats = "```{}```".format(
+            "\n".join(
+                [f"Total: {round((mem.total / 1000000000), 2)} GB",
+                 f"Available: {round((mem.available / 1000000000), 2)} GB",
+                 f"Used: {round((mem.used / 1000000), 2)} MB",
+                 f"Percent: {round(mem.percent, 2)}%"]
+            )
+        )
+        swap_stats = "```{}```".format(
+            "\n".join(
+                [f"Total: {round((swap.total / 1000000000))} GB",
+                     f"Free: {round((swap.free / 1000000), 2)} MB",
+                     f"Used: {round((swap.used / 1000000), 2)} MB",
+                     f"Percentage: {round(swap.percent, 2)}%"]
+            )
+        )
+        disk_stats = "```{}```".format(
+            "\n".join(
+                [f"Total: {round((disk.total / 1000000000), 2)} GB",
+                     f"Used: {round((disk.used / 1000000000), 2)} GB",
+                     f"Free: {round((disk.free / 1000000000), 2)} GB",
+                     f"Percentage: {round((100 * disk.used / disk.total), 2)}%"]
+            )
+        )
+        nv = [
+            ("Stats", "```{}```".format("\n".join(stats))),
+            ("CPU Info", cpu_stats),
+            ("Memory Info", memory_stats),
+            ("Swap Info", swap_stats),
+            ("Disk Info", disk_stats)
+        ]
+        embed = discord.Embed(title="Info About Me!", description=description, color=discord.Color.blue())
+        for name, value in nv:
+            embed.add_field(name=name, value=value, inline=False)
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True,
                     aliases=['flag'],
