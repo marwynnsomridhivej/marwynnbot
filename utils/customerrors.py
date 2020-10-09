@@ -183,6 +183,15 @@ class ServerLinkChannelUnavailable(ServerLinkException):
         super().__init__()
         self.embed.title = "Channel Unavailable"
 
+
+class ServerLinkNoActiveSession(ServerLinkException):
+    def __init__(self, ctx: commands.Context):
+        super().__init__()
+        self.embed.title = "No Active ServerLink Session"
+        self.embed.description = (f"There is currently no active ServerLink session associtaed with "
+                                  f"{ctx.channel.mention}")
+
+
 class StarboardException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Starboard Error",
