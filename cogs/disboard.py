@@ -60,10 +60,8 @@ class Disboard(commands.Cog):
             description = message_content
         async with self.bot.db.acquire() as con:
             await con.execute(f"UPDATE disboard SET time={time_to_send} WHERE guild_id={message.guild.id}")
-        if not await self.check_queued_reminder(str(message.guild.id)):
-            task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
-            task.set_name(str(message.guild.id))
-            self.tasks.append(task)
+        task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+        self.tasks.append(task)
 
     async def check_unsent_reminder(self):
         await self.bot.wait_until_ready()
@@ -83,10 +81,8 @@ class Disboard(commands.Cog):
             title = "Disboard Bump Available!"
             description = record['message_content'] if record['message_content'] else "The bump cooldown has expired! You can now bump your server using `!d bump`"
             channel = await self.bot.fetch_channel(int(record['channel_id']))
-            if not await self.check_queued_reminder(str(record['guild_id'])):
-                task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
-                task.set_name(str(record['guild_id']))
-                self.tasks.append(task)
+            task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+            self.tasks.append(task)
 
     async def check_queued_reminder(self, name: str):
         return name in [task.get_name() for task in self.tasks]
