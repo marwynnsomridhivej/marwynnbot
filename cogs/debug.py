@@ -64,6 +64,13 @@ class Debug(commands.Cog):
                      for counter, freq in enumerate(psutil.cpu_percent(percpu=True), 1)]
             )
         )
+        temp_stats = "```{}```".format(
+            "\n".join(
+                [f"Core {counter}: {temp.current}°C"
+                 for counter, temp in enumerate(psutil.sensors_temperatures(), 1)]
+                 if hasattr(psutil, "sensors_temperatures") else ["No data available"]
+            )
+        )
         memory_stats = "```{}```".format(
             "\n".join(
                 [f"Total: {round((mem.total / 1000000000), 2)} GB",
@@ -91,6 +98,7 @@ class Debug(commands.Cog):
         nv = [
             ("Stats", "```{}```".format("\n".join(stats))),
             ("CPU Info", cpu_stats),
+            ("CPU Temerature Info", temp_stats),
             ("Memory Info", memory_stats),
             ("Swap Info", swap_stats),
             ("Disk Info", disk_stats)
