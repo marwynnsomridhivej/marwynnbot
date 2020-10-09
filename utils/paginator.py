@@ -66,12 +66,8 @@ class EmbedPaginator:
         return self.embed
 
     def prepare_embed(self, entries, page, *, first=False):
-        if self.show_index:
-            desc_list = [f'**{index}.** {entry}'
-                         for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
-        else:
-            desc_list = [f"{entry}"
-                         for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
+        desc_list = [f'{f"**{index}.** " if self.show_index else ""}{entry}'
+                     for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
         if self.maximum_pages > 1:
             if self.show_entry_count:
                 text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
