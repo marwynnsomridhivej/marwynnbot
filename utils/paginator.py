@@ -10,7 +10,7 @@ gcmds = globalcommands.GlobalCMDS()
 
 
 class EmbedPaginator:
-    def __init__(self, ctx, *, entries, per_page=10, show_entry_count=True):
+    def __init__(self, ctx, *, entries, per_page=10, show_entry_count=True, **kwargs):
         self.bot = ctx.bot
         self.ctx = ctx
         self.entries = entries
@@ -35,6 +35,7 @@ class EmbedPaginator:
             ('ℹ️', self.show_help)
         ]
         self.in_help = False
+        self.show_index = kwargs.get("show_index", True)
 
         if ctx.guild:
             self.permissions = self.channel.permissions_for(ctx.guild.me)
@@ -65,7 +66,12 @@ class EmbedPaginator:
         return self.embed
 
     def prepare_embed(self, entries, page, *, first=False):
-        desc_list = [f'**{index}.** {entry}' for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
+        if self.show_index:
+            desc_list = [f'**{index}.** {entry}'
+                         for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
+        else:
+            desc_list = [f"{entry}"
+                         for index, entry in enumerate(entries, 1 + ((page - 1) * self.per_page))]
         if self.maximum_pages > 1:
             if self.show_entry_count:
                 text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
