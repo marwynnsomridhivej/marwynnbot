@@ -60,8 +60,8 @@ class Debug(commands.Cog):
                  f"Uptime: {str(td)}")
         cpu_stats = "```{}```".format(
             "\n".join(
-                    [f"Core {counter}: {int(freq.current)} / {int(freq.max)} MHz"
-                     for counter, freq in enumerate(psutil.cpu_freq(percpu=True), 1)]
+                    [f"Core {counter}: {round(freq, 2)}%"
+                     for counter, freq in enumerate(psutil.cpu_percent(percpu=True), 1)]
             )
         )
         memory_stats = "```{}```".format(
