@@ -30,7 +30,7 @@ class Fun(commands.Cog):
             embed.set_image(url=f"attachment://image.png")
             return await ctx.channel.send(file=picture, embed=embed)
         else:
-            embed = discord.Embed(title=f"{path} {toSend}", color=discord.Color.blue())
+            embed = discord.Embed(title=f"{path.title()} {toSend}", color=discord.Color.blue())
             embed.set_image(url=url)
             return await ctx.channel.send(embed=embed)
 
@@ -206,6 +206,38 @@ class Fun(commands.Cog):
             await asyncio.sleep(SLEEP_TIME)
         return
 
+    @commands.command(aliases=['pika'],
+                      desc="Fetches pictures of Pikachu",
+                      usage="pikachu (amount)")
+    async def pikachu(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "pikachu"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/pikachu") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randombird', 'bird', 'birb'],
+                      desc="Fetches random bird pics",
+                      usage="randombird (amount)")
+    async def randomBird(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "bird"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/birb") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
     @commands.command(aliases=['randomcat', 'cat'],
                       desc="Fetches pictures of cats!",
                       usage="randomcat (amount)")
@@ -228,7 +260,7 @@ class Fun(commands.Cog):
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get("https://api.thecatapi.com/v1/images/search") as image:
                     response = await image.json()
-                    url = response[0]['url']
+                    url = response[0].get('url', FUNNY_URL)
             await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
         return
@@ -240,11 +272,123 @@ class Fun(commands.Cog):
         req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
         path = "dog"
 
+        async with aiohttp.ClientSession() as session:
+            async with session.get(req_url) as image:
+                response = await image.json()
+                urls = response.get('message', FUNNY_URL)
+        for counter, url in enumerate(urls):
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomfox', 'fox'],
+                      desc="Fetches random fox pics",
+                      usage="randomfox (amount)")
+    async def randomFox(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "fox"
+        if toSend > 50:
+            toSend = 50
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
-                async with session.get(req_url) as image:
+                async with session.get("https://some-random-api.ml/img/fox") as image:
                     response = await image.json()
-                    url = response["message"]
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomkangaroo', 'kangaroo'],
+                      desc="Fetches random kangaroo pics",
+                      usage="randomkangaroo (amount)")
+    async def randomKangaroo(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "kangaroo"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/kangaroo") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomkoala', 'koala'],
+                      desc="Fetches random koala pics",
+                      usage="randomkoala (amount)")
+    async def randomKoala(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "koala"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/koala") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randompanda', 'panda'],
+                      desc="Fetches random panda pics",
+                      usage="randompanda (amount)")
+    async def randomPanda(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "panda"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/panda") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomredpanda', 'redpanda'],
+                      desc="Fetches random red panda pics",
+                      usage="randomredpanda (amount)")
+    async def randomRedPanda(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "red panda"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/red_panda") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomracoon', 'racoon'],
+                      desc="Fetches random racoon pics",
+                      usage="randomracoon (amount)")
+    async def randomRacoon(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "racoon"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/racoon") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
+            await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
+            await asyncio.sleep(SLEEP_TIME)
+        return
+
+    @commands.command(aliases=['randomwhale', 'whale'],
+                      desc="Fetches random whale pics",
+                      usage="randomwhale (amount)")
+    async def randomWhale(self, ctx, toSend: typing.Optional[int] = 1):
+        path = "whale"
+        if toSend > 50:
+            toSend = 50
+        for counter in range(toSend):
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://some-random-api.ml/img/whale") as image:
+                    response = await image.json()
+                    url = response.get('link', FUNNY_URL)
             await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
         return
