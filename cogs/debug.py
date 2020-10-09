@@ -67,7 +67,7 @@ class Debug(commands.Cog):
         temp_stats = "```{}```".format(
             "\n".join(
                 [f"Core {counter}: {temp.current}°C"
-                 for counter, temp in enumerate(psutil.sensors_temperatures(), 1)]
+                 for counter, temp in enumerate((psutil.sensors_temperatures())['coretemp'], 1)]
                  if hasattr(psutil, "sensors_temperatures") else ["No data available"]
             )
         )
