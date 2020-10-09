@@ -150,12 +150,38 @@ class ServerLinkNoRegisteredChannels(ServerLinkException):
         self.embed.description = f"{guild.name} does not have any registered ServerLink channels"
 
 
+class ServerLinkNotRegisteredChannel(ServerLinkException):
+    def __init__(self, channel: discord.TextChannel):
+        super().__init__()
+        self.embed.title = "Channel Not Registered"
+        self.embed.description = f"{channel.mention} is not a registered channel"
+
+
+class ServerLinkNoAvailableChannels(ServerLinkException):
+    def __init__(self, other_guild: discord.Guild):
+        super().__init__()
+        self.embed.title = "No Available Channels"
+        self.embed.description = f"{other_guild.name} does not have any available ServerLink channels"
+
+
 class ServerLinkInvalidGuild(ServerLinkException):
     def __init__(self, name: str):
         super().__init__()
         self.embed.title = "Invalid Server Name"
         self.embed.description = f"No server was found with the name `{name}`"
 
+
+class ServerLinkNoRequestFound(ServerLinkException):
+    def __init__(self, initiator_id: int):
+        super().__init__()
+        self.embed.title = "No Request Found"
+        self.embed.description = f"No request was found for channel <#{initiator_id}>"
+
+
+class ServerLinkChannelUnavailable(ServerLinkException):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Channel Unavailable"
 
 class StarboardException(PostgreSQLError):
     def __init__(self):
