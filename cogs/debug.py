@@ -61,7 +61,7 @@ class Debug(commands.Cog):
         cpu_stats = "```{}```".format(
             "\n".join(
                     [f"Core {counter}: {round(freq, 2)}%"
-                     for counter, freq in enumerate(psutil.cpu_percent(percpu=True), 1)]
+                     for counter, freq in enumerate(psutil.cpu_percent(percpu=True))]
             )
         )
         memory_stats = "```{}```".format(
@@ -75,17 +75,17 @@ class Debug(commands.Cog):
         swap_stats = "```{}```".format(
             "\n".join(
                 [f"Total: {round((swap.total / 1000000000))} GB",
-                     f"Free: {round((swap.free / 1000000), 2)} MB",
-                     f"Used: {round((swap.used / 1000000), 2)} MB",
-                     f"Percentage: {round(swap.percent, 2)}%"]
+                 f"Free: {round((swap.free / 1000000), 2)} MB",
+                 f"Used: {round((swap.used / 1000000), 2)} MB",
+                 f"Percentage: {round(swap.percent, 2)}%"]
             )
         )
         disk_stats = "```{}```".format(
             "\n".join(
                 [f"Total: {round((disk.total / 1000000000), 2)} GB",
-                     f"Used: {round((disk.used / 1000000000), 2)} GB",
-                     f"Free: {round((disk.free / 1000000000), 2)} GB",
-                     f"Percentage: {round((100 * disk.used / disk.total), 2)}%"]
+                 f"Used: {round((disk.used / 1000000000), 2)} GB",
+                 f"Free: {round((disk.free / 1000000000), 2)} GB",
+                 f"Percentage: {round((100 * disk.used / disk.total), 2)}%"]
             )
         )
         nv = [
@@ -106,10 +106,10 @@ class Debug(commands.Cog):
                     usage="report")
     async def report(self, ctx):
         menu = discord.Embed(title="Report Options",
-                                description=f"{ctx.author.mention}, here are the options for the report command:\n`["
-                                            f"bug]` - reports a bug\n`[update]` - owner only\n`[userAbuse]` - "
-                                            f"reports user from mention\n`[serverabuse] - reports server from ID`",
-                                color=discord.Color.blue())
+                             description=f"{ctx.author.mention}, here are the options for the report command:\n`["
+                             f"bug]` - reports a bug\n`[update]` - owner only\n`[userAbuse]` - "
+                             f"reports user from mention\n`[serverabuse] - reports server from ID`",
+                             color=discord.Color.blue())
         await ctx.channel.send(embed=menu)
 
     @report.command(aliases=['issue'])
