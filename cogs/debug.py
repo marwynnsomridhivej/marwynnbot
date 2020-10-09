@@ -68,15 +68,15 @@ class Debug(commands.Cog):
         )
         memory_stats = "```{}```".format(
             "\n".join(
-                [f"Total: {round((mem.total / 1000000000), 2)} GB",
-                 f"Available: {round((mem.available / 1000000000), 2)} GB",
+                [f"Total: {round((mem.total / 1000000), 2)} MB",
+                 f"Available: {round((mem.available / 1000000), 2)} MB",
                  f"Used: {round((mem.used / 1000000), 2)} MB",
                  f"Percent: {round(mem.percent, 2)}%"]
             )
         )
         swap_stats = "```{}```".format(
             "\n".join(
-                [f"Total: {round((swap.total / 1000000000))} GB",
+                [f"Total: {round((swap.total / 1000000))} MB",
                  f"Free: {round((swap.free / 1000000), 2)} MB",
                  f"Used: {round((swap.used / 1000000), 2)} MB",
                  f"Percentage: {round(swap.percent, 2)}%"]
