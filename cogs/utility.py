@@ -61,7 +61,7 @@ class Utility(commands.Cog):
                     result = await con.fetch(f"SELECT * from global_counters ORDER BY command ASC")
                     title = "Global Counters"
                     entries = [
-                        f"***{record['command'].lower()}:*** *used {record['amount']} "
+                        f"***{record['command'].lower()}:*** *used {record['amount'] if record['amount'] else '0'} "
                         f"{'times' if record['amount'] != 1 else 'time'}*"
                         for record in result]
             pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=True)
