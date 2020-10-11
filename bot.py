@@ -106,8 +106,7 @@ class Bot(commands.AutoShardedBot):
         self.db = kwargs.pop("db")
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
-        func_listen = (self.on_message, self.on_command_error, self.on_guild_join,
-                       self.on_guild_remove, self.on_member_join)
+        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
