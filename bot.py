@@ -75,7 +75,7 @@ async def run(uptime):
                      "starboard_channel bigint DEFAULT null, log_channel bigint, log_level smallint DEFAULT 0)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
-    await db.execute("CREATE TABLE IF NOT EXISTS guild_counters(guild_id, command text, amount NUMERIC)")
+    await db.execute("CREATE TABLE IF NOT EXISTS guild_counters(guild_id bigint, command text, amount NUMERIC)")
 
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
