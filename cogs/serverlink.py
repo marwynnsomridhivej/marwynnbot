@@ -81,6 +81,39 @@ class ServerLink(commands.Cog):
         gcmds = globalcommands.GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_serverlink())
 
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        async with self.bot.db.acquire() as con:
+            recip_info = await con.fetch(f"SELECT recip_message_id, recip_channel_id FROM serverlink_temp "
+                                         f"WHERE message_id={payload.message_id}")
+        if not recip_info:
+            return
+        with suppress(Exception):
+            recip_info = recip_info[0]
+            orig_channel = self.bot.get_channel(payload.channel_id)
+            orig_message = await orig_channel.fetch_message(payload.message_id)
+            recip_channel = self.bot.get_channel(int(recip_info['recip_channel_id']))
+            recip_message = await recip_channel.fetch_message(int(recip_info['recip_message_id']))
+            await recip_message.edit(content=f"**{orig_message.author}:**\n{orig_message.content}",
+                                     tts=orig_message.tts,
+                                     embed=orig_message.embeds[0] if orig_message.embeds else None,
+                                     allowed_mentions=discord.AllowedMentions.none())
+        return
+
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        async with self.bot.db.acquire() as con:
+            recip_info = await con.fetch(f"DELETE FROM serverlink_temp WHERE message_id={payload.message_id} "
+                                         "RETURNING recip_message_id, recip_channel_id")
+        if not recip_info:
+            return
+        with suppress(Exception):
+            recip_info = recip_info[0]
+            recip_channel = self.bot.get_channel(int(recip_info['recip_channel_id']))
+            recip_message = await recip_channel.fetch_message(int(recip_info['recip_message_id']))
+            await recip_message.delete()
+        return
+
     async def init_serverlink(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
@@ -89,6 +122,8 @@ class ServerLink(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS serverlink_conn(initiator_id bigint, recipient_id bigint, "
                               "pending boolean DEFAULT TRUE, active boolean DEFAULT FALSE, request_time NUMERIC, "
                               "start_time NUMERIC, end_time NUMERIC)")
+            await con.execute("CREATE TABLE IF NOT EXISTS serverlink_temp(message_id bigint, "
+                              "recip_message_id bigint, recip_channel_id bigint)")
 
     async def send_serverlink_help(self, ctx):
         pfx = f"{await gcmds.prefix(ctx)}serverlink"
@@ -350,9 +385,11 @@ class ServerLink(commands.Cog):
             return not message.author.bot and (message.channel.id == init_channel.id
                                                or message.channel.id == recip_channel.id)
 
-        while await self.is_connected(init_channel, recip_channel):
+        while True:
             try:
                 message: discord.Message = await self.bot.wait_for("message", check=valid_sesh_message, timeout=120)
+                if not await self.is_connected(init_channel, recip_channel):
+                    return
             except asyncio.TimeoutError:
                 return await self.terminate_session(init_channel, recip_channel)
             else:
@@ -361,20 +398,29 @@ class ServerLink(commands.Cog):
                 else:
                     channel = init_channel
             with suppress(Exception):
-                await channel.send(content=f"**{message.author}:**\n{message.content}",
-                                   tts=message.tts,
-                                   embed=message.embeds[0] if message.embeds else None,
-                                   files=[await attachment.to_file() for attachment in message.attachments],
-                                   allowed_mentions=discord.AllowedMentions.none())
+                entry = await channel.send(content=f"**{message.author}:**\n{message.content}",
+                                           tts=message.tts,
+                                           embed=message.embeds[0] if message.embeds else None,
+                                           files=[await attachment.to_file() for attachment in message.attachments],
+                                           allowed_mentions=discord.AllowedMentions.none())
+                values = f"({message.id}, {entry.id}, {channel.id})"
+                async with self.bot.db.acquire() as con:
+                    await con.execute("INSERT INTO serverlink_temp(message_id, recip_message_id, recip_channel_id) "
+                                      f"VALUES {values}")
 
     async def terminate_session(self, init_channel: discord.TextChannel, recip_channel: discord.TextChannel,
                                 timed_out: bool = True):
+        await init_channel.trigger_typing()
+        await recip_channel.trigger_typing()
+        await asyncio.sleep(2.0)
         async with self.bot.db.acquire() as con:
             await con.execute(f"UPDATE serverlink_conn SET active=FALSE, end_time={int(datetime.now().timestamp())} "
                               f"WHERE initiator_id={init_channel.id} AND "
                               f"recipient_id={recip_channel.id} AND active=TRUE")
             await con.execute(f"UPDATE serverlink SET active=FALSE WHERE "
                               f"channel_id={init_channel.id} OR channel_id={recip_channel.id}")
+            await con.execute(f"DELETE FROM serverlink_temp WHERE "
+                              f"recip_channel_id={init_channel.id} OR recip_channel_id={recip_channel.id}")
         if timed_out:
             embed = discord.Embed(title="ServerLink Session Terminated",
                                   description=f"The session timed out after 2 minutes of inactivity",
@@ -433,6 +479,8 @@ class ServerLink(commands.Cog):
         guild = discord.utils.get(self.bot.guilds, name=guild_name)
         if not guild:
             raise customerrors.ServerLinkInvalidGuild(guild_name)
+        if guild.id == ctx.guild.id:
+            raise customerrors.ServerLinkNoSelf()
         return await self.create_serverlink_request(ctx, guild)
 
     @serverlink.command(aliases=['allow', 'accept'])
@@ -460,7 +508,7 @@ class ServerLink(commands.Cog):
         if not pot_channel:
             raise customerrors.ServerLinkNoActiveSession(ctx)
         pot_channel = pot_channel[0]
-        if pot_channel['initiator_id'] == ctx.channel.id:
+        if int(pot_channel['initiator_id']) == ctx.channel.id:
             other_channel = self.bot.get_channel(int(pot_channel['recipient_id']))
             await self.terminate_session(ctx.channel, other_channel, timed_out=False)
         else:
