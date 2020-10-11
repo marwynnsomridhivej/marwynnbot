@@ -78,7 +78,8 @@ class Utility(commands.Cog):
                     amount = await con.fetchval(f"SELECT amount FROM guild_counters WHERE "
                                                 f"command=$tag${command.name.lower()}$tag$")
                     title = f"Server Counter for {command.name.title()}"
-            description = f"***{command.name}:*** *used {amount} {'times' if amount != 1 else 'time'}*"
+            description = (f"***{command.name}:*** *used {amount if amount else '0'} "
+                           f"{'times' if amount != 1 else 'time'}*")
             embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
             return await ctx.channel.send(embed=embed)
 
