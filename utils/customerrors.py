@@ -192,6 +192,14 @@ class ServerLinkNoActiveSession(ServerLinkException):
                                   f"{ctx.channel.mention}")
 
 
+class ServerLinkNoSelf(ServerLinkException):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Invalid Server"
+        self.embed.description = "You cannot send a request to the server you are currently in. Please " \
+            "send a request to another server"
+
+
 class StarboardException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Starboard Error",
