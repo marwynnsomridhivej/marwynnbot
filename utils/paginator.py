@@ -1,12 +1,12 @@
-# Thank you to Rapptz (Danny) from the discord.py Discord server for this paginator example
 import asyncio
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
 
-from utils import customerrors, globalcommands
+from utils import customerrors, GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 
 
 class EmbedPaginator:
@@ -180,10 +180,7 @@ class EmbedPaginator:
         self.in_help = True
 
     async def stop_pages(self):
-        try:
-            await self.message.delete()
-        except Exception:
-            pass
+        await gcmds.smart_delete(self.message)
         self.paginating = False
 
     async def rem_reaction(self, payload):
@@ -194,10 +191,8 @@ class EmbedPaginator:
         if member_converted.bot:
             return
 
-        try:
+        with suppress(Exception):
             await self.message.remove_reaction(payload.emoji, member_converted)
-        except Exception:
-            pass
 
     def react_check(self, payload):
         self.bot.loop.create_task(self.rem_reaction(payload))
