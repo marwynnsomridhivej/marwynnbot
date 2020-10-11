@@ -245,6 +245,8 @@ class Utility(commands.Cog):
                        f"> Members: `{len([member for member in ctx.guild.members if not member.bot])}`",
                        f"> Roles: `{len(ctx.guild.roles)}`",
                        f"> Emojis: `{len(ctx.guild.emojis)} / {ctx.guild.emoji_limit}`",
+                       f"> Text Channels: `{len(ctx.guild.text_channels)}`",
+                       f"> Voice Channels: `{len(ctx.guild.voice_channels)}`",
                        f"> Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
                        f"> Boosts: `{len(ctx.guild.premium_subscribers)}`",
                        f"> Filesize Limit: `{round(ctx.guild.filesize_limit / 1000000)} MB`",
