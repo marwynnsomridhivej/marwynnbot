@@ -125,7 +125,7 @@ class Debug(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
         else:
-            timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.datetime.now())
+            timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
             bug_string = str(bug_message)
             bugEmbed = discord.Embed(title=f"Bug Report by {ctx.author}",
                                      description=bug_string,
@@ -170,7 +170,7 @@ class Debug(commands.Cog):
             await ctx.channel.send(embed=invalid)
             return
 
-        timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.datetime.now())
+        timestamp = "Timestamp: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         update_string = str(update_message)
         if update_string.splitlines()[0].startswith("**") and update_string.splitlines()[0].endswith("**"):
             title = update_string.splitlines()[0]
