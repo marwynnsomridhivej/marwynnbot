@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+from contextlib import suppress
 from datetime import datetime
 
 import discord
@@ -50,8 +51,6 @@ class Disboard(commands.Cog):
         current_timestamp = int(datetime.now().timestamp())
         time_to_send = 7200 + int(current_timestamp)
         sleep_time = time_to_send - current_timestamp
-
-        channel = await self.bot.fetch_channel(result['channel_id'])
         title = "Disboard Bump Available!"
         message_content = result['message_content']
         if not message_content:
@@ -60,8 +59,10 @@ class Disboard(commands.Cog):
             description = message_content
         async with self.bot.db.acquire() as con:
             await con.execute(f"UPDATE disboard SET time={time_to_send} WHERE guild_id={message.guild.id}")
-        task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
-        self.tasks.append(task)
+        with suppress(Exception):
+            channel = await self.bot.fetch_channel(result['channel_id'])
+            task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+            self.tasks.append(task)
 
     async def check_unsent_reminder(self):
         await self.bot.wait_until_ready()
@@ -80,9 +81,10 @@ class Disboard(commands.Cog):
                 continue
             title = "Disboard Bump Available!"
             description = record['message_content'] if record['message_content'] else "The bump cooldown has expired! You can now bump your server using `!d bump`"
-            channel = await self.bot.fetch_channel(int(record['channel_id']))
-            task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
-            self.tasks.append(task)
+            with suppress(Exception):
+                channel = await self.bot.fetch_channel(int(record['channel_id']))
+                task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
+                self.tasks.append(task)
 
     async def check_queued_reminder(self, name: str):
         return name in [task.get_name() for task in self.tasks]
