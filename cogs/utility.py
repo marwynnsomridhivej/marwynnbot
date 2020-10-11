@@ -16,46 +16,13 @@ class Utility(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        self.messages = {}
-        self.update_server_stats.start()
         gcmds = globalcommands.GlobalCMDS(bot=self.bot)
         self.bot.loop.create_task(self.init_requests())
-
-    def cog_unload(self):
-        self.update_server_stats.cancel()
 
     async def init_requests(self):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS requests(message_id bigint PRIMARY KEY, user_id bigint, type text)")
-
-    @tasks.loop(minutes=15)
-    async def update_server_stats(self):
-        await self.bot.wait_until_ready()
-        async with self.bot.db.acquire() as con:
-            result = await con.fetch("SELECT guild_id from guild WHERE serverstats=TRUE")
-
-        guild_ids = [item['guild_id'] for item in result] if result else None
-        if not guild_ids:
-            return
-
-        for guild_id in guild_ids:
-            guild = self.bot.get_guild(int(guild_id))
-            if not guild:
-                await self.remove_ss_entry(int(guild_id))
-            for category in guild.categories:
-                if "server stats" in category.name.lower():
-                    names = await self.get_guild_info(guild)
-                    index = 0
-                    for voice_channel in category.voice_channels:
-                        if not str(voice_channel.name) == str(names[index]):
-                            try:
-                                await voice_channel.edit(name=names[index])
-                            except discord.Forbidden:
-                                pass
-                        index += 1
-                    break
-        return
 
     async def add_entry(self, ctx, message_id: int, type: str):
         async with self.bot.db.acquire() as con:
@@ -69,28 +36,6 @@ class Utility(commands.Cog):
     async def remove_entry(self, message_id: int):
         async with self.bot.db.acquire() as con:
             await con.execute(f"DELETE FROM requests WHERE message_id = {message_id}")
-
-    async def get_guild_info(self, guild: discord.Guild) -> list:
-        botCount = 0
-        for member in guild.members:
-            if member.bot:
-                botCount += 1
-
-        totalMembers = f"👥Members: {guild.member_count - botCount}"
-        totalText = f"📑Text Channels: {int(len(guild.text_channels))}"
-        totalVoice = f"🎧Voice Channels: {int(len(guild.voice_channels))}"
-        totalChannels = f"📖Total Channels: {int(len(guild.text_channels)) + int(len(guild.voice_channels))}"
-        totalRole = f"📜Roles: {int(len(guild.roles))}"
-        totalEmoji = f"😄Custom Emotes: {int(len(guild.emojis))}"
-        return [totalMembers, totalChannels, totalText, totalVoice, totalRole, totalEmoji]
-
-    async def add_ss_entry(self, guild_id: int):
-        async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET serverstats=TRUE WHERE guild_id = {guild_id}")
-
-    async def remove_ss_entry(self, guild_id: int):
-        async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET serverstats=FALSE WHERE guild_id = {guild_id}")
 
     @commands.command(aliases=['counters', 'used', 'usedcount'],
                       desc="Displays the used counter for commands",
@@ -220,48 +165,6 @@ class Utility(commands.Cog):
         await ctx.author.send(embed=reply_embed)
         self.remove_entry(message_id)
 
-    @commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'],
-                      desc="Queries emotes that belong to this server",
-                      usage="serveremotes (query)",
-                      note="If `(query)` is unspecified, it will display all the emojis that belong to this server")
-    async def serverEmotes(self, ctx, *, search=None):
-        description = [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
-                       for emoji in ctx.guild.emojis] if not search else \
-            [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
-             for emoji in ctx.guild.emojis
-             if search in emoji.name]
-
-        emojiEmbed = discord.Embed(title="Server Custom Emotes:",
-                                   description="\n".join(sorted(description)),
-                                   color=discord.Color.blue())
-        await ctx.channel.send(embed=emojiEmbed)
-
-    @commands.command(aliases=['info', 'si', 'serverinfo'],
-                      desc="Displays the current server's information",
-                      usage="serverinfo")
-    async def serverInfo(self, ctx):
-        description = ("**Basic Info**",
-                       f"> Owner: {ctx.guild.owner.mention}",
-                       f"> ID: `{ctx.guild.id}`",
-                       f"> Created At: `{str(ctx.guild.created_at)[:-7]}`",
-                       f"> Description: `{ctx.guild.description}`",
-                       f"> Region: `{str(ctx.guild.region).replace('-', ' ')}`",
-                       f"> AFK Timeout: `{int(ctx.guild.afk_timeout / 60)} "
-                       f"{'minutes' if ctx.guild.afk_timeout / 60 > 1 else 'minute'}`",
-                       f"> AFK Channel: `{ctx.guild.afk_channel}`",
-                       "",
-                       "**Stats:**",
-                       f"> Members: `{len([member for member in ctx.guild.members if not member.bot])}`",
-                       f"> Roles: `{len(ctx.guild.roles)}`",
-                       f"> Emojis: `{len(ctx.guild.emojis)} / {ctx.guild.emoji_limit}`",
-                       f"> Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
-                       f"> Boosts: `{len(ctx.guild.premium_subscribers)}`",
-                       f"> Filesize Limit: `{round(ctx.guild.filesize_limit / 1000000)} MB`",
-                       f"> MarwynnBot Shard: `Shard {ctx.guild.shard_id}`",)
-        embed = discord.Embed(title=ctx.guild.name, description="\n".join(description), color=discord.Color.blue())
-        embed.set_image(url=ctx.guild.icon_url)
-        return await ctx.channel.send(embed=embed)
-
     @commands.command(aliases=['pfp'],
                       desc="Displays a member's profile picture",
                       usage="profile [@member]")
@@ -309,46 +212,46 @@ class Utility(commands.Cog):
                                             color=discord.Color.blue())
             await ctx.channel.send(embed=prefixEmbed)
 
-    @commands.command(aliases=['ss', 'serverstats', 'serverstatistics'],
-                      desc="Sets the server's server stats panel",
-                      usage="serverstats (flag)",
-                      uperms=["Manage Server", "Manage Channels"],
-                      bperms=["Manage Server", "Manage Channels"],
-                      note="If `(flag)` is \"rest\", the server stats panel will be deleted")
-    @commands.bot_has_permissions(manage_guild=True, manage_channels=True)
-    @commands.has_permissions(manage_guild=True, manage_channels=True)
-    async def serverStats(self, ctx, reset=None):
-        for category in ctx.guild.categories:
-            if "server stats" in category.name.lower():
-                if reset == "reset":
-                    for channel in category.channels:
-                        await channel.delete()
-                    await category.delete()
-                    await self.remove_ss_entry(ctx.guild.id)
-                    reset_embed = discord.Embed(title="Server Stats Reset",
-                                                description=f"{ctx.author.mention}, your server stats panel for this "
-                                                "server has been deleted",
-                                                color=discord.Color.blue())
-                    return await ctx.channel.send(embed=reset_embed)
-                elif not reset:
-                    exists = discord.Embed(title="Server Stats Panel Exists",
-                                           description=f"{ctx.author.mention}, this server already has a server stats "
-                                           "panel set up!",
-                                           color=discord.Color.dark_red())
-                    return await ctx.channel.send(embed=exists)
-            else:
-                category = await ctx.guild.create_category_channel("📊 Server Stats 📊")
-                await category.edit(position=0)
-                await category.set_permissions(ctx.guild.default_role, connect=False)
-                names = await self.get_guild_info(ctx.guild)
-                for name in names:
-                    await category.create_voice_channel(name)
-                await self.add_ss_entry(ctx.guild.id)
-                created_embed = discord.Embed(title="Server Stats Panel Created",
-                                              description=f"{ctx.author.mention}, I have created the server stats "
-                                              "panel for this server",
-                                              color=discord.Color.blue())
-                return await ctx.channel.send(embed=created_embed)
+    @ commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'],
+                       desc="Queries emotes that belong to this server",
+                       usage="serveremotes (query)",
+                       note="If `(query)` is unspecified, it will display all the emojis that belong to this server")
+    async def serverEmotes(self, ctx, *, search=None):
+        description = [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
+                       for emoji in ctx.guild.emojis] if not search else [f"**{emoji.name}:** \\<:{emoji.name}:{emoji.id}>"
+                                                                          for emoji in ctx.guild.emojis
+                                                                          if search in emoji.name]
+
+        emojiEmbed = discord.Embed(title="Server Custom Emotes:",
+                                   description="\n".join(sorted(description)),
+                                   color=discord.Color.blue())
+        await ctx.channel.send(embed=emojiEmbed)
+
+    @commands.command(aliases=['info', 'si', 'serverinfo'],
+                      desc="Displays the current server's information",
+                      usage="serverinfo")
+    async def serverInfo(self, ctx):
+        description = ("**Basic Info**",
+                       f"> Owner: {ctx.guild.owner.mention}",
+                       f"> ID: `{ctx.guild.id}`",
+                       f"> Created At: `{str(ctx.guild.created_at)[:-7]}`",
+                       f"> Description: `{ctx.guild.description}`",
+                       f"> Region: `{str(ctx.guild.region).replace('-', ' ')}`",
+                       f"> AFK Timeout: `{int(ctx.guild.afk_timeout / 60)} "
+                       f"{'minutes' if ctx.guild.afk_timeout / 60 > 1 else 'minute'}`",
+                       f"> AFK Channel: `{ctx.guild.afk_channel}`",
+                       "",
+                       "**Stats:**",
+                       f"> Members: `{len([member for member in ctx.guild.members if not member.bot])}`",
+                       f"> Roles: `{len(ctx.guild.roles)}`",
+                       f"> Emojis: `{len(ctx.guild.emojis)} / {ctx.guild.emoji_limit}`",
+                       f"> Total Channels: `{len(ctx.guild.channels) - len(ctx.guild.categories)}`",
+                       f"> Boosts: `{len(ctx.guild.premium_subscribers)}`",
+                       f"> Filesize Limit: `{round(ctx.guild.filesize_limit / 1000000)} MB`",
+                       f"> MarwynnBot Shard: `Shard {ctx.guild.shard_id}`",)
+        embed = discord.Embed(title=ctx.guild.name, description="\n".join(description), color=discord.Color.blue())
+        embed.set_image(url=ctx.guild.icon_url)
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['tz'],
                       desc="Appends a timezone tag to yourself",

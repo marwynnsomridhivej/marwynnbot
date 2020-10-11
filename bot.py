@@ -71,7 +71,7 @@ async def run(uptime):
 
     db = await asyncpg.create_pool(**credentials)
     await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean "
-                     "DEFAULT FALSE, serverstats boolean, counter jsonb, starboard_emoji text DEFAULT NULL, "
+                     "DEFAULT FALSE, counter jsonb, starboard_emoji text DEFAULT NULL, "
                      "starboard_channel bigint DEFAULT null, log_channel bigint, log_level smallint DEFAULT 0)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
@@ -325,10 +325,6 @@ class Bot(commands.AutoShardedBot):
                 await con.execute(f"INSERT INTO guild (guild_id, custom_prefix, counter) VALUES ('{guild.id}', 'm!', {op_string})"
                                   " ON CONFLICT DO NOTHING")
                 await con.execute(f"INSERT INTO logging(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
-
-    async def on_guild_remove(self, guild):
-        async with self.db.acquire() as con:
-            await con.execute(f"UPDATE guild SET serverstats=FALSE")
 
     async def on_member_join(self, member: discord.Member):
         async with self.db.acquire() as con:
