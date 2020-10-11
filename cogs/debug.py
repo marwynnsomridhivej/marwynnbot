@@ -161,8 +161,7 @@ class Debug(commands.Cog):
                 return False
 
         try:
-            updates_channel = commands.AutoShardedBot.get_channel(self.bot, 742899140320821367)
-
+            updates_channel = self.bot.get_channel(int(updates_channel_id))
         except discord.NotFound:
             invalid = discord.Embed(title="Logging Channel Does Not Exist",
                                     description=f"{ctx.author.mention}, this feature is not available",
