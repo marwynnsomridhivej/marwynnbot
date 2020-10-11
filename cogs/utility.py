@@ -50,36 +50,36 @@ class Utility(commands.Cog):
         if not name:
             async with self.bot.db.acquire() as con:
                 if mode == 'server':
-                    result = (await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter']
-                    result_dict = json.loads(result)
+                    result = await con.fetch(f"SELECT * FROM guild_counters WHERE guild_id={ctx.guild.id} "
+                                             "ORDER BY command ASC")
                     title = f"Counters for {ctx.guild.name}"
                     entries = [
-                        f"***{key.lower()}:*** *used {result_dict[key]} {'times' if result_dict[key] != 1 else 'time'}*" for key in result_dict.keys()]
+                        f"***{item['command']}:*** *used {item['amount']} "
+                        f"{'times' if item['amount'] != 1 else 'time'}*"
+                        for item in result]
                 else:
-                    result = (await con.fetch(f"SELECT * from global_counters"))
+                    result = await con.fetch(f"SELECT * from global_counters ORDER BY command ASC")
                     title = "Global Counters"
                     entries = [
-                        f"***{record['command'].lower()}:*** *used {record['amount']} {'times' if record['amount'] != 1 else 'time'}*" for record in result]
-            pag = paginator.EmbedPaginator(ctx, entries=sorted(entries), per_page=20, show_entry_count=True)
+                        f"***{record['command'].lower()}:*** *used {record['amount']} "
+                        f"{'times' if record['amount'] != 1 else 'time'}*"
+                        for record in result]
+            pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=True)
             pag.embed.title = title
             return await pag.paginate()
         else:
             command = self.bot.get_command(name)
             async with self.bot.db.acquire() as con:
                 if mode == "global":
-                    amount = (await con.fetch(f"SELECT amount from global_counters WHERE command = '{command.name}'"))[0]['amount']
+                    amount = await con.fetchval(f"SELECT amount from global_counters WHERE "
+                                                f"command=$tag${command.name.lower()}$tag$")
                     title = f"Global Counter for {command.name.title()}"
                 else:
-                    amount = (
-                        await con.fetch(
-                            f"SELECT counter->>'{command.name}' from guild WHERE guild_id = {ctx.guild.id}"
-                        )
-                    )[0][0]
+                    amount = await con.fetchval(f"SELECT amount FROM guild_counters WHERE "
+                                                f"command=$tag${command.name.lower()}$tag$")
                     title = f"Server Counter for {command.name.title()}"
             description = f"***{command.name}:*** *used {amount} {'times' if amount != 1 else 'time'}*"
-            embed = discord.Embed(title=title,
-                                  description=description,
-                                  color=discord.Color.blue())
+            embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
             return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Displays MarwynnBot's invite link",

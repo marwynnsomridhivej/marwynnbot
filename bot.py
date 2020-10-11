@@ -71,10 +71,11 @@ async def run(uptime):
 
     db = await asyncpg.create_pool(**credentials)
     await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean "
-                     "DEFAULT FALSE, counter jsonb, starboard_emoji text DEFAULT NULL, "
+                     "DEFAULT FALSE, starboard_emoji text DEFAULT NULL, "
                      "starboard_channel bigint DEFAULT null, log_channel bigint, log_level smallint DEFAULT 0)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
+    await db.execute("CREATE TABLE IF NOT EXISTS guild_counters(guild_id, command text, amount NUMERIC)")
 
     description = "Marwynn's bot for Discord written in Python using the discord.py API wrapper"
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
@@ -125,30 +126,30 @@ class Bot(commands.AutoShardedBot):
             names = "'{\"" + '", "'.join(command.name for command in self.commands) + "\"}'"
             await con.execute(f"INSERT INTO global_counters(command, amount) VALUES {values} ON CONFLICT DO NOTHING")
             await con.execute(f"DELETE FROM global_counters WHERE command != ALL({names}::text[])")
+            await con.execute(f"DELETE FROM guild_counters WHERE command != ALL({names}::text[])")
         return
 
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
-            command = ctx.command.root_parent.name if ctx.command.parent else ctx.command.name
-            result = await con.fetch(f"SELECT * from global_counters WHERE command = '{command}'")
+            command = ctx.command.root_parent.name.lower() if ctx.command.parent else ctx.command.name.lower()
+            result = await con.fetch(f"SELECT * from global_counters WHERE command=$tag${command}$tag$")
             if result:
-                await con.execute(f"UPDATE global_counters SET amount = amount + 1 WHERE command = '{command}'")
+                op = (f"UPDATE global_counters SET amount=amount+1 "
+                      f"WHERE command=$tag${command}$tag$")
             else:
-                await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ('{command}', 1)")
+                op = (f"INSERT INTO global_counters(command, amount) "
+                      f"VALUES ($tag${command}$tag$, 1)")
             if ctx.guild:
-                try:
-                    old_dict = json.loads((await con.fetch(f"SELECT counter FROM guild WHERE guild_id = {ctx.guild.id}"))[0]['counter'])
-                    old_val = old_dict[command]
-                    new_dict = "{" + f'"{command}": {old_val + 1}' + "}"
-                    op = (f"UPDATE guild SET counter = counter::jsonb - '{command}' || '{new_dict}'"
-                          f" WHERE counter->>'{command}' = '{old_val}' and guild_id = {ctx.guild.id}")
-                except (KeyError, IndexError):
-                    old_val = 0
-                    new_dict = "{" + f'"{command}": 1' + "}"
-                    init_others = "{" + f'"{command}": 0' + "}"
-                    op = (f"UPDATE guild SET counter = counter || '{new_dict}' WHERE guild_id = {ctx.guild.id}")
-                    await con.execute(f"UPDATE guild SET counter = counter || '{init_others}' WHERE guild_id != {ctx.guild.id}")
-                await con.execute(op)
+                entry = await con.fetchval(f"SELECT amount FROM guild_counters "
+                                                f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
+                if not entry:
+                    op = (f"INSERT INTO guild_counters(guild_id, command, amount) "
+                          f"VALUES ({ctx.guild.id}, $tag${command}$tag$, 1)")
+                else:
+                    op = (f"UPDATE guild_counters SET amount=amount+1 "
+                          f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
+            await con.execute(op)
+        return
 
     @tasks.loop(seconds=120)
     async def status(self):
