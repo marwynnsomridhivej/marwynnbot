@@ -53,7 +53,7 @@ class GlobalCMDS:
 
     def __init__(self, bot: commands.AutoShardedBot = None):
         global _bot, _db
-        self.version = "v0.7.0-alpha.1"
+        self.version = "v0.6.9-alpha.1"
         self.bot = bot
         if bot:
             self.db = self.bot.db
