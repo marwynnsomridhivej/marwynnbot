@@ -12,3 +12,4 @@ pokepy_cache
 *.json
 *.yml
 *.sql
+orderer.py
