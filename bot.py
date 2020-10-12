@@ -356,12 +356,7 @@ class Bot(commands.AutoShardedBot):
         self.status.start()
 
     async def get_aliases(self):
-        at = 0
-        for command in self.commands:
-            if command.aliases:
-                for alias in command.aliases:
-                    at += 1
-        return at
+        return len([alias for command in self.commands for alias in command.aliases if command.aliases])
 
 
 uptime = int(datetime.now().timestamp())
