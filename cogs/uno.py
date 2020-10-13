@@ -17,7 +17,7 @@ SPECIAL_CARD_TYPES = ['block', 'reverse', '+2']
 COLOR_CARD_TYPES = NUMBERS + SPECIAL_CARD_TYPES * 2
 BLACK_CARD_TYPES = ['wild', '+4'] * 4
 CARD_TYPES = NUMBERS + SPECIAL_CARD_TYPES + BLACK_CARD_TYPES
-TIMEOUT = 10
+TIMEOUT = 60
 CANCEL = 'Enter "cancel" to cancel the game when it is your turn'
 
 
