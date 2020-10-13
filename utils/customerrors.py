@@ -557,3 +557,10 @@ class InvalidExpression(MathError):
         super().__init__()
         self.embed.title = "Invalid Expression"
         self.embed.description = f"```{eq}``` is not a valid expression or equation"
+
+
+class UnoCannotDM(commands.CommandError):
+    def __init__(self, member: discord.Member):
+        self.embed = discord.Embed(title="Cannot Initiate DM",
+                                   description=f"I don't have the permissions to DM {member.mention}",
+                                   color=discord.Color.dark_red())
