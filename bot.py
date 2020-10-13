@@ -36,6 +36,7 @@ ALL_CUSTOMERRORS = [
     customerrors.LoggingError,
     customerrors.SilentActionError,
     customerrors.CommandNotFound,
+    customerrors.UnoCannotDM,
 ]
 token_rx = re.compile(r'[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}')
 version = f"Running MarwynnBot {gcmds.version}"
@@ -299,14 +300,10 @@ class Bot(commands.AutoShardedBot):
                 raise error
         else:
             for error_type in ALL_CUSTOMERRORS:
-                if isinstance(error, error_type):
-                    if hasattr(error, "embed"):
-                        return await ctx.channel.send(embed=error.embed)
-                    else:
-                        pass
-                    break
-                else:
-                    continue
+                try:
+                    return await ctx.channel.send(embed=error.embed)
+                except Exception:
+                    pass
             else:
                 if isinstance(error, commands.CheckFailure):
                     pass
