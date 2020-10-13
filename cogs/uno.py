@@ -2,6 +2,7 @@ import asyncio
 import math
 import random
 from random import randint, shuffle
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -16,7 +17,8 @@ SPECIAL_CARD_TYPES = ['block', 'reverse', '+2']
 COLOR_CARD_TYPES = NUMBERS + SPECIAL_CARD_TYPES * 2
 BLACK_CARD_TYPES = ['wild', '+4'] * 4
 CARD_TYPES = NUMBERS + SPECIAL_CARD_TYPES + BLACK_CARD_TYPES
-TIMEOUT = 60
+TIMEOUT = 10
+CANCEL = 'Enter "cancel" to cancel the game when it is your turn'
 
 
 class UnoCard:
@@ -144,8 +146,10 @@ class UnoPlayer:
                 return True
         return False
 
-    def validate(self, index: int, pile: UnoPile) -> bool:
-        card = self.hand[index - 1]
+    def validate(self, index: Union[str, int], pile: UnoPile) -> bool:
+        if str(index).lower() == "cancel":
+            return True
+        card = self.hand[int(index) - 1]
         topcard = pile.top_card
         if topcard.color == "black":
             return True
@@ -250,7 +254,7 @@ class UnoGame:
         embed.set_thumbnail(url=pile.top_thumbnail)
         embed.set_author(name=kwargs.get("author", f"{self.current_player.name}'s Turn"),
                          icon_url=self.current_player.avatar_url)
-        embed.set_footer(text=f"Turn {self.turns}")
+        embed.set_footer(text=f"Turn {self.turns}\n{CANCEL}")
         for player in self.players:
             embed.add_field(name=f'{player.name}{" - Uno!" if player.is_uno else ""}',
                             value=(player.emoji_to_game),
@@ -359,7 +363,8 @@ class Uno(commands.Cog):
         embed.set_thumbnail(url=pile.top_thumbnail)
         if not player.can_play(pile):
             player.draw(deck)
-            embed.set_footer(text="You had to draw a card because you were previously unable to place any card")
+            embed.set_footer(text="You had to draw a card because you were "
+                             f"previously unable to place any card\n{CANCEL}")
             if not player.can_play(pile):
                 return False
         try:
@@ -380,7 +385,7 @@ class Uno(commands.Cog):
                               "colors are: " + ", ".join([f'*"{color}"*' for color in COLORS]),
                               color=pile.embed_color)
         embed.set_footer(text="Please respond within 30 seconds, or a random color will "
-                         "be chosen for you")
+                         f"be chosen for you\n{CANCEL}")
         await ctx.channel.send(embed=embed)
 
         try:
@@ -395,14 +400,16 @@ class Uno(commands.Cog):
     async def process_selection(self, ctx, game: UnoGame, pile: UnoPile):
         def from_cur_player(message: discord.Message):
             try:
-                if not 0 <= int(message.content) - 1 < len(player):
+                if message.content.lower() == "cancel":
+                    pass
+                elif 0 <= int(message.content) - 1 < len(player):
                     raise Exception
             except Exception:
                 return False
             else:
                 return (message.channel.id == ctx.channel.id and
                         message.author.id == player.id and
-                        player.validate(int(message.content), pile))
+                        player.validate(message.content, pile))
 
         player = game.current_player
         n_rev = False
@@ -412,6 +419,8 @@ class Uno(commands.Cog):
         except asyncio.TimeoutError:
             card = player.auto_play(pile)
         else:
+            if message.content.lower() == "cancel":
+                return player, None, None, None, True
             card = player.place(player.hand[int(message.content) - 1], pile)
         if card.color == "black":
             await self.choose_black_color(ctx, game, pile)
@@ -419,16 +428,24 @@ class Uno(commands.Cog):
             game.reverse()
             game.newly_reversed = True
             n_rev = True
-        return player, card, game, n_rev
+        return player, card, game, n_rev, False
 
     async def check_finish(self, ctx, game: UnoGame, player: UnoPlayer):
         if len(player) == 0:
             await game.finish(ctx, player)
         game.turns += 1
 
+    async def game_cancelled(self, ctx, player: UnoPlayer):
+        embed = discord.Embed(title="Game Cancelled",
+                              description=f"The game was cancelled by {player.mention}. "
+                              "All progress for the game has been lost",
+                              color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(desc="Uno in Discord!",
                       usage="uno [@member]*va",
-                      note="You must specify up to 9 other members")
+                      note="You must specify up to 9 other members.\n\nWhen it is your turn, "
+                      "you can type \"cancel\" to cancel the game")
     async def uno(self, ctx, members: commands.Greedy[discord.Member] = None):
         if await self.check_valid(ctx, members):
             return
@@ -453,8 +470,11 @@ class Uno(commands.Cog):
             if not author:
                 author = f"{game.current_player.name}'s Turn"
             await game.send_panel(ctx, pile, author=author)
-            player, card, game, n_rev = await self.process_selection(ctx, game, pile)
-            await self.check_finish(ctx, game, player)
+            player, card, game, n_rev, cancelled = await self.process_selection(ctx, game, pile)
+            if cancelled:
+                return await self.game_cancelled(ctx, player)
+            else:
+                await self.check_finish(ctx, game, player)
 
             force_plus = int(card.card_type[1]) if card.card_type in ["+2", "+4"] else 0
             blocked = True if card.card_type == "block" else False
