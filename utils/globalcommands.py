@@ -123,8 +123,7 @@ class GlobalCMDS:
     async def balance_db(self, execute: str, ret_val: bool = False):
         async with self.db.acquire() as con:
             if ret_val:
-                val = await con.fetch(execute)
-                return val[0]['amount']
+                return await con.fetchval(execute)
             else:
                 await con.execute(execute)
 
