@@ -1,6 +1,9 @@
+import asyncio
+import copy
 import os
 import subprocess
 import sys
+import typing
 from datetime import datetime
 from io import BytesIO, StringIO
 
@@ -16,7 +19,7 @@ OWNER_PERM = ["Bot Owner Only"]
 
 class Owner(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
         gcmds = globalcommands.GlobalCMDS(self.bot)
@@ -224,6 +227,34 @@ class Owner(commands.Cog):
                                       color=discord.Color.blue())
         await ctx.channel.send(embed=shutdownEmbed)
         await self.bot.close()
+
+    @commands.command(desc="Runs a command as a different user",
+                      usage="sudo [@member] (#channel) [invocation]",
+                      uperms=OWNER_PERM)
+    @commands.is_owner()
+    async def sudo(self, ctx: commands.Context, member: discord.Member, channel: typing.Optional[discord.TextChannel], *, invocation: str):
+        message = copy.copy(ctx.message)
+        channel = channel or ctx.channel
+        message.channel = channel
+        message.author = channel.guild.get_member(member.id) or member
+        message.content = f"m!{invocation}"
+        new_context = await self.bot.get_context(message, cls=type(ctx))
+        await new_context.channel.send(content=f"**{ctx.author}** invoked "
+                                       f"`{invocation}` with sudo as **{member}**")
+        await self.bot.invoke(new_context)
+
+    @commands.command(desc="Runs a command multiple times",
+                      usage="multexec (amount) [invocation]",
+                      uperms=OWNER_PERM,
+                      note="`(amount)` is how many times a command is to be run, "
+                      "not how many times it is to be repeated")
+    async def multexec(self, ctx, amount: int = 1, *, invocation: str):
+        message = copy.copy(ctx.message)
+        message.content = f"m!{invocation}"
+        new_context = await self.bot.get_context(message, cls=type(ctx))
+        for _ in range(amount):
+            await new_context.reinvoke()
+            await asyncio.sleep(1.0)
 
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'],
                     desc="Manages all user balances",
