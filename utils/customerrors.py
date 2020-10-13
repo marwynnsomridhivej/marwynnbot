@@ -562,5 +562,6 @@ class InvalidExpression(MathError):
 class UnoCannotDM(commands.CommandError):
     def __init__(self, member: discord.Member):
         self.embed = discord.Embed(title="Cannot Initiate DM",
-                                   description=f"I don't have the permissions to DM {member.mention}",
+                                   description=f"I don't have the permissions to DM {member.mention}. The "
+                                   "current Uno game has been cancelled",
                                    color=discord.Color.dark_red())
