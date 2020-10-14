@@ -105,8 +105,27 @@ class AutoroleDeleteError(PostgreSQLError):
 class AutoroleSearchError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Autoroles Error",
-                                   description="An error occured while retrieving this server's autoroles",
+                                   description="An error occurred while retrieving this server's autoroles",
                                    color=discord.Color.dark_red())
+
+
+class LevelError(PostgreSQLError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Leveling Error",
+                                   description="An error occurred while retrieving this server's leveling configuration",
+                                   color=discord.Color.dark_red())
+
+
+class LevelNoConfig(LevelError):
+    def __init__(self):
+        super().__init__()
+
+
+class LevelNotEnabled(LevelError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Leveling Not Enabled"
+        self.embed.description = "Leveling is not enabled on this server. Enable it with `m!level enable`"
 
 
 class LockException(PostgreSQLError):
