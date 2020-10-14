@@ -17,7 +17,7 @@ CogCommands = namedtuple("CogCommands", ['cog_name', 'cog'])
 
 class Help(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
         self.bot.loop.create_task(self.init_cogs_list())
@@ -94,6 +94,15 @@ class Help(commands.Cog):
                 embed.add_field(name=name, value=value,
                                 inline=False if len(cog_commands) > 3 else True)
         return await ctx.channel.send(embed=embed)
+
+    @commands.command(desc="Fetches the invite link to MarwynnBot Support Server",
+                      usage="support")
+    async def support(self, ctx):
+        embed = discord.Embed(title="Support Server",
+                              description=f"Join my support server using this link:\n> https://discord.gg/78XXt3Q",
+                              color=discord.Color.blue())
+        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        return await ctx.channel.send(content="https://discord.gg/78XXt3Q", embed=embed)
 
 
 def setup(bot):
