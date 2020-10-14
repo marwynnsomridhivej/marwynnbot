@@ -7,9 +7,9 @@ from typing import Union
 import discord
 from discord.ext import commands
 from num2words import num2words
-from utils import cards, customerrors, globalcommands
+from utils import cards, customerrors, GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 COLORS = ['red', 'yellow', 'green', 'blue']
 ALL_COLORS = COLORS + ['black']
 NUMBERS = list(range(10)) + list(range(1, 10))
@@ -289,7 +289,7 @@ class Uno(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_uno())
 
     async def init_uno(self):

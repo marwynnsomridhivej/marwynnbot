@@ -1,11 +1,12 @@
 import asyncio
 import random
-import discord
-from discord.ext import commands
-from utils import globalcommands
-import numpy as np
 
-gcmds = globalcommands.GlobalCMDS()
+import discord
+import numpy as np
+from discord.ext import commands
+from utils import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 ROW_COUNT = 6
 COLUMN_COUNT = 7
@@ -194,7 +195,7 @@ class ConnectFour(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_c4())
 
     async def init_c4(self):

@@ -6,9 +6,9 @@ import discord
 import dotenv
 import psutil
 from discord.ext import commands
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 updates_reaction = ['✅', '📝', '🛑']
 
 

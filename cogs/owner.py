@@ -11,9 +11,9 @@ import discord
 from asyncpg.exceptions import UniqueViolationError
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from utils import customerrors, globalcommands, paginator
+from utils import customerrors, GlobalCMDS, paginator
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 OWNER_PERM = ["Bot Owner Only"]
 
 
@@ -22,7 +22,7 @@ class Owner(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_blacklist())
         self.bot.loop.create_task(self.init_balance())
 

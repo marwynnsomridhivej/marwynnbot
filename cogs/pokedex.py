@@ -3,9 +3,9 @@ import math
 import discord
 import pokepy
 from discord.ext import commands
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 poke_bot = pokepy.V2Client(cache='in_disk', cache_location="./pokepy_cache")
 move_status_icon_urls = ["https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/e/ef/Physical.png?width=325",
                          "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-switch/2/24/Special.png?width=325",
@@ -22,7 +22,7 @@ class Pokedex(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     def truncate(self, number: float, decimal_places: int) -> float:
         stepper = 10.0 ** decimal_places

@@ -6,7 +6,7 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-from utils import customerrors, globalcommands, premium
+from utils import customerrors, GlobalCMDS, premium
 from utils.enums import ChannelEmoji as CE
 from utils.enums import LogLevel
 
@@ -30,7 +30,7 @@ class LogDispatcher():
         super().__init__()
         self.bot = bot
         self.min_level = LogLevel.BASIC
-        self.gcmds = globalcommands.GlobalCMDS(self.bot)
+        self.gcmds = GlobalCMDS(self.bot)
 
     async def check_logging_enabled(self, guild, min_level: LogLevel):
         async with self.bot.db.acquire() as con:

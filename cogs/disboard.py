@@ -6,9 +6,9 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands, tasks
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 disboard_bot_id = 302050872383242240
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
@@ -21,7 +21,7 @@ class Disboard(commands.Cog):
         global gcmds
         self.bot = bot
         self.tasks = []
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_disboard())
         self.bot.loop.create_task(self.check_unsent_reminder())
 

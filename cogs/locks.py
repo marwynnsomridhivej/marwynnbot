@@ -2,9 +2,9 @@ import asyncio
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, paginator
+from utils import customerrors, GlobalCMDS, paginator
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 reactions = ['✅', '🛑']
 
 
@@ -12,7 +12,7 @@ class Locks(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_locks())
 
     async def init_locks(self):

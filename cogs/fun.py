@@ -7,9 +7,9 @@ import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import CommandInvokeError
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 SLEEP_TIME = 1.2
 FUNNY_URL = "https://thumbs.gfycat.com/MisguidedPreciousIguanodon-size_restricted.gif"
 FUNNY_FOOTER = "Taken directly from Hubble"
@@ -20,7 +20,7 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def imageSend(self, ctx, path, url=None, toSend: str = ""):
         if not url:

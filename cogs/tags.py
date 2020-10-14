@@ -4,9 +4,9 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, paginator, premium
+from utils import customerrors, GlobalCMDS, paginator, premium
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 PROHIB_NAMES = []
 reactions = ["✅", "🛑"]
 timeout = 600
@@ -23,7 +23,7 @@ class Tags(commands.Cog):
                 for alias in command.aliases:
                     if not alias.lower() in PROHIB_NAMES:
                         PROHIB_NAMES.append(alias.lower())
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_tags())
 
     async def init_tags(self):

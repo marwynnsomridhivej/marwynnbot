@@ -7,9 +7,9 @@ from datetime import datetime, timedelta, timezone
 import discord
 from dateparser.search import search_dates
 from discord.ext import commands, tasks
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 timeout = 30
 reactions = ["🔁", "✅", "🛑"]
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -21,7 +21,7 @@ class Reminders(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.tasks = []
         self.bot.loop.create_task(self.init_reminders())
 

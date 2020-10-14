@@ -6,10 +6,10 @@ from typing import Optional, Sequence, Union
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, premium, logdispatcher
+from utils import customerrors, GlobalCMDS, premium, logdispatcher
 from utils.enums import ConfirmReactions, LogLevel
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 GuildDiff = namedtuple("GuildAttributeDiff", ['type', 'before', 'after'])
 ChannelDiff = namedtuple("ChannelAttributeDiff", ['type', 'before', 'after'])
 MemberDiff = namedtuple("MemberAttributeDiff", ['type', 'before', 'after'])
@@ -21,7 +21,7 @@ class Logging(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_logging())
         self.guild_dispatch = logdispatcher.GuildDispatcher(self.bot)
         self.member_dispatch = logdispatcher.MemberDispatcher(self.bot)

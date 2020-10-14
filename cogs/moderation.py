@@ -9,9 +9,9 @@ import discord
 from dateparser.search import search_dates
 from discord.ext import commands, tasks
 from num2words import num2words
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 auto_mute_duration = 600
 auto_warn_actions = [None, None, "mute", "kick", "ban"]
 

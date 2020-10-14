@@ -5,9 +5,9 @@ from io import BytesIO
 
 import discord
 from discord.ext import commands, tasks
-from utils import globalcommands, paginator
+from utils import GlobalCMDS, paginator
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 invite_url = "https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958583"
 
 
@@ -16,7 +16,7 @@ class Utility(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(bot=self.bot)
+        gcmds = GlobalCMDS(bot=self.bot)
         self.bot.loop.create_task(self.init_requests())
 
     async def init_requests(self):

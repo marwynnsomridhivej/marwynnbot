@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
 from mcstatus import MinecraftServer
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 
 
 class Minecraft(commands.Cog):
@@ -11,7 +11,7 @@ class Minecraft(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def get_server(self, host: str) -> MinecraftServer:
         try:

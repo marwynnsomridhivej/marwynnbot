@@ -1,10 +1,11 @@
 import asyncio
-import discord
 import typing
-from discord.ext import commands
-from utils import globalcommands, customerrors
 
-gcmds = globalcommands.GlobalCMDS()
+import discord
+from discord.ext import commands
+from utils import customerrors, GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 class Games(commands.Cog):
@@ -12,7 +13,7 @@ class Games(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     @commands.command(aliases=['bal'],
                       desc="Check your balance and compare with other people",

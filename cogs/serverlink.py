@@ -5,9 +5,9 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands, tasks
-from utils import customerrors, globalcommands, paginator, premium
+from utils import customerrors, GlobalCMDS, paginator, premium
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 _bot = None
 
 
@@ -78,7 +78,7 @@ class ServerLink(commands.Cog):
         global gcmds, _bot
         self.bot = bot
         _bot = self.bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_serverlink())
 
     @commands.Cog.listener()

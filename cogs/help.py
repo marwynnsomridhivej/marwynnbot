@@ -4,9 +4,9 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands
+from utils import customerrors, GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
 NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Minecraft', 'Nintendo', 'Pokedex', 'Reddit',
                 'Redirects', 'Reminders', 'Serverlink', 'Starboard', 'Tags', 'Todo']
@@ -21,7 +21,7 @@ class Help(commands.Cog):
         global gcmds
         self.bot = bot
         self.bot.loop.create_task(self.init_cogs_list())
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def init_cogs_list(self):
         await self.bot.wait_until_ready()

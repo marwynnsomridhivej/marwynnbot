@@ -5,9 +5,9 @@ from contextlib import suppress
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, paginator
+from utils import customerrors, GlobalCMDS, paginator
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
@@ -20,7 +20,7 @@ class Roles(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_roles())
 
     async def init_roles(self):

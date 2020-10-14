@@ -5,9 +5,9 @@ import aiohttp
 import discord
 import sympy
 from discord.ext import commands
-from utils import customerrors, globalcommands, paginator
+from utils import customerrors, GlobalCMDS, paginator
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 LATEX_URL = "https://latex.codecogs.com/gif.download?%5Cbg_white%20%5Clarge%20"
 
 
@@ -15,7 +15,7 @@ class Math(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     @commands.command(desc="Renders image given a latex string",
                       usage="latex [equation]",

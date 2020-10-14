@@ -1,11 +1,12 @@
 import asyncio
-import discord
 import typing
-from discord.ext import commands
-import numpy as np
-from utils import globalcommands
 
-gcmds = globalcommands.GlobalCMDS()
+import discord
+import numpy as np
+from discord.ext import commands
+from utils import GlobalCMDS
+
+gcmds = GlobalCMDS()
 
 
 async def win(ctx, betAmount, bot):
@@ -39,7 +40,7 @@ class Coinflip(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_cf())
 
     async def init_cf(self):

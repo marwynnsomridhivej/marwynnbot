@@ -4,9 +4,9 @@ from datetime import datetime
 import discord
 import praw
 from discord.ext import commands
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 
 
 class Reddit(commands.Cog):
@@ -14,7 +14,7 @@ class Reddit(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def get_id_secret(self, ctx):
         client_id = gcmds.env_check("REDDIT_CLIENT_ID")

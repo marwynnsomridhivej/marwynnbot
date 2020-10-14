@@ -2,9 +2,9 @@ import asyncio
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands
+from utils import customerrors, GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 levels = ['⭐', '✨', '🌟', '💫']
 
 
@@ -12,7 +12,7 @@ class Starboard(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_starboard())
 
     async def init_starboard(self):

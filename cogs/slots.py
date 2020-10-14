@@ -3,9 +3,9 @@ import asyncio
 import discord
 import numpy.random as np
 from discord.ext import commands
-from utils import globalcommands
+from utils import GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 emojis = [":apple:", ":green_apple:", ":pineapple:", ":cherries:", ":grapes:", ":strawberry:", ":lemon:", ":pear:",
           ":moneybag:", ":gem:", ":trophy:", ":violin:", ":musical_keyboard:", ":dragon:", ":free:", ":pirate_flag:"]
 weights = [0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375, 0.09375,
@@ -160,7 +160,7 @@ class Slots(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_slots())
 
     async def init_slots(self):

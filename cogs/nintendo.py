@@ -3,9 +3,9 @@ import typing
 
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands
+from utils import customerrors, GlobalCMDS
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 FC_REGEX = re.compile(r"SW-[\d]{4}-[\d]{4}-[\d]{4}")
 
 
@@ -14,7 +14,7 @@ class Nintendo(commands.Cog):
         global gcmds
         self.bot = bot
         self.bot.loop.create_task(self.init_nintendo())
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def init_nintendo(self):
         await self.bot.wait_until_ready()

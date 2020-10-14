@@ -7,9 +7,9 @@ from datetime import datetime
 import discord
 import lavalink
 from discord.ext import commands, tasks
-from utils import context, customerrors, globalcommands, premium
+from utils import context, customerrors, GlobalCMDS, premium
 
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 reactions = ["⏪", "⏯", "⏩", "⏹"]
 plist_reactions = ["💾", "📝"]
@@ -22,7 +22,7 @@ class Music(commands.Cog):
         self.bot = bot
         for func in [self.lavalink_setup, self.init_playlist, self.init_music]:
             self.bot.loop.create_task(func())
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
 
     async def lavalink_setup(self):
         await self.bot.wait_until_ready()

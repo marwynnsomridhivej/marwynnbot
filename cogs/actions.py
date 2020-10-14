@@ -4,10 +4,10 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-from utils import customerrors, globalcommands, objects
+from utils import customerrors, GlobalCMDS, objects
 
 converter = commands.MemberConverter()
-gcmds = globalcommands.GlobalCMDS()
+gcmds = GlobalCMDS()
 
 
 class Actions(commands.Cog):
@@ -15,7 +15,7 @@ class Actions(commands.Cog):
     def __init__(self, bot):
         global gcmds
         self.bot = bot
-        gcmds = globalcommands.GlobalCMDS(self.bot)
+        gcmds = GlobalCMDS(self.bot)
         self.bot.loop.create_task(self.init_actions())
 
     async def init_actions(self):
