@@ -53,11 +53,16 @@ class Debug(commands.Cog):
         swap = psutil.swap_memory()
         disk = psutil.disk_usage("/")
         time_now = int(datetime.now().timestamp())
+        complete_command_list = [command for cog in self.bot.cogs
+                                 for command in self.bot.get_cog(cog).walk_commands()]
         td = timedelta(seconds=time_now - self.bot.uptime)
         description = (f"Hi there! I am a multipurpose Discord Bot made by <@{self.bot.owner_id}> "
                        "written in Python using the `discord.py` API wrapper. Here are some of my stats:")
         stats = (f"Servers Joined: {len(self.bot.guilds)}",
                  f"Users Served: {len(self.bot.users)}",
+                 f"Commands: {len(self.bot.commands)}",
+                 f"Commands Including Subcommands: {len(complete_command_list)}",
+                 f"Aliases: {len([alias for command in self.bot.commands for alias in command.aliases if command.aliases])}",
                  f"Commands Processed: {command_amount}",
                  f"Uptime: {str(td)}")
         cpu_stats = "```{}```".format(
