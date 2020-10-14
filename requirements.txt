@@ -7,7 +7,7 @@ lavalink~=3.1.2
 mcstatus~=4.0.0
 num2words==0.5.10
 numpy==1.19.1
-pillow~=7.2.0
+pillow~=8.0.0
 pokepy~=0.6.1
 praw~=7.1.0
 psutil==5.7.2
