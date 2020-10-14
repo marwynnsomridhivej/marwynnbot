@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 from datetime import datetime, timedelta
 
 import discord
@@ -49,8 +50,11 @@ class Debug(commands.Cog):
     async def marwynnbot(self, ctx):
         async with self.bot.db.acquire() as con:
             command_amount = await con.fetchval("SELECT SUM (amount) FROM global_counters")
+        current_process = psutil.Process(os.getpid())
         mem = psutil.virtual_memory()
+        mem_used = current_process.memory_full_info().uss
         swap = psutil.swap_memory()
+        swap_used = getattr(current_process.memory_full_info(), "swap", swap.used)
         disk = psutil.disk_usage("/")
         time_now = int(datetime.now().timestamp())
         complete_command_list = [command for cog in self.bot.cogs
@@ -75,16 +79,16 @@ class Debug(commands.Cog):
             "\n".join(
                 [f"Total: {round((mem.total / 1000000), 2)} MB",
                  f"Available: {round((mem.available / 1000000), 2)} MB",
-                 f"Used: {round((mem.used / 1000000), 2)} MB",
-                 f"Percent: {round(mem.percent, 2)}%"]
+                 f"Used: {round((mem_used / 1000000), 2)} MB",
+                 f"Percent: {round(100 * (mem_used / mem.total), 2)}%"]
             )
         )
         swap_stats = "```{}```".format(
             "\n".join(
                 [f"Total: {round((swap.total / 1000000))} MB",
                  f"Free: {round((swap.free / 1000000), 2)} MB",
-                 f"Used: {round((swap.used / 1000000), 2)} MB",
-                 f"Percentage: {round(swap.percent, 2)}%"]
+                 f"Used: {round((swap_used / 1000000), 2)} MB",
+                 f"Percentage: {round(100 * (swap_used / swap.total), 2)}%"]
             )
         )
         disk_stats = "```{}```".format(
