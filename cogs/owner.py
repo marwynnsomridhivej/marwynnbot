@@ -230,7 +230,10 @@ class Owner(commands.Cog):
 
     @commands.command(desc="Runs a command as a different user",
                       usage="sudo [@member] (#channel) [invocation]",
-                      uperms=OWNER_PERM)
+                      uperms=OWNER_PERM,
+                      note="This is only authorised for debugging purposes, such "
+                      "as testing permissions. Always obtain consent to sudo invoke "
+                      "as another member")
     @commands.is_owner()
     async def sudo(self, ctx: commands.Context, member: discord.Member, channel: typing.Optional[discord.TextChannel], *, invocation: str):
         message = copy.copy(ctx.message)
