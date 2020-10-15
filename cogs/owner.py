@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import typing
+from contextlib import suppress
 from datetime import datetime
 from io import BytesIO, StringIO
 
@@ -11,7 +12,7 @@ import discord
 from asyncpg.exceptions import UniqueViolationError
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from utils import customerrors, GlobalCMDS, paginator
+from utils import GlobalCMDS, customerrors, paginator
 
 gcmds = GlobalCMDS()
 OWNER_PERM = ["Bot Owner Only"]
@@ -242,9 +243,36 @@ class Owner(commands.Cog):
         message.author = channel.guild.get_member(member.id) or member
         message.content = f"m!{invocation}"
         new_context = await self.bot.get_context(message, cls=type(ctx))
-        await new_context.channel.send(content=f"**{ctx.author}** invoked "
-                                       f"`{invocation}` with sudo as **{member}**")
-        await self.bot.invoke(new_context)
+        reactions = ["✅", "❌"]
+        embed = discord.Embed(title="Confirm Grant Sudo Privileges",
+                              description=f"{member.mention}, in order to allow {ctx.author.mention} "
+                              f"to invoke `{invocation}` under your name, react with ✅, to deny react with ❌",
+                              color=discord.Color.blue())
+        panel = await ctx.channel.send(embed=embed)
+        for reaction in reactions:
+            with suppress(Exception):
+                await panel.add_reaction(reaction)
+
+        def other_reacted(reaction: discord.Reaction, user: discord.User):
+            return reaction.message.id == panel.id and user.id == member.id and str(reaction.emoji) in reactions
+
+        try:
+            reaction, user = await self.bot.wait_for("reaction_add", check=other_reacted, timeout=30)
+        except asyncio.TimeoutError:
+            return await gcmds.cancelled(ctx, "sudo invoke")
+        else:
+            if reaction.emoji == reactions[0]:
+                await new_context.channel.send(content=f"**{ctx.author}** invoked "
+                                               f"`{invocation}` with sudo as **{member}**")
+                await self.bot.invoke(new_context)
+            else:
+                embed = discord.Embed(title="Sudo Privileges Denied",
+                                      description=f"{ctx.author.mention}, you were not give "
+                                      "sudo privileges, and the command invocation was cancelled",
+                                      color=discord.Color.dark_red())
+                return await ctx.channel.send(embed=embed)
+        finally:
+            await gcmds.smart_delete(panel)
 
     @commands.command(desc="Runs a command multiple times",
                       usage="multexec (amount) [invocation]",
