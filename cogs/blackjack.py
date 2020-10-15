@@ -129,8 +129,7 @@ def take_bet(chips):
         try:
             bet = chips.bet
         except ValueError:
-            print("NonInt passed into bet")
-            break
+            bet = 1
         else:
             if bet > chips.total:
                 return False
