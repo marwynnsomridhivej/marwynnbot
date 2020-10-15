@@ -279,6 +279,7 @@ class Owner(commands.Cog):
                       uperms=OWNER_PERM,
                       note="`(amount)` is how many times a command is to be run, "
                       "not how many times it is to be repeated")
+    @commands.is_owner()
     async def multexec(self, ctx, amount: int = 1, *, invocation: str):
         message = copy.copy(ctx.message)
         message.content = f"m!{invocation}"
