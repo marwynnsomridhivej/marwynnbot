@@ -310,14 +310,11 @@ class Bot(commands.AutoShardedBot):
 
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
-            # Checks blacklist table
-            result = await con.fetch(f"SELECT * FROM blacklist WHERE id = {guild.id} AND type='guild'")
+            result = await con.fetchval(f"SELECT id FROM blacklist WHERE id={guild.id} AND type='guild'")
             if result:
                 await guild.leave()
             else:
-                op = [f'"{command.name}": 0' for command in self.commands]
-                op_string = "'{" + ", ".join(op) + "}'"
-                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix, counter) VALUES ('{guild.id}', 'm!', {op_string})"
+                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')"
                                   " ON CONFLICT DO NOTHING")
                 await con.execute(f"INSERT INTO logging(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
 
