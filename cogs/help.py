@@ -95,7 +95,7 @@ class Help(commands.Cog):
                                 inline=False if len(cog_commands) > 3 else True)
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(aliases=['docs'],
+    @commands.command(aliases=['docs', 'notation'],
                       desc="Displays what the symbols in the help messages of commands mean",
                       usage="documentation")
     async def documentation(self, ctx):
@@ -105,10 +105,12 @@ class Help(commands.Cog):
                               "what the notation means",
                               color=discord.Color.blue(),
                               url=SUPPORT_SERVER_INVITE)
-        definitions = ("- command ⟶ the command you are getting help on",
-                       "- argument/parameter ⟶ the additional elements you need to "
+        definitions = ("- `command` ⟶ the command you are getting help on. Appears immediately after the prefix",
+                       "- `subcommand` ⟶ other commands that are based on a base command. Subcommands are "
+                       "specified after the base command",
+                       "- `argument/parameter` ⟶ the additional elements you need to "
                        "supply in order for the commands to work as intended",
-                       "- mention/ping ⟶ using Discord's @user for users or #channel for channels")
+                       "- `mention/ping` ⟶ using Discord's @user for users or #channel for channels")
         embed.add_field(name="Definitions",
                         value="Here are some important definitions to be aware of:"
                         "\n> " + "\n> ".join(definitions),
