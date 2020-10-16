@@ -4,7 +4,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS
+from utils import FieldPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
@@ -72,15 +72,7 @@ class Help(commands.Cog):
                 return await self.dispatch(ctx, self.bot.get_command(name))
             except KeyError:
                 raise customerrors.CommandHelpDirectlyCalled(name)
-        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
-        embed = discord.Embed(title="MarwynnBot Help Menu",
-                              color=discord.Color.blue(),
-                              url=SUPPORT_SERVER_INVITE,
-                              description="These are all the commands I currently support! "
-                              f"To get help on a specific command, type:```{await gcmds.prefix(ctx)}help (command)```")
-        embed.set_thumbnail(url=DEFAULT_THUMBNAIL)
-        embed.set_author(name="MarwynnBot", icon_url=ctx.me.avatar_url)
-        embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
+        nv = []
         for name, cog in self.mb_cogs:
             if name in NON_DETAILED:
                 cog_commands = []
@@ -91,9 +83,17 @@ class Help(commands.Cog):
             if value == "``":
                 continue
             else:
-                embed.add_field(name=name, value=value,
-                                inline=False if len(cog_commands) > 3 else True)
-        return await ctx.channel.send(embed=embed)
+                nv.append((name, value, False))
+        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        embed = discord.Embed(title="MarwynnBot Help Menu",
+                              color=discord.Color.blue(),
+                              url=SUPPORT_SERVER_INVITE,
+                              description="This is a paginated panel of all the commands I currently support! "
+                              f"To get help on a specific command, type:```{await gcmds.prefix(ctx)}help (command)```")
+        embed.set_thumbnail(url=DEFAULT_THUMBNAIL)
+        embed.set_author(name="MarwynnBot", icon_url=ctx.me.avatar_url)
+        pag = FieldPaginator(ctx, entries=nv, per_page=6, show_entry_count=False, footer=timestamp, embed=embed)
+        return await pag.paginate()
 
     @commands.command(aliases=['docs', 'notation'],
                       desc="Displays what the symbols in the help messages of commands mean",
