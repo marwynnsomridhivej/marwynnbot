@@ -22,7 +22,7 @@ class EmbedPaginator:
         if left_over:
             pages += 1
         self.maximum_pages = pages
-        self.embed = discord.Embed(color=discord.Color.blue())
+        self.embed = kwargs.get("embed", discord.Embed(color=discord.Color.blue()))
         self.paginating = len(entries) > per_page
         self.show_entry_count = show_entry_count
         self.emojis = [
@@ -180,7 +180,6 @@ class EmbedPaginator:
         self.in_help = True
 
     async def stop_pages(self):
-        await gcmds.smart_delete(self.message)
         self.paginating = False
 
     async def rem_reaction(self, payload):
@@ -236,18 +235,23 @@ class EmbedPaginator:
             await self.match()
 
 
-class FieldPages(EmbedPaginator):
+class FieldPaginator(EmbedPaginator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.footer = kwargs.get("footer", None)
+
     def prepare_embed(self, entries, page, *, first=False):
         self.embed.clear_fields()
-        self.embed.description = discord.Embed.Empty
 
-        for key, value in entries:
-            self.embed.add_field(name=key, value=value, inline=False)
+        for key, value, inline in entries:
+            self.embed.add_field(name=key, value=value, inline=inline)
 
-        if self.maximum_pages > 1:
-            if self.show_entry_count:
-                text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
-            else:
-                text = f'Page {page}/{self.maximum_pages}'
-
-            self.embed.set_footer(text=text)
+        if self.footer:
+            self.embed.set_footer(text=self.footer)
+        else:
+            if self.maximum_pages > 1:
+                if self.show_entry_count:
+                    text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
+                else:
+                    text = f'Page {page}/{self.maximum_pages}'
+                self.embed.set_footer(text=text)
