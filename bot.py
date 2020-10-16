@@ -108,7 +108,8 @@ class Bot(commands.AutoShardedBot):
         self.db = kwargs.pop("db")
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
-        func_listen = (self.on_message, self.on_command_error, self.on_guild_join, self.on_member_join)
+        func_listen = (self.on_message, self.on_command_error, self.on_command_completion,
+                       self.on_guild_join, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
         for func in func_listen:
@@ -135,22 +136,18 @@ class Bot(commands.AutoShardedBot):
             command = ctx.command.root_parent.name.lower() if ctx.command.parent else ctx.command.name.lower()
             result = await con.fetchval(f"SELECT amount from global_counters WHERE command=$tag${command}$tag$")
             if result:
-                op = ("UPDATE global_counters SET amount=amount+1 "
-                      f"WHERE command=$tag${command}$tag$")
+                await con.execute(f"UPDATE global_counters SET amount=amount+1 WHERE command=$tag${command}$tag$")
             else:
-                op = (f"INSERT INTO global_counters(command, amount) "
-                      f"VALUES ($tag${command}$tag$, 1)")
-            await con.execute(op)
+                await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ($tag${command}$tag$, 1)")
             if ctx.guild:
                 entry = await con.fetchval(f"SELECT amount FROM guild_counters "
-                                                f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
+                                           f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
                 if not entry:
-                    op = (f"INSERT INTO guild_counters(guild_id, command, amount) "
-                          f"VALUES ({ctx.guild.id}, $tag${command}$tag$, 1)")
+                    await con.execute(f"INSERT INTO guild_counters(guild_id, command, amount) "
+                                      f"VALUES ({ctx.guild.id}, $tag${command}$tag$, 1)")
                 else:
-                    op = (f"UPDATE guild_counters SET amount=amount+1 "
-                          f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
-                await con.execute(op)
+                    await con.execute(f"UPDATE guild_counters SET amount=amount+1 "
+                                      f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
         return
 
     @tasks.loop(seconds=120)
