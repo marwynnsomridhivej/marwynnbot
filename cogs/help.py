@@ -72,7 +72,7 @@ class Help(commands.Cog):
                 return await self.dispatch(ctx, self.bot.get_command(name))
             except KeyError:
                 raise customerrors.CommandHelpDirectlyCalled(name)
-        timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         embed = discord.Embed(title="MarwynnBot Help Menu",
                               color=discord.Color.blue(),
                               url=SUPPORT_SERVER_INVITE,
@@ -95,11 +95,48 @@ class Help(commands.Cog):
                                 inline=False if len(cog_commands) > 3 else True)
         return await ctx.channel.send(embed=embed)
 
+    @commands.command(aliases=['docs'],
+                      desc="Displays what the symbols in the help messages of commands mean",
+                      usage="documentation")
+    async def documentation(self, ctx):
+        embed = discord.Embed(title="Documentation",
+                              description="The help commands all use a specific way of notating "
+                              "how to use MarwynnBot's commands. This is a detailed explanation of "
+                              "what the notation means",
+                              color=discord.Color.blue(),
+                              url=SUPPORT_SERVER_INVITE)
+        definitions = ("- command ⟶ the command you are getting help on",
+                       "- argument/parameter ⟶ the additional elements you need to "
+                       "supply in order for the commands to work as intended",
+                       "- mention/ping ⟶ using Discord's @user for users or #channel for channels")
+        embed.add_field(name="Definitions",
+                        value="Here are some important definitions to be aware of:"
+                        "\n> " + "\n> ".join(definitions),
+                        inline=False)
+        brackets = ("Brackets `[argument]` and parentheses `(argument)` indicate the necessity for "
+                    "the `argument` to be specified. Brackets around an argument like `[argument]` "
+                    "indicate that `argument` must be specified. Parentheses around an argument like "
+                    "`(argument)` indicate that `argument` may be specified, but is not required")
+        mentionable = ("The presence of `@` or `#` in front of an argument specifies that this argument "
+                       "can be in the form of a mentionable, such as `@user` or `#channel`. Arguments that "
+                       "can be mentioned can also be entered using their ID, or in specific cases, their "
+                       "name, although this can sometimes not work as well as mentioning")
+        var_amt = ("The presence of `*va` directly after an argument indicates that the argument "
+                   "accepts more than one argument of the same type. Bracket and parenthesis notation "
+                   "still apply, as `*va` is an extension to the notation")
+        nv = [("Argument Requirements", brackets), ("Mentionables", mentionable), ("Variable Amounts", var_amt)]
+        for name, value in nv:
+            embed.add_field(name=name, value=f"> {value}", inline=False)
+        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(desc="Fetches the invite link to MarwynnBot Support Server",
                       usage="support")
     async def support(self, ctx):
         embed = discord.Embed(title="Support Server",
-                              description=f"Join my support server using this link:\n> https://discord.gg/78XXt3Q",
+                              description=f"Join my support server using this link:\n> https://discord.gg/78XXt3Q\n"
+                              "Thank you for using MarwynnBot!",
                               color=discord.Color.blue())
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         return await ctx.channel.send(content="https://discord.gg/78XXt3Q", embed=embed)
