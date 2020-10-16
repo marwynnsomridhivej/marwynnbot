@@ -5,7 +5,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands, tasks
-from utils import customerrors, GlobalCMDS, paginator, premium
+from utils import EmbedPaginator, GlobalCMDS, customerrors, premium
 
 gcmds = GlobalCMDS()
 _bot = None
@@ -463,14 +463,14 @@ class ServerLink(commands.Cog):
     @serverlink.command(aliases=['listings', 'global'])
     async def serverlink_listings(self, ctx):
         entries = await self.get_public_channels()
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True, show_index=False)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True, show_index=False)
         pag.embed.title = "Public ServerLink Channels"
         return await pag.paginate()
 
     @serverlink.command(aliases=['-ls', 'list', 'show'])
     async def serverlink_list(self, ctx):
         entries = [f"<#{entry['channel_id']}>" for entry in await self.get_serverlink_channels(ctx)]
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=False)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=False)
         pag.embed.title = "Registered ServerLink Channels"
         return await pag.paginate()
 

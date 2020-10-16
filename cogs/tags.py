@@ -4,7 +4,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS, paginator, premium
+from utils import EmbedPaginator, GlobalCMDS, customerrors, premium
 
 gcmds = GlobalCMDS()
 PROHIB_NAMES = []
@@ -230,14 +230,14 @@ class Tags(commands.Cog):
     @tag.command()
     async def list(self, ctx):
         desc_list = await self.list_user_tags(ctx)
-        pag = paginator.EmbedPaginator(ctx, entries=desc_list, per_page=10)
+        pag = EmbedPaginator(ctx, entries=desc_list, per_page=10)
         pag.embed.title = "Your Tags"
         return await pag.paginate()
 
     @tag.command()
     async def search(self, ctx, *, keyword):
         entries = await self.search_tags(ctx, keyword)
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = "Search Results"
         return await pag.paginate()
 

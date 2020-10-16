@@ -5,7 +5,7 @@ from contextlib import suppress
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS, paginator
+from utils import EmbedPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -344,7 +344,7 @@ class Roles(commands.Cog):
 
         entries = [
             f"<@&{item['role_id']}> *[Type: {item['type']}]*\n> Assigned By: <@{item['author_id']}>\n" for item in result]
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = f"{flag.title()} Autoroles"
         await pag.paginate()
 
@@ -534,7 +534,7 @@ class Roles(commands.Cog):
                 title = f"{ctx.author.display_name}'s Reaction Roles Panels"
             entries = [
                 f"Message ID: [{item[0]}]({item[2]}) *[Emojis: {item[3]}]*\n> Owner: <@{item[1]}>" for item in messages]
-            pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=5, show_entry_count=True)
+            pag = EmbedPaginator(ctx, entries=entries, per_page=5, show_entry_count=True)
             pag.embed.title = title
             return await pag.paginate()
 

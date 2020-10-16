@@ -5,7 +5,7 @@ from io import BytesIO
 
 import discord
 from discord.ext import commands, tasks
-from utils import GlobalCMDS, paginator
+from utils import EmbedPaginator, GlobalCMDS
 
 gcmds = GlobalCMDS()
 invite_url = "https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958583"
@@ -64,7 +64,7 @@ class Utility(commands.Cog):
                         f"***{record['command'].lower()}:*** *used {record['amount'] if record['amount'] else '0'} "
                         f"{'times' if record['amount'] != 1 else 'time'}*"
                         for record in result]
-            pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=True)
+            pag = EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=True)
             pag.embed.title = title
             return await pag.paginate()
         else:

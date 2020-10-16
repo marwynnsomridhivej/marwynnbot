@@ -2,7 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
-from utils import context, customerrors, GlobalCMDS, paginator
+from utils import context, customerrors, GlobalCMDS, EmbedPaginator
 
 gcmds = GlobalCMDS()
 reactions = ["✅", "🛑"]
@@ -141,7 +141,7 @@ class Redirects(commands.Cog):
         or_count = [f"`{ovr['command']}` ⟶ <#{ovr['channel_id']}> [*set by <@{ovr['author_id']}>*]" for ovr in overrides] if overrides else ["No overriding redirects exist"]
         rg_count = f"{len(rglobal)} commands are globally redirected" if rglobal else "No global redirects exist"
 
-        pag = paginator.EmbedPaginator(ctx, entries=or_count, per_page=10, show_entry_count=False)
+        pag = EmbedPaginator(ctx, entries=or_count, per_page=10, show_entry_count=False)
         pag.embed.title = "Command Redirects"
         pag.embed.set_footer(text=rg_count)
         return await pag.paginate()

@@ -2,7 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS, paginator
+from utils import EmbedPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 reactions = ['✅', '🛑']
@@ -158,7 +158,7 @@ class Locks(commands.Cog):
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed)
         else:
-            pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+            pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
             pag.embed.title = f"{flag.title() if flag != 'all' else 'All Locked'} Channels"
             return await pag.paginate()
 

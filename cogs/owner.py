@@ -12,7 +12,7 @@ import discord
 from asyncpg.exceptions import UniqueViolationError
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
-from utils import GlobalCMDS, customerrors, paginator
+from utils import EmbedPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 OWNER_PERM = ["Bot Owner Only"]
@@ -564,7 +564,7 @@ class Owner(commands.Cog):
     async def user(self, ctx, source: str = "guild"):
         op = source if source == "guild" else "global"
         entries = [f"{user.mention} - {user.name}" for user in await self.get_premium_users(ctx.guild, op)]
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = f"MarwynnBot Premium Users in {ctx.guild.name}" if op == "guild" else "MarwynnBot Premium Users"
         return await pag.paginate()
 
@@ -572,7 +572,7 @@ class Owner(commands.Cog):
     @commands.is_owner()
     async def guild(self, ctx):
         entries = [f"{guild.name}" for guild in await self.get_premium_guilds()]
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = "MarwynnBot Premium Servers"
         return await pag.paginate()
 

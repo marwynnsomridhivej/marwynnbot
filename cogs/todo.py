@@ -4,7 +4,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS, paginator
+from utils import EmbedPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 
@@ -212,7 +212,7 @@ class Todo(commands.Cog):
         elif flag in ["done", "complete", "completed", "finished"]:
             title = "Your Completed Todos"
             entries = await self.get_todos(ctx, req_complete=True, list=True, detailed=True)
-        pag = paginator.EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
+        pag = EmbedPaginator(ctx, entries=entries, per_page=10, show_entry_count=True)
         pag.embed.title = title
         return await pag.paginate()
 
