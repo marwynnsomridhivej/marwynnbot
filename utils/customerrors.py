@@ -219,6 +219,20 @@ class ServerLinkNoSelf(ServerLinkException):
             "send a request to another server"
 
 
+class ServerLinkBlocked(ServerLinkException):
+    def __init__(self, other_guild: discord.Guild):
+        super().__init__()
+        self.embed.title = "Request Failed"
+        self.embed.description = f"I could not send a ServerLink request to {other_guild.name}"
+
+
+class ServerLinkSelfBlocked(ServerLinkException):
+    def __init__(self, action):
+        super().__init__()
+        self.embed.title = "Invalid Server Name"
+        self.embed.description = f"You cannot {action} your own server"
+
+
 class StarboardException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Starboard Error",
