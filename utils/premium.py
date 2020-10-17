@@ -5,8 +5,7 @@ from utils import customerrors, globalcommands
 
 
 def is_premium(*args, **kwargs):
-
-    # async def predicate(ctx, *args, **kwargs):
+    async def predicate(ctx, *args, **kwargs):
         # db = globalcommands._db
         # if not db:
         #     raise customerrors.NoPostgreSQL()
@@ -23,9 +22,9 @@ def is_premium(*args, **kwargs):
         #         result = await con.fetch(f"SELECT * FROM premium WHERE user_id={ctx.author.id} OR guild_id={ctx.guild.id}")
         #         if not result:
         #             raise customerrors.NotPremiumUserOrGuild(ctx.author, ctx.guild)
-        # return True
+        return True
 
-    return True  # commands.check(predicate)
+    return commands.check(predicate)
 
 
 async def check_user_premium(user: discord.User) -> bool:
