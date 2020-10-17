@@ -180,6 +180,8 @@ class EmbedPaginator:
         self.in_help = True
 
     async def stop_pages(self):
+        with suppress(Exception):
+            await self.message.clear_reactions()
         self.paginating = False
 
     async def rem_reaction(self, payload):
