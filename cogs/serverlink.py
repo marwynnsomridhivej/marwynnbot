@@ -2,10 +2,12 @@ import asyncio
 import functools
 from contextlib import suppress
 from datetime import datetime
+from typing import Union
 
 import discord
 from discord.ext import commands, tasks
-from utils import EmbedPaginator, GlobalCMDS, customerrors, premium
+from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, customerrors,
+                   premium)
 
 gcmds = GlobalCMDS()
 _bot = None
@@ -73,6 +75,16 @@ def ensure_inactive(func):
     return checker
 
 
+def handle_db(func):
+    @functools.wraps(func)
+    async def checker(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception:
+            raise customerrors.ServerLinkException()
+    return checker
+
+
 class ServerLink(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         global gcmds, _bot
@@ -124,6 +136,7 @@ class ServerLink(commands.Cog):
                               "start_time NUMERIC, end_time NUMERIC)")
             await con.execute("CREATE TABLE IF NOT EXISTS serverlink_temp(message_id bigint, "
                               "recip_message_id bigint, recip_channel_id bigint)")
+            await con.execute("CREATE TABLE IF NOT EXISTS serverlink_block(recip_id bigint, init_id bigint)")
 
     async def send_serverlink_help(self, ctx):
         pfx = f"{await gcmds.prefix(ctx)}serverlink"
@@ -176,12 +189,27 @@ class ServerLink(commands.Cog):
                  "**Aliases:** `reject`",
                  "**Note:** `[ID]` is provided in the request message. If the request is more than an hour old, "
                  "it is automatically invalidated")
+        sdisconnect = (f"**Usage:** `{pfx} disconnect`",
+                       "**Returns:** An embed that confirms you have successfully disconnected the active "
+                       "ServerLink session",
+                       "**Aliases:** `dc` `end`",
+                       "**Note:** You may only disconnect if the channel you invoked "
+                       "the command in currently has an active ServerLink connection")
+        sblock = (f"**Usage:** `{pfx} block [server]`",
+                  "**Returns:** A confirmation panel that once confirmed, will automatically deny "
+                  "requests sent to your server by the specified server",
+                  "**Aliases:** `b`")
+        sunblock = (f"**Usage:** `{pfx} unblock [server]`",
+                    "**Returns:** A confirmation panel that once confirmed, will allow requests "
+                    "to be sent to your server by the specified server",
+                    "**Aliases:** `ub`",
+                    "**Note:** If `[server]` is unspecified, it will unblock all blocked servers")
         nv = [("Register", sregister), ("Unregister", sunregister), ("Public", spublic), ("Unpublic", sunpublic),
-              ("List", slist), ("Request", srequest), ("Accept", saccept), ("Deny", sdeny)]
-        embed = discord.Embed(title="ServerLink Help", description=description, color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+              ("List", slist), ("Request", srequest), ("Accept", saccept), ("Deny", sdeny),
+              ("Block", sblock), ("Unblock", sunblock)]
+        pag = FieldPaginator(ctx, entries=[(name, "> " + "\n> ".join(value), False) for name, value in nv], per_page=4)
+        pag.embed = discord.Embed(title="ServerLink Help", description=description, color=discord.Color.blue())
+        return await pag.paginate()
 
     async def send_serverlink_about(self, ctx):
         description = ("ServerLink is a unique feature of MarwynnBot that allows you to communicate to another server "
@@ -306,8 +334,9 @@ class ServerLink(commands.Cog):
                 await con.execute(f"INSERT INTO serverlink_conn(initiator_id, recipient_id, request_time) "
                                   f"VALUES({my_channel_id}, {other_channel_id}, {int(datetime.now().timestamp())})")
             embed = discord.Embed(title=f"Incoming ServerLink Request ⟶ {ctx.guild.name}",
-                                  description=f"{ctx.guild.name} sent a serverlink request. Accept it with "
-                                  f"`{await gcmds.prefix(ctx)}serverlink accept {my_channel_id}`",
+                                  description=f"{ctx.guild.name} sent a serverlink request.\n\nTo Accept: "
+                                  f"```{await gcmds.prefix(ctx)}serverlink accept {my_channel_id}```\n"
+                                  f"To Deny: ```{await gcmds.prefix(ctx)}serverlink deny {my_channel_id}```",
                                   color=discord.Color.blue())
             return await channel.send(embed=embed)
 
@@ -317,8 +346,12 @@ class ServerLink(commands.Cog):
                                                "AND active=FALSE LIMIT 1")
             other_channel_id = await con.fetchval(f"SELECT channel_id FROM serverlink WHERE guild_id={other_guild.id} "
                                                   "AND public=TRUE AND active=FALSE LIMIT 1")
-            if not other_channel_id:
-                raise customerrors.ServerLinkNoAvailableChannels(other_guild)
+            blocked = await con.fetchval(f"SELECT recip_id FROM serverlink_block WHERE init_id={ctx.guild.id} AND "
+                                         f"recip_id={other_guild.id}")
+        if not other_channel_id:
+            raise customerrors.ServerLinkNoAvailableChannels(other_guild)
+        if blocked:
+            raise customerrors.ServerLinkBlocked(other_guild)
         await self.dispatch_request(ctx, other_guild, my_channel_id, other_channel_id)
         embed = discord.Embed(title="Request Successfully Sent",
                               description=f"{ctx.author.mention}, the ServerLink request to {other_guild.name} "
@@ -429,6 +462,37 @@ class ServerLink(commands.Cog):
             await recip_channel.send(embed=embed)
         return
 
+    @handle_db
+    async def block_guilds(self, ctx, guild: discord.Guild) -> Union[str, None]:
+        async with self.bot.db.acquire() as con:
+            entry = await con.fetchval(f"SELECT recip_id FROM serverlink_block WHERE "
+                                       f"init_id={guild.id} AND recip_id={ctx.guild.id}")
+            public = await con.fetchval(f"SELECT public FROM serverlink WHERE guild_id={guild.id} "
+                                        "AND public=TRUE LIMIT 1")
+            if not entry and public:
+                await con.execute(f"INSERT INTO serverlink_block(recip_id, init_id) "
+                                   f"VALUES({ctx.guild.id}, {guild.id})")
+                block = guild.name
+                print("Entered block entry")
+            else:
+                block = None
+        return block
+
+    @handle_db
+    async def unblock_guilds(self, ctx, guild: Union[discord.Guild, None]) -> Union[str, None]:
+        async with self.bot.db.acquire() as con:
+            if not guild:
+                await con.execute(f"DELETE FROM serverlink_block WHERE recip_id={ctx.guild.id}")
+                unblock = "all"
+            else:
+                entry = await con.execute(f"DELETE FROM serverlink_block WHERE recip_id={ctx.guild.id} "
+                                          f"AND init_id={guild.id} RETURNING recip_id")
+                if entry:
+                    unblock = guild.name
+                else:
+                    unblock = None
+        return unblock
+
     @commands.group(invoke_without_command=True,
                     aliases=['sl', 'link'],
                     desc="Displays the help command for serverlink",
@@ -519,6 +583,45 @@ class ServerLink(commands.Cog):
                               color=discord.Color.dark_red())
         await ctx.channel.send(embed=embed)
         await other_channel.send(embed=embed)
+
+    @serverlink.command(aliases=['b', 'block'])
+    @commands.has_permissions(manage_guild=True)
+    async def serverlink_block(self, ctx, *, guild_name: str):
+        guild = discord.utils.get(self.bot.guilds, name=guild_name)
+        if guild and guild.id == ctx.guild.id:
+            raise customerrors.ServerLinkSelfBlocked("block")
+        blocks = await self.block_guilds(ctx, guild)
+        print(blocks)
+        if blocks:
+            embed = discord.Embed(title="ServerLink Block Successful",
+                                  description=f"{ctx.author.mention}, {guild.name} was successfully blocked",
+                                  color=discord.Color.blue())
+        else:
+            embed = discord.Embed(title="ServerLink Block Failed",
+                                  description=f"{ctx.author.mention}, {guild.name} was already blocked, "
+                                  "or is an invalid server name",
+                                  color=discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
+
+    @serverlink.command(aliases=['ub', 'unblock'])
+    @commands.has_permissions(manage_guild=True)
+    async def serverlink_unblock(self, ctx, *, guild_name=None):
+        guild = discord.utils.get(self.bot.guilds, name=guild_name)
+        if guild and guild.id == ctx.guild.id:
+            raise customerrors.ServerLinkSelfBlocked("unblock")
+        unblocks = await self.unblock_guilds(ctx, guild)
+        if isinstance(unblocks, str) and unblocks == "all":
+            description = f"{ctx.author.mention}, all servers were unblocked"
+        elif unblocks:
+            description = f"{ctx.author.mention}, {unblocks} was successfully unblocked"
+        elif not unblocks and guild:
+            description = f"{ctx.author.mention}, {guild.name} was already unblocked, or is an invalid server name"
+        else:
+            description = f"{ctx.author.mention}, there are no servers to unblock"
+        embed = discord.Embed(title=f"ServerLink Unblock {'Successful' if unblocks else 'Failed'}",
+                              description=description,
+                              color=discord.Color.blue() if unblocks else discord.Color.dark_red())
+        return await ctx.channel.send(embed=embed)
 
 
 def setup(bot):
