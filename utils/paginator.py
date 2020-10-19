@@ -238,15 +238,40 @@ class EmbedPaginator:
 
 
 class FieldPaginator(EmbedPaginator):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, ctx, *, entries, per_page=10, show_entry_count=True, **kwargs):
+        super().__init__(ctx, entries=entries, per_page=per_page,
+                         show_entry_count=show_entry_count, **kwargs)
         self.footer = kwargs.get("footer", None)
+        if kwargs.get('embed', None):
+            self.embed = kwargs.get("embed")
 
     def prepare_embed(self, entries, page, *, first=False):
         self.embed.clear_fields()
 
         for key, value, inline in entries:
             self.embed.add_field(name=key, value=value, inline=inline)
+
+        if self.footer:
+            self.embed.set_footer(text=self.footer)
+        else:
+            if self.maximum_pages > 1:
+                if self.show_entry_count:
+                    text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
+                else:
+                    text = f'Page {page}/{self.maximum_pages}'
+                self.embed.set_footer(text=text)
+
+
+class SubcommandPaginator(FieldPaginator):
+    def __init__(self, ctx, *, entries, per_page=10, show_entry_count=True, **kwargs):
+        super().__init__(ctx, entries=entries, per_page=per_page,
+                         show_entry_count=show_entry_count, **kwargs)
+
+    def prepare_embed(self, entries, page, *, first=False):
+        self.embed.clear_fields()
+
+        for key, value, inline in entries:
+            self.embed.add_field(name=key, value="> " + "\n> ".join(value), inline=inline)
 
         if self.footer:
             self.embed.set_footer(text=self.footer)
