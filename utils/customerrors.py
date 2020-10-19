@@ -128,6 +128,34 @@ class LevelNotEnabled(LevelError):
         self.embed.description = "Leveling is not enabled on this server. Enable it with `m!level enable`"
 
 
+class LevelInvalidNotifyMode(LevelError):
+    def __init__(self, mode: str):
+        super().__init__()
+        self.embed.title = "Invalid Notify Mode"
+        self.embed.description = f"`{mode}` is not a valid mode"
+
+
+class LevelInvalidRange(LevelError):
+    def __init__(self, level: int):
+        super().__init__()
+        self.embed.title = "Invalid Level"
+        self.embed.description = f"`{level}` is not between 1 and 100"
+
+
+class LevelInvalidType(LevelError):
+    def __init__(self, level_type: str):
+        super().__init__()
+        self.embed.title = "Invalid Type"
+        self.embed.description = f"`{level_type}` is not a valid type"
+
+
+class LevelRolesExists(LevelError):
+    def __init__(self):
+        super().__init__()
+        self.embed.title = "Invalid Roles"
+        self.embed.description = "One of the roles is already registered for another level"
+
+
 class LockException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Invalid Lock Operation",
