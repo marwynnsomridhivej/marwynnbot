@@ -134,11 +134,9 @@ class Bot(commands.AutoShardedBot):
     async def on_command_completion(self, ctx):
         async with self.db.acquire() as con:
             command = ctx.command.root_parent.name.lower() if ctx.command.parent else ctx.command.name.lower()
-            result = await con.fetchval(f"SELECT amount from global_counters WHERE command=$tag${command}$tag$")
-            if result:
-                await con.execute(f"UPDATE global_counters SET amount=amount+1 WHERE command=$tag${command}$tag$")
-            else:
-                await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ($tag${command}$tag$, 1)")
+            await con.execute(f"INSERT INTO global_counters(command, amount) VALUES ($tag${command}$tag$, 1) "
+                              f"ON CONFLICT (command) DO UPDATE SET amount=global_counters.amount+1 "
+                              f"WHERE global_counters.command=$tag${command}$tag$")
             if ctx.guild:
                 entry = await con.fetchval(f"SELECT amount FROM guild_counters "
                                            f"WHERE guild_id={ctx.guild.id} AND command=$tag${command}$tag$")
