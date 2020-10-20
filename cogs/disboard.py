@@ -52,11 +52,8 @@ class Disboard(commands.Cog):
         time_to_send = 7200 + int(current_timestamp)
         sleep_time = time_to_send - current_timestamp
         title = "Disboard Bump Available!"
-        message_content = result['message_content']
-        if not message_content:
-            description = "The bump cooldown has expired! You can now bump your server using `!d bump`"
-        else:
-            description = message_content
+        description = (result['message_content'] if result['message_content']
+                       else "The bump cooldown has expired! You can now bump your server using `!d bump`")
         async with self.bot.db.acquire() as con:
             await con.execute(f"UPDATE disboard SET time={time_to_send} WHERE guild_id={message.guild.id}")
         with suppress(Exception):
@@ -77,10 +74,11 @@ class Disboard(commands.Cog):
             sleep_time = int(record['time']) - int(datetime.now().timestamp())
             if sleep_time < 0:
                 async with self.bot.db.acquire() as con:
-                    await con.execute(f"UPDATE disboard SET time = NULL WHERE guild_id = {record['guild_id']}")
+                    await con.execute(f"UPDATE disboard SET time=NULL WHERE guild_id={record['guild_id']}")
                 continue
             title = "Disboard Bump Available!"
-            description = record['message_content'] if record['message_content'] else "The bump cooldown has expired! You can now bump your server using `!d bump`"
+            description = (record['message_content'] if record['message_content']
+                           else "The bump cooldown has expired! You can now bump your server using `!d bump`")
             with suppress(Exception):
                 channel = await self.bot.fetch_channel(int(record['channel_id']))
                 task = self.bot.loop.create_task(self.send_bump_reminder(channel, title, description, sleep_time))
@@ -159,7 +157,10 @@ class Disboard(commands.Cog):
             return False
 
         async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO disboard(guild_id, channel_id, message_content) VALUES({ctx.guild.id}, {channel_id}, {message_content}) ON CONFLICT DO NOTHING")
+            await con.execute(f"INSERT INTO disboard(guild_id, channel_id, message_content) "
+                              f"VALUES({ctx.guild.id}, {channel_id}, "
+                              f"{f'$tag${message_content}$tag$' if message_content else 'NULL'}) "
+                              "ON CONFLICT DO NOTHING")
         return True
 
     async def edit_bump_reminder(self, ctx, channel_id, message_content) -> bool:
@@ -170,7 +171,8 @@ class Disboard(commands.Cog):
         if channel_id:
             update.append(f"channel_id = {channel_id}")
         if message_content:
-            update.append(f"message_content = '{message_content}'" if message_content != "default" else "message_content = NULL")
+            update.append(f"message_content = $tag${message_content}$tag$" if message_content !=
+                          "default" else "message_content = NULL")
 
         try:
             async with self.bot.db.acquire() as con:
@@ -307,12 +309,12 @@ class Disboard(commands.Cog):
         except (discord.NotFound, discord.Forbidden):
             return await ctx.channel.send(embed=embed)
 
-    @disboard.command(aliases = ['-e', 'adjust'])
+    @disboard.command(aliases=['-e', 'adjust'])
     @commands.has_permissions(manage_guild=True)
     async def edit(self, ctx):
         if not await self.check_bump_reminder(ctx):
             await ctx.invoke(self.create)
-        
+
         async with self.bot.db.acquire() as con:
             info = (await con.fetch(f"SELECT * FROM disboard WHERE guild_id = {ctx.guild.id}"))[0]
 
@@ -365,10 +367,10 @@ class Disboard(commands.Cog):
             description = f"{ctx.author.mention}, your bump reminder could not be edited"
             color = discord.Color.dark_red()
         if not await self.edit_panel(ctx, panel, title=title, description=description, color=color):
-                embed = discord.Embed(title=title, description=description, color=color)
-                return await ctx.channel.send(embed=embed)
+            embed = discord.Embed(title=title, description=description, color=color)
+            return await ctx.channel.send(embed=embed)
 
-    @disboard.command(aliases = ['-rm', 'trash', 'cancel'])
+    @disboard.command(aliases=['-rm', 'trash', 'cancel'])
     @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx):
         if not await self.check_bump_reminder(ctx):
