@@ -20,7 +20,7 @@ class Leveling(commands.Cog):
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS level_config(guild_id bigint PRIMARY KEY, "
-                              "enabled boolean DEFAULT TRUE, route_channel_id bigint DEFAULT NULL, "
+                              "enabled boolean DEFAULT FALSE, route_channel_id bigint DEFAULT NULL, "
                               "freq smallint DEFAULT 1, per_min smallint DEFAULT 20, "
                               "server_notif boolean DEFAULT FALSE, global_notif boolean DEFAULT FALSE)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_disabled(channel_id bigint PRIMARY KEY, "
