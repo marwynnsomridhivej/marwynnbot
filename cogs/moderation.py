@@ -291,16 +291,16 @@ class Moderation(commands.Cog):
                 await ctx.channel.send(embed=mutedEmbed)
             else:
                 await member.add_roles(role)
-                path = './muted'
+                path = './assets/muted'
                 files = os.listdir(path)
                 name = random.choice(files)
-                d = f'{path}//{name}'
-                with open(d, 'rb') as f:
-                    picture = discord.File(f, d)
+                directory = f'{path}/{name}'
+                with open(directory, 'rb') as image:
+                    picture = discord.File(fp=image, filename=name)
                 mutedEmbed = discord.Embed(title=f'Muted {member}️',
                                            description=f"**Reason:** {reason_nd}\n**Duration:** {timestring}",
                                            color=discord.Color.blue())
-                mutedEmbed.set_thumbnail(url=f"attachment://muted_{name}")
+                mutedEmbed.set_thumbnail(url=f"attachment://{name}")
                 mutedEmbed.set_footer(text=f'{member} was muted by: {ctx.author}')
                 await ctx.channel.send(file=picture, embed=mutedEmbed)
             await self.set_mute(ctx, member, timestamp)
