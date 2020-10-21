@@ -361,7 +361,7 @@ class Leveling(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True,
-                    aliases=['lvl'],
+                    aliases=['lvl', 'levels'],
                     desc="Displays the user's server level",
                     usage="level (subcommand)",
                     note="Do `m!level help` to view the help menu for level subcommands. "
