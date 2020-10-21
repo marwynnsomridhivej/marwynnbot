@@ -142,10 +142,11 @@ async def _calculate_guild_level(bot: commands.AutoShardedBot, message: discord.
 async def calculate_level(bot: commands.AutoShardedBot, message: discord.Message):
     current_timestamp = int(datetime.now().timestamp())
     enabled, route_channel_id, freq, per_min, snotif, gnotif = await _get_guild_config(bot, message.guild)
-    await _calculate_global_level(bot, message, current_timestamp, route_channel_id, gnotif)
-    if enabled:
-        await _calculate_guild_level(bot, message, current_timestamp, route_channel_id, freq, per_min, snotif)
-    return
+    print("Server Notif", gnotif)
+    # await _calculate_global_level(bot, message, current_timestamp, route_channel_id, gnotif)
+    # if enabled:
+    #     await _calculate_guild_level(bot, message, current_timestamp, route_channel_id, freq, per_min, snotif)
+    # return
 
 
 async def _get_progress_bar(bot: commands.AutoShardedBot, member: discord.Member) -> Tuple[Any, int, int, int]:

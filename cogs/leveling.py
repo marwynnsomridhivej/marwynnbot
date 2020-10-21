@@ -22,7 +22,7 @@ class Leveling(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS level_config(guild_id bigint PRIMARY KEY, "
                               "enabled boolean DEFAULT TRUE, route_channel_id bigint DEFAULT NULL, "
                               "freq smallint DEFAULT 1, per_min smallint DEFAULT 20, "
-                              "server_notif boolean DEFAULT TRUE, global_notif boolean DEFAULT TRUE)")
+                              "server_notif boolean DEFAULT FALSE, global_notif boolean DEFAULT FALSE)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_disabled(channel_id bigint PRIMARY KEY, "
                               "guild_id bigint, disabled boolean DEFAULT TRUE)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_users(user_id bigint, guild_id bigint, "
@@ -37,7 +37,7 @@ class Leveling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot or not message.guild:
+        if message.author.bot or not message.guild or message.guild.id == 336642139381301249:
             return
         await levels.calculate_level(self.bot, message)
 
