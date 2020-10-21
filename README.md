@@ -1,10 +1,4 @@
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/2e6c3dab900e45f9bd53047e4740f435)](https://www.codacy.com/manual/marwynnsomridhivej/marwynnbot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=marwynnsomridhivej/marwynnbot&amp;utm_campaign=Badge_Grade)
-![License](https://img.shields.io/badge/license-GPLv3.0-brightgreen)
-![Clone Size](https://img.shields.io/github/repo-size/marwynnsomridhivej/marwynnbot?color=red&label=Clone%20Size)
-![GitHub stars](https://img.shields.io/github/stars/marwynnsomridhivej/marwynnbot?label=Stars&style=social)
-![GitHub forks](https://img.shields.io/github/forks/marwynnsomridhivej/marwynnbot?label=Forks&style=social)
-
-# MarwynnBot <img align="right" src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="100" width="100">
+# MarwynnBot <img src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="100" width="100" align="right">
 I am a general purpose discord bot written in python using discord.py, a Discord API Wrapper. I am currently under
 development, so please expect new features to come and any issues to be addressed as soon as I can.
 
