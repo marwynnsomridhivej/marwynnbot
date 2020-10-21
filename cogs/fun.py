@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import os
 import random
 import typing
@@ -6,7 +7,6 @@ import typing
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.ext.commands import CommandInvokeError
 from utils import GlobalCMDS
 
 gcmds = GlobalCMDS()
@@ -15,18 +15,26 @@ FUNNY_URL = "https://thumbs.gfycat.com/MisguidedPreciousIguanodon-size_restricte
 FUNNY_FOOTER = "Taken directly from Hubble"
 
 
-class Fun(commands.Cog):
+def fix_toSend(toSend: int):
+    if toSend < 1:
+        return 1
+    elif toSend > 50:
+        return 50
+    else:
+        return toSend
 
-    def __init__(self, bot):
+
+class Fun(commands.Cog):
+    def __init__(self, bot: commands.AutoShardedBot):
         global gcmds
         self.bot = bot
         gcmds = GlobalCMDS(self.bot)
 
     async def imageSend(self, ctx, path, url=None, toSend: str = ""):
         if not url:
-            with open(f"{path}/{random.choice(os.listdir(path))}", "rb") as bin_file:
+            with open(f"./assets/{path}/{random.choice(os.listdir(f'./assets/{path}'))}", "rb") as bin_file:
                 picture = discord.File(bin_file, filename="image.png")
-            embed = discord.Embed(title=f"{path[2:].title()} {toSend}", color=discord.Color.blue())
+            embed = discord.Embed(title=f"{path.title()} {toSend}", color=discord.Color.blue())
             embed.set_image(url=f"attachment://image.png")
             return await ctx.channel.send(file=picture, embed=embed)
         else:
@@ -101,12 +109,11 @@ class Fun(commands.Cog):
         if not api_key:
             title = "Missing API Key"
             description = "Insert your Tenor API Key in the `.env` file"
-            color = discord.Color.red()
-            embed = discord.Embed(title=title,
-                                  description=description,
-                                  color=color)
+            color = discord.Color.dark_red()
+            embed = discord.Embed(title=title, description=description, color=color)
             return await ctx.channel.send(embed=embed)
 
+        toSend = fix_toSend(toSend)
         url = "https://api.tenor.com/v1/random?q=%s&key=%s&limit=%s" % (query, api_key, toSend if toSend <= 50 else 50)
         path = f"{query} from Tenor"
         async with aiohttp.ClientSession() as session:
@@ -122,30 +129,26 @@ class Fun(commands.Cog):
         elif r.status == 429:
             title = "Error Code 429"
             description = "**HTTP ERROR:** Rate limit exceeded. Please try again in about 30 seconds"
-            color = discord.Color.dark_red()
         elif 300 <= r.status < 400:
             title = f"Error Code {r.status}"
             description = "**HTTP ERROR:** Redirect"
-            color = discord.Color.dark_red()
         elif r.status == 404:
             title = "Error Code 404"
             description = "**HTTP ERROR:** Not found - bad resource"
-            color = discord.Color.dark_red()
         elif 500 <= r.status < 600:
             title = f"Error Code {r.status}"
             description = "**HTTP ERROR:** Unexpected server error"
-            color = discord.Color.dark_red()
+        else:
+            title = f"Error Code {r.status}"
+            description = f"**HTTP ERROR:** An error occurred with code {r.status}"
 
-        embed = discord.Embed(title=title,
-                              description=description,
-                              color=color)
-
+        embed = discord.Embed(title=title, description=description, color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['imgur', 'imgursearch'],
                       desc="Fetches images from Imgur",
                       usage="imgursearch (amount) [query]")
-    async def imgurSearch(self, ctx, toSend: typing.Optional[int] = None, *, query: str):
+    async def imgurSearch(self, ctx, toSend: typing.Optional[int] = 1, *, query: str):
         bot_id = gcmds.env_check("IMGUR_API")
         if not bot_id:
             title = "Missing Client ID"
@@ -180,6 +183,7 @@ class Fun(commands.Cog):
                                  description=f"{ctx.author.mention},there were no images that matched your query: `{query}`",
                                  color=discord.Color.dark_red())
             return await ctx.channel.send(embed=none)
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             url = random.choice(images)
             await self.imageSend(ctx, path, url=url, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
@@ -190,7 +194,8 @@ class Fun(commands.Cog):
                       desc="Fetches pictures of Isabelle from Animal Crossing",
                       usage="isabelle (amount)")
     async def isabelle(self, ctx, toSend: typing.Optional[int] = 1):
-        path = "./isabelle"
+        path = "isabelle"
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
@@ -200,7 +205,8 @@ class Fun(commands.Cog):
                       desc="Fetches pictures of Peppa Pig",
                       usage="peppa (amount)")
     async def peppa(self, ctx, toSend: typing.Optional[int] = 1):
-        path = "./peppa"
+        path = "peppa"
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
@@ -211,8 +217,7 @@ class Fun(commands.Cog):
                       usage="pikachu (amount)")
     async def pikachu(self, ctx, toSend: typing.Optional[int] = 1):
         path = "pikachu"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/pikachu") as image:
@@ -227,8 +232,7 @@ class Fun(commands.Cog):
                       usage="randombird (amount)")
     async def randomBird(self, ctx, toSend: typing.Optional[int] = 1):
         path = "bird"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/birb") as image:
@@ -254,8 +258,7 @@ class Fun(commands.Cog):
 
         path = "cat"
         headers = {"x-api-key": api_key}
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get("https://api.thecatapi.com/v1/images/search") as image:
@@ -269,9 +272,9 @@ class Fun(commands.Cog):
                       desc="Fetches pictures of dogs!",
                       usage="randomdog (amount)")
     async def randomDog(self, ctx, toSend: typing.Optional[int] = 1):
+        toSend = fix_toSend(toSend)
         req_url = f"https://dog.ceo/api/breeds/image/random/{toSend}"
         path = "dog"
-
         async with aiohttp.ClientSession() as session:
             async with session.get(req_url) as image:
                 response = await image.json()
@@ -286,8 +289,7 @@ class Fun(commands.Cog):
                       usage="randomfox (amount)")
     async def randomFox(self, ctx, toSend: typing.Optional[int] = 1):
         path = "fox"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/fox") as image:
@@ -302,8 +304,7 @@ class Fun(commands.Cog):
                       usage="randomkangaroo (amount)")
     async def randomKangaroo(self, ctx, toSend: typing.Optional[int] = 1):
         path = "kangaroo"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/kangaroo") as image:
@@ -318,8 +319,7 @@ class Fun(commands.Cog):
                       usage="randomkoala (amount)")
     async def randomKoala(self, ctx, toSend: typing.Optional[int] = 1):
         path = "koala"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/koala") as image:
@@ -334,8 +334,7 @@ class Fun(commands.Cog):
                       usage="randompanda (amount)")
     async def randomPanda(self, ctx, toSend: typing.Optional[int] = 1):
         path = "panda"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/panda") as image:
@@ -350,8 +349,7 @@ class Fun(commands.Cog):
                       usage="randomredpanda (amount)")
     async def randomRedPanda(self, ctx, toSend: typing.Optional[int] = 1):
         path = "red panda"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/red_panda") as image:
@@ -366,8 +364,7 @@ class Fun(commands.Cog):
                       usage="randomracoon (amount)")
     async def randomRacoon(self, ctx, toSend: typing.Optional[int] = 1):
         path = "racoon"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/racoon") as image:
@@ -382,8 +379,7 @@ class Fun(commands.Cog):
                       usage="randomwhale (amount)")
     async def randomWhale(self, ctx, toSend: typing.Optional[int] = 1):
         path = "whale"
-        if toSend > 50:
-            toSend = 50
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://some-random-api.ml/img/whale") as image:
@@ -404,7 +400,8 @@ class Fun(commands.Cog):
                       desc="Fetches picture of Toad from Super Mario",
                       usage="toad (amount)")
     async def toad(self, ctx, toSend: typing.Optional[int] = 1):
-        path = "./toad"
+        path = "toad"
+        toSend = fix_toSend(toSend)
         for counter in range(toSend):
             await self.imageSend(ctx, path, toSend=f"[{counter + 1}/{toSend}]" if toSend != 1 else "")
             await asyncio.sleep(SLEEP_TIME)
