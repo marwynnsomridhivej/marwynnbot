@@ -37,7 +37,7 @@ class Leveling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot or not message.guild or message.guild.id == 336642139381301249:
+        if message.author.bot or not message.guild:
             return
         await levels.calculate_level(self.bot, message)
 
