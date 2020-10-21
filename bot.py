@@ -1,19 +1,17 @@
-import json
-import logging
-import math
-import os
-import random
-import socket
-import sys
-import re
-import discord
-import asyncpg
 import asyncio
+import itertools
+import logging
+import os
+import re
+import socket
 from datetime import datetime
+
+import asyncpg
+import discord
 from discord.ext import commands, tasks
-from dotenv import load_dotenv
 from lavalink.exceptions import NodeException
-from utils import customerrors, globalcommands, context
+
+from utils import context, customerrors, globalcommands
 
 try:
     import uvloop
@@ -21,6 +19,8 @@ except ImportError:
     pass
 else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+finally:
+    loop = asyncio.get_event_loop()
 
 gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
@@ -158,9 +158,8 @@ class Bot(commands.AutoShardedBot):
         activity4 = discord.Activity(name=f"MarwynnBot {gcmds.version}", type=discord.ActivityType.playing)
         activity5 = discord.Activity(name=f"{len(self.commands)} commands & {at} aliases",
                                      type=discord.ActivityType.listening)
-        activityList = [activity1, activity2, activity3, activity4, activity5]
-        activity = random.choice(activityList)
-        await self.change_presence(status=discord.Status.online, activity=activity)
+        activity = itertools.cycle([activity1, activity2, activity3, activity4, activity5])
+        await self.change_presence(status=discord.Status.online, activity=next(activity))
 
     async def on_message(self, message):
         await self.wait_until_ready()
@@ -350,5 +349,4 @@ class Bot(commands.AutoShardedBot):
 
 
 uptime = int(datetime.now().timestamp())
-loop = asyncio.get_event_loop()
 loop.run_until_complete(run(uptime))
