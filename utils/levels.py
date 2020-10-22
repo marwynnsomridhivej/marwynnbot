@@ -123,7 +123,6 @@ async def _calculate_global_level(bot: commands.AutoShardedBot, message: discord
 async def _manage_roles(bot: commands.AutoShardedBot, message: discord.Message, current_level: int,
                         current_role, other_roles: Union[List[discord.Role], None]):
     role = message.guild.get_role(int(current_role['role_id']))
-    print(role)
     await message.author.add_roles(role, reason=f"level up to level {current_level}")
     if not current_role['type'] == "replace":
         return
