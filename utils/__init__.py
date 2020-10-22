@@ -1,4 +1,4 @@
-from utils._confirm import confirm
-from utils.customhandler import handle
-from utils.globalcommands import GlobalCMDS
-from utils.paginator import EmbedPaginator, FieldPaginator, SubcommandPaginator
+from .confirmation import confirm
+from .customhandler import handle
+from .globalcommands import GlobalCMDS
+from .paginator import EmbedPaginator, FieldPaginator, SubcommandPaginator
