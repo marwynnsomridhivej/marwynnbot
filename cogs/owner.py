@@ -91,10 +91,8 @@ class Owner(commands.Cog):
                                           f"{guild.name} has been revoked. Please contact {owner.mention} if you "
                                           "believe this was a mistake",
                                           color=discord.Color.dark_red())
-            try:
+            with suppress(Exception):
                 await guild.owner.send(embed=embed)
-            except Exception:
-                pass
             return True
         except UniqueViolationError:
             raise customerrors.GuildAlreadyPremium(guild)
@@ -273,6 +271,35 @@ class Owner(commands.Cog):
                 return await ctx.channel.send(embed=embed)
         finally:
             await gcmds.smart_delete(panel)
+
+    @commands.command(desc="Runs all commands in a cog",
+                      usage="cogexec [cog]",
+                      uperms=OWNER_PERM)
+    @commands.is_owner()
+    async def cogexec(self, ctx, cog_name: str):
+        cog = self.bot.get_cog(f"{cog_name}")
+        if not cog:
+            embed = discord.Embed(title="No Cog Found",
+                                  description=f"{ctx.author.mention}, there was no cog named `{cog_name}`",
+                                  color=discord.Color.dark_red())
+        else:
+            try:
+                for command in cog.walk_commands():
+                    message = copy.copy(ctx.message)
+                    message.content = f"m!{command.name}"
+                    new_context = await self.bot.get_context(message, cls=type(ctx))
+                    await new_context.reinvoke()
+                    await asyncio.sleep(1.5)
+            except Exception as e:
+                embed = discord.Embed(title="Error Occurred",
+                                    description=f"```Command: {command.name}\n\n{e}```",
+                                    color=discord.Color.dark_red())
+            else:
+                embed = discord.Embed(title="Cog Commands Executed Successfully",
+                                    description=f'{ctx.author.mention}, all commands in this cog were '
+                                    'successfully executed',
+                                    color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Runs a command multiple times",
                       usage="multexec (amount) [invocation]",
