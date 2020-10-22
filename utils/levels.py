@@ -35,13 +35,16 @@ def _calc_req_xp(level: int) -> int:
     return int(-2000 + (2000.69420 * math.exp(0.069420 * level))) if level != 0 else 100
 
 
-async def _get_guild_config(bot: commands.AutoShardedBot, guild: discord.Guild) -> Tuple[bool, int, int, int, bool, bool]:
+async def _get_guild_config(bot: commands.AutoShardedBot, message: discord.Message) -> Tuple[bool, bool, int, int, int, bool, bool]:
     async with bot.db.acquire() as con:
         config = await con.fetch("SELECT enabled, route_channel_id, freq, per_min, server_notif, global_notif "
-                                 f"FROM level_config WHERE guild_id={guild.id}")
+                                 f"FROM level_config WHERE guild_id={message.guild.id}")
+        disabled = await con.fetchval(f"SELECT channel_id FROM level_disabled WHERE "
+                                      f"channel_id={message.channel.id} AND guild_id={message.guild.id}")
     config = config[0]
     return (
         bool(config['enabled']),
+        bool(disabled),
         int(config['route_channel_id']) if config['route_channel_id'] else None,
         int(config['freq']),
         int(config['per_min']),
@@ -141,9 +144,9 @@ async def _calculate_guild_level(bot: commands.AutoShardedBot, message: discord.
 
 async def calculate_level(bot: commands.AutoShardedBot, message: discord.Message):
     current_timestamp = int(datetime.now().timestamp())
-    enabled, route_channel_id, freq, per_min, snotif, gnotif = await _get_guild_config(bot, message.guild)
+    enabled, channel_disabled, route_channel_id, freq, per_min, snotif, gnotif = await _get_guild_config(bot, message)
     await _calculate_global_level(bot, message, current_timestamp, route_channel_id, gnotif)
-    if enabled:
+    if enabled and not channel_disabled:
         await _calculate_guild_level(bot, message, current_timestamp, route_channel_id, freq, per_min, snotif)
     return
 

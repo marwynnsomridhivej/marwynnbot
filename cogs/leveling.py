@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import List, Union
 
 import discord
 from discord.ext import commands
@@ -23,8 +24,7 @@ class Leveling(commands.Cog):
                               "enabled boolean DEFAULT FALSE, route_channel_id bigint DEFAULT NULL, "
                               "freq smallint DEFAULT 1, per_min smallint DEFAULT 20, "
                               "server_notif boolean DEFAULT FALSE, global_notif boolean DEFAULT FALSE)")
-            await con.execute("CREATE TABLE IF NOT EXISTS level_disabled(channel_id bigint PRIMARY KEY, "
-                              "guild_id bigint, disabled boolean DEFAULT TRUE)")
+            await con.execute("CREATE TABLE IF NOT EXISTS level_disabled(channel_id bigint PRIMARY KEY, guild_id bigint)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_users(user_id bigint, guild_id bigint, "
                               "level smallint DEFAULT 0, xp NUMERIC, last_msg NUMERIC, enabled boolean DEFAULT TRUE)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_global(user_id bigint, level smallint DEFAULT 0, "
@@ -126,6 +126,44 @@ class Leveling(commands.Cog):
         embed = discord.Embed(title="About Leveling", description=description, color=discord.Color.blue())
         for name, value in nv:
             embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
+        return await ctx.channel.send(embed=embed)
+
+    async def enable_level(self, ctx, channels: Union[List[discord.TextChannel], None]):
+        async with self.bot.db.acquire() as con:
+            enabled = await con.fetchval(f"UPDATE level_config SET enabled=TRUE WHERE "
+                                         f"enabled=FALSE AND guild_id={ctx.guild.id} RETURNING enabled")
+            channel_ids = f"({', '.join([str(channel.id) for channel in channels if channels])})" if channels \
+                else f"({', '.join([str(channel.id) for channel in ctx.guild.text_channels])})"
+            await con.execute(f"DELETE FROM level_disabled WHERE "
+                              f"guild_id={ctx.guild.id} AND channel_id IN {channel_ids}")
+        if enabled:
+            description = (f"{ctx.author.mention}, leveling has now been enabled on this server. "
+                           "Server members will gain XP whenever they talk, and will level up once they "
+                           "pass certain XP thresholds. Configure role rewards with "
+                           f"`{await gcmds.prefix(ctx)}levelroles`")
+        else:
+            description = (f"{ctx.author.mention}, leveling was enabled in the following channels:\n"
+                           '\n'.join([channel.mention for channel in channels]))
+        embed = discord.Embed(title="Leveling Enabled", description=description, color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
+    @levels.check_entry_exists(entry="enabled", db_name="level_config")
+    async def disable_level(self, ctx, channels: Union[List[discord.TextChannel], None]):
+        async with self.bot.db.acquire() as con:
+            if not channels:
+                await con.execute("UPDATE level_config SET enabled=FALSE WHERE "
+                                  f"enabled=TRUE AND guild_id={ctx.guild.id}")
+                title = "Leveling Disabled"
+                description = (f"{ctx.author.mention}, leveling has been disabled on this server. "
+                               f"Do `{await gcmds.prefix(ctx)}level enable` if you'd like to re-enable it.")
+            else:
+                values = [f"({channel.id}, {ctx.guild.id})" for channel in channels]
+                await con.execute(f"INSERT INTO level_disabled(channel_id, guild_id) "
+                                  f"VALUES {', '.join(values)}")
+                title = "Leveling Disabled in Specific Channels"
+                description = (f"{ctx.author.mention}, leveling has been disabled in the following channels:\n"
+                               "\n".join([channel.mention for channel in channels]))
+        embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
     @levels.check_entry_exists(entry="enabled", db_name="level_config")
@@ -376,17 +414,19 @@ class Leveling(commands.Cog):
 
     @level.command(aliases=['on', 'enable'])
     @commands.has_permissions(manage_guild=True)
-    async def level_enable(self, ctx, channels: commands.Greedy[discord.TextChannel] = None):
-        if not channels:
-            channels = ctx.guild.text_channels
-        return
+    async def level_enable(self, ctx, *, channels: commands.Greedy[discord.TextChannel] = None):
+        if channels:
+            if hasattr(channels, "id"):
+                channels = [channels]
+        return await self.enable_level(ctx, channels)
 
     @level.command(aliases=['off', 'disable'])
     @commands.has_permissions(manage_guild=True)
-    async def level_disable(self, ctx, channels: commands.Greedy[discord.TextChannel] = None):
-        if not channels:
-            channels = ctx.guild.text_channels
-        return
+    async def level_disable(self, ctx, *, channels: commands.Greedy[discord.TextChannel] = None):
+        if channels:
+            if hasattr(channels, "id"):
+                channels = [channels]
+        return await self.disable_level(ctx, channels)
 
     @level.command(aliases=['xpm', 'xppermin', 'xpperminute'])
     @commands.cooldown(1.0, 60.0, commands.BucketType.guild)
