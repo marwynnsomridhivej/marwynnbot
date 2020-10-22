@@ -4,9 +4,10 @@ from contextlib import suppress
 from datetime import datetime
 from io import BytesIO
 from random import randint
-from typing import Any, Tuple
+from typing import Any, List, Tuple, Union
 
 import discord
+from discord import message
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 from PIL.Image import NEAREST
@@ -119,6 +120,28 @@ async def _calculate_global_level(bot: commands.AutoShardedBot, message: discord
     return
 
 
+async def _manage_roles(bot: commands.AutoShardedBot, message: discord.Message, current_level: int,
+                        current_role, other_roles: Union[List[discord.Role], None]):
+    role = message.guild.get_role(int(current_role['role_id']))
+    print(role)
+    await message.author.add_roles(role, reason=f"level up to level {current_level}")
+    if not current_role['type'] == "replace":
+        return
+
+    to_remove = []
+    if other_roles:
+        async with bot.db.acquire() as con:
+            for entry in other_roles:
+                try:
+                    to_remove.append(message.guild.get_role(int(entry['role_id'])))
+                except Exception:
+                    await con.execute(f"DELETE FROM level_roles WHERE role_id={int(entry['role_id'])}")
+    if to_remove:
+        with suppress(Exception):
+            await message.author.remove_roles(*to_remove)
+    return
+
+
 async def _calculate_guild_level(bot: commands.AutoShardedBot, message: discord.Message,
                                  current_timestamp: int, route_channel_id: int,
                                  freq: int, per_min: int, notify: bool):
@@ -134,6 +157,12 @@ async def _calculate_guild_level(bot: commands.AutoShardedBot, message: discord.
             await con.execute(f"UPDATE level_users SET level=level+1, xp={xp - req_xp} "
                               f"WHERE user_id={message.author.id} AND guild_id={message.guild.id}")
             current_level += 1
+            current_role = await con.fetch(f"SELECT * FROM level_roles WHERE guild_id={message.guild.id} AND "
+                                           f"obtain_at = {current_level}")
+            other_roles = await con.fetch(f"SELECT * from level_roles WHERE guild_id={message.guild.id} AND "
+                                          f"obtain_at < {current_level}")
+            current_role = current_role[0]
+            await _manage_roles(bot, message, current_level, current_role, other_roles)
             if notify:
                 await _dispatch_level_up(message, current_level, "guild", route=route_channel_id)
         else:

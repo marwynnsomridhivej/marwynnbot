@@ -275,20 +275,22 @@ class Leveling(commands.Cog):
 
     @levels.check_entry_exists(entry="enabled", db_name="level_config")
     @handle(Exception, to_raise=customerrors.LevelRolesExists())
-    async def give_levelroles(self, ctx, level: int, level_type: str, roles: list) -> discord.Message:
+    async def give_levelroles(self, ctx, level: int, level_type: str, roles: List[discord.Role]) -> discord.Message:
         async with self.bot.db.acquire() as con:
             if isinstance(roles, discord.Role):
                 roles = [roles]
             values = [f"({role.id}, {ctx.guild.id}, {level}, '{level_type}')" for role in roles]
             await con.execute(f"INSERT INTO level_roles(role_id, guild_id, obtain_at, type) VALUES"
                               f"{', '.join(values)}")
+        description = (f"{ctx.author.mention}, when users on your server reach "
+                       f"level {level}, they will receive the following roles:\n" +
+                       "\n".join([role.mention for role in roles]))
+        if level_type == "add":
+            description += "\nThey will be added to previous role rewards they have received"
+        else:
+            description += "\nThey will be added, but previous role rewards will be removed"
         embed = discord.Embed(title="Successfully Set Role Rewards",
-                              description=f"{ctx.author.mention}, when users on your server reach "
-                              f"level {level}, they will receive the following roles:\n" +
-                              "\n".join([role.mention for role in roles]) + "\n"
-                              "They will be added to previous role rewards they have received"
-                              if level_type == "add" else
-                              "They will be added, but previous role rewards will be removed",
+                              description=description,
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
