@@ -168,8 +168,12 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=['pfp'],
                       desc="Displays a member's profile picture",
-                      usage="profilepic [@member]")
-    async def profilepic(self, ctx, *, member: discord.Member):
+                      usage="profilepic (@member)",
+                      note="If `(@member)` is not specified, it defaults to the "
+                      "user who invoked the command")
+    async def profilepic(self, ctx, *, member: discord.Member = None):
+        if not member:
+            member = ctx.author
         icon = member.avatar_url_as(static_format="png", size=4096)
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
