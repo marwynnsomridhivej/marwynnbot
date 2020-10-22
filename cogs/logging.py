@@ -6,7 +6,8 @@ from typing import Optional, Sequence, Union
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS, premium, logdispatcher
+from utils import (GlobalCMDS, SubcommandPaginator, customerrors,
+                   logdispatcher, premium)
 from utils.enums import ConfirmReactions, LogLevel
 
 gcmds = GlobalCMDS()
@@ -271,11 +272,12 @@ class Logging(commands.Cog):
                       "**Aliases:** `bl`",
                       "**Special Cases:** This is an owner only command. `(guild)` will default to the current server "
                       "if unspecified")
-        nv = [("Set", lset), ("List", llist), ("Remove", ldisable), ("Level", llevel), ("Blacklist", lblacklist)]
+        nv = [("Set", lset), ("Command", lcommand), ("List", llist),
+              ("Remove", ldisable), ("Level", llevel), ("Blacklist", lblacklist)]
         embed = discord.Embed(title="Logging Help", description="\n".join(description), color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv], per_page=2,
+                                  show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def check_loggable(self, ctx):
         async with self.bot.db.acquire() as con:
@@ -396,9 +398,9 @@ class Logging(commands.Cog):
         async with self.bot.db.acquire() as con:
             status = await con.fetchval(f"SELECT {name.lower()} FROM logging WHERE guild_id={ctx.guild.id}")
         embed = discord.Embed(title="Command Logging Details",
-                                description=f"Logging for the command `{name.lower()}` is ""**{}**"
-                                .format('enabled' if status else 'disabled'),
-                                color=discord.Color.blue())
+                              description=f"Logging for the command `{name.lower()}` is ""**{}**"
+                              .format('enabled' if status else 'disabled'),
+                              color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
     @logging.command(aliases=['rm', 'delete', 'reset', 'clear', 'remove', 'disable'])
