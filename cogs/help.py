@@ -7,8 +7,8 @@ from discord.ext import commands
 from utils import FieldPaginator, GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
-GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'UNO']
-NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Minecraft', 'Nintendo', 'Pokedex', 'Reddit',
+GAMES = ['Blackjack', 'Coinflip', 'ConnectFour', 'Slots', 'Uno']
+NON_DETAILED = ['Actions', 'Disboard', 'Locks', 'Logging', 'Minecraft', 'Nintendo', 'Pokedex', 'Reddit',
                 'Redirects', 'Reminders', 'Serverlink', 'Starboard', 'Tags', 'Todo']
 DEFAULT_THUMBNAIL = "https://www.jing.fm/clipimg/full/71-716621_transparent-clip-art-open-book-frame-line-art.png"
 SUPPORT_SERVER_INVITE = "https://discord.gg/78XXt3Q"
