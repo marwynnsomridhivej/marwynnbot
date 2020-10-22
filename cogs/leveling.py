@@ -136,13 +136,13 @@ class Leveling(commands.Cog):
                 else f"({', '.join([str(channel.id) for channel in ctx.guild.text_channels])})"
             await con.execute(f"DELETE FROM level_disabled WHERE "
                               f"guild_id={ctx.guild.id} AND channel_id IN {channel_ids}")
-        if enabled:
+        if enabled or not channels:
             description = (f"{ctx.author.mention}, leveling has now been enabled on this server. "
                            "Server members will gain XP whenever they talk, and will level up once they "
                            "pass certain XP thresholds. Configure role rewards with "
                            f"`{await gcmds.prefix(ctx)}levelroles`")
         else:
-            description = (f"{ctx.author.mention}, leveling was enabled in the following channels:\n"
+            description = (f"{ctx.author.mention}, leveling was enabled in the following channels:\n" +
                            '\n'.join([channel.mention for channel in channels]))
         embed = discord.Embed(title="Leveling Enabled", description=description, color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
