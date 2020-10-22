@@ -223,6 +223,19 @@ class Leveling(commands.Cog):
                               color=discord.Color.blue() if curr_status else discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
+    @levels.check_entry_exists(entry="enabled", db_name="level_config")
+    async def configure_reroute(self, ctx, channel: discord.TextChannel = None, name: str = None) -> discord.Message:
+        async with self.bot.db.acquire() as con:
+            if name == "reroute":
+                await con.execute(f"UPDATE level_config SET route_channel_id={channel.id} WHERE guild_id={ctx.guild.id}")
+                description = f"The level up messages will now appear in {channel.mention}"
+            else:
+                await con.execute(f"UPDATE level_config SET route_channel_id=NULL WHERE guild_id={ctx.guild.id}")
+                description = ("The level up messages will now appear in "
+                               "the channel the user leveled up in")
+        embed = discord.Embed(title="Level Up Reroute", description=description, color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
+
     async def send_levelroles_help(self, ctx):
         pfx = f"{await gcmds.prefix(ctx)}levelroles"
         description = ("Once you have configured MarwynnBot's leveling system, you can configure "
@@ -448,28 +461,15 @@ class Leveling(commands.Cog):
         else:
             return await self.edit_current_freq(ctx, value)
 
-    @levels.check_entry_exists(entry="enabled", db_name="level_config")
     @level.command(aliases=['redirect', 'reroute'])
     @commands.has_permissions(manage_guild=True)
     async def level_reroute(self, ctx, channel: discord.TextChannel):
-        async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE level_config SET route_channel_id={channel.id} WHERE guild_id={ctx.guild.id}")
-        embed = discord.Embed(title="Level Up Reroute",
-                              description=f"The level up messages will now appear in {channel.mention}",
-                              color=discord.Color.blue())
-        return await ctx.channel.send(embed=embed)
+        return await self.configure_reroute(ctx, channel=channel, name="reroute")
 
-    @levels.check_entry_exists(entry="enabled", db_name="level_config")
     @level.command(aliases=['unredirect', 'unroute'])
     @commands.has_permissions(manage_guild=True)
     async def level_unroute(self, ctx):
-        async with self.bot.db.acquire() as con:
-            await con.execute(f"UPDATE level_config SET route_channel_id=NULL WHERE guild_id={ctx.guild.id}")
-        embed = discord.Embed(title="Level Up Reroute",
-                              description="The level up messages will now appear in "
-                              "the channel the user leveled up in",
-                              color=discord.Color.blue())
-        return await ctx.channel.send(embed=embed)
+        return await self.configure_reroute(ctx, name="reroute")
 
     @level.command(aliases=['notif', 'notifs', 'notify'])
     @commands.has_permissions(manage_guild=True)
