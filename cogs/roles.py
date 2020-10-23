@@ -1049,9 +1049,9 @@ class Roles(commands.Cog):
         else:
             async with ctx.channel.typing():
                 if user_type in ['member', 'members']:
-                    members = (member for member in ctx.guild.members if not member.bot)
+                    members = (member for member in ctx.guild.members if not member.bot and member != ctx.guild.me)
                 else:
-                    members = (member for member in ctx.guild.members if member.bot)
+                    members = (member for member in ctx.guild.members if member.bot and member != ctx.guild.me)
                 for member in members:
                     if op == "give":
                         func = member.add_roles
