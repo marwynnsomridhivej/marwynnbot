@@ -3,6 +3,7 @@ from typing import Iterable, List, Union
 import discord
 from discord.ext import commands
 from faker import Faker
+from utils import extract
 
 COLOR_FORMATS = ['hex', 'rgb', 'hsv', 'hsl']
 HUES = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']
@@ -14,13 +15,6 @@ class AutoGen(commands.Cog):
         self.bot = bot
         self.fake = Faker()
         Faker.seed(0)
-
-    def extract(self, iterable: Iterable, iter_in: List) -> Union[str, None]:
-        for item in iterable:
-            if item in iter_in:
-                return item
-        else:
-            return None
 
     async def send(self, ctx, name: str, func: str, color: discord.Color = None) -> discord.Message:
         embed = discord.Embed(title=name.title(),
@@ -67,9 +61,9 @@ class AutoGen(commands.Cog):
                       '`(luminosity)` can be "bright", "dark", "light", or unspecified for a random luminosity')
     async def autocolor(self, ctx, *, options: str = None):
         options = options.split(" ") if options else []
-        color_format = self.extract(options, COLOR_FORMATS) or "hex"
-        hue = self.extract(options, HUES)
-        luminosity = self.extract(options, LUMINOSITIES) or "random"
+        color_format = extract(options, COLOR_FORMATS) or "hex"
+        hue = extract(options, HUES)
+        luminosity = extract(options, LUMINOSITIES) or "random"
         return await self.send(
             ctx,
             f"{color_format} color",
@@ -153,8 +147,8 @@ class AutoGen(commands.Cog):
                       '`(class)` can be either "a", "b", or "c", defaults to random')
     async def autoip(self, ctx, *, options: str = None):
         options = options.split(" ") if options else []
-        version = self.extract(options, "46")
-        addr_class = self.extract(options, "abc")
+        version = extract(options, "46")
+        addr_class = extract(options, "abc")
         if not version or version != "6":
             func = self.fake.ipv4(address_class=addr_class)
         else:
