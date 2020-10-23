@@ -17,6 +17,20 @@ class CommandHelpDirectlyCalled(CommandNotFound):
                                   "Please use the help command for the category this command is in")
 
 
+class MassroleInvalidType(commands.CommandError):
+    def __init__(self, user_type: str):
+        self.embed = discord.Embed(title="Invalid Type",
+                                   description=f"The specified type `{user_type}` is not a valid type",
+                                   color=discord.Color.dark_red())
+
+
+class MassroleInvalidOperation(commands.CommandError):
+    def __init__(self, op: str):
+        self.embed = discord.Embed(title="Invalid Operation",
+                                   description=f"The specified operation `{op}` is not a valid operation",
+                                   color=discord.Color.dark_red())
+
+
 class LoggingError(commands.CommandError):
     pass
 

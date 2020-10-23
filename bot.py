@@ -26,18 +26,6 @@ gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
-ALL_CUSTOMERRORS = [
-    customerrors.TagError,
-    customerrors.PremiumError,
-    customerrors.GameStatsError,
-    customerrors.BlacklistOperationError,
-    customerrors.PostgreSQLError,
-    customerrors.MathError,
-    customerrors.LoggingError,
-    customerrors.SilentActionError,
-    customerrors.CommandNotFound,
-    customerrors.UnoCannotDM,
-]
 token_rx = re.compile(r'[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}')
 version = f"Running MarwynnBot {gcmds.version}"
 
@@ -271,10 +259,8 @@ class Bot(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandOnCooldown):
             cooldown_time_truncated = gcmds.truncate(error.retry_after, 3)
             if cooldown_time_truncated < 1:
-                spell = "milliseconds"
                 cooldown_time_truncated *= 1000
-            else:
-                spell = "seconds"
+            spell = "milliseconds" if cooldown_time_truncated < 1 else "seconds"
             cooldown = discord.Embed(title="Command on Cooldown",
                                      description=f"{ctx.author.mention}, this command is still on cooldown for {cooldown_time_truncated} {spell}",
                                      color=discord.Color.dark_red())
@@ -293,17 +279,13 @@ class Bot(commands.AutoShardedBot):
                 return await ctx.channel.send(embed=forbidden)
             else:
                 raise error
+        elif isinstance(error, commands.CheckFailure):
+            pass
         else:
-            for error_type in ALL_CUSTOMERRORS:
-                try:
-                    return await ctx.channel.send(embed=error.embed)
-                except Exception:
-                    pass
-            else:
-                if isinstance(error, commands.CheckFailure):
-                    pass
-                else:
-                    raise error
+            try:
+                return await ctx.channel.send(embed=error.embed)
+            except Exception:
+                raise error
 
     async def on_guild_join(self, guild):
         async with self.db.acquire() as con:
