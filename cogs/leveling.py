@@ -31,8 +31,6 @@ class Leveling(commands.Cog):
                               "xp NUMERIC, last_msg NUMERIC, enabled boolean DEFAULT TRUE)")
             await con.execute("CREATE TABLE IF NOT EXISTS level_roles(role_id bigint PRIMARY KEY, guild_id bigint, "
                               "obtain_at smallint, type text DEFAULT 'add')")
-            for guild in self.bot.guilds:
-                await con.execute(f"INSERT INTO level_config(guild_id) VALUES({guild.id}) ON CONFLICT DO NOTHING")
         return
 
     @commands.Cog.listener()
