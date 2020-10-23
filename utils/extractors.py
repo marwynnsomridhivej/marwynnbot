@@ -3,6 +3,9 @@ from typing import Any, Iterable, List, Union
 
 
 def extract(iterable: Iterable, iter_in: List) -> Union[str, None]:
+    if not iterable:
+        return None
+
     for item in iterable:
         if item in iter_in:
             return item
