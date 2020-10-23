@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 from contextlib import suppress
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -1027,6 +1028,47 @@ class Roles(commands.Cog):
             return await self.delete_rr_message(ctx, message_id)
         else:
             return await self.user_cancelled(ctx, panel)
+
+    @commands.cooldown(1, 300, type=commands.BucketType.guild)
+    @commands.command(aliases=['mr'],
+                      desc="Gives specified roles to every user in the server",
+                      usage="massrole [operation] [type] [@role]*va",
+                      uperms=['Manage Server'],
+                      bperms=['Manage Roles'],
+                      note="This command can be used once per 15 minutes. "
+                      "Valid options for `[operation]` are \"give\" or \"remove\". "
+                      "Valid options for `(type)` are \"members\" and \"bots\"")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_guild=True)
+    async def massrole(self, ctx, op: str, user_type: str, roles: commands.Greedy[discord.Role]):
+        op, user_type = op.lower(), user_type.lower()
+        if not user_type in ['member', 'members', 'bot', 'bots']:
+            raise customerrors.MassroleInvalidType(user_type)
+        elif not op in ['give', 'remove']:
+            raise customerrors.MassroleInvalidOperation(op)
+        else:
+            async with ctx.channel.typing():
+                if user_type in ['member', 'members']:
+                    members = (member for member in ctx.guild.members if not member.bot)
+                else:
+                    members = (member for member in ctx.guild.members if member.bot)
+                for member in members:
+                    if op == "give":
+                        func = member.add_roles
+                    else:
+                        func = member.remove_roles
+                    with suppress(Exception):
+                        await func(roles, reason=f"Given by {ctx.author} using massrole")
+            if op == "give":
+                title = "Roles Successfully Given"
+                description = (f"{ctx.author.mention}, I've given all the roles you've specified "
+                               f"to every {user_type.replace('s', '')} that I have permissions to give roles to")
+            else:
+                title = "Roles Successfully Removed"
+                description = (f"{ctx.author.mention}, I've removed all the roles you've specified "
+                               f"from every {user_type.replace('s', '')} that I have permissions to remove roles from")
+            embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
 
 def setup(bot):
