@@ -160,8 +160,9 @@ async def _calculate_guild_level(bot: commands.AutoShardedBot, message: discord.
                                            f"obtain_at = {current_level}")
             other_roles = await con.fetch(f"SELECT * from level_roles WHERE guild_id={message.guild.id} AND "
                                           f"obtain_at < {current_level}")
-            current_role = current_role[0]
-            await _manage_roles(bot, message, current_level, current_role, other_roles)
+            if current_role:
+                current_role = current_role[0]
+                await _manage_roles(bot, message, current_level, current_role, other_roles)
             if notify:
                 await _dispatch_level_up(message, current_level, "guild", route=route_channel_id)
         else:
