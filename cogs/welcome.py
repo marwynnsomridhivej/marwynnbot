@@ -12,8 +12,8 @@ from utils import GlobalCMDS
 
 gcmds = GlobalCMDS()
 timeout = 120
-channel_tag_rx = re.compile(r'<#[0-9]{18}>')
-channel_id_rx = re.compile(r'[0-9]{18}')
+channel_tag_rx = re.compile(r'<#[\d]{18}>')
+channel_id_rx = re.compile(r'[\d]{18}')
 api_key = gcmds.env_check("TENOR_API")
 
 
@@ -508,18 +508,15 @@ class Welcome(commands.Cog):
             except asyncio.TimeoutError:
                 return await gcmds.timeout(ctx, cmd_title, timeout)
             if result.content == "cancel":
-                try:
-                    await temp_welcomer.delete()
-                except Exception:
-                    pass
+                await gcmds.smart_delete(temp_welcomer)
                 return await gcmds.cancelled(ctx, cmd_title)
             elif result.content == "skip" or result.content == "default":
                 new_channel_id = info[0]
                 break
-            elif re.match(result.content, channel_tag_rx):
+            elif re.match(channel_tag_rx, result.content):
                 new_channel_id = result.content[2:20]
                 break
-            elif re.match(result.content, channel_id_rx):
+            elif re.match(channel_id_rx, result.content):
                 new_channel_id = result.content
                 break
             else:
@@ -538,10 +535,7 @@ class Welcome(commands.Cog):
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, cmd_title, timeout)
         if result.content == "cancel":
-            try:
-                await temp_welcomer.delete()
-            except Exception:
-                pass
+            await gcmds.smart_delete(temp_welcomer)
             return await gcmds.cancelled(ctx, cmd_title)
         elif result.content == "skip":
             new_title = info[1]
