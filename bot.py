@@ -70,7 +70,8 @@ async def run(uptime):
     startup = discord.Activity(name="Starting Up...", type=discord.ActivityType.playing)
     intents = discord.Intents.all()
     bot = Bot(command_prefix=get_prefix, help_command=None, shard_count=1, description=description, db=db,
-              fetch_offline_members=True, status=discord.Status.online, activity=startup, uptime=uptime, intents=intents)
+              fetch_offline_members=True, status=discord.Status.online, activity=startup, uptime=uptime,
+              intents=intents, owner_id=int(os.getenv("OWNER_ID")))
 
     try:
         await bot.start(gcmds.env_check("TOKEN"))
@@ -90,7 +91,8 @@ class Bot(commands.AutoShardedBot):
             fetch_offline_members=kwargs['fetch_offline_members'],
             status=kwargs['status'],
             activity=kwargs['activity'],
-            intents=kwargs['intents']
+            intents=kwargs['intents'],
+            owner_id=kwargs['owner_id'],
         )
         self.uptime = kwargs['uptime']
         self.db = kwargs.pop("db")
