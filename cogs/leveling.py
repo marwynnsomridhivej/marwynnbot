@@ -36,6 +36,21 @@ class Leveling(commands.Cog):
         return
 
     @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute(f"INSERT INTO level_config(guild_id) VALUES({guild.id}) ON CONFLICT DO NOTHING")
+        return
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            for db_name in ['level_config', 'level_roles', 'level_users', 'level_disabled']:
+                await con.execute(f"DELETE FROM {db_name} WHERE guild_id={guild.id}")
+        return
+
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot or not message.guild:
             return
