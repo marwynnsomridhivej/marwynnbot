@@ -1,10 +1,7 @@
-import json
-import os
 from datetime import datetime, timedelta
-from io import BytesIO
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from utils import EmbedPaginator, GlobalCMDS
 
 gcmds = GlobalCMDS()
