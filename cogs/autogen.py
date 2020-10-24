@@ -1,5 +1,4 @@
 from random import randint
-from typing import Iterable, List, Union
 
 import discord
 from discord.ext import commands, tasks
