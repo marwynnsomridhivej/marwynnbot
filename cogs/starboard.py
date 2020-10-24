@@ -140,7 +140,6 @@ class Starboard(commands.Cog):
         else:
             async with self.bot.db.acquire() as con:
                 counter = await con.fetchval(f"UPDATE starboard SET counter=counter-1 WHERE message_id={sb_message.id} RETURNING counter")
-        print(ceiling)
 
         if counter >= ceiling:
             embed_copy = sb_message.embeds[0]
