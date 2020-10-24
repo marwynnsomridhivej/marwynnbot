@@ -1,8 +1,9 @@
 import asyncio
+from math import ceil, log
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS
+from utils import GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 levels = ['⭐', '✨', '🌟', '💫']
@@ -45,16 +46,20 @@ class Starboard(commands.Cog):
             orig = await con.fetchval(f"SELECT orig_message_id FROM starboard WHERE orig_message_id={message.id}")
             on_sb = await con.fetchval(f"SELECT message_id FROM starboard WHERE message_id={message.id} OR orig_message_id={message.id}")
 
-        if str(emoji) != registered_emoji:
+        if str(emoji) != registered_emoji or message.id == on_sb:
+            return
+
+        sbc = await self.bot.fetch_channel(sbc)
+        reaction = discord.utils.get(message.reactions, emoji=registered_emoji)
+        ceiling = ceil(log(len([member for member in message.guild.members if not member.bot]), 4)) or 1
+        if reaction.count < ceiling:
             return
         elif not (orig or on_sb):
-            sbc = await self.bot.fetch_channel(sbc)
             return (await self.push_starboard(message, sbc, emoji=emoji) if sbc
                     else await self.push_starboard(message, emoji=emoji))
         else:
-            sbc = await self.bot.fetch_channel(sbc)
             on_sb = await sbc.fetch_message(on_sb)
-            return await self.update_starboard(on_sb, sbc, "add", emoji)
+            return await self.update_starboard(on_sb, "add", emoji, ceiling)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
@@ -79,13 +84,13 @@ class Starboard(commands.Cog):
             registered_emoji = await con.fetchval(f"SELECT starboard_emoji FROM guild WHERE guild_id={channel.guild.id}")
             on_sb = await con.fetchval(f"SELECT message_id FROM starboard WHERE message_id={message.id} OR orig_message_id={message.id}")
 
-        if not emoji != registered_emoji or not on_sb:
+        if not emoji != registered_emoji or not on_sb or message.id == on_sb:
             return
-        else:
-            if sbc:
-                sbc = await self.bot.fetch_channel(sbc)
-                on_sb = await sbc.fetch_message(on_sb)
-            return await self.update_starboard(on_sb, sbc, "remove", emoji)
+
+        sbc = await self.bot.fetch_channel(sbc)
+        counter = ceil(log(len([member for member in message.guild.members if not member.bot]), 4)) or 1
+        on_sb = await sbc.fetch_message(on_sb)
+        return await self.update_starboard(on_sb, "remove", emoji, counter)
 
     async def push_starboard(self, message: discord.Message, sbc: discord.TextChannel = None, emoji=None):
         if not sbc:
@@ -121,7 +126,6 @@ class Starboard(commands.Cog):
                     value = f"[{attachment.filename}]({attachment.url})"
                 embed.add_field(name="Attachments", value=value, inline=False)
         sb_message = await sbc.send(embed=embed)
-        await sb_message.add_reaction(emoji)
 
         async with self.bot.db.acquire() as con:
             values = f"({message.id}, {sb_message.id}, {message.guild.id}, '{sb_message.jump_url}')"
@@ -129,18 +133,20 @@ class Starboard(commands.Cog):
             await con.execute(f"UPDATE guild SET starboard_channel={sbc.id} WHERE guild_id={message.guild.id}")
         return
 
-    async def update_starboard(self, sb_message: discord.Message, sb_channel: discord.TextChannel, mode, emoji):
+    async def update_starboard(self, sb_message: discord.Message, mode: str, emoji: str, ceiling: int):
         if mode == "add":
             async with self.bot.db.acquire() as con:
                 counter = await con.fetchval(f"UPDATE starboard SET counter=counter+1 WHERE message_id={sb_message.id} RETURNING counter")
         else:
             async with self.bot.db.acquire() as con:
                 counter = await con.fetchval(f"UPDATE starboard SET counter=counter-1 WHERE message_id={sb_message.id} RETURNING counter")
+        print(ceiling)
 
-        if counter != 0:
+        if counter >= ceiling:
             embed_copy = sb_message.embeds[0]
             counter_emoji = levels[counter // 10 if counter // 10 <= 4 else 4]
-            embed_copy.set_footer(text=f"{counter_emoji} Upvoted {counter} {'times' if counter != 1 else 'time'}. React with {emoji} to upvote!")
+            embed_copy.set_footer(
+                text=f"{counter_emoji} Upvoted {counter} {'times' if counter != 1 else 'time'}. React with {emoji} to upvote!")
             return await sb_message.edit(embed=embed_copy)
         else:
             async with self.bot.db.acquire() as con:
@@ -217,7 +223,7 @@ class Starboard(commands.Cog):
             channel_id = await con.fetchval(f"SELECT starboard_channel FROM guild WHERE guild_id={ctx.guild.id}")
             emoji_id = await con.fetchval(f"SELECT starboard_emoji FROM guild WHERE guild_id={ctx.guild.id}")
         if not channel_id and not emoji_id:
-            raise customerrors.NoStarboard()
+            raise customerrors.NoStarboardSet()
         description = ""
         if channel_id:
             description += f"Channel: <#{channel_id}>"
