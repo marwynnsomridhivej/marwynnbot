@@ -1,6 +1,5 @@
 import asyncio
 import mimetypes
-import os
 import random
 import re
 
@@ -8,7 +7,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 from num2words import num2words
-from utils import GlobalCMDS
+from utils import GlobalCMDS, SubcommandPaginator
 
 gcmds = GlobalCMDS()
 timeout = 120
@@ -99,40 +98,39 @@ class Welcome(commands.Cog):
                                         color=discord.Color.dark_red())
             leave_embed.set_thumbnail(url=member.avatar_url)
             leave_embed.set_image(url="https://media1.tenor.com/images/e69ebde3631408c200777ebe10f84367/tenor.gif?"
-                                    "itemid=5081296")
+                                  "itemid=5081296")
             return await channel_to_send.send(embed=leave_embed)
 
     async def get_welcome_help(self, ctx) -> discord.Message:
+        pfx = f"{await gcmds.prefix(ctx)}welcomer"
         title = "Welcomer Help Menu"
-        description = f"{ctx.author.mention}, the welcomer is used to greet new members of your server when they join. " \
-            f"The base command is `{await gcmds.prefix(ctx)}welcomer [option]` *alias=welcome*. Here are the valid " \
-            "options for `[option]`\n\n"
-        create = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer create`\n" \
-            "**Returns:** An interactive setup panel that will create a working welcomer in your server\n" \
-            "**Aliases:** `make` `start` `-c`\n" \
-            "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you" \
-            " try to use this command when you already have a welcomer set up, it will automatically redirect you to " \
-            "the interactive edit panel"
-        edit = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer edit`\n" \
-            "**Returns:** An interactive setup panel that will edit your current welcomer\n" \
-            "**Aliases:** `adjust` `modify` `-e`\n" \
-            "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        delete = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer delete`\n" \
-            "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
-            "**Aliases:** `trash` `cancel` `rm`\n" \
-            "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
-        test = (f"**Usage:** `{await gcmds.prefix(ctx)}welcomer test`\n"
+        description = (f"{ctx.author.mention}, the welcomer is used to greet new members of your server when they join. "
+                       f"The base command is `{pfx} [option]` *alias=welcome*. Here are the valid "
+                       "options for `[option]`")
+        create = (f"**Usage:** `{pfx} create`",
+                  "**Returns:** An interactive setup panel that will create a working welcomer in your server",
+                  "**Aliases:** `make` `start` `-c`",
+                  "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you"
+                  " try to use this command when you already have a welcomer set up, it will automatically redirect you to "
+                  "the interactive edit panel")
+        edit = (f"**Usage:** `{pfx} edit`",
+                "**Returns:** An interactive setup panel that will edit your current welcomer",
+                "**Aliases:** `adjust` `modify` `-e`",
+                "**Special Cases:** You must have a welcomer currently set up in this server to use this command")
+        delete = (f"**Usage:** `{pfx} delete`",
+                  "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so",
+                  "**Aliases:** `trash` `cancel` `rm`",
+                  "**Special Cases:** You must have a welcomer currently set up in this server to use this command")
+        test = (f"**Usage:** `{pfx} test`",
                 "**Returns:** A test welcomer in your currently set welcome channel")
-        fields = [("Create", create), ("Edit", edit), ("Delete", delete), ("Test", test)]
+        nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Test", test)]
 
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
-        for name, value in fields:
-            embed.add_field(name=name,
-                            value=value,
-                            inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=2, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def check_panel(self, panel: discord.Message) -> bool:
         try:
@@ -216,7 +214,7 @@ class Welcome(commands.Cog):
         op.append(f"title = '{title}'") if title else op.append(f"title = 'New Member Joined!'")
         op.append(f"description = '{description}'") if description else op.append(
             "description = 'Welcome to {server_name}! {user_mention} is our {member_count_ord} member!'"
-            )
+        )
         if media:
             if media == "default":
                 op.append("media = NULL")
