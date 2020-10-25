@@ -172,7 +172,7 @@ class EmbedPaginator:
         embed = self.embed.copy()
         embed.clear_fields()
         embed.title = "Paginator Help"
-        embed.description = (f"{self.author.mention}, here are the controls for the paginator:\n\n"
+        embed.description = (f"{self.author.mention}, here are the controls for the paginator:\n\n" + 
                              '\n'.join(desc))
         embed.set_footer(
             text=f"Original paginator left on page {self.current_page}. Press ⏹️ to return to original paginator")
