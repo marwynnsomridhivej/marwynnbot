@@ -6,7 +6,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands, tasks
-from utils import GlobalCMDS
+from utils import GlobalCMDS, SubcommandPaginator
 
 gcmds = GlobalCMDS()
 disboard_bot_id = 302050872383242240
@@ -101,32 +101,32 @@ class Disboard(commands.Cog):
             await con.execute(f"UPDATE disboard SET time = NULL WHERE guild_id = {channel.guild.id}")
 
     async def get_disboard_help(self, ctx) -> discord.Message:
+        pfx = f"{await gcmds.prefix(ctx)}disboard"
         title = "Disboard Commands"
         description = (f"{ctx.author.mention}, this is MarwynnBot's Disboard integration. MarwynnBot's many functions "
-                       f"are listed here below. The base command is {await gcmds.prefix(ctx)}disboard [option]. "
-                       "Here are all the valid options for the `[option]` argument")
-        create = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard create`",
+                       f"are listed here below. The base command is `{pfx}`. Here are all the valid Disboard commands")
+        create = (f"**Usage:** `{pfx} create`",
                   "**Returns:** An interactive setup panel that will make your disboard bump reminder",
                   "**Aliases:** `-c` `make` `start`",
                   "**Note:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
-        edit = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard edit`",
+        edit = (f"**Usage:** `{pfx} edit`",
                 "**Returns:** An interactive setup panel that will edit your current disboard bump reminder",
                 "**Aliases:** `-e` `adjust`",
                 "**Note:** You must satisfy the special case for `create` and currently have a working bump "
                 "reminder set")
-        delete = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard delete`",
+        delete = (f"**Usage:** `{pfx} delete`",
                   "**Returns:** A confirmation panel that will delete your current disboard bump reminder",
                   "**Aliases:** `rm` `trash` `cancel`",
                   "**Note:** You must satisfy the special case for `edit`")
-        invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`",
+        invite = (f"**Usage:** `{pfx} invite`",
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
         nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite)]
         embed = discord.Embed(title=title,
                               description=description,
                               color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def disboard_joined(self, ctx) -> bool:
         if not ctx.guild.get_member(disboard_bot_id):

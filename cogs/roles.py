@@ -1,12 +1,10 @@
 import asyncio
-import os
 import re
 from contextlib import suppress
-from typing import Optional
 
 import discord
 from discord.ext import commands
-from utils import EmbedPaginator, GlobalCMDS, customerrors
+from utils import EmbedPaginator, GlobalCMDS, SubcommandPaginator, customerrors
 
 gcmds = GlobalCMDS()
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
@@ -154,32 +152,33 @@ class Roles(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     async def rr_help(self, ctx):
+        pfx = f"{await gcmds.prefix(ctx)}reactionrole"
         message_id_message = f"The `[messageID]` argument must be the message ID of a reaction " \
             f"roles panel that you have created. You will be unable to edit the panel if you " \
             f"provide an invalid message ID or provide a message ID of a panel that was " \
             f"not created by you"
         embed = discord.Embed(title="ReactionRoles Help Menu",
                               description=f"All reaction roles commands can be accessed using "
-                              f"`{await gcmds.prefix(ctx)}reactionrole [option]`. "
+                              f"`{pfx} [option]`. "
                               f"Below is a list of all the valid options",
                               color=discord.Color.blue())
-        rrcreate = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole create`",
+        rrcreate = (f"**Usage:** `{pfx} create`",
                     f"**Returns:** Interactive reaction roles setup panel",
                     f"**Aliases:** `-c` `start` `make`")
-        rredit = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`",
+        rredit = (f"**Usage:** `{pfx} edit [messageID]`",
                   f"**Returns:** Interactive reaction roles edit panel",
                   f"**Aliases:** `-e` `adjust`",
                   f"**Note:** {message_id_message}")
-        rrdelete = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`",
+        rrdelete = (f"**Usage:** `{pfx} delete [messageID]`",
                     f"**Returns:** Message that details status of the deletion",
                     f"**Aliases:** `-d` `rm` `del`",
                     f"**Note:** {message_id_message}. If the panel was manually deleted, "
                     f"MarwynnBot will delete the panel's record from its database of reaction role panels")
-        rrur = ("**Hex Color Picker:** https://www.google.com/search?q=color+picker",)
+        rrur = ("Hex Color Picker: https://www.google.com/search?q=color+picker",)
         nv = [("Create", rrcreate), ("Edit", rredit), ("Delete", rrdelete), ("Useful Resources", rrur)]
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def send_rr_message(self, ctx, channel: discord.TextChannel, send_embed: discord.Embed,
                               role_emoji: list, type_name: str):
@@ -292,27 +291,27 @@ class Roles(commands.Cog):
                        "> - The subcommands below, with the exception of list, apply for both users and bots and assume that"
                        " you have selected either `user` or `bot` already\n\n"
                        "Here are the supported autorole subcommands")
-        set = (f"**Usage:** `{spar} set [roles]`",
-               "**Returns:** A confirmation embed with the list of roles that will be set to automatically give to new users/bots"
-               " who join the server",
-               "**Aliases:** `-s` `create` `assign`",
-               "**Note:** `[roles]` must be role tags or role IDs")
-        remove = (f"**Usage:** `{spar} remove [roles]`",
-                  "**Returns:** A confirmation embed with the list of roles that will be no longer given to new users/bots "
-                  "who join the server",
-                  "**Aliases:** `rm` `delete` `cancel`")
-        list = (f"**Usage:** `{await gcmds.prefix(ctx)} autorole list (user/bot)`",
-                "**Returns:** An embed that lists any active autoroles for users, bots, or both",
-                "**Aliases:** `ls` `show`",
-                "**Note:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
-        nv = [("Set", set), ("Remove", remove), ("List", list)]
+        arset = (f"**Usage:** `{spar} set [roles]`",
+                 "**Returns:** A confirmation embed with the list of roles that will be set to automatically give to new users/bots"
+                 " who join the server",
+                 "**Aliases:** `-s` `create` `assign`",
+                 "**Note:** `[roles]` must be role tags or role IDs")
+        arremove = (f"**Usage:** `{spar} remove [roles]`",
+                    "**Returns:** A confirmation embed with the list of roles that will be no longer given to new users/bots "
+                    "who join the server",
+                    "**Aliases:** `rm` `delete` `cancel`")
+        arlist = (f"**Usage:** `{await gcmds.prefix(ctx)} autorole list (user/bot)`",
+                  "**Returns:** An embed that lists any active autoroles for users, bots, or both",
+                  "**Aliases:** `ls` `show`",
+                  "**Note:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
+        nv = [("Set", arset), ("Remove", arremove), ("List", arlist)]
 
         embed = discord.Embed(title="Autorole Command Help",
                               description=description,
                               color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     @commands.group(invoke_without_command=True,
                     aliases=['ar', 'autoroles'],

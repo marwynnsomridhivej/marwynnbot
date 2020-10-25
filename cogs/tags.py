@@ -1,10 +1,10 @@
 import asyncio
-import os
 from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import EmbedPaginator, GlobalCMDS, customerrors, premium
+from utils import (EmbedPaginator, GlobalCMDS, SubcommandPaginator,
+                   customerrors, premium)
 
 gcmds = GlobalCMDS()
 PROHIB_NAMES = []
@@ -35,39 +35,37 @@ class Tags(commands.Cog):
     async def tag_help(self, ctx) -> discord.Message:
         timestamp = f"Executed by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         pfx = await gcmds.prefix(ctx)
-        tag = (f"**Usage:** `{pfx}tag`\n"
-               "**Returns:** This help menu\n"
-               "**Aliases:** `tags`")
-        list = (f"**Usage:** `{pfx}tag list`\n"
-                "**Returns:** A list of all the tags you own, if any")
-        search = (f"**Usage:** `{pfx}tag search`\n"
-                  "**Returns:** A list of the top 20 tags that contain the query substring in the order of most used\n"
-                  "**Note:** If no tag is found, it will return an error message")
-        create = (f"**Usage:** `{pfx}tag create (name)`\n"
-                  "**Returns:** An interactive tag creation panel\n"
-                  "**Aliases:** `make`\n"
-                  "**Note:** If the tag `name` already exists and you own it, you can choose to edit or delete it")
-        edit = (f"**Usage:** `{pfx}tag edit (name)`\n"
-                "**Returns:** An interactive tag edit panel\n"
-                "**Note:** If the tag does not exist, you will have the option to create it. You can only "
-                "edit tags you own")
-        delete = (f"**Usage:** `{pfx}tag delete`\n"
-                  "**Returns:** A tag delete confirmation panel\n"
-                  "**Aliases:** `remove`\n"
-                  "**Note:** The tag must exist and you must own the tag in order to delete it")
-        cmds = [("Help", tag), ("List", list), ("Search", search),
-                ("Create", create), ("Edit", edit), ("Delete", delete)]
+        ttag = (f"**Usage:** `{pfx}tag`",
+                "**Returns:** This help menu",
+                "**Aliases:** `tags`")
+        tlist = (f"**Usage:** `{pfx}tag list`",
+                 "**Returns:** A list of all the tags you own, if any")
+        tsearch = (f"**Usage:** `{pfx}tag search`",
+                   "**Returns:** A list of the top 20 tags that contain the query substring in the order of most used",
+                   "**Note:** If no tag is found, it will return an error message")
+        tcreate = (f"**Usage:** `{pfx}tag create (name)`",
+                   "**Returns:** An interactive tag creation panel",
+                   "**Aliases:** `make`",
+                   "**Note:** If the tag `name` already exists and you own it, you can choose to edit or delete it")
+        tedit = (f"**Usage:** `{pfx}tag edit (name)`",
+                 "**Returns:** An interactive tag edit panel",
+                 "**Note:** If the tag does not exist, you will have the option to create it. You can only "
+                 "edit tags you own")
+        tdelete = (f"**Usage:** `{pfx}tag delete`",
+                   "**Returns:** A tag delete confirmation panel",
+                   "**Aliases:** `remove`",
+                   "**Note:** The tag must exist and you must own the tag in order to delete it")
+        nv = [("Help", ttag), ("List", tlist), ("Search", tsearch),
+              ("Create", tcreate), ("Edit", tedit), ("Delete", tdelete)]
 
         embed = discord.Embed(title="Tag Commands",
                               description=f"{ctx.author.mention}, tags are an easy way to create your own custom "
                               "command! Here are all the tag commands MarwynnBot supports",
                               color=discord.Color.blue())
-        embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
-        for name, value in cmds:
-            embed.add_field(name=name,
-                            value=value,
-                            inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed, footer=timestamp,
+                                  icon_url=ctx.author.avatar_url)
+        return await pag.paginate()
 
     async def check_tag(self, ctx, name) -> bool:
         if not name:
@@ -412,6 +410,7 @@ class Tags(commands.Cog):
             return await self.edit_global(ctx, tag, status)
         else:
             return await gcmds.cancelled(ctx, "tag edit global status")
+
 
 def setup(bot):
     bot.add_cog(Tags(bot))

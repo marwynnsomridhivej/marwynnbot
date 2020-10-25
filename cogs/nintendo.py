@@ -3,7 +3,7 @@ import typing
 
 import discord
 from discord.ext import commands
-from utils import customerrors, GlobalCMDS
+from utils import GlobalCMDS, SubcommandPaginator
 
 gcmds = GlobalCMDS()
 FC_REGEX = re.compile(r"SW-[\d]{4}-[\d]{4}-[\d]{4}")
@@ -43,11 +43,9 @@ class Nintendo(commands.Cog):
         embed = discord.Embed(title="Nintendo Commands Help",
                               description=description,
                               color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name,
-                            value="> " + "\n> ".join(value),
-                            inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def not_valid_friend_code(self, ctx, friend_code: str):
         embed = discord.Embed(title="Invalid Friend Code",

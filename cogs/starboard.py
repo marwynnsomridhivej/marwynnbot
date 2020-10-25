@@ -4,7 +4,7 @@ from typing import Union
 
 import discord
 from discord.ext import commands
-from utils import GlobalCMDS, customerrors
+from utils import GlobalCMDS, SubcommandPaginator, customerrors
 
 gcmds = GlobalCMDS()
 levels = ['⭐', '✨', '🌟', '💫']
@@ -177,11 +177,11 @@ class Starboard(commands.Cog):
                    "**Returns:** An embed that confirms your emoji was unbound from starboard trigger",
                    "**Aliases:** `rm` `clear` `reset` `delete`")
         nv = [("Channel", schannel), ("Set", sset), ("List", slist), ("Remove", sremove)]
+        footer = "Note that you can disable the starboard just by unbinding the emoji"
         embed = discord.Embed(title="Starboard Help", description=description, color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        embed.set_footer(text="Note that you can disable the starboard just by unbinding the emoji")
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=4, show_entry_count=False, embed=embed, footer=footer)
+        return await pag.paginate()
 
     async def migrate_starboard(self, ctx, channel_id):
         try:

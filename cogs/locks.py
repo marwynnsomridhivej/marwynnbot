@@ -2,7 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
-from utils import EmbedPaginator, GlobalCMDS, customerrors
+from utils import EmbedPaginator, GlobalCMDS, SubcommandPaginator, customerrors
 
 gcmds = GlobalCMDS()
 reactions = ['✅', '🛑']
@@ -47,9 +47,9 @@ class Locks(commands.Cog):
                    f"**Note:** *this command can also be invoked with `{await gcmds.prefix(ctx)}unlock [#channel]\*va`*")
         nv = [("Set", lset), ("List", llist), ("Unlock", lunlock)]
         embed = discord.Embed(title="Lock Help", description=description, color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def check_lock(self, ctx, flag: str = None):
         async with self.bot.db.acquire() as con:

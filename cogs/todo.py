@@ -4,7 +4,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils import EmbedPaginator, GlobalCMDS, customerrors
+from utils import EmbedPaginator, GlobalCMDS, SubcommandPaginator, customerrors
 
 gcmds = GlobalCMDS()
 
@@ -61,9 +61,9 @@ class Todo(commands.Cog):
         nv = [("Set", tset), ("Edit", tedit), ("List", tlist),
               ("Complete", tcomplete), ("Reset", treset), ("Remove", tremove)]
         embed = discord.Embed(title="Todo Help", description=description, color=discord.Color.blue())
-        for name, value in nv:
-            embed.add_field(name=name, value="> " + "\n> ".join(value), inline=False)
-        return await ctx.channel.send(embed=embed)
+        pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv],
+                                  per_page=3, show_entry_count=False, embed=embed)
+        return await pag.paginate()
 
     async def check_todos(self, ctx, ids):
         async with self.bot.db.acquire() as con:
