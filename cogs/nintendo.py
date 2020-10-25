@@ -35,7 +35,7 @@ class Nintendo(commands.Cog):
         unregister = (f"**Usage:** `{pfx} unregister`",
                       "**Returns:** An embed that confirms you have successfully unregistered your information",
                       "**Aliases:** `unreg`",
-                      "**Special Cases:** You must be registered in order to successfully unregister")
+                      "**Note:** You must be registered in order to successfully unregister")
         profile = (f"**Usage:** `{pfx} profile (@user)`",
                    "**Returns:** An embed with user's profile details if registered",
                    "**Aliases:** `prof` `pfl`")

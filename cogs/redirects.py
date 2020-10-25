@@ -31,18 +31,18 @@ class Redirects(commands.Cog):
                 "**Returns:** A confirmation embed that requires the user to confirm that they would like the output for "
                 "these commands to be redirected to the specified channel",
                 "**Aliases:** `-s` `apply`",
-                "**Special Cases:** The `[command]*va` must be a list of commands separated by commas, or \"all\" "
+                "**Note:** The `[command]*va` must be a list of commands separated by commas, or \"all\" "
                 "to set redirects for all commands")
         rlist = (f"**Usage:** `{rd} list (#channel)`",
                  "**Returns:** A list of all the redirects this server implements that redirect to the specified channel",
                  "**Aliases:** `ls` `show`",
-                 "**Special Cases:** If `(#channel)` is not specified, it will show all the redirects that this server "
+                 "**Note:** If `(#channel)` is not specified, it will show all the redirects that this server "
                  "implements for all commands with redirects")
         rremove = (f"**Usage:** `{rd} remove [command]*va`",
                    "**Returns:** A confirmation embed that requires the user to confirm they would like to remove the redirect "
                    "for the specified commands",
                    "**Aliases:** `rm` `delete` `cancel`",
-                   "**Special Cases:** The `[command]*va` must be a list of commands separated by commas, or \"all\" to "
+                   "**Note:** The `[command]*va` must be a list of commands separated by commas, or \"all\" to "
                    "remove all redirects for all commands")
         important_note = ("An important thing to note is that when setting the redirect for all commands at once, it will "
                           "be assigned the type `all`, and when setting the redirect for specific commands or a list of commands, "

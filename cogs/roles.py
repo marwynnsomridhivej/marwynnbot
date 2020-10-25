@@ -169,11 +169,11 @@ class Roles(commands.Cog):
         rredit = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole edit [messageID]`",
                   f"**Returns:** Interactive reaction roles edit panel",
                   f"**Aliases:** `-e` `adjust`",
-                  f"**Special Cases:** {message_id_message}")
+                  f"**Note:** {message_id_message}")
         rrdelete = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`",
                     f"**Returns:** Message that details status of the deletion",
                     f"**Aliases:** `-d` `rm` `del`",
-                    f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
+                    f"**Note:** {message_id_message}. If the panel was manually deleted, "
                     f"MarwynnBot will delete the panel's record from its database of reaction role panels")
         rrur = ("**Hex Color Picker:** https://www.google.com/search?q=color+picker",)
         nv = [("Create", rrcreate), ("Edit", rredit), ("Delete", rrdelete), ("Useful Resources", rrur)]
@@ -296,7 +296,7 @@ class Roles(commands.Cog):
                "**Returns:** A confirmation embed with the list of roles that will be set to automatically give to new users/bots"
                " who join the server",
                "**Aliases:** `-s` `create` `assign`",
-               "**Special Cases:** `[roles]` must be role tags or role IDs")
+               "**Note:** `[roles]` must be role tags or role IDs")
         remove = (f"**Usage:** `{spar} remove [roles]`",
                   "**Returns:** A confirmation embed with the list of roles that will be no longer given to new users/bots "
                   "who join the server",
@@ -304,7 +304,7 @@ class Roles(commands.Cog):
         list = (f"**Usage:** `{await gcmds.prefix(ctx)} autorole list (user/bot)`",
                 "**Returns:** An embed that lists any active autoroles for users, bots, or both",
                 "**Aliases:** `ls` `show`",
-                "**Special Cases:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
+                "**Note:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
         nv = [("Set", set), ("Remove", remove), ("List", list)]
 
         embed = discord.Embed(title="Autorole Command Help",

@@ -110,17 +110,17 @@ class Welcome(commands.Cog):
         create = (f"**Usage:** `{pfx} create`",
                   "**Returns:** An interactive setup panel that will create a working welcomer in your server",
                   "**Aliases:** `make` `start` `-c`",
-                  "**Special Cases:** You will be unable to use this command if you already have a welcomer set up. If you"
+                  "**Note:** You will be unable to use this command if you already have a welcomer set up. If you"
                   " try to use this command when you already have a welcomer set up, it will automatically redirect you to "
                   "the interactive edit panel")
         edit = (f"**Usage:** `{pfx} edit`",
                 "**Returns:** An interactive setup panel that will edit your current welcomer",
                 "**Aliases:** `adjust` `modify` `-e`",
-                "**Special Cases:** You must have a welcomer currently set up in this server to use this command")
+                "**Note:** You must have a welcomer currently set up in this server to use this command")
         delete = (f"**Usage:** `{pfx} delete`",
                   "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so",
                   "**Aliases:** `trash` `cancel` `rm`",
-                  "**Special Cases:** You must have a welcomer currently set up in this server to use this command")
+                  "**Note:** You must have a welcomer currently set up in this server to use this command")
         test = (f"**Usage:** `{pfx} test`",
                 "**Returns:** A test welcomer in your currently set welcome channel")
         nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Test", test)]
@@ -251,11 +251,11 @@ class Welcome(commands.Cog):
         create = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver create`\n"
                   "**Returns:** An embed that details the status of the leaver creation\n"
                   "**Aliases:** `-c` `make` `start`\n"
-                  "**Special Cases:** Only works if there is a welcomer set up")
+                  "**Note:** Only works if there is a welcomer set up")
         delete = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver delete`\n"
                   "**Returns:** An embed that details the status of the leaver deletion\n"
                   "**Aliases:** `rm` `trash` `cancel`\n"
-                  "**Special Cases:** Only works if there is a welcomer and leaver set up")
+                  "**Note:** Only works if there is a welcomer and leaver set up")
         test = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver test`\n"
                 "**Returns:** A test leaver in your currently set welcome channel")
         fields = [("Create", create), ("Delete", delete), ("Test", test)]

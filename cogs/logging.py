@@ -248,16 +248,16 @@ class Logging(commands.Cog):
         lset = (f"**Usage:** `{pfx} set [#channel]`",
                 "**Returns:** An embed that confirms that you have successfully set the logging channel",
                 "**Aliases:** `-s` `use`",
-                "**Special Cases:** `[#channel]` should be a channel tag or channel ID")
+                "**Note:** `[#channel]` should be a channel tag or channel ID")
         lcommand = (f"**Usage:** `{pfx} command [command]`",
                     "**Returns:** An embed that confirms you have successfully toggled logging status for that command",
                     "**Aliases:** `toggle` `cmd`",
-                    "**Special Cases:** `[command]` must be a command name, not an alias *(`help` instead of `h`)*. Enter "
+                    "**Note:** `[command]` must be a command name, not an alias *(`help` instead of `h`)*. Enter "
                     "*\"all\"* to toggle all")
         llist = (f"**Usage:** `{pfx} list (command)`",
                  "**Returns:** An embed that displays the current logging channel and logging level, if set",
                  "**Aliases:** `ls` `show` `display`",
-                 "**Special Cases:** This will return an error message if no logging channel is set. If `(command)` is "
+                 "**Note:** This will return an error message if no logging channel is set. If `(command)` is "
                  "specified, it will display the logging status for that command if it is a valid command")
         ldisable = (f"**Usage:** `{pfx} disable`",
                     "**Returns:** A confirmation embed that once confirmed, will disable logging on this server",
@@ -265,12 +265,12 @@ class Logging(commands.Cog):
         llevel = (f"**Usage:** `{pfx} level [level]`",
                   "**Returns:** An embed that confirms the server's log level was changed",
                   "**Aliases:** `lvl` `levels`",
-                  "**Special Cases:** This command can only be used if your server is a MarwynnBot Premium Server. "
+                  "**Note:** This command can only be used if your server is a MarwynnBot Premium Server. "
                   "`[level]` must be either \"basic\", \"server\", or \"hidef\"")
         lblacklist = (f"**Usage:** `{pfx} blacklist (guild)`",
                       "**Returns:** An embed that confirms the blacklist has been set for `(guild)`",
                       "**Aliases:** `bl`",
-                      "**Special Cases:** This is an owner only command. `(guild)` will default to the current server "
+                      "**Note:** This is an owner only command. `(guild)` will default to the current server "
                       "if unspecified")
         nv = [("Set", lset), ("Command", lcommand), ("List", llist),
               ("Disable", ldisable), ("Level", llevel), ("Blacklist", lblacklist)]

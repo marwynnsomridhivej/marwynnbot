@@ -31,17 +31,17 @@ class Locks(commands.Cog):
         lset = (f"**Usage:** `{pfx} set [#channel]*va`",
                 "**Returns:** A confirmation panel that will let the user confirm they would like to lock the specified channels",
                 "**Alaises:** `-s`, `apply` `create`",
-                "**Special Cases:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
+                "**Note:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
                 "by commas. After confirmation, MarwynnBot will no longer respond to any commands invoked in those channels",
                 "**Note:** *if `[#channel]` is \"all\", MarwynnBot will lock all channels except for the current channel*")
         llist = (f"**Usage:** `{pfx} list (flag)`",
                  "**Returns:** A list of all channels that are locked or explicitly unlocked",
                  "**Aliases:** `ls` `show`",
-                 "**Special Cases:** Valid `(flag)` are \"lock\", \"unlock\", and \"all\"")
+                 "**Note:** Valid `(flag)` are \"lock\", \"unlock\", and \"all\"")
         lunlock = (f"**Usage:** `{pfx} unlock [#channel]*va`",
                    "**Returns:** A confirmation panel that will let the user confirm they would like to unlock the specified channels",
                    "**Aliases:** `ulk` `rm` `remove` `delete` `cancel`",
-                   "**Special Cases:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
+                   "**Note:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
                    "by commas, or \"all\" to unlock all locked channels. After confirmation, MarwynnBot will once again"
                    " respond to any commands invoked in those channels",
                    f"**Note:** *this command can also be invoked with `{await gcmds.prefix(ctx)}unlock [#channel]\*va`*")

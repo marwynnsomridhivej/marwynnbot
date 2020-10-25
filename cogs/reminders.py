@@ -123,14 +123,14 @@ class Reminders(commands.Cog):
                         value=f"Usage: `{await gcmds.prefix(ctx)}remind [message_with_time]`\n"
                               f"Returns: Your reminder message at the specified time\n"
                               f"Aliases: `reminder`\n"
-                              f"Special Cases: You must specify a time within your message, whether it be exact or "
+                              f"Note: You must specify a time within your message, whether it be exact or "
                               f"relative",
                         inline=False)
         embed.add_field(name="Edit",
                         value=f"Usage: `{await gcmds.prefix(ctx)}remind edit`\n"
                               f"Returns: An interactive reminder edit panel\n"
                               f"Aliases: `-e`\n"
-                              f"Special Cases: You must have at least one reminder queued\n\n*An error may occur if the "
+                              f"Note: You must have at least one reminder queued\n\n*An error may occur if the "
                               f"reminder fires while you are in the middle of editing it. It may also end up firing "
                               f"twice if you edit it within 15 seconds of it's firing time*",
                         inline=False)
@@ -138,7 +138,7 @@ class Reminders(commands.Cog):
                         value=f"Usage: `{await gcmds.prefix(ctx)}remind delete`\n"
                         f"Returns: An interactive reminder delete panel\n"
                         f"Aliases: `rm` `trash`\n"
-                        f"Special Cases: You must have at least one reminder queued in that server\n\n*An error may "
+                        f"Note: You must have at least one reminder queued in that server\n\n*An error may "
                         f"occur if the reminder fires while you are in the middle of deleting it. If you proceed, it "
                         f"may display that the deletion was unsuccessful. It's entry has already been deleted from "
                         f"the database after it was fired*")

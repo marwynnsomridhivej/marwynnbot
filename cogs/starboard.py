@@ -163,7 +163,7 @@ class Starboard(commands.Cog):
         schannel = (f"**Usage:** `{pfx} channel [#channel]`",
                     "**Returns:** An embed that confirms your starboard channel was successfully bound",
                     "**Aliases:** `cn`",
-                    "**Special Cases:** If this command has not been called or a channel has not been specified, MarwynnBot "
+                    "**Note:** If this command has not been called or a channel has not been specified, MarwynnBot "
                     "will automatically create a new channel called \"starboard\" if such a channel doesn't already exist")
         sset = (f"**Usage:** `{pfx} set [emoji]`",
                 "**Returns:** An embed that confirms your emoji binding was successful",

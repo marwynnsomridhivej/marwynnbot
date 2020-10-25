@@ -42,19 +42,19 @@ class Tags(commands.Cog):
                 "**Returns:** A list of all the tags you own, if any")
         search = (f"**Usage:** `{pfx}tag search`\n"
                   "**Returns:** A list of the top 20 tags that contain the query substring in the order of most used\n"
-                  "**Special Cases:** If no tag is found, it will return an error message")
+                  "**Note:** If no tag is found, it will return an error message")
         create = (f"**Usage:** `{pfx}tag create (name)`\n"
                   "**Returns:** An interactive tag creation panel\n"
                   "**Aliases:** `make`\n"
-                  "**Special Cases:** If the tag `name` already exists and you own it, you can choose to edit or delete it")
+                  "**Note:** If the tag `name` already exists and you own it, you can choose to edit or delete it")
         edit = (f"**Usage:** `{pfx}tag edit (name)`\n"
                 "**Returns:** An interactive tag edit panel\n"
-                "**Special Cases:** If the tag does not exist, you will have the option to create it. You can only "
+                "**Note:** If the tag does not exist, you will have the option to create it. You can only "
                 "edit tags you own")
         delete = (f"**Usage:** `{pfx}tag delete`\n"
                   "**Returns:** A tag delete confirmation panel\n"
                   "**Aliases:** `remove`\n"
-                  "**Special Cases:** The tag must exist and you must own the tag in order to delete it")
+                  "**Note:** The tag must exist and you must own the tag in order to delete it")
         cmds = [("Help", tag), ("List", list), ("Search", search),
                 ("Create", create), ("Edit", edit), ("Delete", delete)]
 

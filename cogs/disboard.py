@@ -108,16 +108,16 @@ class Disboard(commands.Cog):
         create = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard create`",
                   "**Returns:** An interactive setup panel that will make your disboard bump reminder",
                   "**Aliases:** `-c` `make` `start`",
-                  "**Special Cases:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
+                  "**Note:** You must have the `Disboard` bot in this server, otherwise, the command will fail")
         edit = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard edit`",
                 "**Returns:** An interactive setup panel that will edit your current disboard bump reminder",
                 "**Aliases:** `-e` `adjust`",
-                "**Special Cases:** You must satisfy the special case for `create` and currently have a working bump "
+                "**Note:** You must satisfy the special case for `create` and currently have a working bump "
                 "reminder set")
         delete = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard delete`",
                   "**Returns:** A confirmation panel that will delete your current disboard bump reminder",
                   "**Aliases:** `rm` `trash` `cancel`",
-                  "**Special Cases:** You must satisfy the special case for `edit`")
+                  "**Note:** You must satisfy the special case for `edit`")
         invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`",
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
         nv = [("Create", create), ("Edit", edit), ("Delete", delete), ("Invite", invite)]

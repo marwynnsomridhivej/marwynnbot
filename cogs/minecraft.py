@@ -89,8 +89,8 @@ class Minecraft(commands.Cog):
                                 f"Returns: Details about the specified minecraft server\n"
                                 f"Aliases: `-d` `-q` `query`",
                         inline=False)
-        embed.add_field(name="Special Cases",
-                        value=f"Special Cases: The `[serverIP]` argument can be a domain name, IP address, "
+        embed.add_field(name="Note",
+                        value=f"Note: The `[serverIP]` argument can be a domain name, IP address, "
                                 f"or IP address:port",
                         inline=False)
         await ctx.channel.send(embed=embed)

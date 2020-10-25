@@ -30,32 +30,32 @@ class Todo(commands.Cog):
         tset = (f"**Usage:** `{pfx} create [item]`",
                 "**Returns:** An embed that confirms your todo was successfully created, or added to the current todo list",
                 "**Aliaes:** `-s` `add`",
-                "**Special Cases:** `[item]` is what you want your todo message to be")
+                "**Note:** `[item]` is what you want your todo message to be")
         tedit = (f"**Usage:** `{pfx}edit [ID]`",
                  "**Returns:** An interactive panel that will guide you through editing a created todo",
                  "**Aliases:** `-e` `modify` `adjust`",
-                 "**Special Cases:** The ID passed into `[ID]` must be an ID of a todo that you own. You cannot edit another "
+                 "**Note:** The ID passed into `[ID]` must be an ID of a todo that you own. You cannot edit another "
                  "user's todos")
         tlist = (f"**Usage:** `{pfx}list` (flag)",
                  "**Returns:** A paginated list of all your active and completed todos",
                  "**Aliases:** `ls` `show`",
-                 "**Special Cases:** Valid arguments for `(flag)` are \"active\" (shows active only) and \"done\" or "
+                 "**Note:** Valid arguments for `(flag)` are \"active\" (shows active only) and \"done\" or "
                  "\"complete\" (shows completed only)")
         tcomplete = (f"**Usage:** `{pfx} complete [ID]*va`",
                      "**Returns:** An embed that confirms your todo was successfully marked as completed",
                      "**Aliases:** `-c` `finish` `done`",
-                     "**Special Cases:** Marking as complete does not truly delete the todo from your history. "
+                     "**Note:** Marking as complete does not truly delete the todo from your history. "
                      "If `[ID]` is \"all\", it will mark all currently active todos as complete. `[ID]` accepts a single ID "
                      "or comma separated IDs")
         treset = (f"**Usage:** `{pfx} reset [ID]*va`",
                   "**Returns:** An embed that confirms your todo was successfully reset (marked as active)",
                   "**Aliases:** `-r` `incomplete`",
-                  "**Special Cases:** If `[ID]` is \"all\", it will mark all your todos, both active and completed, as active. "
+                  "**Note:** If `[ID]` is \"all\", it will mark all your todos, both active and completed, as active. "
                   "`[ID]` accepts a single ID or comma separated IDs")
         tremove = (f"**Usage:** `{pfx}remove [ID]*va`",
                    "**Returns:** A confirmation embed that upon confirmation, will delete the specified IDs"
                    "**Aliases:** `rm` `cancel` `delete`",
-                   "**Special Cases:** Removing a todo will remove it from your history, therefore, you will not be able to "
+                   "**Note:** Removing a todo will remove it from your history, therefore, you will not be able to "
                    "access that todo anymore. It will no longer show up when you list all your todos. `[ID]` accepts a single ID "
                    "or comma separated IDs")
         nv = [("Set", tset), ("Edit", tedit), ("List", tlist),
