@@ -242,6 +242,7 @@ class FieldPaginator(EmbedPaginator):
         super().__init__(ctx, entries=entries, per_page=per_page,
                          show_entry_count=show_entry_count, **kwargs)
         self.footer = kwargs.get("footer", None)
+        self.icon_url = kwargs.get("icon_url", None)
         if kwargs.get('embed', None):
             self.embed = kwargs.get("embed")
 
@@ -252,14 +253,14 @@ class FieldPaginator(EmbedPaginator):
             self.embed.add_field(name=key, value=value, inline=inline)
 
         if self.footer:
-            self.embed.set_footer(text=self.footer)
+            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
         else:
             if self.maximum_pages > 1:
                 if self.show_entry_count:
                     text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
-                self.embed.set_footer(text=text)
+                self.embed.set_footer(text=text, icon_url=self.icon_url)
 
 
 class SubcommandPaginator(FieldPaginator):
@@ -274,11 +275,11 @@ class SubcommandPaginator(FieldPaginator):
             self.embed.add_field(name=key, value="> " + "\n> ".join(value), inline=inline)
 
         if self.footer:
-            self.embed.set_footer(text=self.footer)
+            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
         else:
             if self.maximum_pages > 1:
                 if self.show_entry_count:
                     text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
-                self.embed.set_footer(text=text)
+                self.embed.set_footer(text=text, icon_url=self.icon_url)
