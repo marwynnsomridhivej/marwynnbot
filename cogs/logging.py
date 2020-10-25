@@ -1,5 +1,4 @@
 import asyncio
-import types
 from collections import namedtuple
 from datetime import datetime
 from typing import Optional, Sequence, Union
@@ -350,8 +349,7 @@ class Logging(commands.Cog):
                                       description=f"{ctx.author.mention}, logging for all commands were ""{}"
                                       .format("enabled" if not update_bool else "disabled"),
                                       color=discord.Color.blue())
-        except Exception as e:
-            raise e
+        except Exception:
             embed = discord.Embed(title="Toggle Set Failed",
                                   description=f"{ctx.author.mention}, I could not toggle logging status for the command `{name}`",
                                   color=discord.Color.dark_red())
