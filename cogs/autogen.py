@@ -69,9 +69,9 @@ class AutoGen(commands.Cog):
                       '`(luminosity)` can be "bright", "dark", "light", or unspecified for a random luminosity')
     async def autocolor(self, ctx, *, options: str = None):
         options = options.split(" ") if options else []
-        color_format = extract(options, COLOR_FORMATS) or "hex"
-        hue = extract(options, HUES)
-        luminosity = extract(options, LUMINOSITIES) or "random"
+        color_format = extract(options, COLOR_FORMATS, func="lower", default="hex")
+        hue = extract(options, HUES, func="lower")
+        luminosity = extract(options, LUMINOSITIES, func="lower", default="random")
         return await self.send(
             ctx,
             f"{color_format} color",
@@ -156,11 +156,12 @@ class AutoGen(commands.Cog):
     async def autoip(self, ctx, *, options: str = None):
         options = options.split(" ") if options else []
         version = extract(options, "46")
-        addr_class = extract(options, "abc")
+        addr_class = extract(options, "abc", func="lower")
         if not version or version != "6":
             func = self.fake.ipv4(address_class=addr_class)
         else:
             func = self.fake.ipv6()
+        print(version, addr_class)
         return await self.send(ctx, "IP address", func)
 
     @commands.command(aliases=['amac'],
