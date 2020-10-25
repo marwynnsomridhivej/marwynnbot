@@ -314,6 +314,11 @@ class Owner(commands.Cog):
         for _ in range(amount):
             await new_context.reinvoke()
             await asyncio.sleep(1.0)
+        embed = discord.Embed(title="Command Invoked Successfully",
+                              description=f"{ctx.author.mention}, `{message.content}` was "
+                              f"successfully invoked {amount} times",
+                              color=discord.Color.blue())
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(aliases=['balanceadmin', 'baladmin', 'balop'],
                     desc="Manages all user balances",
