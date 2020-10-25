@@ -1,9 +1,11 @@
 import asyncio
 from math import ceil, log
+from typing import Union
 
 import discord
 from discord.ext import commands
 from utils import GlobalCMDS, customerrors
+
 
 gcmds = GlobalCMDS()
 levels = ['⭐', '✨', '🌟', '💫']
@@ -55,8 +57,7 @@ class Starboard(commands.Cog):
         if reaction.count < ceiling:
             return
         elif not (orig or on_sb):
-            return (await self.push_starboard(message, sbc, emoji=emoji) if sbc
-                    else await self.push_starboard(message, emoji=emoji))
+            return await self.push_starboard(message, ceiling, sbc, emoji=emoji)
         else:
             on_sb = await sbc.fetch_message(on_sb)
             return await self.update_starboard(on_sb, "add", emoji, ceiling)
@@ -92,7 +93,8 @@ class Starboard(commands.Cog):
         on_sb = await sbc.fetch_message(on_sb)
         return await self.update_starboard(on_sb, "remove", emoji, counter)
 
-    async def push_starboard(self, message: discord.Message, sbc: discord.TextChannel = None, emoji=None):
+    async def push_starboard(self, message: discord.Message, ceiling: int,
+                             sbc: Union[discord.TextChannel, None], emoji=None):
         if not sbc:
             for text_channel in message.guild.text_channels:
                 if 'starboard' in text_channel.name.lower():
@@ -113,7 +115,8 @@ class Starboard(commands.Cog):
                               description=description + f"\n\n> Click on the [Jump URL]({message.jump_url}) to see me!",
                               color=discord.Color.blue())
         embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-        embed.set_footer(text=f"{levels[0]} Upvoted 1 time. React with {emoji} to upvote!")
+        embed.set_footer(text=f"{levels[0]} Upvoted {ceiling} {'times' if ceiling != 1 else 'time'}. "
+                         f"React with {emoji} to upvote!")
 
         if message.attachments:
             attachment = message.attachments[0]
@@ -128,8 +131,9 @@ class Starboard(commands.Cog):
         sb_message = await sbc.send(embed=embed)
 
         async with self.bot.db.acquire() as con:
-            values = f"({message.id}, {sb_message.id}, {message.guild.id}, '{sb_message.jump_url}')"
-            await con.execute(f"INSERT INTO starboard VALUES {values}")
+            values = f"({message.id}, {sb_message.id}, {message.guild.id}, $tag${sb_message.jump_url}$tag$, {ceiling})"
+            await con.execute("INSERT INTO starboard(orig_message_id, message_id, guild_id, jump_url, counter) "
+                              f"VALUES {values}")
             await con.execute(f"UPDATE guild SET starboard_channel={sbc.id} WHERE guild_id={message.guild.id}")
         return
 
