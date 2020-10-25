@@ -36,11 +36,11 @@ class Locks(commands.Cog):
                 "**Note:** *if `[#channel]` is \"all\", MarwynnBot will lock all channels except for the current channel*")
         llist = (f"**Usage:** `{pfx} list (flag)`",
                  "**Returns:** A list of all channels that are locked or explicitly unlocked",
-                 "**Aliases:** `-ls` `show`",
+                 "**Aliases:** `ls` `show`",
                  "**Special Cases:** Valid `(flag)` are \"lock\", \"unlock\", and \"all\"")
         lunlock = (f"**Usage:** `{pfx} unlock [#channel]*va`",
                    "**Returns:** A confirmation panel that will let the user confirm they would like to unlock the specified channels",
-                   "**Aliases:** `ulk` `-rm` `remove` `delete` `cancel`",
+                   "**Aliases:** `ulk` `rm` `remove` `delete` `cancel`",
                    "**Special Cases:** [#channel] must be channel tags. Multiple channels can be specified by separating the tags "
                    "by commas, or \"all\" to unlock all locked channels. After confirmation, MarwynnBot will once again"
                    " respond to any commands invoked in those channels",
@@ -147,7 +147,7 @@ class Locks(commands.Cog):
         else:
             return await gcmds.cancelled(ctx, "set channel lock")
 
-    @lock.command(aliases=['-ls', 'show', 'list'])
+    @lock.command(aliases=['ls', 'show', 'list'])
     async def lock_list(self, ctx, *, flag: str = "all"):
         if flag not in ['all', 'lock', 'unlock']:
             flag == 'all'
@@ -162,12 +162,12 @@ class Locks(commands.Cog):
             pag.embed.title = f"{flag.title() if flag != 'all' else 'All Locked'} Channels"
             return await pag.paginate()
 
-    @lock.command(aliases=['ulk', '-rm', 'remove', 'delete', 'cancel', 'unlock'])
+    @lock.command(aliases=['ulk', 'rm', 'remove', 'delete', 'cancel', 'unlock'])
     @commands.has_permissions(manage_guild=True)
     async def lock_unlock(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, *, flag: str = None):
         return await ctx.invoke(self.unlock, channels=channels, flag=flag)
 
-    @commands.command(aliases=['ulk', '-rm', 'remove', 'delete', 'cancel'],
+    @commands.command(aliases=['ulk', 'rm', 'remove', 'delete', 'cancel'],
                       desc="Unlock channels that are currently locked",
                       usage="unlock [#channel]*va",
                       uperms=["Manage Server"],

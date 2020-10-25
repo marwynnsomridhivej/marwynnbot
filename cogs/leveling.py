@@ -273,7 +273,7 @@ class Leveling(commands.Cog):
                   "**Note:** This action cannot be undone, and will remove ALL role rewards for ALL levels")
         llist = (f"**Usage:** `{pfx} list (level)`",
                  "**Returns:** An embed that displays the role rewards for the specified level",
-                 "**Aliases:** `show` `-ls`",
+                 "**Aliases:** `show` `ls`",
                  "**Note:** If `(level)` is not specified, it will display ALL the role rewards that are set")
         lchangelevel = (f"**Usage:** `{pfx} changelevel [level] [@role]`",
                         "**Returns:** A confirmation panel that once confirmed, will set the level "
@@ -542,7 +542,7 @@ class Leveling(commands.Cog):
                              success_func=self.reset_levelroles(ctx),
                              op="levelroles reset")
 
-    @levelroles.command(aliases=['show', '-ls', 'list'])
+    @levelroles.command(aliases=['show', 'ls', 'list'])
     async def levelroles_list(self, ctx, level: int = None):
         if level and not 1 <= level <= 100:
             raise customerrors.LevelInvalidRange(level)

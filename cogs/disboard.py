@@ -116,7 +116,7 @@ class Disboard(commands.Cog):
                 "reminder set")
         delete = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard delete`",
                   "**Returns:** A confirmation panel that will delete your current disboard bump reminder",
-                  "**Aliases:** `-rm` `trash` `cancel`",
+                  "**Aliases:** `rm` `trash` `cancel`",
                   "**Special Cases:** You must satisfy the special case for `edit`")
         invite = (f"**Usage:** `{await gcmds.prefix(ctx)}disboard invite`",
                   "**Returns:** An interactive panel that details how to get the `Disboard` bot into your own server")
@@ -370,7 +370,7 @@ class Disboard(commands.Cog):
             embed = discord.Embed(title=title, description=description, color=color)
             return await ctx.channel.send(embed=embed)
 
-    @disboard.command(aliases=['-rm', 'trash', 'cancel'])
+    @disboard.command(aliases=['rm', 'trash', 'cancel'])
     @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx):
         if not await self.check_bump_reminder(ctx):

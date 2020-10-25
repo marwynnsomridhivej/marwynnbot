@@ -172,10 +172,10 @@ class Starboard(commands.Cog):
         slist = (f"**Usage:** `{pfx} list`",
                  "**Returns:** Your current emoji that when used to react to a message, will trigger a starboard post, "
                  "as well as the starboard channel tag",
-                 "**Aliases:** `-ls` `show`")
+                 "**Aliases:** `ls` `show`")
         sremove = (f"**Usage:** `{pfx} remove`",
                    "**Returns:** An embed that confirms your emoji was unbound from starboard trigger",
-                   "**Aliases:** `-rm` `clear` `reset` `delete`")
+                   "**Aliases:** `rm` `clear` `reset` `delete`")
         nv = [("Channel", schannel), ("Set", sset), ("List", slist), ("Remove", sremove)]
         embed = discord.Embed(title="Starboard Help", description=description, color=discord.Color.blue())
         for name, value in nv:
@@ -269,11 +269,11 @@ class Starboard(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @starboard.command(aliases=['-ls', 'show', 'list'])
+    @starboard.command(aliases=['ls', 'show', 'list'])
     async def starboard_list(self, ctx):
         return await self.get_starboard(ctx)
 
-    @starboard.command(aliases=['-rm', 'clear', 'reset', 'delete', 'remove'])
+    @starboard.command(aliases=['rm', 'clear', 'reset', 'delete', 'remove'])
     @commands.has_permissions(manage_guild=True)
     async def starboard_remove(self, ctx):
         await self.remove_starboard_emoji(ctx)

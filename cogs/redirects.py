@@ -35,13 +35,13 @@ class Redirects(commands.Cog):
                 "to set redirects for all commands")
         rlist = (f"**Usage:** `{rd} list (#channel)`",
                  "**Returns:** A list of all the redirects this server implements that redirect to the specified channel",
-                 "**Aliases:** `-ls` `show`",
+                 "**Aliases:** `ls` `show`",
                  "**Special Cases:** If `(#channel)` is not specified, it will show all the redirects that this server "
                  "implements for all commands with redirects")
         rremove = (f"**Usage:** `{rd} remove [command]*va`",
                    "**Returns:** A confirmation embed that requires the user to confirm they would like to remove the redirect "
                    "for the specified commands",
-                   "**Aliases:** `-rm` `delete` `cancel`",
+                   "**Aliases:** `rm` `delete` `cancel`",
                    "**Special Cases:** The `[command]*va` must be a list of commands separated by commas, or \"all\" to "
                    "remove all redirects for all commands")
         important_note = ("An important thing to note is that when setting the redirect for all commands at once, it will "
@@ -129,7 +129,7 @@ class Redirects(commands.Cog):
         else:
             return await gcmds.cancelled(ctx, "set redirect")
 
-    @redirect.command(aliases=['-ls', 'show', 'list'])
+    @redirect.command(aliases=['ls', 'show', 'list'])
     async def redirect_list(self, ctx):
         try:
             async with self.bot.db.acquire() as con:
@@ -146,7 +146,7 @@ class Redirects(commands.Cog):
         pag.embed.set_footer(text=rg_count)
         return await pag.paginate()
 
-    @redirect.command(aliases=['-rm', 'delete', 'cancel', 'remove'])
+    @redirect.command(aliases=['rm', 'delete', 'cancel', 'remove'])
     @commands.has_permissions(manage_guild=True)
     async def redirect_remove(self, ctx, *, cmds: str):
         if cmds != "all":

@@ -119,7 +119,7 @@ class Welcome(commands.Cog):
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
         delete = f"**Usage:** `{await gcmds.prefix(ctx)}welcomer delete`\n" \
             "**Returns:** A confirmation panel that will delete your current welcomer if you choose to do so\n" \
-            "**Aliases:** `trash` `cancel` `-rm`\n" \
+            "**Aliases:** `trash` `cancel` `rm`\n" \
             "**Special Cases:** You must have a welcomer currently set up in this server to use this command"
         test = (f"**Usage:** `{await gcmds.prefix(ctx)}welcomer test`\n"
                 "**Returns:** A test welcomer in your currently set welcome channel")
@@ -256,7 +256,7 @@ class Welcome(commands.Cog):
                   "**Special Cases:** Only works if there is a welcomer set up")
         delete = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver delete`\n"
                   "**Returns:** An embed that details the status of the leaver deletion\n"
-                  "**Aliases:** `-rm` `trash` `cancel`\n"
+                  "**Aliases:** `rm` `trash` `cancel`\n"
                   "**Special Cases:** Only works if there is a welcomer and leaver set up")
         test = (f"**Usage:** `{await gcmds.prefix(ctx)}leaver test`\n"
                 "**Returns:** A test leaver in your currently set welcome channel")
@@ -654,7 +654,7 @@ class Welcome(commands.Cog):
                                       color=discord.Color.dark_red())
                 return await ctx.channel.send(embed=embed)
 
-    @welcomer.command(aliases=['-rm', 'trash', 'cancel'])
+    @welcomer.command(aliases=['rm', 'trash', 'cancel'])
     @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx):
         info = await self.get_welcomer(ctx)
@@ -757,7 +757,7 @@ class Welcome(commands.Cog):
                                   color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
-    @leaver.command(aliases=['-rm', 'cancel', 'trash', 'delete'])
+    @leaver.command(aliases=['rm', 'cancel', 'trash', 'delete'])
     @commands.has_permissions(manage_guild=True)
     async def _delete(self, ctx):
         if not await self.has_leaver(ctx):

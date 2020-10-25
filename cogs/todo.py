@@ -38,7 +38,7 @@ class Todo(commands.Cog):
                  "user's todos")
         tlist = (f"**Usage:** `{pfx}list` (flag)",
                  "**Returns:** A paginated list of all your active and completed todos",
-                 "**Aliases:** `-ls` `show`",
+                 "**Aliases:** `ls` `show`",
                  "**Special Cases:** Valid arguments for `(flag)` are \"active\" (shows active only) and \"done\" or "
                  "\"complete\" (shows completed only)")
         tcomplete = (f"**Usage:** `{pfx} complete [ID]*va`",
@@ -54,7 +54,7 @@ class Todo(commands.Cog):
                   "`[ID]` accepts a single ID or comma separated IDs")
         tremove = (f"**Usage:** `{pfx}remove [ID]*va`",
                    "**Returns:** A confirmation embed that upon confirmation, will delete the specified IDs"
-                   "**Aliases:** `-rm` `cancel` `delete`",
+                   "**Aliases:** `rm` `cancel` `delete`",
                    "**Special Cases:** Removing a todo will remove it from your history, therefore, you will not be able to "
                    "access that todo anymore. It will no longer show up when you list all your todos. `[ID]` accepts a single ID "
                    "or comma separated IDs")
@@ -201,7 +201,7 @@ class Todo(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @todo.command(aliases=['-ls', 'show', 'list'])
+    @todo.command(aliases=['ls', 'show', 'list'])
     async def todo_list(self, ctx, *, flag: str = None):
         if not flag in ["active", "done", "complete"]:
             entries = await self.get_todos(ctx, list=True, detailed=True)
@@ -239,7 +239,7 @@ class Todo(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @todo.command(aliases=['-rm', 'cancel', 'delete', 'remove'])
+    @todo.command(aliases=['rm', 'cancel', 'delete', 'remove'])
     async def todo_remove(self, ctx, *, ids):
         ids = ids.replace(" ", "").split(",")
         await self.check_todos(ctx, ids)

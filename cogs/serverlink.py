@@ -171,7 +171,7 @@ class ServerLink(commands.Cog):
                      f"public. See the above two subcommands for reference")
         slist = (f"**Usage:** `{pfx} list`",
                  "**Returns:** An embed that lists all currently registered ServerLink channels",
-                 "**Aliases:** `-ls` `show`",
+                 "**Aliases:** `ls` `show`",
                  "**Note:** An error message will appear if you do not have any registered channels")
         srequest = (f"**Usage:** `{pfx} request [server]`",
                     "**Returns:** An embed that confirms your request was successfully sent",
@@ -531,7 +531,7 @@ class ServerLink(commands.Cog):
         pag.embed.title = "Public ServerLink Channels"
         return await pag.paginate()
 
-    @serverlink.command(aliases=['-ls', 'list', 'show'])
+    @serverlink.command(aliases=['ls', 'list', 'show'])
     async def serverlink_list(self, ctx):
         entries = [f"<#{entry['channel_id']}>" for entry in await self.get_serverlink_channels(ctx)]
         pag = EmbedPaginator(ctx, entries=entries, per_page=20, show_entry_count=False)

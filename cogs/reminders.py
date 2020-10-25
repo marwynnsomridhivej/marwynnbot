@@ -137,7 +137,7 @@ class Reminders(commands.Cog):
         embed.add_field(name="Delete",
                         value=f"Usage: `{await gcmds.prefix(ctx)}remind delete`\n"
                         f"Returns: An interactive reminder delete panel\n"
-                        f"Aliases: `-rm` `trash`\n"
+                        f"Aliases: `rm` `trash`\n"
                         f"Special Cases: You must have at least one reminder queued in that server\n\n*An error may "
                         f"occur if the reminder fires while you are in the middle of deleting it. If you proceed, it "
                         f"may display that the deletion was unsuccessful. It's entry has already been deleted from "
@@ -557,7 +557,7 @@ class Reminders(commands.Cog):
                                   description=f"{ctx.author.mention}, your reminder could not be edited")
         return
 
-    @remind.command(aliases=['-rm', 'trash'])
+    @remind.command(aliases=['rm', 'trash'])
     async def delete(self, ctx):
         reminders_list = await self.get_reminders(ctx.guild.id, ctx.author.id)
         if not reminders_list:

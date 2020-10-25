@@ -581,7 +581,7 @@ class Owner(commands.Cog):
         embed = discord.Embed(title=title, description=description, color=color)
         return await ctx.channel.send(embed=embed)
 
-    @premium.group(invoke_without_command=True, aliases=['list', '-l', '-ls'])
+    @premium.group(invoke_without_command=True, aliases=['list', '-l', 'ls'])
     @commands.is_owner()
     async def list_premium(self, ctx):
         return

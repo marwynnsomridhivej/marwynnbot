@@ -256,12 +256,12 @@ class Logging(commands.Cog):
                     "*\"all\"* to toggle all")
         llist = (f"**Usage:** `{pfx} list (command)`",
                  "**Returns:** An embed that displays the current logging channel and logging level, if set",
-                 "**Aliases:** `-ls` `show` `display`",
+                 "**Aliases:** `ls` `show` `display`",
                  "**Special Cases:** This will return an error message if no logging channel is set. If `(command)` is "
                  "specified, it will display the logging status for that command if it is a valid command")
         ldisable = (f"**Usage:** `{pfx} disable`",
                     "**Returns:** A confirmation embed that once confirmed, will disable logging on this server",
-                    "**Aliases:** `-rm` `delete` `reset` `clear` `remove`")
+                    "**Aliases:** `rm` `delete` `reset` `clear` `remove`")
         llevel = (f"**Usage:** `{pfx} level [level]`",
                   "**Returns:** An embed that confirms the server's log level was changed",
                   "**Aliases:** `lvl` `levels`",
@@ -403,7 +403,7 @@ class Logging(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @logging.command(aliases=['-rm', 'delete', 'reset', 'clear', 'remove', 'disable'])
+    @logging.command(aliases=['rm', 'delete', 'reset', 'clear', 'remove', 'disable'])
     @commands.has_permissions(manage_guild=True)
     async def logging_disable(self, ctx):
         reactions = [reaction.value for reaction in ConfirmReactions]

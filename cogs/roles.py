@@ -172,7 +172,7 @@ class Roles(commands.Cog):
                   f"**Special Cases:** {message_id_message}")
         rrdelete = (f"**Usage:** `{await gcmds.prefix(ctx)}reactionrole delete [messageID]`",
                     f"**Returns:** Message that details status of the deletion",
-                    f"**Aliases:** `-d` `-rm` `del`",
+                    f"**Aliases:** `-d` `rm` `del`",
                     f"**Special Cases:** {message_id_message}. If the panel was manually deleted, "
                     f"MarwynnBot will delete the panel's record from its database of reaction role panels")
         rrur = ("**Hex Color Picker:** https://www.google.com/search?q=color+picker",)
@@ -300,10 +300,10 @@ class Roles(commands.Cog):
         remove = (f"**Usage:** `{spar} remove [roles]`",
                   "**Returns:** A confirmation embed with the list of roles that will be no longer given to new users/bots "
                   "who join the server",
-                  "**Aliases:** `-rm` `delete` `cancel`")
+                  "**Aliases:** `rm` `delete` `cancel`")
         list = (f"**Usage:** `{await gcmds.prefix(ctx)} autorole list (user/bot)`",
                 "**Returns:** An embed that lists any active autoroles for users, bots, or both",
-                "**Aliases:** `-ls` `show`",
+                "**Aliases:** `ls` `show`",
                 "**Special Cases:** If `(user/bot)` is not specified, it will show all active autoroles for both users and bots")
         nv = [("Set", set), ("Remove", remove), ("List", list)]
 
@@ -321,7 +321,7 @@ class Roles(commands.Cog):
     async def autorole(self, ctx):
         return await self.ar_help(ctx)
 
-    @autorole.command(aliases=['list', '-ls', 'show'])
+    @autorole.command(aliases=['list', 'ls', 'show'])
     async def autorole_list(self, ctx, flag: str = "all"):
         try:
             async with self.bot.db.acquire() as con:
@@ -373,7 +373,7 @@ class Roles(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @autorole_user.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    @autorole_user.command(aliases=['remove', 'rm', 'delete', 'cancel'])
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_guild=True)
     async def autorole_user_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
@@ -453,7 +453,7 @@ class Roles(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @autorole_bot.command(aliases=['remove', '-rm', 'delete', 'cancel'])
+    @autorole_bot.command(aliases=['remove', 'rm', 'delete', 'cancel'])
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_guild=True)
     async def autorole_bot_remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
@@ -516,7 +516,7 @@ class Roles(commands.Cog):
     async def reactionrole(self, ctx):
         return await self.rr_help(ctx)
 
-    @reactionrole.command(aliases=['-ls'])
+    @reactionrole.command(aliases=['ls'])
     async def list(self, ctx, flag: str = None):
         messages = await self.get_guild_rr(ctx, flag) if flag == "all" else await self.get_guild_rr(ctx, None)
         if not messages:
@@ -984,7 +984,7 @@ class Roles(commands.Cog):
         return await self.edit_rr_message(ctx, message_id, ctx.guild.id, title, description,
                                           color, emoji_role_list, type_name)
 
-    @reactionrole.command(aliases=['-d', '-rm', 'del'])
+    @reactionrole.command(aliases=['-d', 'rm', 'del'])
     @commands.bot_has_permissions(manage_roles=True, add_reactions=True)
     @commands.has_permissions(manage_guild=True)
     async def delete(self, ctx, message_id: int = None):
