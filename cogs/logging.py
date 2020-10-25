@@ -273,7 +273,7 @@ class Logging(commands.Cog):
                       "**Special Cases:** This is an owner only command. `(guild)` will default to the current server "
                       "if unspecified")
         nv = [("Set", lset), ("Command", lcommand), ("List", llist),
-              ("Remove", ldisable), ("Level", llevel), ("Blacklist", lblacklist)]
+              ("Disable", ldisable), ("Level", llevel), ("Blacklist", lblacklist)]
         embed = discord.Embed(title="Logging Help", description="\n".join(description), color=discord.Color.blue())
         pag = SubcommandPaginator(ctx, entries=[(name, value, False) for name, value in nv], per_page=2,
                                   show_entry_count=False, embed=embed)
@@ -403,7 +403,7 @@ class Logging(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
-    @logging.command(aliases=['rm', 'delete', 'reset', 'clear', 'remove', 'disable'])
+    @logging.command(aliases=['-rm', 'delete', 'reset', 'clear', 'remove', 'disable'])
     @commands.has_permissions(manage_guild=True)
     async def logging_disable(self, ctx):
         reactions = [reaction.value for reaction in ConfirmReactions]
