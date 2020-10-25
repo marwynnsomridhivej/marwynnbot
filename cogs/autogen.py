@@ -161,7 +161,6 @@ class AutoGen(commands.Cog):
             func = self.fake.ipv4(address_class=addr_class)
         else:
             func = self.fake.ipv6()
-        print(version, addr_class)
         return await self.send(ctx, "IP address", func)
 
     @commands.command(aliases=['amac'],
