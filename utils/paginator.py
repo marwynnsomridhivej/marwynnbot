@@ -95,7 +95,7 @@ class EmbedPaginator:
             return
 
         self.message = await self.channel.send(content=content, embed=embed)
-        for (reaction, function) in self.emojis:
+        for reaction, _ in self.emojis:
             if self.maximum_pages == 2 and reaction in ('⏮️', '⏭️'):
                 continue
 
@@ -172,7 +172,7 @@ class EmbedPaginator:
         embed = self.embed.copy()
         embed.clear_fields()
         embed.title = "Paginator Help"
-        embed.description = (f"{self.author.mention}, here are the controls for the paginator:\n\n" + 
+        embed.description = (f"{self.author.mention}, here are the controls for the paginator:\n\n" +
                              '\n'.join(desc))
         embed.set_footer(
             text=f"Original paginator left on page {self.current_page}. Press ⏹️ to return to original paginator")
@@ -253,14 +253,21 @@ class FieldPaginator(EmbedPaginator):
             self.embed.add_field(name=key, value=value, inline=inline)
 
         if self.footer:
-            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+            if self.icon_url:
+                self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+            else:
+                self.embed.set_footer(text=self.footer)
         else:
             if self.maximum_pages > 1:
                 if self.show_entry_count:
                     text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
-                self.embed.set_footer(text=text, icon_url=self.icon_url)
+
+                if self.icon_url:
+                    self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+                else:
+                    self.embed.set_footer(text=self.footer)
 
 
 class SubcommandPaginator(FieldPaginator):
@@ -275,11 +282,18 @@ class SubcommandPaginator(FieldPaginator):
             self.embed.add_field(name=key, value="> " + "\n> ".join(value), inline=inline)
 
         if self.footer:
-            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+            if self.icon_url:
+                self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+            else:
+                self.embed.set_footer(text=self.footer)
         else:
             if self.maximum_pages > 1:
                 if self.show_entry_count:
                     text = f'Page {page}/{self.maximum_pages} ({len(self.entries)} entries)'
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
-                self.embed.set_footer(text=text, icon_url=self.icon_url)
+
+                if self.icon_url:
+                    self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+                else:
+                    self.embed.set_footer(text=self.footer)
