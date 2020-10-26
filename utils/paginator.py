@@ -264,7 +264,11 @@ class FieldPaginator(EmbedPaginator):
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
 
-                if self.icon_url:
+                if not self.footer and not self.icon_url:
+                    self.embed.set_footer(text=text)
+                elif not self.footer and self.icon_url:
+                    self.embed.set_footer(text=text, icon_url=self.icon_url)
+                elif self.icon_url:
                     self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
                 else:
                     self.embed.set_footer(text=self.footer)
@@ -293,7 +297,11 @@ class SubcommandPaginator(FieldPaginator):
                 else:
                     text = f'Page {page}/{self.maximum_pages}'
 
-                if self.icon_url:
+                if not self.footer and not self.icon_url:
+                    self.embed.set_footer(text=text)
+                elif not self.footer and self.icon_url:
+                    self.embed.set_footer(text=text, icon_url=self.icon_url)
+                elif self.icon_url:
                     self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
                 else:
                     self.embed.set_footer(text=self.footer)
