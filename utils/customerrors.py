@@ -18,11 +18,19 @@ class CommandHelpDirectlyCalled(CommandNotFound):
 
 
 class TimeoutError(commands.CommandError):
-    def __init__(self, ctx, name: str, timeout: int):
+    def __init__(self, ctx: commands.Context, name: str, timeout: int):
         super().__init__()
         self.embed = discord.Embed(title="Setup Timed Out",
                                    description=f"{ctx.author.mention}, your {name} setup timed out after "
                                    f"no valid response was provided after {timeout} seconds",
+                                   color=discord.Color.dark_red())
+
+
+class CancelError(commands.CommandError):
+    def __init__(self, ctx: commands.Context, name: str):
+        super().__init__()
+        self.embed = discord.Embed(title="Setup Cancelled",
+                                   description=f"{ctx.author.mention}, your {name} setup was cancelled",
                                    color=discord.Color.dark_red())
 
 

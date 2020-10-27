@@ -14,6 +14,18 @@ __all__ = (
 )
 
 
+VALID_CORO_NAMES = [
+    "get_channel",
+    "get_hex",
+    "get_url",
+    "get_role",
+    "get_message_content",
+    "channel",
+    "hex",
+    "url",
+    "role",
+    "message"
+]
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
@@ -22,19 +34,41 @@ url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 
 class SetupPanel():
+    __slots__ = [
+        "bot",
+        "ctx",
+        "author",
+        "chnl",
+        "guild",
+        "send",
+        "timeout",
+        "name",
+        "embed",
+        "has_intro",
+        "cancellable",
+        "steps",
+        "map",
+        "channel",
+        "hex",
+        "url",
+        "role",
+        "message",
+    ]
+
     def __init__(self, ctx: commands.Context, bot: commands.AutoShardedBot,
                  timeout: int = 30, name: str = "interactive", embed: discord.Embed = None,
-                 has_intro: bool = False):
+                 has_intro: bool = False, cancellable: bool = True):
         self.bot = bot
         self.ctx = ctx
         self.author = ctx.author
-        self.channel = ctx.channel
+        self.chnl = ctx.channel
         self.guild = ctx.guild
         self.send = ctx.channel.send
         self.timeout = timeout
         self.name = name
         self.embed = embed
         self.has_intro = has_intro
+        self.cancellable = cancellable
         self.steps = []
         self.map = {
             "get_channel": self._from_user_channel,
@@ -43,29 +77,29 @@ class SetupPanel():
             "get_hex": self._from_user_hex,
             "get_url": self._from_user_url,
         }
+        self.channel = self.get_channel
+        self.hex = self.get_hex
+        self.url = self.get_url
+        self.role = self.get_role
+        self.message = self.get_message_content
 
     def _from_user(self, message: discord.Message) -> bool:
-        return message.author == self.author and message.channel == self.channel
+        if message.content.lower() == "cancel":
+            raise customerrors.CancelError(self.ctx, self.name)
+        return message.author == self.author and message.channel == self.chnl
 
     def _from_user_role(self, message: discord.Message) -> bool:
-        if not re.match(role_tag_rx, message.content):
-            return False
-        return self._from_user(message)
+        return self._from_user(message) and re.match(role_tag_rx, message.content)
 
     def _from_user_channel(self, message: discord.Message) -> bool:
-        if not re.match(channel_tag_rx, message.content) or re.match(channel_id_rx, message.content):
-            return False
-        return self._from_user(message)
+        return self._from_user(message) and (re.match(channel_tag_rx, message.content) or
+                                             re.match(channel_id_rx, message.content))
 
     def _from_user_hex(self, message: discord.Message) -> bool:
-        if not re.match(hex_color_rx, message.content):
-            return False
-        return self._from_user(message)
+        return self._from_user(message) and re.match(hex_color_rx, message.content)
 
     def _from_user_url(self, message: discord.Message) -> bool:
-        if not re.match(url_rx, message.content):
-            return False
-        return self._from_user(message)
+        return self._from_user(message) and re.match(url_rx, message.content)
 
     async def intro(self, **options) -> None:
         embed = options.get("embed", self.embed)
@@ -77,7 +111,7 @@ class SetupPanel():
         return
 
     def add_step(self, coro: callable, **options) -> None:
-        if not iscoroutine(coro) or not iscoroutinefunction(coro):
+        if not (iscoroutine(coro) or iscoroutinefunction(coro)):
             raise TypeError("Function must be a coroutine or a coroutine function")
         if options.get("ignore_error", False):
             async def ie_coro():
@@ -90,6 +124,8 @@ class SetupPanel():
             self.steps.append(coro)
 
     async def start(self, **options) -> List[Any]:
+        if not self.steps:
+            raise ValueError("Please specify at least one setup operation before starting the setup panel")
         if self.has_intro:
             await self.intro(**options)
         return [await coro for coro in self.steps]
@@ -220,7 +256,7 @@ class SetupPanel():
         else:
             return self.bot.loop.create_task(coro(embed, timeout, obtain_type=obtain_type, provided=provided))
 
-    def until_finish(self, coro: callable, **options) -> None:
+    def until_finish(self, coro_name: str, **options) -> None:
         async def repeater(func: callable, **kwargs) -> List[Any]:
             values = []
             embed = kwargs.get("embed")
@@ -228,9 +264,7 @@ class SetupPanel():
 
             def validate(message: discord.Message):
                 checker = self.map[func.__name__]
-                if checker(message):
-                    return True
-                return message.author == self.author and message.channel == self.channel
+                return checker(message)
 
             while True:
                 await self.send(embed=embed)
@@ -243,9 +277,9 @@ class SetupPanel():
                 values.append(func(**kwargs, provided=message, immediate=True))
             return [task.result() for task in values]
 
-        if iscoroutine(coro) or iscoroutinefunction(coro):
-            raise TypeError("Please specify one of the setup functions")
-
+        if not coro_name in VALID_CORO_NAMES:
+            raise ValueError("Please specify a valid setup operation name")
+        coro = getattr(self, coro_name)
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
