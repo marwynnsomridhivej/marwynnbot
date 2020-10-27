@@ -17,6 +17,15 @@ class CommandHelpDirectlyCalled(CommandNotFound):
                                   "Please use the help command for the category this command is in")
 
 
+class TimeoutError(commands.CommandError):
+    def __init__(self, ctx, name: str, timeout: int):
+        super().__init__()
+        self.embed = discord.Embed(title="Setup Timed Out",
+                                   description=f"{ctx.author.mention}, your {name} setup timed out after "
+                                   f"no valid response was provided after {timeout} seconds",
+                                   color=discord.Color.dark_red())
+
+
 class MassroleInvalidType(commands.CommandError):
     def __init__(self, user_type: str):
         self.embed = discord.Embed(title="Invalid Type",
