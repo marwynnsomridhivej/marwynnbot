@@ -1,0 +1,14 @@
+aiohttp~=3.6.2
+asyncpg==0.21.0
+dateparser~=0.7.6
+discord.py[voice]~=1.5.0
+faker==4.4.0
+lavalink~=3.1.2
+num2words==0.5.10
+numpy==1.19.1
+pillow~=8.0.0
+pokepy~=0.6.1
+praw~=7.1.0
+psutil==5.7.2
+python-dotenv~=0.14.0
+sympy~=1.6.2
