@@ -4,6 +4,13 @@ from discord.ext import commands
 from utils import customerrors, globalcommands
 
 
+__all__ = (
+    "is_premium",
+    "check_user_premium",
+    "check_guild_premium",
+)
+
+
 def is_premium(*args, **kwargs):
     async def predicate(ctx, *args, **kwargs):
         # db = globalcommands._db

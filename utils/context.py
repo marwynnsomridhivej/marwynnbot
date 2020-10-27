@@ -1,6 +1,12 @@
 from utils import customerrors, globalcommands
 
 
+__all__ = (
+    "redirect",
+    "music_bind",
+)
+
+
 async def redirect(ctx):
     if not ctx.guild:
         return True

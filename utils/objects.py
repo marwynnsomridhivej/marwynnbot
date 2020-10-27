@@ -1,5 +1,12 @@
 from random import random
 
+
+__all__ = (
+    "get_random_object",
+    "get_random_body_part",
+)
+
+
 obj_list = [
     'a banana',
     'a baseball',
@@ -67,7 +74,3 @@ def get_random_object():
 
 def get_random_body_part():
     return random.choice(parts_list)
-
-
-if __name__ == "__main__":
-    raise ImportError("objects.py must be imported, not run directly")

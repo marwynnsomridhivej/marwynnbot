@@ -8,6 +8,12 @@ from discord.ext import commands
 
 from . import customerrors
 
+
+__all__ = (
+    "SetupPanel",
+)
+
+
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
 role_tag_rx = re.compile(r'<@&[0-9]{18}>')
@@ -83,7 +89,7 @@ class SetupPanel():
         else:
             self.steps.append(coro)
 
-    async def process(self, **options) -> List[Any]:
+    async def start(self, **options) -> List[Any]:
         if self.has_intro:
             await self.intro(**options)
         return [await coro for coro in self.steps]

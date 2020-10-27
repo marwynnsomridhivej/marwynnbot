@@ -8,6 +8,10 @@ from utils.globalcommands import GlobalCMDS
 
 reactions = ['✅', '❌']
 
+__all__ = (
+    "confirm",
+)
+
 
 async def confirm(ctx: commands.Context, bot: commands.AutoShardedBot, user: discord.User = None,
                   success_func: callable = None, fail_func: callable = None, embed: discord.Embed = None,

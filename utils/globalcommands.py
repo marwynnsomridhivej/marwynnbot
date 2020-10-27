@@ -10,6 +10,13 @@ from dotenv import load_dotenv
 
 from utils import customerrors
 
+
+__all__ = (
+    "GlobalCMDS",
+    "GithubError",
+)
+
+
 load_dotenv()
 env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "OWNER_ID=YOUR_ID_HERE",
