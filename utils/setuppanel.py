@@ -279,7 +279,10 @@ class SetupPanel():
 
         if not coro_name in VALID_CORO_NAMES:
             raise ValueError("Please specify a valid setup operation name")
-        coro = getattr(self, coro_name)
+        try:
+            coro = getattr(self, coro_name)
+        except AttributeError:
+            raise AttributeError(f"'{coro_name}' is not a valid setup function")
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
