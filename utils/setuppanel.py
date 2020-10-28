@@ -1,13 +1,11 @@
 import asyncio
 import re
-from inspect import iscoroutine, iscoroutinefunction
 from typing import Any, List, Union
 
 import discord
 from discord.ext import commands
 
 from . import customerrors
-
 
 __all__ = (
     "SetupPanel",
@@ -24,7 +22,8 @@ VALID_CORO_NAMES = [
     "hex",
     "url",
     "role",
-    "message"
+    "message",
+    "chain",
 ]
 channel_tag_rx = re.compile(r'<#[0-9]{18}>')
 channel_id_rx = re.compile(r'[0-9]{18}')
@@ -76,6 +75,7 @@ class SetupPanel():
             "get_role": self._from_user_role,
             "get_hex": self._from_user_hex,
             "get_url": self._from_user_url,
+            "until_finish": self._from_user,
         }
         self.channel = self.get_channel
         self.hex = self.get_hex
@@ -101,6 +101,9 @@ class SetupPanel():
     def _from_user_url(self, message: discord.Message) -> bool:
         return self._from_user(message) and re.match(url_rx, message.content)
 
+    def _from_user_finish(self, message: discord.Message) -> bool:
+        return message.author == self.author and message.channel == self.chnl and message.content.lower() == "finish"
+
     async def intro(self, **options) -> None:
         embed = options.get("embed", self.embed)
         if not embed:
@@ -111,8 +114,6 @@ class SetupPanel():
         return
 
     def add_step(self, coro: callable, **options) -> None:
-        if not (iscoroutine(coro) or iscoroutinefunction(coro)):
-            raise TypeError("Function must be a coroutine or a coroutine function")
         if options.get("ignore_error", False):
             async def ie_coro():
                 try:
@@ -256,15 +257,51 @@ class SetupPanel():
         else:
             return self.bot.loop.create_task(coro(embed, timeout, obtain_type=obtain_type, provided=provided))
 
-    def until_finish(self, coro_name: str, **options) -> None:
+    def chain(self, func_names: List[str], embeds: Union[discord.Embed, List[discord.Embed]],
+              timeouts: List[Union[int, float]] = None, **options) -> None:
+        async def chainer(funcs: List[callable], embeds: List[discord.Embed],
+                          timeouts: List[Union[int, float]], **kwargs) -> List[List[Any]]:
+            values = []
+
+            def validate(message: discord.Message) -> bool:
+                checker = self.map[func.__name__]
+                return checker(message)
+
+            if not kwargs.get("provided", False):
+                for embed, func, timeout in zip(embeds, funcs, timeouts):
+                    kwargs['embed'] = embed
+                    await self.send(embed=embed)
+                    try:
+                        message = await self.bot.wait_for("message", check=validate, timeout=timeout)
+                    except asyncio.TimeoutError:
+                        raise customerrors.TimeoutError(self.ctx, self.name, timeout)
+                    values.append(func(**kwargs, provided=message, immediate=True))
+            else:
+                return kwargs['provided']
+            await asyncio.sleep(0)
+            return [task.result() for task in values]
+
+        for name in func_names:
+            if not name in VALID_CORO_NAMES:
+                raise ValueError(f"{name} is not a valid setup operation name")
+        else:
+            funcs = [getattr(self, name) for name in func_names]
+        if not timeouts:
+            timeouts = [options.get("timeout", 30) for _ in funcs]
+        if not options.get("immediate", False):
+            self.add_step(chainer(funcs, embeds, timeouts, **options))
+        else:
+            return self.bot.loop.create_task(chainer(funcs, embeds, timeouts, **options))
+
+    def until_finish(self, func_name: str, **options) -> None:
         async def repeater(func: callable, **kwargs) -> List[Any]:
             values = []
             embed = kwargs.get("embed")
             timeout = kwargs.get("timeout", 30)
 
-            def validate(message: discord.Message):
+            def validate(message: discord.Message) -> bool:
                 checker = self.map[func.__name__]
-                return checker(message)
+                return self._from_user_finish(message) or checker(message)
 
             while True:
                 await self.send(embed=embed)
@@ -277,13 +314,51 @@ class SetupPanel():
                 values.append(func(**kwargs, provided=message, immediate=True))
             return [task.result() for task in values]
 
-        if not coro_name in VALID_CORO_NAMES:
+        async def chain_repeater(**kwargs) -> List[List[Any]]:
+            values = []
+            func_names = kwargs.get("func_names")
+            funcs = [getattr(self, name) for name in func_names]
+            embeds = kwargs.get("embeds")
+            timeouts = kwargs.get("timeouts", [30 for _ in func_names])
+
+            def validate(message: discord.Message) -> bool:
+                checker = self.map[func.__name__]
+                return self._from_user_finish(message) or checker(message)
+
+            while True:
+                subvalues = []
+                message = ""
+                for func, embed, timeout in zip(funcs, embeds, timeouts):
+                    await self.send(embed=embed)
+                    try:
+                        message = await self.bot.wait_for("message", check=validate, timeout=timeout)
+                    except asyncio.TimeoutError:
+                        raise customerrors.TimeoutError(self.ctx, self.name, self.timeout)
+                    if message.content == "finish":
+                        break
+                    subvalues.append(func(embed=embed, provided=message, immediate=True, **kwargs))
+                if message.content == "finish":
+                    break
+                await asyncio.sleep(0)
+                values.append([task.result() for task in subvalues])
+            return values
+
+        if not func_name in VALID_CORO_NAMES:
             raise ValueError("Please specify a valid setup operation name")
         try:
-            coro = getattr(self, coro_name)
+            func = getattr(self, func_name)
         except AttributeError:
-            raise AttributeError(f"'{coro_name}' is not a valid setup function")
+            raise AttributeError(f"'{func_name}' is not a valid setup function")
         embed = options.get("embed", None)
-        if not embed:
+        if not embed and not func_name == "chain":
             raise ValueError("You must specify an embed")
-        self.add_step(repeater(coro, **options))
+        if not func_name == "chain":
+            self.add_step(repeater(func, **options))
+        else:
+            if not options.get('func_names', None):
+                raise ValueError("Please specify function names")
+            elif not options.get('embeds', None):
+                raise ValueError("Please specify embeds to use")
+            else:
+                self.add_step(chain_repeater(**options))
+        return
