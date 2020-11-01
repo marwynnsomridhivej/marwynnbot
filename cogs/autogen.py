@@ -20,6 +20,10 @@ class AutoGen(commands.Cog):
         embed = discord.Embed(title=name.title(),
                               description=f"```{func}```",
                               color=color or discord.Color.blue())
+        embed.set_footer(text=f"Disclaimer: The data provided is randomly generated using Faker "
+                         "(https://pypi.org/project/Faker/). Any resemblance to real values in any "
+                         "way is purely coincidental. This functionality is intended to be used for generating "
+                         "values for testing purposes.")
         return await ctx.channel.send(embed=embed)
 
     @tasks.loop(seconds=60)
