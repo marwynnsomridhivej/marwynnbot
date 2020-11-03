@@ -34,7 +34,8 @@ env_write = ["TOKEN=YOUR_BOT_TOKEN",
              "REDDIT_CLIENT_SECRET=CLIENT_SECRET_FROM_REDDIT_API",
              "USER_AGENT=YOUR_USER_AGENT",
              "TENOR_API=API_KEY_FROM_TENOR",
-             "GITHUB_TOKEN=PERSONAL_ACCESS_TOKEN"]
+             "GITHUB_TOKEN=PERSONAL_ACCESS_TOKEN",
+             "NASA_API=DEMO_KEY"]
 default_env = ["YOUR_BOT_TOKEN",
                "YOUR_ID_HERE",
                "POSTGRES_USERNAME",
@@ -51,7 +52,8 @@ default_env = ["YOUR_BOT_TOKEN",
                "CLIENT_SECRET_FROM_REDDIT_API",
                "YOUR_USER_AGENT",
                "API_KEY_FROM_TENOR",
-               "PERSONAL_ACCESS_TOKEN"]
+               "PERSONAL_ACCESS_TOKEN",
+               "DEMO_KEY"]
 _bot = None
 _db = None
 

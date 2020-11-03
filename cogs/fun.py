@@ -1,8 +1,8 @@
 import asyncio
-import functools
 import os
 import random
 import typing
+from datetime import datetime
 
 import aiohttp
 import discord
@@ -46,8 +46,10 @@ class Fun(commands.Cog):
                       desc="Shows today's NASA Astronomy Photo of the Day",
                       usage="apod")
     async def apod(self, ctx):
+        api_key = gcmds.env_check("NASA_API") or "DEMO_KEY"
+        today = datetime.today().strftime("%Y-%m-%d")
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY") as returned:
+            async with session.get(f"https://api.nasa.gov/planetary/apod?api_key={api_key}&date={today}") as returned:
                 result = await returned.json()
         embed = discord.Embed(title=result.get('title', ''), color=discord.Color.blue())
         embed.set_author(name=f"NASA Astronomy Photo of the Day {result.get('date', '').replace('-', '/')}")
