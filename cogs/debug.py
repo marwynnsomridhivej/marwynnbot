@@ -1,10 +1,8 @@
 import asyncio
-import datetime
 import os
 from datetime import datetime, timedelta
 
 import discord
-import dotenv
 import psutil
 from discord.ext import commands
 from utils import GlobalCMDS
