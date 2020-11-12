@@ -1,7 +1,7 @@
 aiohttp~=3.6.2
 asyncpg==0.21.0
 dateparser~=0.7.6
-discord.py[voice]~=1.5.0
+discord.py[voice]~=1.5.1
 faker==4.4.0
 lavalink~=3.1.2
 num2words==0.5.10
