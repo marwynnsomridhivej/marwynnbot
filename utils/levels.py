@@ -43,11 +43,11 @@ def _calc_req_xp(level: int) -> int:
 
 async def _get_guild_config(bot: commands.AutoShardedBot, message: discord.Message) -> Tuple[bool, bool, int, int, int, bool, bool]:
     async with bot.db.acquire() as con:
-        config = await con.fetch("SELECT enabled, route_channel_id, freq, per_min, server_notif, global_notif "
-                                 f"FROM level_config WHERE guild_id={message.guild.id}")
+        config = await con.fetch(f"SELECT * FROM level_config WHERE guild_id={message.guild.id}")
         disabled = await con.fetchval(f"SELECT channel_id FROM level_disabled WHERE "
                                       f"channel_id={message.channel.id} AND guild_id={message.guild.id}")
-    print(config)
+    if not config:
+        return (False, True, None, 1, 20, False, False)
     config = config[0]
     return (
         bool(config['enabled']),
