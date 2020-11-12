@@ -109,6 +109,8 @@ class Bot(commands.AutoShardedBot):
         self.loop.create_task(self._configure_guilds())
 
     async def _configure_guilds(self):
+        await self.wait_until_ready()
+        print("Running configure guilds")
         for guild in self.guilds:
             try:
                 await self.on_guild_join(guild)
