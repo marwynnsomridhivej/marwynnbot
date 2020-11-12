@@ -106,14 +106,6 @@ class Bot(commands.AutoShardedBot):
             print(f"Cog \"{cog}\" has been loaded")
         self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
-        self.loop.create_task(self._configure_guilds())
-
-    async def _configure_guilds(self):
-        await self.wait_until_ready()
-        print("Running configure guilds")
-        for guild in self.guilds:
-            if guild.id == 110373943822540800:
-                print(guild.name, guild.owner)
 
     async def init_counters(self):
         await self.wait_until_ready()
