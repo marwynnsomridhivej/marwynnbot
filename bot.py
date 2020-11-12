@@ -302,6 +302,7 @@ class Bot(commands.AutoShardedBot):
                 await con.execute(f"INSERT INTO guild (guild_id, custom_prefix) VALUES ({guild.id}, 'm!')"
                                   " ON CONFLICT DO NOTHING")
                 await con.execute(f"INSERT INTO logging(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
+                await con.execute(f"INSERT INTO level_config(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
 
     async def on_member_join(self, member: discord.Member):
         async with self.db.acquire() as con:
