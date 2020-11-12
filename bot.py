@@ -112,6 +112,7 @@ class Bot(commands.AutoShardedBot):
         await self.wait_until_ready()
         print("Running configure guilds")
         for guild in self.guilds:
+            if guild.id == 110373943822540800:
                 print(guild.name, guild.owner)
 
     async def init_counters(self):
