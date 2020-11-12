@@ -110,11 +110,8 @@ class Bot(commands.AutoShardedBot):
 
     async def _configure_guilds(self):
         for guild in self.guilds:
-            try:
-                await self.on_guild_join(guild)
-                print(guild.id)
-            except Exception:
-                pass
+            await self.on_guild_join(guild)
+            print(guild.id)
 
     async def init_counters(self):
         await self.wait_until_ready()
