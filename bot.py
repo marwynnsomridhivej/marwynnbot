@@ -112,11 +112,7 @@ class Bot(commands.AutoShardedBot):
         await self.wait_until_ready()
         print("Running configure guilds")
         for guild in self.guilds:
-            try:
-                await self.on_guild_join(guild)
-                print(guild.id)
-            except Exception as e:
-                print(e)
+                print(guild.name, guild.owner)
 
     async def init_counters(self):
         await self.wait_until_ready()
