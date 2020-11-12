@@ -98,18 +98,23 @@ class Bot(commands.AutoShardedBot):
         self.db = kwargs.pop("db")
         gcmds = globalcommands.GlobalCMDS(bot=self)
         func_checks = (self.check_blacklist, self.disable_dm_exec, context.redirect)
-        func_listen = (self.on_message, self.on_command_error, self.on_command_completion,
-                       self.on_guild_join, self.on_member_join)
         for func in func_checks:
             self.add_check(func)
-        for func in func_listen:
-            self.event(func)
         cogs = [filename[:-3] for filename in os.listdir('./cogs') if filename.endswith(".py")]
         for cog in sorted(cogs):
             self.load_extension(f'cogs.{cog}')
             print(f"Cog \"{cog}\" has been loaded")
         self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
+        self.loop.create_task(self._configure_guilds())
+
+    async def _configure_guilds(self):
+        for guild in self.guilds:
+            try:
+                await self.on_guild_join(guild)
+                print(guild.id)
+            except Exception:
+                pass
 
     async def init_counters(self):
         await self.wait_until_ready()
@@ -295,7 +300,7 @@ class Bot(commands.AutoShardedBot):
             if result:
                 await guild.leave()
             else:
-                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix) VALUES ('{guild.id}', 'm!')"
+                await con.execute(f"INSERT INTO guild (guild_id, custom_prefix) VALUES ({guild.id}, 'm!')"
                                   " ON CONFLICT DO NOTHING")
                 await con.execute(f"INSERT INTO logging(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
 
