@@ -47,6 +47,7 @@ async def _get_guild_config(bot: commands.AutoShardedBot, message: discord.Messa
                                  f"FROM level_config WHERE guild_id={message.guild.id}")
         disabled = await con.fetchval(f"SELECT channel_id FROM level_disabled WHERE "
                                       f"channel_id={message.channel.id} AND guild_id={message.guild.id}")
+    print(config)
     config = config[0]
     return (
         bool(config['enabled']),
