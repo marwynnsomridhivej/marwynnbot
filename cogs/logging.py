@@ -278,15 +278,18 @@ class Logging(commands.Cog):
                                   show_entry_count=False, embed=embed)
         return await pag.paginate()
 
-    async def check_loggable(self, ctx):
+    async def check_loggable(self, ctx, channel: discord.TextChannel):
         async with self.bot.db.acquire() as con:
             on_blacklist = await con.fetch(f"SELECT * FROM guild WHERE guild_id={ctx.guild.id} AND log_channel=-1")
         if on_blacklist:
             raise customerrors.LoggingBlacklisted(ctx.guild)
+        perms = ctx.guild.me.permissions_in(channel)
+        if not perms.send_messages:
+            raise customerrors.CannotMessageChannel(channel)
 
     async def set_logging_channel(self, ctx, channel: discord.TextChannel) -> discord.Message:
         embed = discord.Embed()
-        await self.check_loggable(ctx)
+        await self.check_loggable(ctx, channel)
         try:
             async with self.bot.db.acquire() as con:
                 await con.execute(f"UPDATE guild SET log_channel={channel.id} WHERE guild_id={ctx.guild.id}")

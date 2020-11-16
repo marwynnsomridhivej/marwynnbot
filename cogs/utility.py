@@ -199,7 +199,7 @@ class Utility(commands.Cog):
                       note="If `[prefix]` is \"reset\", then the custom prefix will be set to \"m!\"")
     @commands.has_permissions(manage_guild=True)
     async def setPrefix(self, ctx, prefix):
-        async with self.db.acquire() as con:
+        async with self.bot.db.acquire() as con:
             if prefix != 'reset':
                 await con.execute(f"UPDATE guild SET custom_prefix=$tag${prefix}$tag$ WHERE guild_id={ctx.guild.id}")
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
@@ -212,7 +212,7 @@ class Utility(commands.Cog):
                 prefixEmbed = discord.Embed(title='Server Prefix Set',
                                             description=f"Server prefix has been reset to `m!`",
                                             color=discord.Color.blue())
-            await ctx.channel.send(embed=prefixEmbed)
+        return await ctx.channel.send(embed=prefixEmbed)
 
     @ commands.command(aliases=['emotes', 'serveremotes', 'serveremote', 'serverEmote', 'emojis', 'emoji'],
                        desc="Queries emotes that belong to this server",

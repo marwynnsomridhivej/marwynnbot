@@ -3,7 +3,7 @@ I am a general purpose discord bot written in python using discord.py, a Discord
 development, so please expect new features to come and any issues to be addressed as soon as I can.
 
 ## Add Me To Your Server ![uptime](https://img.shields.io/badge/uptime-90.0%25-brightgreen)
-You can add the public MarwynnBot to your own Discord server by clicking [here](https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=8)
+You can add the public MarwynnBot to your own Discord server by clicking [here](https://discord.com/oauth2/authorize?client_id=623317451811061763&scope=bot&permissions=2146958583)
 
 ## Prefix
 - The default prefix is `m!`

@@ -106,6 +106,14 @@ class Bot(commands.AutoShardedBot):
             print(f"Cog \"{cog}\" has been loaded")
         self.loop.create_task(self.init_counters())
         self.loop.create_task(self.all_loaded())
+        self.loop.create_task(self._init_guilds())
+
+    async def _init_guilds(self):
+        await self.wait_until_ready()
+        async with self.db.acquire() as con:
+            for guild in self.guilds:
+                await con.execute(f"INSERT INTO guild(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
+                await con.execute(f"INSERT INTO level_config(guild_id) VALUES ({guild.id}) ON CONFLICT DO NOTHING")
 
     async def init_counters(self):
         await self.wait_until_ready()
@@ -157,11 +165,11 @@ class Bot(commands.AutoShardedBot):
             if gcmds.env_check('GITHUB_TOKEN'):
                 url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for "
                                               f"invalidation. Server: {message.guild.name}")
-            embed = discord.Embed(title="Token Found",
-                                  description=f"{message.author.mention}, a Discord token was found in your message. It has"
-                                  f" been sent to [Github]({url}) to be invalidated",
-                                  color=discord.Color.dark_red())
-            await message.channel.send(embed=embed)
+                embed = discord.Embed(title="Token Found",
+                                      description=f"{message.author.mention}, a Discord token was found in your message. It has"
+                                      f" been sent to [Github]({url}) to be invalidated",
+                                      color=discord.Color.dark_red())
+                await message.channel.send(embed=embed)
 
         if await self.check_locks(message):
             await self.process_commands(message)
@@ -248,12 +256,6 @@ class Bot(commands.AutoShardedBot):
                                       f"command",
                                       color=discord.Color.dark_red())
             return await ctx.channel.send(embed=not_owner)
-        elif isinstance(error, commands.CommandNotFound):
-            notFound = discord.Embed(title="Command Not Found",
-                                     description=f"{ctx.author.mention}, `{ctx.message.content}` "
-                                     f"does not exist\n\nDo `{await gcmds.prefix(ctx)}help` for help",
-                                     color=discord.Color.dark_red())
-            return await ctx.channel.send(embed=notFound)
         elif isinstance(error, commands.CommandOnCooldown):
             cooldown_time_truncated = gcmds.truncate(error.retry_after, 3)
             if cooldown_time_truncated < 1:
@@ -278,6 +280,8 @@ class Bot(commands.AutoShardedBot):
             else:
                 raise error
         elif isinstance(error, commands.CheckFailure):
+            pass
+        elif isinstance(error, commands.CommandNotFound):
             pass
         else:
             try:

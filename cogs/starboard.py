@@ -250,6 +250,9 @@ class Starboard(commands.Cog):
     @starboard.command(aliases=['cn', 'channel'])
     @commands.has_permissions(manage_guild=True)
     async def starboard_channel(self, ctx, channel: discord.TextChannel):
+        perms = ctx.guild.me.permissions_in(channel)
+        if not perms.send_messages:
+            raise customerrors.CannotMessageChannel(channel)
         async with self.bot.db.acquire() as con:
             prev_channel_id = await con.fetchval(f"SELECT starboard_channel FROM guild WHERE guild_id={ctx.guild.id}")
             await con.execute(f"UPDATE guild SET starboard_channel={channel.id} WHERE guild_id={ctx.guild.id}")

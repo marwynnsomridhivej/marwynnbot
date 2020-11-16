@@ -2,12 +2,13 @@ import asyncio
 import base64
 import os
 import re
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 
 import discord
 from dateparser.search import search_dates
 from discord.ext import commands, tasks
-from utils import GlobalCMDS
+from utils import GlobalCMDS, customerrors
 
 gcmds = GlobalCMDS()
 timeout = 30
@@ -394,15 +395,22 @@ class Reminders(commands.Cog):
         except asyncio.TimeoutError:
             return await self.timeout(ctx)
         reaction = result[0].emoji
-        await panel.clear_reactions()
+        with suppress(discord.Forbidden):
+            await panel.clear_reactions()
         if reaction == "🛑":
             return await self.cancelled(ctx, panel)
-        if reaction == "✅":
-            remind_type = "single"
         elif reaction == "🔁":
-            remind_type = "loop"
-
-        if remind_type == "single":
+            str_time = "every " + str(dates[0][0]).replace("in ", "").replace("at ", "")
+            panel_new_title = "Reminder Successfully Created"
+            panel_new_description = f"{ctx.author.mention}, your reminder has been created and will be dispatched to " \
+                                    f"this channel {str_time}"
+            finished = await self.edit_panel(panel_embed, panel, panel_new_title, panel_new_description)
+            if not finished:
+                return await self.cancelled(ctx, panel)
+            loop_interval = time_to_send - current_time
+            await self.create_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, loop_interval,
+                                       remind_message, "loop")
+        else:
             if str(dates[0][0]).startswith("in ") or str(dates[0][0]).startswith("at "):
                 str_time = str(dates[0][0])
             else:
@@ -414,18 +422,7 @@ class Reminders(commands.Cog):
             if not finished:
                 return await self.cancelled(ctx, panel)
             await self.create_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, time_to_send,
-                                       remind_message, remind_type)
-        elif remind_type == "loop":
-            str_time = "every " + str(dates[0][0]).replace("in ", "").replace("at ", "")
-            panel_new_title = "Reminder Successfully Created"
-            panel_new_description = f"{ctx.author.mention}, your reminder has been created and will be dispatched to " \
-                                    f"this channel {str_time}"
-            finished = await self.edit_panel(panel_embed, panel, panel_new_title, panel_new_description)
-            if not finished:
-                return await self.cancelled(ctx, panel)
-            loop_interval = time_to_send - current_time
-            await self.create_reminder(ctx.author.id, ctx.channel.id, ctx.guild.id, loop_interval,
-                                       remind_message, remind_type)
+                                       remind_message, "single")
 
     @remind.command(aliases=['-e'])
     async def edit(self, ctx):
@@ -547,6 +544,12 @@ class Reminders(commands.Cog):
             else:
                 continue
         await gcmds.smart_delete(result)
+        if channel_id:
+            channel = ctx.guild.get_channel(int(channel_id))
+            perms = ctx.guild.me.permissions_in(channel)
+            if not perms.send_messages:
+                await gcmds.smart_delete(panel)
+                raise customerrors.CannotMessageChannel(channel)
 
         succeeded = await self.edit_reminder(ctx.guild.id, ctx.author.id, index, channel_id, time_to_send, edited_content)
         if succeeded:

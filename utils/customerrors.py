@@ -52,6 +52,13 @@ class LoggingError(commands.CommandError):
     pass
 
 
+class CannotMessageChannel(commands.CommandError):
+    def __init__(self, channel: discord.TextChannel):
+        self.embed = discord.Embed(title="Insufficient Permissions",
+                                   description=f"I cannot send messages in {channel.mention}",
+                                   color=discord.Color.dark_red())
+
+
 class LoggingNotEnabled(LoggingError):
     def __init__(self):
         self.embed = discord.Embed(title="Logging Not Enabled",

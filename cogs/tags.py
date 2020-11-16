@@ -95,6 +95,11 @@ class Tags(commands.Cog):
             return True
 
     async def create_tag(self, ctx, name, content) -> discord.Message:
+        if len(content) > 2000:
+            embed = discord.Embed(title="Tag Too Long",
+                                  description=f"{ctx.author.mention}, your tag exceeds 2000 characters",
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed)
         async with self.bot.db.acquire() as con:
             values = f"({ctx.guild.id}, {ctx.author.id}, $tag${name}$tag$, $tag${content}$tag$, {int(datetime.now().timestamp())})"
             await con.execute(f"INSERT INTO tags(guild_id, author_id, name, message_content, created_at) VALUES {values}")
@@ -240,12 +245,12 @@ class Tags(commands.Cog):
         return await pag.paginate()
 
     @tag.command(aliases=['make'])
-    async def create(self, ctx, *, tag):
+    async def create(self, ctx, tag):
         if tag.lower() in PROHIB_NAMES:
             raise customerrors.InvalidTagName(tag)
         await self.check_tag_exists(ctx, tag)
         embed = discord.Embed(title=f"Create Tag \"{tag}\"",
-                              description=f"{ctx.author.mention}, within 2 minutes, please enter what you would like the tag to return\n\n"
+                              description=f"{ctx.author.mention}, within 10 minutes, please enter what you would like the tag to return\n\n"
                               f"ex. *If you enter \"test\", doing `{await gcmds.prefix(ctx)}tag {tag}` will return \"test\"*",
                               color=discord.Color.blue())
         embed.set_footer(text="Enter \"cancel\" to cancel this setup")

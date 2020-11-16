@@ -642,15 +642,21 @@ class Music(commands.Cog):
 
     @commands.command(desc="Stops music playback",
                       usage="stop",
-                      uperms=["Manage Server"])
+                      uperms=["Manage Server` or `Mute Members` or `Deafen Members` or `Move Members"])
     @commands.has_permissions(manage_guild=True)
     async def stop(self, ctx):
-        if ctx.author != ctx.guild.owner:
-            return await self.not_owner(ctx)
-
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if not player:
             return await self.no_player(ctx)
+
+        perms = ctx.author.guild_permissions
+        if not any([perms.manage_guild, perms.mute_members, perms.deafen_members, perms.move_members]):
+            embed = discord.Embed(title="Insufficient Permissions",
+                                  description=f"{ctx.author.mention}, you require either the "
+                                  "`Mute Members`, `Deafen Members`, or `Move Members` permissions to "
+                                  "invoke this command. You may also vote to stop on the control panel",
+                                  color=discord.Color.dark_red())
+            return await ctx.channel.send(embed=embed)
 
         if not player.is_connected:
             invalid = discord.Embed(title="Error",

@@ -7,7 +7,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 from num2words import num2words
-from utils import GlobalCMDS, SubcommandPaginator
+from utils import GlobalCMDS, SubcommandPaginator, customerrors
 
 gcmds = GlobalCMDS()
 timeout = 120
@@ -352,6 +352,11 @@ class Welcome(commands.Cog):
             else:
                 continue
         await gcmds.smart_delete(result)
+        channel = ctx.guild.get_channel(int(channel_id))
+        perms = ctx.guild.me.permissions_in(channel)
+        if not perms.send_messages:
+            await gcmds.smart_delete(panel)
+            raise customerrors.CannotMessageChannel(channel)
 
         description = f"{ctx.author.mention}, please enter the title of the welcome embed, {or_default}\n\n" \
             "Default Value: New Member Joined!"
@@ -734,14 +739,6 @@ class Welcome(commands.Cog):
                                   description=f"{ctx.author.mention}, this server already has a leaver set up",
                                   color=discord.Color.dark_red())
             return await ctx.channel.send(embed=embed)
-
-        def from_user(message: discord.Message) -> bool:
-            if message.author.id == ctx.author.id and message.channel.id == ctx.channel.id:
-                return True
-            else:
-                return False
-
-        channel_id = welcomer[0]
 
         succeeded = await self.create_leaver(ctx)
         if succeeded:
