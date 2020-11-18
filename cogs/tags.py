@@ -246,7 +246,9 @@ class Tags(commands.Cog):
 
     @tag.command(aliases=['make'])
     async def create(self, ctx, tag):
-        if tag.lower() in PROHIB_NAMES:
+        if len(tag) > 128:
+            raise customerrors.InvalidTagLength()
+        if tag.lower().replace(" ", "") in PROHIB_NAMES:
             raise customerrors.InvalidTagName(tag)
         await self.check_tag_exists(ctx, tag)
         embed = discord.Embed(title=f"Create Tag \"{tag}\"",

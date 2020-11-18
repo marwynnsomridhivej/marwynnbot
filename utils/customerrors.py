@@ -2,11 +2,14 @@ import discord
 from discord.ext import commands
 
 
+_EC = discord.Color.dark_red()
+
+
 class CommandNotFound(commands.CommandError):
     def __init__(self, name: str):
         self.embed = discord.Embed(title="Command Not Found",
                                    description=f"`{name}` is not a valid command",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class CommandHelpDirectlyCalled(CommandNotFound):
@@ -23,7 +26,7 @@ class TimeoutError(commands.CommandError):
         self.embed = discord.Embed(title="Setup Timed Out",
                                    description=f"{ctx.author.mention}, your {name} setup timed out after "
                                    f"no valid response was provided after {timeout} seconds",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class CancelError(commands.CommandError):
@@ -31,21 +34,21 @@ class CancelError(commands.CommandError):
         super().__init__()
         self.embed = discord.Embed(title="Setup Cancelled",
                                    description=f"{ctx.author.mention}, your {name} setup was cancelled",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class MassroleInvalidType(commands.CommandError):
     def __init__(self, user_type: str):
         self.embed = discord.Embed(title="Invalid Type",
                                    description=f"The specified type `{user_type}` is not a valid type",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class MassroleInvalidOperation(commands.CommandError):
     def __init__(self, op: str):
         self.embed = discord.Embed(title="Invalid Operation",
                                    description=f"The specified operation `{op}` is not a valid operation",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LoggingError(commands.CommandError):
@@ -56,21 +59,21 @@ class CannotMessageChannel(commands.CommandError):
     def __init__(self, channel: discord.TextChannel):
         self.embed = discord.Embed(title="Insufficient Permissions",
                                    description=f"I cannot send messages in {channel.mention}",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LoggingNotEnabled(LoggingError):
     def __init__(self):
         self.embed = discord.Embed(title="Logging Not Enabled",
                                    description="Logging is not enabled on this server",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LoggingBlacklisted(LoggingError):
     def __init__(self, guild: discord.Guild):
         self.embed = discord.Embed(title=f"{guild.name} Blacklisted",
                                    description="This server is blacklisted from using any logging functionality",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
         self.embed.set_footer(text="Please contact MS Arranges#3060 if you think this is a mistake")
 
 
@@ -87,14 +90,14 @@ class LoggingLevelInvalid(LoggingError):
         self.embed = discord.Embed(title="Invalid Logging Level",
                                    description=f"The logging level `{level}` is not a valid logging level. Please enter "
                                    "either `basic`, `server`, or `hidef`",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LoggingCommandNameInvalid(LoggingError):
     def __init__(self, name: str):
         self.embed = discord.Embed(title="Invalid Command Name",
                                    description=f"No command is registered under the name `{name}`",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class PostgreSQLError(commands.CommandError):
@@ -108,28 +111,28 @@ class NoPostgreSQL(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="No Valid DB Connection",
                                    description="No valid DB connection was passed as an argument",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoBoundChannel(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="No Music Channel Bound",
                                    description="You must bind MarwynnBot's music commands to a channel",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NotBoundChannel(PostgreSQLError):
     def __init__(self, channel_id):
         self.embed = discord.Embed(title="Not Bound Channel",
                                    description=f"Execute music commands in <#{channel_id}>",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class AutoroleInsertError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Autoroles Error",
                                    description="An error occured while setting this server's autoroles",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class AutoroleDeleteError(PostgreSQLError):
@@ -137,21 +140,21 @@ class AutoroleDeleteError(PostgreSQLError):
         self.embed = discord.Embed(title="Autoroles Error",
                                    description="An error occured while removing this server's autoroles. Please check "
                                    "if the role you provided is a valid autorole",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class AutoroleSearchError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Autoroles Error",
                                    description="An error occurred while retrieving this server's autoroles",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LevelError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Leveling Error",
                                    description="An error occurred while retrieving this server's leveling configuration",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LevelNoConfig(LevelError):
@@ -198,7 +201,7 @@ class LockException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Invalid Lock Operation",
                                    description="An error occurred due to an invalid lock oepration",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class LockAllExcept(LockException):
@@ -217,7 +220,7 @@ class ServerLinkException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="An Error Occurred",
                                    description="An error occurred while processing ServerLink data",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class ServerLinkChannelLimitExceeded(ServerLinkException):
@@ -303,7 +306,7 @@ class StarboardException(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Starboard Error",
                                    description="An error occurred while performing an operation on the starboard",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoStarboardSet(StarboardException):
@@ -316,35 +319,35 @@ class RedirectSetError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Set Error",
                                    description="An error occured while setting this server's redirects",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class RedirectSearchError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Retrieve Error",
                                    description="An error occured while retrieving this server's redirects",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class RedirectRemoveError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="Redirect Remove Error",
                                    description="An error occured while removing this server's redirects",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class InvalidCommandSpecified(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="No Valid Commands Specified",
                                    description="An error occured while searching for valid commands",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class ToDoError(PostgreSQLError):
     def __init__(self):
         self.embed = discord.Embed(title="An Error Occurred",
                                    description="An error occurred while performing operations on todo lists",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class ToDoSetError(ToDoError):
@@ -398,7 +401,7 @@ class TagError(commands.CommandError):
         super().__init__(message=message, *args)
         self.embed = discord.Embed(title="An Error Occurred",
                                    description=f"An error occurred while processing a tag command:\n```{error}\n```",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class TagNotFound(TagError):
@@ -411,7 +414,7 @@ class TagNotFound(TagError):
     def __init__(self, tag: str):
         self.embed = discord.Embed(title="Tag Not Found",
                                    description=f"The tag `{tag}` does not exist in this server",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class TagAlreadyExists(TagError):
@@ -424,7 +427,7 @@ class TagAlreadyExists(TagError):
     def __init__(self, tag: str):
         self.embed = discord.Embed(title="Tag Already Exists",
                                    description=f"The tag `{tag}` already exists in this server",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NotTagOwner(TagError):
@@ -437,7 +440,7 @@ class NotTagOwner(TagError):
     def __init__(self, tag: str):
         self.embed = discord.Embed(title="Illegal Tag Operation",
                                    description=f"You do not own the tag `{tag}`. Modifying or destructive actions can only be performed by the tag's owner",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class UserNoTags(TagError):
@@ -450,7 +453,7 @@ class UserNoTags(TagError):
     def __init__(self, member: discord.Member):
         self.embed = discord.Embed(title="No Tags Owned",
                                    description=f"{member.mention}, you do not own any tags",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoSimilarTags(TagError):
@@ -463,14 +466,22 @@ class NoSimilarTags(TagError):
     def __init__(self, query: str):
         self.embed = discord.Embed(title="No Results",
                                    description=f"There were no results for any tag named `{query}` in this server",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class InvalidTagName(TagError):
     def __init__(self, tag: str):
         self.embed = discord.Embed(title="Invalid Tag Name",
                                    description=f"You cannot create a tag with the name `{tag}`",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
+
+
+class InvalidTagLength(TagError):
+    def __init__(self):
+        self.embed = discord.Embed(title="Tag Too Long",
+                                   description="Please keep tag names no longer "
+                                   "than 128 characters (including whitespace)",
+                                   color=_EC)
 
 
 class TagLimitReached(TagError):
@@ -478,7 +489,7 @@ class TagLimitReached(TagError):
         self.embed = discord.Embed(title="Tag Limit Reached",
                                    description=f"{user.mention}, you must be a MarwynnBot Premium subscriber in order to "
                                    "create more than 100 tags",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class CannotPaginate(commands.CommandError):
@@ -503,7 +514,7 @@ class NoPremiumGuilds(PremiumError):
     def __init__(self):
         self.embed = discord.Embed(title="No MarwynnBot Premium Members",
                                    description="There are no servers registered as MarwynnBot Premium servers \:(",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoPremiumUsers(PremiumError):
@@ -513,7 +524,7 @@ class NoPremiumUsers(PremiumError):
     def __init__(self):
         self.embed = discord.Embed(title="No MarwynnBot Premium Members",
                                    description="This server does not have any MarwynnBot Premium members \:(",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoGlobalPremiumUsers(NoPremiumUsers):
@@ -536,7 +547,7 @@ class NotPremiumGuild(PremiumError):
         self.embed = discord.Embed(title="Not MarwynnBot Premium",
                                    description=f"This guild, {guild.name}, must have a MarwynnBot Premium Server Subscription"
                                    " to use this command",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NotPremiumUser(PremiumError):
@@ -549,7 +560,7 @@ class NotPremiumUser(PremiumError):
     def __init__(self, user: discord.User):
         self.embed = discord.Embed(title="Not MarwynnBot Premium",
                                    description=f"{user.mention}, you must have a MarwynnBot Premium User Subscription to use this command",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NotPremiumUserOrGuild(PremiumError):
@@ -564,7 +575,7 @@ class NotPremiumUserOrGuild(PremiumError):
         self.embed = discord.Embed(title="Not MarwynnBot Premium",
                                    description=f"{user.mention}, you or this server, {guild.name}, must have a "
                                    "MarwynnBot Premium Server Subscription to use this command",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class UserPremiumException(PremiumError):
@@ -577,7 +588,7 @@ class UserPremiumException(PremiumError):
     def __init__(self, user: discord.User):
         self.embed = discord.Embed(title="Set Premium Error",
                                    description=f"An error occured when trying to operate on {user.display_name}",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class UserAlreadyPremium(UserPremiumException):
@@ -602,7 +613,7 @@ class GuildPremiumException(PremiumError):
     def __init__(self, guild: discord.Guild):
         self.embed = discord.Embed(title="Set Premium Error",
                                    description=f"An error occured when trying to operate on {guild.name}",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class GuildAlreadyPremium(GuildPremiumException):
@@ -621,7 +632,7 @@ class GameStatsError(commands.CommandError):
     def __init__(self):
         self.embed = discord.Embed(title="GameStats Error",
                                    description="An error occurred while executing a gamestats query",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class NoStatsAll(GameStatsError):
@@ -641,14 +652,14 @@ class BlacklistOperationError(commands.CommandError):
         self.embed = discord.Embed(title="A Blacklist Operation Error Occurred",
                                    description="An error occurred while trying to operate on the blacklist. Please check "
                                    "to see if the user was already blacklisted or if any table constraints were violated",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class MathError(commands.CommandError):
     def __init__(self):
         self.embed = discord.Embed(title="Math Error",
                                    description="An error occurred while trying to parse or solve an equation or expression input",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
 
 
 class InvalidExpression(MathError):
@@ -663,4 +674,4 @@ class UnoCannotDM(commands.CommandError):
         self.embed = discord.Embed(title="Cannot Initiate DM",
                                    description=f"I don't have the permissions to DM {member.mention}. The "
                                    "current Uno game has been cancelled",
-                                   color=discord.Color.dark_red())
+                                   color=_EC)
