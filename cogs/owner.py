@@ -2,11 +2,10 @@ import asyncio
 import copy
 import os
 import subprocess
-import sys
 import typing
 from contextlib import suppress
 from datetime import datetime
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import discord
 from asyncpg.exceptions import UniqueViolationError
