@@ -266,7 +266,7 @@ class Tags(commands.Cog):
         except asyncio.TimeoutError:
             return await gcmds.timeout(ctx, "tag creation", timeout)
         if result.content == "cancel":
-            return gcmds.cancelled(ctx, "tag creation")
+            return await gcmds.cancelled(ctx, "tag creation")
         await gcmds.smart_delete(result)
 
         try:
