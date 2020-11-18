@@ -525,6 +525,11 @@ class Welcome(commands.Cog):
             else:
                 continue
         await gcmds.smart_delete(result)
+        channel = ctx.guild.get_channel(int(new_channel_id))
+        perms = ctx.guild.me.permissions_in(channel)
+        if not perms.send_messages:
+            await gcmds.smart_delete(panel)
+            raise customerrors.CannotMessageChannel(channel)
 
         description = f"{ctx.author.mention}, please enter the title of the welcomer you would like " \
             f"MarwynnBot to display, {or_default}\n\nCurrent Title: {info[1]}"
