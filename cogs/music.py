@@ -299,7 +299,7 @@ class Music(commands.Cog):
 
     async def add_reaction_panel(self, message):
         with suppress(Exception):
-            await message.clear_reactions()
+            await gcmds.smart_clear(message)
             for reaction in reactions:
                 await message.add_reaction(reaction)
 
@@ -883,11 +883,11 @@ class Music(commands.Cog):
                 return await panel.edit(embed=timeout)
             else:
                 if str(choice[0].emoji) == plist_reactions[0]:
-                    await panel.clear_reactions()
+                    await gcmds.smart_clear(panel)
                     action = "save"
                     break
                 elif str(choice[0].emoji) == plist_reactions[1]:
-                    await panel.clear_reactions()
+                    await gcmds.smart_clear(panel)
                     action = "edit"
                     break
                 else:
@@ -1198,11 +1198,11 @@ class Music(commands.Cog):
                 return await panel.edit(embed=timeout)
             else:
                 if str(reacted[0].emoji) == plist_delete_reactions[0]:
-                    await panel.clear_reactions()
+                    await gcmds.smart_clear(panel)
                     action = "confirm"
                     break
                 elif str(reacted[0].emoji) == plist_delete_reactions[1]:
-                    await panel.clear_reactions()
+                    await gcmds.smart_clear(panel)
                     action = "cancel"
                     break
                 else:

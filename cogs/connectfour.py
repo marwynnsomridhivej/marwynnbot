@@ -271,7 +271,7 @@ class ConnectFour(commands.Cog):
                     choice = await self.bot.wait_for('reaction_add', timeout=60.0,
                                                      check=check)
                 except asyncio.TimeoutError:
-                    await message.clear_reactions()
+                    await gcmds.smart_clear(message)
                     canceled = discord.Embed(title="Game Timeout",
                                              description="ConnectFour game canceled due to inactivity, "
                                                          "create a new game",
@@ -304,7 +304,7 @@ class ConnectFour(commands.Cog):
                             description = f"{member.mention} canceled the game"
                             valid = True
                         if valid:
-                            await message.clear_reactions()
+                            await gcmds.smart_clear(message)
                             c4 = discord.Embed(title="Connect Four Game Canceled",
                                                description=description,
                                                color=discord.Color.dark_red())
@@ -328,7 +328,7 @@ class ConnectFour(commands.Cog):
                             description = f"{member.mention}'s turn\n\n{printed_board}"
                             confirm_turn = True
                             if winning_move(board, 1):
-                                await message.clear_reactions()
+                                await gcmds.smart_clear(message)
                                 printed_board = print_board(board)
                                 c4 = discord.Embed(title="Connect Four",
                                                    description=f"{ctx.author.mention} wins!\n\n{printed_board}",
@@ -360,7 +360,7 @@ class ConnectFour(commands.Cog):
                             description = f"{ctx.author.mention}'s turn\n\n{printed_board}"
                             confirm_turn = True
                             if winning_move(board, 2):
-                                await message.clear_reactions()
+                                await gcmds.smart_clear(message)
                                 printed_board = print_board(board)
                                 c4 = discord.Embed(title="Connect Four",
                                                    description=f"{member.mention} wins!\n\n{printed_board}",

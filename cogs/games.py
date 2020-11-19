@@ -186,7 +186,7 @@ class Games(commands.Cog):
                         choice = 'cancel'
                         break
                 if choice == 'confirm':
-                    await message.clear_reactions()
+                    await gcmds.smart_clear(message)
                     description = "Successfully transferred:\n"
                     await gcmds.balance_db(f"UPDATE balance SET amount = amount - {amount * (int(len(userlist)) - 1)} WHERE user_id = {ctx.author.id}")
                     for members in member:
@@ -199,14 +199,14 @@ class Games(commands.Cog):
 
                     return
                 if choice == 'cancel':
-                    await message.clear_reactions()
+                    await gcmds.smart_clear(message)
                     confirmEmbed = discord.Embed(title="Credits Transfer Cancelled",
                                                  description=f"{ctx.author.mention} cancelled the transfer\n",
                                                  color=discord.Color.dark_red())
                     await message.edit(embed=confirmEmbed)
                     return
             except asyncio.TimeoutError:
-                await message.clear_reactions()
+                await gcmds.smart_clear(message)
                 canceled = discord.Embed(title="Confirmation Timeout",
                                          description=f"{ctx.author.mention}, transfer cancelled due to inactivity",
                                          color=discord.Color.dark_red())

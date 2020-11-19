@@ -88,6 +88,13 @@ class GlobalCMDS:
             except Exception:
                 pass
 
+    async def smart_clear(self, message: discord.Message):
+        if message.guild and message.guild.me.guild_permissions.manage_messages:
+            try:
+                await message.clear_reactions()
+            except Exception:
+                pass
+
     async def confirmation(self, ctx, description):
         embed = discord.Embed(title="Confirmation",
                               description=description + " React with ✅ to confirm or 🛑 to cancel",

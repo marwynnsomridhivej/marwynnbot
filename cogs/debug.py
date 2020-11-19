@@ -215,7 +215,7 @@ class Debug(commands.Cog):
                     return await self.timeout(ctx, preview)
                 else:
                     if response[0].emoji in updates_reaction:
-                        await panel.clear_reactions()
+                        await gcmds.smart_clear(panel)
                         break
                     else:
                         await panel.remove_reaction(response[0].emoji, ctx.author)

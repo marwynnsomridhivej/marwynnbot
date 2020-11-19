@@ -212,7 +212,7 @@ class Roles(commands.Cog):
         if emoji_role_list or type_name:
             async with self.bot.db.acquire() as con:
                 if emoji_role_list:
-                    await message.clear_reactions()
+                    await gcmds.smart_clear(message)
                     await con.execute(f"DELETE FROM emoji_rr WHERE message_id={message.id}")
                     for role, emoji in emoji_role_list:
                         await message.add_reaction(emoji)
@@ -702,7 +702,7 @@ class Roles(commands.Cog):
 
             emoji = result[0].emoji
             emoji_list.append(emoji)
-            await result[0].message.clear_reactions()
+            await gcmds.smart_clear(result[0].message)
 
             emoji_role_list.append((role, emoji))
 
@@ -924,7 +924,7 @@ class Roles(commands.Cog):
 
             emoji = result[0].emoji
             emoji_list.append(emoji)
-            await result[0].message.clear_reactions()
+            await gcmds.smart_clear(result[0].message)
 
             emoji_role_list.append((role, emoji))
 

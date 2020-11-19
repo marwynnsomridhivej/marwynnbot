@@ -396,7 +396,7 @@ class Reminders(commands.Cog):
             return await self.timeout(ctx)
         reaction = result[0].emoji
         with suppress(discord.Forbidden):
-            await panel.clear_reactions()
+            await gcmds.smart_clear(panel)
         if reaction == "🛑":
             return await self.cancelled(ctx, panel)
         elif reaction == "🔁":
@@ -625,7 +625,7 @@ class Reminders(commands.Cog):
             return await self.cancelled(ctx, panel)
 
         try:
-            await panel.clear_reactions()
+            await gcmds.smart_clear(panel)
         except Exception:
             pass
 

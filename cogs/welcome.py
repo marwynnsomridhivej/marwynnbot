@@ -697,7 +697,7 @@ class Welcome(commands.Cog):
                 break
             else:
                 continue
-        await panel.clear_reactions()
+        await gcmds.smart_clear(panel)
 
         if result[0].emoji == "✅":
             succeeded = await self.delete_welcomer(ctx)

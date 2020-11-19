@@ -326,7 +326,7 @@ class Blackjack(commands.Cog):
                         choice = 'stand'
                         break
                     if str(item) == '🛑':
-                        await message.clear_reactions()
+                        await gcmds.smart_clear(message)
                         bjEmbed = discord.Embed(title="Blackjack Game Canceled",
                                                 description=f"{ctx.author.mention}, your game was cancelled",
                                                 color=discord.Color.dark_red())
@@ -338,7 +338,7 @@ class Blackjack(commands.Cog):
                 pv_int = player_hand.added()
                 dealer_value = dealer_hand.list_hand(True)
 
-                await message.clear_reactions()
+                await gcmds.smart_clear(message)
                 bjEmbed = discord.Embed(title="Blackjack",
                                         description=f"To hit, react to {hitEmoji}, to stand, react to {standEmoji}, "
                                                     f"to cancel the game, react to {cancelEmoji}",
@@ -354,7 +354,7 @@ class Blackjack(commands.Cog):
                 if won:
                     return
                 else:
-                    await message.clear_reactions()
+                    await gcmds.smart_clear(message)
                     canceled = discord.Embed(title="Game Timeout",
                                              description=f"{ctx.author.mention}, game canceled due to inactivity, "
                                                          f"create a new game",
@@ -374,7 +374,7 @@ class Blackjack(commands.Cog):
                 dealer_value = dealer_hand.list_hand(gameEnd=won)
                 dr_int = dealer_hand.added()
 
-                await message.clear_reactions()
+                await gcmds.smart_clear(message)
                 bjEmbedEdit = discord.Embed(title="Blackjack",
                                             description=f"{ctx.author.mention}, you busted! Lost **{bet}** {spell}",
                                             color=discord.Color.blue())
@@ -428,7 +428,7 @@ class Blackjack(commands.Cog):
                             await con.execute(f"UPDATE blackjack SET tie = tie + 1 WHERE user_id = {ctx.author.id}")
                     description = "Its a tie! No credits lost or gained"
 
-                await message.clear_reactions()
+                await gcmds.smart_clear(message)
                 bjEmbedEdit = discord.Embed(title="Blackjack",
                                             description=description,
                                             color=discord.Color.blue())
@@ -459,19 +459,19 @@ class Blackjack(commands.Cog):
                         pin_choice = await self.bot.wait_for('reaction_add', timeout=20.0,
                                                              check=check_pin)
                     except asyncio.TimeoutError:
-                        await message.clear_reactions()
+                        await gcmds.smart_clear(message)
                         bjEmbedEdit.set_footer(text="Not pinned 🛑")
                         await message.edit(embed=bjEmbedEdit)
                         return
                     else:
                         for item in pin_choice:
                             if str(item) == '📌':
-                                await message.clear_reactions()
+                                await gcmds.smart_clear(message)
                                 await message.pin()
                                 bjEmbedEdit.set_footer(text="Pinned 📌")
                                 break
                             if str(item) == '🛑':
-                                await message.clear_reactions()
+                                await gcmds.smart_clear(message)
                                 bjEmbedEdit.set_footer(text="Not pinned 🛑")
                                 return
 
