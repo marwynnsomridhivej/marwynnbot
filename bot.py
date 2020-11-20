@@ -157,20 +157,6 @@ class Bot(commands.AutoShardedBot):
 
     async def on_message(self, message):
         await self.wait_until_ready()
-        tokens = token_rx.findall(message.content)
-        if tokens and message.guild:
-            if message.guild.id == 336642139381301249:
-                return
-            await gcmds.smart_delete(message)
-            if gcmds.env_check('GITHUB_TOKEN'):
-                url = await gcmds.create_gist('\n'.join(tokens), description="Discord token detected, posted for "
-                                              f"invalidation. Server: {message.guild.name}")
-                embed = discord.Embed(title="Token Found",
-                                      description=f"{message.author.mention}, a Discord token was found in your message. It has"
-                                      f" been sent to [Github]({url}) to be invalidated",
-                                      color=discord.Color.dark_red())
-                await message.channel.send(embed=embed)
-
         if await self.check_locks(message):
             await self.process_commands(message)
 
