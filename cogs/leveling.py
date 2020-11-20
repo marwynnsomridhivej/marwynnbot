@@ -3,8 +3,8 @@ from typing import List, Union
 
 import discord
 from discord.ext import commands
-from utils import (GlobalCMDS, SubcommandPaginator, confirm, customerrors,
-                   handle, levels)
+from utils import (EmbedPaginator, GlobalCMDS, SubcommandPaginator, confirm,
+                   customerrors, handle, levels)
 
 gcmds = GlobalCMDS()
 lrl = namedtuple("RoleRewardListing", ['level', 'type', 'entries'])
@@ -428,6 +428,14 @@ class Leveling(commands.Cog):
                               color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
+    @handle(Exception, to_raise=customerrors.LevelError())
+    async def _get_leaderboard(self, guild: discord.Guild) -> List[str]:
+        async with self.bot.db.acquire() as con:
+            entries = await con.fetch("SELECT user_id, level, xp FROM level_users WHERE "
+                                      f"guild_id={guild.id} ORDER BY level DESC, xp DESC")
+        return [f"<@{item['user_id']}> ⟶ Level **{item['level']}** "
+                f"*({item['xp']}/{levels._calc_req_xp(int(item['level']))})*" for item in entries]
+
     @commands.group(invoke_without_command=True,
                     aliases=['lvl', 'levels'],
                     desc="Displays the user's server level",
@@ -579,6 +587,23 @@ class Leveling(commands.Cog):
                              user=ctx.author,
                              success_func=self.change_lr_type(ctx, level_type, level=level),
                              op="levelroles change type")
+
+    @commands.command(aliases=['lb'],
+                      desc="Shows the server leveling and XP leaderboard",
+                      usage="leaderboard",
+                      note="This only displays members that have a database entry for leveling")
+    async def leaderboard(self, ctx):
+        entries = await self._get_leaderboard(ctx.guild)
+        embed = discord.Embed(title=f"Leaderboard for {ctx.guild.name}", color=discord.Color.blue())
+        description = (f"Here is the leaderboard for {ctx.guild.name}. "
+                       "Climb the leaderboard by simply talking in the enabled channels!")
+        pag = EmbedPaginator(ctx,
+                             entries=entries,
+                             per_page=10,
+                             show_entry_count=False,
+                             embed=embed,
+                             description=description)
+        return await pag.paginate()
 
 
 def setup(bot):
