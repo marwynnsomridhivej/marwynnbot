@@ -109,9 +109,9 @@ section below for ways to get in touch with the developers.
 > be personally identifying, including, but not limited to, an email address,
 > phone number, government issued ID, etc. In the event that you wish for database
 > records containing any non-sensitive information, such as information obtainable
-> through Discord's interface (like user IDs, guild IDs, channel IDs, role IDs)
-> the MarwynnBot developers will evaluate on a case by case basis, as some data
-> is required in order for MarwynnBot to function correctly on your guild*
+> through Discord's interface (like user IDs, guild IDs, channel IDs, role IDs),
+> to be removed, the MarwynnBot developers will evaluate on a case by case basis,
+> as some data is required in order for MarwynnBot to function correctly on your guild*
 
 
 # Contact
@@ -119,5 +119,4 @@ section below for ways to get in touch with the developers.
 > 
 > MarwynnBot's Developer: MS Arranges#3060
 
-*I will be happy to remove any information from MarwynnBot's database that you would
-like to have removed, or clarify the information on this document if necessary.*
+*I will be happy to clarify the information on this document if necessary.*
