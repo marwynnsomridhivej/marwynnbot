@@ -44,6 +44,7 @@ class EmbedPaginator:
         ]
         self.in_help = False
         self.show_index = kwargs.get("show_index", True)
+        self.description = kwargs.get("description", None)
 
         if ctx.guild:
             self.permissions = self.channel.permissions_for(ctx.guild.me)
@@ -87,7 +88,10 @@ class EmbedPaginator:
             desc_list.append('')
             desc_list.append('React with ℹ️ for help')
 
-        self.embed.description = '\n'.join(desc_list)
+        if self.description:
+            self.embed.description = self.description + '\n'.join(desc_list)
+        else:
+            self.embed.description = '\n'.join(desc_list)
 
     async def show_page(self, page, *, first=False):
         self.current_page = page
