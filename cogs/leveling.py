@@ -1,4 +1,5 @@
 from collections import namedtuple
+from datetime import datetime
 from typing import List, Union
 
 import discord
@@ -595,8 +596,10 @@ class Leveling(commands.Cog):
     async def leaderboard(self, ctx):
         entries = await self._get_leaderboard(ctx.guild)
         embed = discord.Embed(title=f"Leaderboard for {ctx.guild.name}", color=discord.Color.blue())
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_footer(text=f"Current as of {datetime.now().strftime('%m/%d/%Y %H:%M:%S')}")
         description = (f"Here is the leaderboard for {ctx.guild.name}. "
-                       "Climb the leaderboard by simply talking in the enabled channels!")
+                       "Climb the leaderboard by simply talking in the enabled channels!\n\n")
         pag = EmbedPaginator(ctx,
                              entries=entries,
                              per_page=10,
