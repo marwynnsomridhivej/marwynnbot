@@ -26,7 +26,6 @@ gcmds = globalcommands.GlobalCMDS()
 DISABLED_COGS = ["Blackjack", 'Coinflip', 'Connectfour', 'Oldmaid', 'Slots', 'Uno',
                  'Reactions', 'Moderation', 'Music', 'Utility']
 DISABLED_COMMANDS = []
-token_rx = re.compile(r'[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}')
 version = f"Running MarwynnBot {gcmds.version}"
 
 if os.path.exists('discord.log'):
@@ -60,7 +59,7 @@ async def run(uptime):
 
     db = await asyncpg.create_pool(**credentials)
     await db.execute("CREATE TABLE IF NOT EXISTS guild(guild_id bigint PRIMARY KEY, custom_prefix text, automod boolean "
-                     "DEFAULT FALSE, starboard_emoji text DEFAULT NULL, "
+                     "DEFAULT FALSE, token BOOLEAN DEFAULT FALSE, starboard_emoji text DEFAULT NULL, "
                      "starboard_channel bigint DEFAULT null, log_channel bigint, log_level smallint DEFAULT 0)")
     await db.execute("CREATE TABLE IF NOT EXISTS premium(user_id bigint UNIQUE, guild_id bigint UNIQUE)")
     await db.execute("CREATE TABLE IF NOT EXISTS global_counters(command text PRIMARY KEY, amount NUMERIC)")
