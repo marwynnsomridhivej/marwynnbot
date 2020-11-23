@@ -48,7 +48,6 @@ async def _get_guild_config(bot: commands.AutoShardedBot, message: discord.Messa
                                       f"channel_id={message.channel.id} AND guild_id={message.guild.id}")
     if not config:
         return (False, True, None, 1, 20, False, False)
-    print(config)
     config = config[0]
     return (
         bool(config['enabled']),
