@@ -2,16 +2,16 @@ import asyncio
 import itertools
 import logging
 import os
-import re
 import socket
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 
 import asyncpg
 import discord
 from discord.ext import commands, tasks
 from lavalink.exceptions import NodeException
 
-from utils import context, customerrors, globalcommands
+from utils import context, globalcommands
 
 try:
     import uvloop
@@ -32,8 +32,9 @@ if os.path.exists('discord.log'):
     os.remove('discord.log')
 
 logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+logger.setLevel(logging.INFO)
+handler = RotatingFileHandler("discord.log", mode="a", maxBytes=25000000,
+                              backupCount=2, encoding="utf-8", delay=0)
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
