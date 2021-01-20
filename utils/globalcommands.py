@@ -146,7 +146,7 @@ class GlobalCMDS:
     async def get_balance(self, member: discord.Member):
         async with self.db.acquire() as con:
             bal = await con.fetchval(f"SELECT amount FROM balance WHERE user_id = {member.id}")
-            return int(bal) if bal else None
+            return int(bal) if bal is not None else None
 
     async def ratio(self, user: discord.User, game: str):
         async with self.db.acquire() as con:

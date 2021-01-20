@@ -21,7 +21,7 @@ class Games(commands.Cog):
     async def balance(self, ctx, member: commands.Greedy[discord.Member] = None):
         if not member:
             balance = await gcmds.get_balance(ctx.author)
-            if not balance:
+            if balance is None:
                 await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({ctx.author.id}, 1000)")
                 balance = 1000
         else:
