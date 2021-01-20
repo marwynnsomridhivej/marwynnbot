@@ -29,7 +29,7 @@ class Games(commands.Cog):
             color = 0
             for user in member:
                 balance = await gcmds.get_balance(user)
-                if not balance:
+                if balance is None:
                     await gcmds.balance_db(f"INSERT INTO balance(user_id, amount) VALUES ({user.id}, 1000)")
                     balance = 1000
                 if balance != 1:
