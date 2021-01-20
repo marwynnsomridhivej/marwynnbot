@@ -5,6 +5,7 @@ from contextlib import suppress
 from datetime import datetime
 
 import discord
+from discord.errors import Forbidden
 import lavalink
 from discord.ext import commands, tasks
 from utils import context, customerrors, GlobalCMDS, premium
@@ -77,26 +78,25 @@ class Music(commands.Cog):
         if reaction.message.id != await self.fetch_stored(guild_id, 'panel_id'):
             return
 
-        with suppress(Exception):
-            message = reaction.message
-            channel = message.channel
-            voice_channel = user.voice.channel
-            if await self.check_reaction(reaction, voice_channel):
-                if reaction.emoji == "⏹":
-                    await self.reacted_stop(guild_id, player, channel, user)
-                    with suppress(Exception):
-                        await message.delete()
-                elif reaction.emoji == "⏪":
-                    queue = player.fetch("queue", [])
-                    await self.reacted_rewind(guild_id, player, queue, channel, user)
-                elif reaction.emoji == "⏯":
-                    paused = player.fetch("paused", False)
-                    await self.reacted_paused(guild_id, player, message, paused, channel, user)
-                elif reaction.emoji == "⏩":
-                    await self.reacted_fowards(guild_id, player, channel, user)
-                    with suppress(Exception):
-                        await message.delete()
-            return await self.adjust_counter(message, voice_channel)
+        message = reaction.message
+        channel = message.channel
+        voice_channel = user.voice.channel
+        met_threshold = await self.check_reaction(reaction, voice_channel)
+        if met_threshold:
+            if reaction.emoji == "⏹":
+                await self.reacted_stop(guild_id, player, channel, user)
+                with suppress(Exception):
+                    await message.delete()
+            elif reaction.emoji == "⏪":
+                queue = player.fetch("queue", [])
+                await self.reacted_rewind(guild_id, player, queue, channel, user)
+            elif reaction.emoji == "⏯":
+                paused = player.fetch("paused", False)
+                await self.reacted_paused(guild_id, player, message, paused, channel)
+            elif reaction.emoji == "⏩":
+                await self.reacted_fowards(guild_id, player, channel, user)
+                await gcmds.smart_delete(message)
+        return await self.adjust_counter(message, voice_channel)
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: discord.Reaction, user: discord.User):
@@ -135,7 +135,10 @@ class Music(commands.Cog):
         if raw_count >= math.ceil(min_count):
             async for user in reaction.users():
                 if user.id != self.bot.user.id:
-                    await reaction.message.remove_reaction(reaction.emoji, user)
+                    try:
+                        await reaction.message.remove_reaction(reaction.emoji, user)
+                    except Forbidden:
+                        pass
             return True
         else:
             return False
@@ -350,11 +353,10 @@ class Music(commands.Cog):
 
     async def del_temp_msgs(self, guild_id: int):
         channel = await self.get_bound_channel(guild_id)
-        with suppress(Exception):
-            message = await channel.fetch_message(await self.fetch_stored(guild_id, "panel_id"))
-            counter = await channel.fetch_message(await self.fetch_stored(guild_id, "counter_id"))
-            await message.delete()
-            await counter.delete()
+        message = await channel.fetch_message(await self.fetch_stored(guild_id, "panel_id"))
+        counter = await channel.fetch_message(await self.fetch_stored(guild_id, "counter_id"))
+        await message.delete()
+        await counter.delete()
         await self.set_value(guild_id, "all")
         player = self.bot.lavalink.player_manager.get(guild_id)
         player.queue.clear()
