@@ -85,8 +85,7 @@ class Music(commands.Cog):
         if met_threshold:
             if reaction.emoji == "⏹":
                 await self.reacted_stop(guild_id, player, channel, user)
-                with suppress(Exception):
-                    await message.delete()
+                await gcmds.smart_delete(message)
             elif reaction.emoji == "⏪":
                 queue = player.fetch("queue", [])
                 await self.reacted_rewind(guild_id, player, queue, channel, user)
@@ -115,9 +114,8 @@ class Music(commands.Cog):
         if reaction.message.id != await self.fetch_stored(guild_id, 'panel_id'):
             return
 
-        with suppress(Exception):
-            message = reaction.message
-            return await self.adjust_counter(message, user.voice.channel)
+        message = reaction.message
+        return await self.adjust_counter(message, user.voice.channel)
 
     async def adjust_counter(self, message: discord.Message, voice_channel: discord.VoiceChannel):
         description = "\n".join(["{} ⟶ {} / {} required votes".format(
@@ -293,18 +291,16 @@ class Music(commands.Cog):
                 await self.set_value(message.guild.id, 'counter_id', counter_message.id)
             await self.add_reaction_panel(message)
         if isinstance(event, lavalink.events.QueueEndEvent) or isinstance(event, lavalink.events.WebSocketClosedEvent):
-            with suppress(Exception):
-                await self.del_temp_msgs(event.player.guild_id)
+            await self.del_temp_msgs(event.player.guild_id)
 
     async def connect_to(self, guild_id: int, channel_id: str):
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
     async def add_reaction_panel(self, message):
-        with suppress(Exception):
-            await gcmds.smart_clear(message)
-            for reaction in reactions:
-                await message.add_reaction(reaction)
+        await gcmds.smart_clear(message)
+        for reaction in reactions:
+            await message.add_reaction(reaction)
 
     async def no_player(self, ctx):
         invalid = discord.Embed(title="No Music Player Instance",
