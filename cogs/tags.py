@@ -118,7 +118,7 @@ class Tags(commands.Cog):
         embed = discord.Embed(description=content,
                               color=discord.Color.blue())
         embed.set_author(name=name, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text=f"Requested by {ctx.author.display_name} at {timestamp}")
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} at {timestamp}")
         await ctx.channel.send(embed=embed)
 
     async def list_user_tags(self, ctx) -> list:

@@ -34,7 +34,7 @@ class Math(commands.Cog):
 
         output_img = discord.File(fp=BytesIO(img), filename="latex_eq.png")
         embed = discord.Embed(color=discord.Color.blue())
-        embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.set_author(name=f"Requested by: {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         embed.set_image(url="attachment://latex_eq.png")
         return await ctx.channel.send(file=output_img, embed=embed)
 

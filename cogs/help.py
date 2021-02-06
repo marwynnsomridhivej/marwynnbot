@@ -83,7 +83,7 @@ class Help(commands.Cog):
                 continue
             else:
                 nv.append((name, value, False))
-        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        timestamp = f"Requested by: {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         embed = discord.Embed(title="MarwynnBot Help Menu",
                               color=discord.Color.blue(),
                               url=SUPPORT_SERVER_INVITE,
@@ -128,7 +128,7 @@ class Help(commands.Cog):
         nv = [("Argument Requirements", brackets), ("Mentionables", mentionable), ("Variable Amounts", var_amt)]
         for name, value in nv:
             embed.add_field(name=name, value=f"> {value}", inline=False)
-        timestamp = f"Requested by {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
+        timestamp = f"Requested by: {ctx.author.display_name} " + "at: {:%m/%d/%Y %H:%M:%S}".format(datetime.now())
         embed.set_footer(text=timestamp, icon_url=ctx.author.avatar_url)
         return await ctx.channel.send(embed=embed)
 
@@ -152,7 +152,7 @@ class Help(commands.Cog):
                               "if you have any questions regarding the privacy policy by doing "
                               f"`{await gcmds.prefix(ctx)}support`",
                               color=discord.Color.blue())
-        embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         return await ctx.channel.send(embed=embed)
 
 

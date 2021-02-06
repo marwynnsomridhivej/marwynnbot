@@ -66,7 +66,7 @@ class Fun(commands.Cog):
                 result = await returned.json()
         embed = discord.Embed(description=result['joke'],
                               color=discord.Color.blue())
-        embed.set_author(name=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.set_author(name=f"Requested by: {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=['8ball', '8b'],
