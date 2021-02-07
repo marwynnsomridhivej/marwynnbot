@@ -4,6 +4,7 @@ from typing import Any, List, Union
 
 import discord
 from discord.ext import commands
+from discord.ext.commands.core import check
 
 from . import customerrors
 
@@ -32,7 +33,7 @@ hex_color_rx = re.compile(r'#[A-Fa-f0-9]{6}')
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 
-class SetupPanel():
+class SetupPanel(object):
     __slots__ = [
         "bot",
         "ctx",
@@ -51,6 +52,7 @@ class SetupPanel():
         "hex",
         "url",
         "role",
+        "reaction",
         "message",
     ]
 
@@ -65,7 +67,7 @@ class SetupPanel():
         self.send = ctx.channel.send
         self.timeout = timeout
         self.name = name
-        self.embed = embed
+        self.embed = embed.copy()
         self.has_intro = has_intro
         self.cancellable = cancellable
         self.steps = []
@@ -73,6 +75,7 @@ class SetupPanel():
             "get_channel": self._from_user_channel,
             "get_message_content": self._from_user,
             "get_role": self._from_user_role,
+            "get_message_reaction": self._from_user_reaction,
             "get_hex": self._from_user_hex,
             "get_url": self._from_user_url,
             "until_finish": self._from_user,
@@ -81,6 +84,7 @@ class SetupPanel():
         self.hex = self.get_hex
         self.url = self.get_url
         self.role = self.get_role
+        self.reaction = self.get_message_reaction
         self.message = self.get_message_content
 
     def _from_user(self, message: discord.Message) -> bool:
@@ -100,6 +104,13 @@ class SetupPanel():
 
     def _from_user_url(self, message: discord.Message) -> bool:
         return self._from_user(message) and re.match(url_rx, message.content)
+
+    def _from_user_reaction(self, reaction: discord.Reaction, user: discord.User) -> bool:
+        return user.id == self.author.id
+
+    def _real_from_user_reaction(self, reaction: discord.Reaction, user: discord.User,
+                                 message: discord.Message) -> bool:
+        return reaction.message.id == message.id and user.id == self.author.id
 
     def _from_user_finish(self, message: discord.Message) -> bool:
         return message.author == self.author and message.channel == self.chnl and message.content.lower() == "finish"
@@ -131,14 +142,59 @@ class SetupPanel():
             await self.intro(**options)
         return [await coro for coro in self.steps]
 
-    def get_channel(self, **options) -> None:
-        async def coro(embed: discord.Embed, timeout: int, **kwargs) -> int:
+    def title_256(self, **options) -> None:
+        async def coro(embed: discord.Embed, timeout: int, **kwargs) -> str:
             provided = kwargs.get("provided", None)
 
             if not provided:
                 await self.send(embed=embed)
                 try:
-                    response = await self.bot.wait_for("message", check=self._from_user_channel, timeout=timeout)
+                    while True:
+                        response = await self.bot.wait_for("message", check=self._from_user, timeout=timeout)
+                        if len(response.content) > 256:
+                            embed.description = ("The title may at most be 256 characters**"
+                                                 "\n\nPlease input what you would like the title of your poll to be")
+                            embed.color = discord.Color.dark_red()
+                            await self.send(embed=embed)
+                        else:
+                            break
+                except asyncio.TimeoutError:
+                    raise customerrors.TimeoutError(self.ctx, self.name, timeout)
+            else:
+                response = provided
+            return response.content if type(response) != str else response
+
+        embed = options.get("embed", None)
+        if not embed:
+            raise ValueError("You must specify an embed")
+        embed = embed.copy()
+        timeout = options.get("timeout", self.timeout)
+        provided = options.get("provided", None)
+        if not options.get("immediate", False):
+            self.add_step(coro(embed, timeout, provided=provided))
+        else:
+            return self.bot.loop.create_task(coro(embed, timeout, provided=provided))
+
+    def get_channel(self, **options) -> None:
+        async def coro(embed: discord.Embed, timeout: int, **kwargs) -> int:
+            provided = kwargs.get("provided", None)
+            check_perms = kwargs.get("check_perms")
+            
+            def validated(ctx: commands.Context, response: discord.Message) -> bool:
+                channel_id = int(response.content) if not "<#" in response.content else int(response.content[2:20])
+                channel = ctx.guild.get_channel(channel_id)
+                perms = channel.permissions_for(ctx.guild.me)
+                return perms.send_messages
+
+            if not provided:
+                await self.send(embed=embed)
+                try:
+                    while True:
+                        response = await self.bot.wait_for("message", check=self._from_user_channel, timeout=timeout)
+                        if not check_perms or validated(self.ctx, response):
+                            break
+                        embed.description = f"{self.author.mention}, I cannot send messages in this channel. Please enter another channel"
+                        await self.send(embed=embed)
                 except asyncio.TimeoutError:
                     raise customerrors.TimeoutError(self.ctx, self.name, timeout)
             else:
@@ -148,12 +204,14 @@ class SetupPanel():
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
+        embed = embed.copy()
         timeout = options.get("timeout", self.timeout)
         provided = options.get("provided", None)
+        check_perms = options.get("check_perms", False)
         if not options.get("immediate", False):
-            self.add_step(coro(embed, timeout, provided=provided))
+            self.add_step(coro(embed, timeout, provided=provided, check_perms=check_perms))
         else:
-            return self.bot.loop.create_task(coro(embed, timeout, provided=provided))
+            return self.bot.loop.create_task(coro(embed, timeout, provided=provided, check_perms=check_perms))
 
     def get_hex(self, **options) -> None:
         async def coro(embed: discord.Embed, timeout: int, **kwargs) -> int:
@@ -172,6 +230,7 @@ class SetupPanel():
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
+        embed = embed.copy()
         timeout = options.get("timeout", self.timeout)
         provided = options.get("provided", None)
         if not options.get("immediate", False):
@@ -196,6 +255,7 @@ class SetupPanel():
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
+        embed = embed.copy()
         timeout = options.get("timeout", self.timeout)
         provided = options.get("provided", None)
         if not options.get("immediate", False):
@@ -220,6 +280,7 @@ class SetupPanel():
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
+        embed = embed.copy()
         timeout = options.get("timeout", self.timeout)
         provided = options.get("provided", None)
         if not options.get("immediate", False):
@@ -249,6 +310,7 @@ class SetupPanel():
         embed = options.get("embed", None)
         if not embed:
             raise ValueError("You must specify an embed")
+        embed = embed.copy()
         timeout = options.get("timeout", self.timeout)
         obtain_type = options.get("obtain_type", "id")
         provided = options.get("provided", None)
@@ -256,6 +318,34 @@ class SetupPanel():
             self.add_step(coro(embed, timeout, obtain_type=obtain_type, provided=provided))
         else:
             return self.bot.loop.create_task(coro(embed, timeout, obtain_type=obtain_type, provided=provided))
+
+    def get_message_reaction(self, **options) -> None:
+        async def coro(embed: discord.Embed, timeout: int,
+                       **kwargs) -> discord.Emoji:
+            provided = kwargs.get("provided", False)
+            if not provided:
+                msg = await self.send(embed=embed)
+                try:
+                    while True:
+                        reaction, user = await self.bot.wait_for("reaction_add", check=self._from_user_reaction, timeout=timeout)
+                        if self._real_from_user_reaction(reaction, user, msg):
+                            break
+                except asyncio.TimeoutError:
+                    raise customerrors.TimeoutError(self.ctx, self.name, timeout)
+                return reaction.emoji
+            else:
+                return provided
+
+        embed = options.get("embed", None)
+        if not embed:
+            raise ValueError("You must specify an embed")
+        embed = embed.copy()
+        timeout = options.get("timeout", self.timeout)
+        provided = options.get("provided", None)
+        if not options.get("immediate", False):
+            self.add_step(coro(embed, timeout, provided=provided))
+        else:
+            return self.bot.loop.create_task(coro(embed, timeout, provided=provided))
 
     def chain(self, func_names: List[str], embeds: Union[discord.Embed, List[discord.Embed]],
               timeouts: List[Union[int, float]] = None, **options) -> None:
@@ -284,14 +374,41 @@ class SetupPanel():
         for name in func_names:
             if not name in VALID_CORO_NAMES:
                 raise ValueError(f"{name} is not a valid setup operation name")
-        else:
-            funcs = [getattr(self, name) for name in func_names]
+        funcs = [getattr(self, name) for name in func_names]
+        embeds = [embed.copy() for embed in embeds]
         if not timeouts:
             timeouts = [options.get("timeout", 30) for _ in funcs]
         if not options.get("immediate", False):
             self.add_step(chainer(funcs, embeds, timeouts, **options))
         else:
             return self.bot.loop.create_task(chainer(funcs, embeds, timeouts, **options))
+
+    def message_react_until_finish(self, **options) -> None:
+        async def coro(embeds: List[discord.Embed],
+                       timeouts: List[Union[int, float]]) -> List[List[str]]:
+            values = []
+            while True:
+                content = await self.get_message_content(embed=embeds[0],
+                                                         timeout=timeouts[0],
+                                                         immediate=True)
+                if content.lower() == "finish":
+                    break
+                reaction = await self.get_message_reaction(embed=embeds[1],
+                                                           timeout=timeouts[1],
+                                                           immediate=True)
+                values.append([content, reaction])
+            return values
+        embeds = options.get("embeds")
+        if not embeds or not len(embeds) == 2:
+            raise ValueError("You must specify the embeds to use")
+        embeds = [embed.copy() for embed in embeds]
+        timeouts = options.get("timeouts")
+        if not timeouts:
+            timeouts = [self.timeout, self.timeout]
+        if not options.get("immediate", False):
+            self.add_step(coro(embeds, timeouts))
+        else:
+            return self.bot.loop.create_task(coro(embeds, timeouts))
 
     def until_finish(self, func_name: str, **options) -> None:
         async def repeater(func: callable, **kwargs) -> List[Any]:
@@ -353,6 +470,7 @@ class SetupPanel():
         if not embed and not func_name == "chain":
             raise ValueError("You must specify an embed")
         if not func_name == "chain":
+            embed = embed.copy()
             self.add_step(repeater(func, **options))
         else:
             if not options.get('func_names', None):
@@ -360,5 +478,6 @@ class SetupPanel():
             elif not options.get('embeds', None):
                 raise ValueError("Please specify embeds to use")
             else:
+                options["embeds"] = [embed.copy() for embed in options["embeds"]]
                 self.add_step(chain_repeater(**options))
         return

@@ -1,3 +1,5 @@
+import discord
+
 from utils import customerrors, globalcommands
 
 
@@ -21,7 +23,10 @@ async def redirect(ctx):
         ctx.channel = await bot.fetch_channel(int(result))
     return True
 
-async def music_bind(ctx):
+
+async def music_bind(ctx, message: discord.Message = None):
+    if not ctx:
+        ctx = message
     db = globalcommands._db
     async with db.acquire() as con:
         result = await con.fetchval(f"SELECT channel_id FROM music WHERE guild_id={ctx.guild.id}")
