@@ -21,6 +21,7 @@ __all__ = (
     "track_hook",
     "get_player",
     "no_queue",
+    "total_queue_duration",
     "process_votes",
     "prep_play_queue_playlist",
     "play_or_queue_tracks",
@@ -105,7 +106,7 @@ def ensure_voice(should_connect: bool = False):
                     player.voice_channel_id = ctx.author.voice.channel.id
                     player.text_channel = ctx.channel
                     if should_connect:
-                        await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
+                        await self.connect_to(ctx.guild, ctx.author.voice.channel)
                     return await func(self, *args, **kwargs)
             elif ctx.command.name == "join":
                 if not player.is_playing:
@@ -178,6 +179,8 @@ async def track_hook(self, event: lavalink.events.Event):
                 f"Current Queue: {queue_rem}",
             ]),
             icon_url=requester.avatar_url
+        ).set_image(
+            url=_get_track_thumbnail(track)
         )
         await text_channel.send(embed=embed)
     else:
@@ -201,9 +204,9 @@ async def no_queue(ctx: Context) -> discord.Message:
 def _process_op_threshold(bot: AutoShardedBot, ctx: Context, op: str) -> Tuple[int, int, bool, str]:
     player = get_player(bot, ctx)
     voice_channel: discord.VoiceChannel = ctx.author.voice.channel
-    members = [member for member in voice_channel if not member.bot]
+    members = [member for member in voice_channel.members if not member.bot]
     current_member_count = len(members)
-    vote_op: List[int] = player.votes.get(op)
+    vote_op: List[int] = player.votes.get(op, [])
     if ctx.author.id in vote_op:
         vote_op.remove(ctx.author.id)
         action = "rescinded"
@@ -240,18 +243,27 @@ async def process_votes(bot: AutoShardedBot,
     embed = discord.Embed(title=f"Vote {op_name.title()}", color=BLUE)
     if allow_op:
         player = get_player(bot, ctx)
-        desc = ALLOW_TEMPLATES.get(op_name)
-        embed.description = desc
+        embed.description = ALLOW_TEMPLATES.get(op_name)
         if op_name == "pause":
             await player.set_pause(True)
-            embed.set_footer(text="Do `m!unpause` to vote to unpause the player")
+            embed.description += "\n\nDo `m!unpause` to vote to unpause the player"
         elif op_name == "unpause":
             await player.set_pause(False)
         elif op_name == "rewind":
+            player.set_loop_times(0)
             temp_embed = player.enable_rewind()
+            if temp_embed is None:
+                await player.play()
             embed = embed if temp_embed is None else temp_embed
         elif op_name == "skip":
-            await player.play()
+            player.set_loop_times(0)
+            res = await player.play()
+            if res is None:
+                return discord.Embed(
+                    title="Finished Playing",
+                    description="I have finished playing all tracks in queue and will now disconnect",
+                    color=BLUE
+                )
         elif op_name == "stop":
             await player.stop()
             player.close_session()
@@ -272,7 +284,10 @@ def _get_track_duration_timestamp(milliseconds: int) -> str:
 
 
 def _get_queue_total_duration(queue: List[AudioTrack]) -> str:
-    return _get_track_duration_timestamp(sum(track for track in queue))
+    return _get_track_duration_timestamp(sum(track.duration for track in queue))
+
+
+total_queue_duration = _get_queue_total_duration
 
 
 def _get_track_thumbnail(track: Union[AudioTrack, List[AudioTrack]]) -> str:
@@ -319,12 +334,11 @@ async def play_or_queue_tracks(ctx: Context,
     embed = discord.Embed(color=BLUE)
     queue = player.queue
     if results['loadType'] == "PLAYLIST_LOADED":
-        tracks = (AudioTrack(data, ctx.author.id) for data in results.get("tracks"))
+        tracks = [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
         tracklist = []
         for index, track in enumerate(tracks, 1):
             tracklist.append(f"**{index}:** [{track.title}]({track.uri})")
             player.add(requester=ctx.author.id, track=track)
-            queue.append(track)
 
         embed.title = "Playlist Queued"
         embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks:\n\n' + "\n".join(
@@ -332,10 +346,10 @@ async def play_or_queue_tracks(ctx: Context,
         ) + f"\n\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}"
         embed.set_image(
             url=_get_track_thumbnail(tracks)
-        ).set_footer(text=f"Requested by: {ctx.author.display_name}\n\nQueue Duration: {_get_queue_total_duration(queue)}")
+        ).set_footer(text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}")
     else:
         track = AudioTrack(results['tracks'][0], ctx.author.id)
-        queue.append(track)
+        player.add(requester=ctx.author.id, track=track)
         embed.title = "Track Queued"
         embed.description = f'[{track.title}]({track.uri})\n\nDuration: {_get_track_duration_timestamp(track.duration)}'
         embed.set_image(
@@ -343,7 +357,7 @@ async def play_or_queue_tracks(ctx: Context,
         ).set_author(
             name=f"Author: {track.author}"
         ).set_footer(
-            text=f"Requested by: {ctx.author.display_name}\n\nQueue Duration: {_get_queue_total_duration(queue)}",
+            text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}",
             icon_url=ctx.author.avatar_url,
         )
     if send_embeds:
@@ -458,6 +472,12 @@ async def _confirm_modify(bot: AutoShardedBot,
                           color=BLUE)
     panel_msg = await ctx.channel.send(embed=panel)
     try:
+        for reaction in CONF_REACTIONS:
+            panel_msg.add_reaction(reaction)
+    except (NotFound, Forbidden, HTTPException):
+        pass
+
+    try:
         reaction, user = await bot.wait_for(
             "reaction_add",
             check=lambda r, u: r.message.id == panel_msg.id and r.emoji in CONF_REACTIONS and u.id == ctx.author.id,
@@ -486,6 +506,7 @@ async def _save_playlist_get_name(bot: AutoShardedBot, ctx: Context, urls: List[
             check=lambda m: m.channel == ctx.channel and m.author == ctx.author,
             timeout=120
         )
+        name = name.content
     except asyncio.TimeoutError as e:
         raise SetupCancelled(setup="playlist save") from e
     else:
@@ -554,9 +575,9 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
 
 async def get_playlist(self, ctx, id: int = None, name: str = None, ret: str = "all") -> Union[Playlist, List[Playlist], List[str], None]:
     async with self.bot.db.acquire() as con:
-        op = (f"SELECT * FROM playlists WHERE user_id={ctx.author.id}" +
-              f" AND id={id}" if id is not None else f" AND playlist_name=$pln${name}$pln$" if name is not None else "")
-        entries = await con.fetch(str(op) + " ORDER BY id ASC")
+        op = f"SELECT * FROM playlists WHERE user_id={ctx.author.id}"
+        op += f" AND id={id}" if id is not None else f" AND playlist_name=$pln${name}$pln$" if name is not None else ""
+        entries = await con.fetch(op + " ORDER BY id ASC")
     if not entries:
         return None
     elif ret == "all":
@@ -606,7 +627,7 @@ async def modify_playlist(self, ctx: Context, id: int, urls: List[str] = None, n
     embed = discord.Embed(title=f"Playlist {op_type.title()}", color=BLUE)
     try:
         _check_urls(urls)
-        await _check_ownership(ctx, id)
+        await _check_ownership(self.bot, ctx, id)
         await _confirm_modify(self.bot, ctx, urls=urls, name=name, type=op_type)
         async with self.bot.db.acquire() as con:
             op = f"urls={_urls_pg(urls)}" if op_type != "rename" else f"name=$pln${name}$pln$"

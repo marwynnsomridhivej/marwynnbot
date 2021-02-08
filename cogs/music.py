@@ -1,3 +1,4 @@
+from typing import Union
 import discord
 import lavalink
 from discord.ext import commands
@@ -16,7 +17,7 @@ class Music(commands.Cog):
     async def init_music(self, bot: commands.AutoShardedBot):
         await self.bot.wait_until_ready()
         if not hasattr(bot, 'lavalink'):
-            bot.lavalink = lavalink.Client(self.bot.user.id)
+            bot.lavalink = lavalink.Client(self.bot.user.id, player=MBPlayer)
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
             if not all(data):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")
@@ -36,10 +37,14 @@ class Music(commands.Cog):
     async def cog_check(self, ctx):
         return True if ctx.command.name == "bind" else await context.music_bind(ctx)
 
-    async def connect_to(self, player: MBPlayer, guild_id: int, channel_id: int, mute: bool = False, deafen: bool = True) -> None:
-        await self.bot.ws.voice_state(guild_id, channel_id, self_mute=mute, self_deaf=deafen)
-        player = get_player(self.bot, None, guild=self.bot.get_guild(guild_id))
-        player.store("channel_id", channel_id)
+    async def connect_to(self, guild: Union[discord.Guild, int], channel: Union[discord.VoiceChannel, int, None], mute: bool = False, deafen: bool = True) -> None:
+        if isinstance(guild, int):
+            guild = self.bot.get_guild(guild)
+        if isinstance(channel, int):
+            channel = guild.get_channel(channel)
+        await guild.change_voice_state(channel=channel, self_mute=mute, self_deaf=deafen)
+        player = get_player(self.bot, None, guild=guild)
+        player.voice_channel_id = channel.id if channel is not None else None
 
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
@@ -69,7 +74,7 @@ class Music(commands.Cog):
         ).set_thumbnail(
             url="https://vignette.wikia.nocookie.net/mario/images/0/04/Music_Toad.jpg/revision/latest/top-crop/width/500/height/500?cb=20180812231020"
         )
-        await self.connect_to(ctx.guild.id, ctx.author.voice.channel.id)
+        await self.connect_to(ctx.guild, ctx.author.voice.channel)
         return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Makes MarwynnBot play a song or the current queue",
@@ -79,8 +84,17 @@ class Music(commands.Cog):
     async def play(self, ctx, *, query: str = None):
         player = get_player(self.bot, ctx)
         if not query:
-            if player.queue and not player.is_playing:
-                return await player.play()
+            if player.queue:
+                if not player.is_playing:
+                    return await player.play()
+                else:
+                    embed = discord.Embed(
+                        title="No Query",
+                        description=f"{ctx.author.mention}, you didn't specify a query. Please do so if you wish to queue a track. "
+                        "If you wish to skip the current track, vote by executing `m!skip`",
+                        color=discord.Color.dark_red()
+                    )
+                    return await ctx.channel.send(embed=embed)
             else:
                 return await no_queue(ctx)
 
@@ -112,6 +126,9 @@ class Music(commands.Cog):
                 description.append(
                     f"**{index}**: [{item['title']}]https://www.youtube.com/watch?v={item['identifier']})")
         embed.description = "\n".join(description)
+        embed.set_footer(
+            text=f"Queue Duration: {total_queue_duration(player.queue)}"
+        )
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=["cq"],
@@ -168,7 +185,11 @@ class Music(commands.Cog):
         "move_members": True,
     }, mode="any")
     async def leave(self, ctx):
-        await self.connect_to(ctx.guild.id, None)
+        player = get_player(self.bot, ctx)
+        if player.is_playing:
+            player.queue.appendleft(player.current)
+            await player.stop()
+        await self.connect_to(ctx.guild, None)
         embed = discord.Embed(
             title="Disconnected",
             description=f"{ctx.author.mention}, I have disconnected from the voice channel",
@@ -257,6 +278,9 @@ class Music(commands.Cog):
             embed = player.set_loop_times(amount)
         return await ctx.channel.send(embed=embed)
 
+    # @commands.command(desc="Seek to a specific timestamp in the current track",
+    #                  usage="seek ()")
+
     @commands.group(invoke_without_command=True,
                     aliases=["playlists", "pl"],
                     desc="Shows help for the playlist command and subcommands",
@@ -267,25 +291,29 @@ class Music(commands.Cog):
     @playlist.command(name="list",
                       aliases=["ls"])
     async def playlist_list(self, ctx):
-        embed = discord.Embed(title="Your Playlists", color=discord.Color.blue())
+        embed = discord.Embed(title="Your Playlists 🎶", color=discord.Color.blue())
         playlists = await get_playlist(self, ctx)
         if not playlists:
             embed.description = f"{ctx.author.mention}, you don't have any saved playlists"
             return await ctx.channel.send(embed=embed)
 
-        template = "**{}:** *[ID: {}]* {} Track{}"
+        template = "**{}:** *ID: {}* - {} Track{} 💽"
         entries = [
-            template.format(
-                index,
-                playlist.id,
-                len(playlist.urls),
-                's' if len(playlist.urls) != 1 else ''
+            (
+                playlist.name,
+                template.format(
+                    index,
+                    playlist.id,
+                    len(playlist.urls),
+                    's' if len(playlist.urls) != 1 else ''
+                ),
+                False
             ) for index, playlist in enumerate(playlists, 1)
         ]
         pag = FieldPaginator(ctx, entries=entries, embed=embed)
         return await pag.paginate()
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="queue",
                       aliases=["q"])
     @ensure_voice(should_connect=True)
@@ -293,7 +321,7 @@ class Music(commands.Cog):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
         return await play_or_queue_playlist(self.bot, ctx, get_player(self, ctx), playlist)
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="play",
                       aliases=["p"])
     @ensure_voice(should_connect=True)
@@ -301,28 +329,28 @@ class Music(commands.Cog):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
         return await play_or_queue_playlist(self.bot, ctx, get_player(self, ctx), playlist, play=True)
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="save",
                       aliases=["s"])
     async def playlist_save(self, ctx, *, urls: str = None):
         player = get_player(self.bot, ctx)
         return await save_playlist(self, ctx, urls.split() if urls else [track.uri for track in player.queue])
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="append",
                       aliases=["add", "a"])
     async def playlist_append(self, ctx, id: int, *, urls: str = None):
         player = get_player(self.bot, ctx)
         return await modify_playlist(self, ctx, id, urls=urls.split() if urls else [track.uri for track in player.queue], op_type="append")
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="replace",
                       aliases=["repl", "rp"])
     async def playlist_replace(self, ctx, id: int, *, urls: str = None):
         player = get_player(self.bot, ctx)
         return await modify_playlist(self, ctx, id, urls=urls.split() if urls else [track.uri for track in player.queue], op_type="replace")
 
-    @premium.is_premium
+    @premium.is_premium()
     @playlist.command(name="rename",
                       aliases=["ren", "rn"])
     async def playlist_rename(self, ctx, *, identifier: str):
