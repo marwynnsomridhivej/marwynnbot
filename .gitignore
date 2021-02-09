@@ -4,6 +4,7 @@ venv
 logs
 __pycache__
 pokepy_cache
+musiccache
 /db
 .env
 *.pyc
