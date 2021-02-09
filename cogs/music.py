@@ -65,16 +65,21 @@ class Music(commands.Cog):
         if not isinstance(channel, discord.TextChannel):
             converter = commands.TextChannelConverter()
             channel = await converter.convert(ctx, channel)
-        async with self.bot.db.acquire() as con:
-            entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={ctx.guild.id}")
-            if not entry:
-                op = f"INSERT INTO music(guild_id, channel_id) VALUES ({ctx.guild.id}, {channel.id})"
-            else:
-                op = f"UPDATE music SET channel_id={channel.id} WHERE guild_id={ctx.guild.id}"
-            await con.execute(op)
-        embed = discord.Embed(title="Music Channel Bound",
-                              description=f"The music channel was bound to {channel.mention}",
-                              color=discord.Color.blue())
+        if not isinstance(channel, discord.TextChannel):
+            embed = discord.Embed(title="Invalid Channel",
+                                  description=f"{ctx.author.mention}, please specify a valid channel",
+                                  color=discord.Color.dark_red())
+        else:
+            async with self.bot.db.acquire() as con:
+                entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={ctx.guild.id}")
+                if not entry:
+                    op = f"INSERT INTO music(guild_id, channel_id) VALUES ({ctx.guild.id}, {channel.id})"
+                else:
+                    op = f"UPDATE music SET channel_id={channel.id} WHERE guild_id={ctx.guild.id}"
+                await con.execute(op)
+            embed = discord.Embed(title="Music Channel Bound",
+                                  description=f"The music channel was bound to {channel.mention}",
+                                  color=discord.Color.blue())
         return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Makes MarwynnBot join the same voice channel you're in",
@@ -310,7 +315,8 @@ m!equaliser all 0
                         )
             except ValueError as e:
                 raise customerrors.EQBandError(ctx) from e
-            gain = check_gain(ctx, band, gain)
+            finally:
+                gain = check_gain(ctx, band, gain)
         embed = (await player.process_eq(band=band, gain=gain, op=op)).set_footer(
             text=f"Requested by: {ctx.author.display_name}\nChanges may not be applied immediately. Please wait around 2 - 10 seconds.",
             icon_url=ctx.author.avatar_url
