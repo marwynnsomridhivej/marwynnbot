@@ -12,6 +12,7 @@ from discord.ext.commands import AutoShardedBot, Context
 from lavalink.models import AudioTrack
 
 from . import EntryData, SubcommandHelp
+from .customerrors import EQBandError, EQGainError, EQGainMismatch
 from .mbplayer import MBPlayer
 
 __all__ = (
@@ -22,6 +23,7 @@ __all__ = (
     "get_player",
     "no_queue",
     "total_queue_duration",
+    "track_duration",
     "process_votes",
     "prep_play_queue_playlist",
     "play_or_queue_tracks",
@@ -31,6 +33,7 @@ __all__ = (
     "save_playlist",
     "modify_playlist",
     "delete_playlist",
+    "check_gain",
     "PLAYER_REACTIONS",
 )
 
@@ -51,6 +54,7 @@ class Playlist(NamedTuple):
     urls: List[str]
     user_id: int
     id: int
+    tracks: List[AudioTrack] = None
 
 
 class InvalidURL(Exception):
@@ -68,13 +72,18 @@ class InvalidName(Exception):
 class NonexistentPlaylist(Exception):
     def __init__(self, *args, id: int = None, name: str = None) -> None:
         super().__init__(*args)
-        self.err_msg = "{}, no playlist exists with " + f"a name of {name}" if name else f"an id of {id}"
+        self.err_msg = "{}, no playlist exists with "
+        self.err_msg += "a name of {name}" if name else f"an id of {id}"
 
 
 class NotPlaylistOwner(Exception):
     def __init__(self, *args, id: int = None) -> None:
         super().__init__(*args)
         self.id = id
+
+
+class NoNameSpecified(Exception):
+    pass
 
 
 class SetupCancelled(Exception):
@@ -165,19 +174,17 @@ async def track_hook(self, event: lavalink.events.Event):
         requester: discord.User = self.bot.get_user(track.requester)
         queue_length = len(event.player.queue)
         queue_rem = f"{queue_length} Track{'s' if queue_length != 1 else ''} - about {_get_queue_total_duration(event.player.queue)}" if queue_length > 0 else "nothing"
+        loop_count = event.player.loop_count
         embed = discord.Embed(
             title=f"Now Playing:",
-            description="\n".join([
-                f"[{track.title}]({track.uri})",
-                f"Duration: {_get_track_duration_timestamp(track.duration) if not track.stream else 'livestream'}"
-            ]),
+            description=f"[{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}",
             color=BLUE
         ).set_footer(
             text="\n".join([
                 f"Requested by: {requester.display_name}",
                 f"Author: {track.author}",
                 f"Current Queue: {queue_rem}",
-            ]),
+            ]) + f"Looped {loop_count} time{'s' if loop_count != 1 else ''}" if loop_count >= 1 else '',
             icon_url=requester.avatar_url
         ).set_image(
             url=_get_track_thumbnail(track)
@@ -222,7 +229,8 @@ def _process_op_threshold(bot: AutoShardedBot, ctx: Context, op: str) -> Tuple[i
     return current, threshold, allow_op, action
 
 
-async def process_votes(bot: AutoShardedBot,
+async def process_votes(self,
+                        bot: AutoShardedBot,
                         ctx: Context,
                         op_name: str) -> discord.Embed:
     ALLOW_TEMPLATES = {
@@ -231,6 +239,7 @@ async def process_votes(bot: AutoShardedBot,
         "rewind": "The player has rewound to the previous track",
         "skip": "The player has skipped to the next track",
         "stop": "The player has stopped and the queue has been cleared",
+        "leave": "The player has stopped and I have left the current voice channel. The queue has not been cleared."
     }
     NOT_ALLOW_TEMPLATES = {
         "pause": "pause the player",
@@ -238,6 +247,7 @@ async def process_votes(bot: AutoShardedBot,
         "rewind": "rewind to the previous track",
         "skip": "skip to the next track",
         "stop": "stop the player and clear the queue",
+        "leave": "make MarwynnBot leave the current voice channel without clearing the queue"
     }
     current, threshold, allow_op, action = _process_op_threshold(bot, ctx, op_name)
     embed = discord.Embed(title=f"Vote {op_name.title()}", color=BLUE)
@@ -267,7 +277,15 @@ async def process_votes(bot: AutoShardedBot,
         elif op_name == "stop":
             await player.stop()
             player.close_session()
-    else:
+        elif op_name == "leave":
+            if player.is_playing:
+                player.queue.appendleft(player.current)
+                await player.stop()
+            await self.connect_to(ctx.guild, None)
+            embed.set_thumbnail(
+                url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a.png"
+            )
+            return embed
         req = threshold - current
         embed.description = f"{ctx.author.mention}, you've {action} your vote to {NOT_ALLOW_TEMPLATES.get(op_name)}"
         embed.set_footer(
@@ -288,6 +306,7 @@ def _get_queue_total_duration(queue: List[AudioTrack]) -> str:
 
 
 total_queue_duration = _get_queue_total_duration
+track_duration = _get_track_duration_timestamp
 
 
 def _get_track_thumbnail(track: Union[AudioTrack, List[AudioTrack]]) -> str:
@@ -323,7 +342,7 @@ async def play_or_queue_tracks(ctx: Context,
             source = opp_source[source]
         if not url_rx.match(query):
             _query = f"{source}search:{query}"
-        results = await player.node.get_tracks(_query)
+        results = await player.get_tracks(_query)
         counter += 1
     if not results or not results.get("tracks"):
         embed = discord.Embed(title="Nothing Found",
@@ -337,7 +356,8 @@ async def play_or_queue_tracks(ctx: Context,
         tracks = [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
         tracklist = []
         for index, track in enumerate(tracks, 1):
-            tracklist.append(f"**{index}:** [{track.title}]({track.uri})")
+            tracklist.append(
+                f"**{index}:** [{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}")
             player.add(requester=ctx.author.id, track=track)
 
         embed.title = "Playlist Queued"
@@ -351,7 +371,7 @@ async def play_or_queue_tracks(ctx: Context,
         track = AudioTrack(results['tracks'][0], ctx.author.id)
         player.add(requester=ctx.author.id, track=track)
         embed.title = "Track Queued"
-        embed.description = f'[{track.title}]({track.uri})\n\nDuration: {_get_track_duration_timestamp(track.duration)}'
+        embed.description = f"**1:** [{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}"
         embed.set_image(
             url=_get_track_thumbnail(track)
         ).set_author(
@@ -376,7 +396,12 @@ async def get_playlist_help(self, ctx: Context) -> discord.Message:
                    "premium only (currently available to everyone). Any playlist modification/deletion subcommand may only be "
                    "successfully executed on playlists you have created. Here are all the valid subcommands")
     phelp = SubcommandHelp(pfx, title, description, show_entry_count=True)
-    return await phelp.add_entry("List", EntryData(
+    return await phelp.add_entry("Help", EntryData(
+        usage="help",
+        returns="This help message",
+        aliases=["h"],
+        note=f"This same help message will appear by doing just `{pfx}`"
+    )).add_entry("List", EntryData(
         usage="list",
         returns="A paginated list of all your created playlists",
         aliases=["ls"],
@@ -441,9 +466,10 @@ def _urls_pg(urls: List[str]) -> str:
 
 
 def _check_urls(urls: List[str]) -> None:
-    for url in urls:
-        if not url_rx.match(url):
-            raise InvalidURL(url=url)
+    if urls:
+        for url in urls:
+            if not url_rx.match(url):
+                raise InvalidURL(url=url)
     return
 
 
@@ -459,13 +485,32 @@ async def _check_ownership(bot: AutoShardedBot, ctx: Context, id: int) -> None:
     return
 
 
+async def _extract_playlist_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> List[str]:
+    player = get_player(bot, ctx)
+    ret = []
+    for url in urls:
+        results = await player.get_tracks(url)
+        if not results or not results["tracks"]:
+            continue
+        if not results["loadType"] == "PLAYLIST_LOADED":
+            ret.append(AudioTrack(results["tracks"][0], ctx.author.id).uri)
+            continue
+        ret += [AudioTrack(data, ctx.author.id).uri for data in results.get("tracks")]
+    return ret
+
+
 async def _confirm_modify(bot: AutoShardedBot,
                           ctx: Context,
+                          id: int,
                           urls: List[str] = None,
                           name: str = None,
-                          type: str = None) -> None:
-    urls_listed = '\n'.join(f'**{index}:** {url}' for index, url in enumerate(urls, 1))
-    panel_description = (f"URLs: {urls_listed}" if urls else f'Rename to: "{name}"' +
+                          type: str = None) -> List[str]:
+    if urls:
+        urls = await _extract_playlist_urls(bot, ctx, urls)
+    if not urls and type in ["append", "replace"]:
+        raise InvalidURL(url="`[NO URL PROVIDED]`")
+    urls_listed = '\n'.join(f'**{index}:** {url}' for index, url in enumerate(urls, 1)) if urls else ""
+    panel_description = (f"URLs:\n{urls_listed}" if urls else f'Rename to: "{name}"' +
                          f"\n\n{CONF_MSG.format(ctx.author.mention)}")
     panel = discord.Embed(title=f"Confirm {type.title()}",
                           description=panel_description,
@@ -473,7 +518,7 @@ async def _confirm_modify(bot: AutoShardedBot,
     panel_msg = await ctx.channel.send(embed=panel)
     try:
         for reaction in CONF_REACTIONS:
-            panel_msg.add_reaction(reaction)
+            await panel_msg.add_reaction(reaction)
     except (NotFound, Forbidden, HTTPException):
         pass
 
@@ -488,6 +533,14 @@ async def _confirm_modify(bot: AutoShardedBot,
     else:
         if reaction.emoji == CONF_REACTIONS[1]:
             raise SetupCancelled(setup=f"playlist {type}")
+
+    if not type == "rename":
+        if type == "replace":
+            return urls
+        async with bot.db.acquire() as con:
+            stored_urls: List[str] = await con.fetchval(f"SELECT urls FROM playlists WHERE id={id}")
+        if type == "append":
+            return stored_urls + urls if stored_urls else [] + urls
 
 
 async def _save_playlist_get_name(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> str:
@@ -530,16 +583,18 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
                                  playlist: Playlist,
                                  play: bool = False,
                                  send_embeds: bool = True):
-    successful = failed = []
+    successful = []
+    failed = []
     queue = player.queue
     for url in playlist.urls:
-        results = player.node.get_tracks(url)
+        results = await player.get_tracks(url)
         if not results:
+            print("No result found for {url}")
             failed.append(url)
-            continue
-        track = AudioTrack(results['tracks'][0], ctx.author.id)
-        queue.append(track)
-        successful.append(track)
+        else:
+            track = AudioTrack(results['tracks'][0], ctx.author.id)
+            queue.append(track)
+            successful.append(track)
 
     embed = discord.Embed(title=f"{playlist.name} Queued", color=BLUE)
     if len(failed) == len(playlist.urls):
@@ -562,7 +617,7 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
             name=f"Playlist by: {user.display_name}",
             icon_url=user.avatar_url
         ).set_footer(
-            text=f"Requested by: {ctx.author.display_name}\n\nQueue Duration: {_get_queue_total_duration(queue)}",
+            text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}",
             icon_url=ctx.author.avatar_url
         )
     if send_embeds:
@@ -573,7 +628,24 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
     return
 
 
-async def get_playlist(self, ctx, id: int = None, name: str = None, ret: str = "all") -> Union[Playlist, List[Playlist], List[str], None]:
+async def _get_playlist_tracks_data(player: MBPlayer, entries: List) -> List[List[AudioTrack]]:
+    ret = []
+    for record in entries:
+        ret.append([AudioTrack((await player.get_tracks(url)).get("tracks")[0] or None, record["user_id"]) for url in record["urls"]])
+    return ret
+
+
+async def get_playlist(self,
+                       ctx: Context,
+                       id: int = None,
+                       name: str = None,
+                       identifier: str = None,
+                       ret: str = "all") -> Union[Playlist, List[Playlist], List[str], None]:
+    if identifier is not None:
+        id, name, not_found = _process_identifier(identifier)
+        if not_found:
+            return None
+    player = get_player(self.bot, ctx)
     async with self.bot.db.acquire() as con:
         op = f"SELECT * FROM playlists WHERE user_id={ctx.author.id}"
         op += f" AND id={id}" if id is not None else f" AND playlist_name=$pln${name}$pln$" if name is not None else ""
@@ -582,6 +654,9 @@ async def get_playlist(self, ctx, id: int = None, name: str = None, ret: str = "
         return None
     elif ret == "all":
         return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"]) for record in entries]
+    elif ret == "all-info":
+        track_data = await _get_playlist_tracks_data(player, entries)
+        return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"], tracks=tracks) for record, tracks in zip(entries, track_data)]
     elif ret == "url":
         if len(entries) != 1:
             raise ValueError(f"Playlist Query has returned {len(entries)} entries, supposed to return just 1")
@@ -628,17 +703,22 @@ async def modify_playlist(self, ctx: Context, id: int, urls: List[str] = None, n
     try:
         _check_urls(urls)
         await _check_ownership(self.bot, ctx, id)
-        await _confirm_modify(self.bot, ctx, urls=urls, name=name, type=op_type)
+        if op_type == "rename" and name is None:
+            raise NoNameSpecified()
+        urls = await _confirm_modify(self.bot, ctx, id, urls=urls, name=name, type=op_type)
         async with self.bot.db.acquire() as con:
-            op = f"urls={_urls_pg(urls)}" if op_type != "rename" else f"name=$pln${name}$pln$"
+            op = f"urls={_urls_pg(urls)}" if op_type != "rename" else f"playlist_name=$pln${name}$pln$"
             await con.execute(f"UPDATE playlists set {op} WHERE id={id} and user_id={ctx.author.id}")
-        embed.description = f"{ctx.author.mention}, {len(urls)} the {op_type if op_type == 'append' else 'replacement'} was successful"
+            success = "append" if op_type == "append" else "replacement" if op_type == "replace" else "rename" if op_type == "rename" else "[error]"
+        embed.description = f"{ctx.author.mention}, the {success} was successful"
     except InvalidURL as i:
         embed.description = f"{ctx.author.mention}, {i.url} is not a valid URL"
     except NonexistentPlaylist as i:
         embed.description = i.err_msg.format(ctx.author.mention)
     except NotPlaylistOwner as i:
         embed.description = f"{ctx.author.mention}, you must own this playlist in order to modify it"
+    except NoNameSpecified as i:
+        embed.description = f"{ctx.author.mention}, you must specify a name to rename this playlist to"
     except SetupCancelled as i:
         embed.description = f"{ctx.author.mention}, the {i.setup} was cancelled"
     else:
@@ -652,8 +732,8 @@ async def modify_playlist(self, ctx: Context, id: int, urls: List[str] = None, n
 
 async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Message:
     raised = True
-    name, id, _ = _process_identifier(identifier)
-    filter = f"name=$pln${name}$pln$" if name else f"id={id}"
+    id, name, _ = _process_identifier(identifier)
+    filter = f"playlist_name=$pln${name}$pln$" if name else f"id={id}"
     embed = discord.Embed(title="Playlist Deleted", color=BLUE)
     try:
         async with self.bot.db.acquire() as con:
@@ -662,7 +742,8 @@ async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Messag
                 raise NonexistentPlaylist(id=id, name=name)
             await _check_ownership(self.bot, ctx, playlist_id)
             await con.execute(f"DELETE FROM playlists WHERE {filter} AND user_id={ctx.author.id}")
-        embed.description = f"{ctx.author.mention}, your playlist, \"{name}\", was successfully saved"
+        identifier = f'"{name}"' if name is not None else f"[ID: {id}]"
+        embed.description = f"{ctx.author.mention}, your playlist, {identifier}, was successfully deleted"
     except NonexistentPlaylist as i:
         embed.description = i.err_msg.format(ctx.author.mention)
     except NotPlaylistOwner as i:
@@ -676,3 +757,23 @@ async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Messag
         embed.title = "Playlist Delete Failed"
         embed.color = RED
     return await ctx.channel.send(embed=embed)
+
+
+def check_gain(ctx: Context, band: List[int], gain: str) -> Union[List[float], float]:
+    if gain is None:
+        return [0.00 for _ in range(15)]
+    elif not "," in gain:
+        try:
+            if not -0.25 <= float(gain) <= 1.00:
+                raise EQGainError(ctx, f"{gain} is not between -0.25 and 1.00 inclusive")
+            return float(gain) if type(band) == int else [float(g) for g in range(len(band))]
+        except ValueError as e:
+            raise EQGainError(ctx) from e
+    else:
+        try:
+            gain = [float(val) for val in gain.split(",")]
+            if not len(gain) == len(band):
+                raise EQGainMismatch(ctx, len(band), len(gain))
+        except ValueError as e:
+            raise EQGainError(ctx) from e
+    return gain

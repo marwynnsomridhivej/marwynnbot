@@ -1,10 +1,16 @@
-from typing import Union
+import os
+import re
+from typing import List, Union
+
 import discord
 import lavalink
 from discord.ext import commands
-from utils import (FieldPaginator, GlobalCMDS, context, customerrors,
-                   premium)
+from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
+                   customerrors, premium)
 from utils.musicutils import *
+
+VALID_TS = re.compile(r"([\d]*:[\d]{1,2}:[\d]{1,2})|([\d]{1,2}:[\d]{1,2})|([\d]*)")
+SCARED_IDS: List[int]
 
 
 class Music(commands.Cog):
@@ -15,21 +21,21 @@ class Music(commands.Cog):
         self.track_hook: function
 
     async def init_music(self, bot: commands.AutoShardedBot):
+        global SCARED_IDS
         await self.bot.wait_until_ready()
+        async with self.bot.db.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint, panel_id bigint)")
+            await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
         if not hasattr(bot, 'lavalink'):
             bot.lavalink = lavalink.Client(self.bot.user.id, player=MBPlayer)
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
             if not all(data):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")
-            bot.lavalink.add_node(*data, 'na', 'default-node', name="lavalink")
+            bot.lavalink.add_node(*data, 'na', 'default-node', name="lavalink", reconnect_attempts=-1)
             self.bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
         self.bot.lavalink = bot.lavalink
         self.bot.lavalink.add_event_hook(self.track_hook)
-
-        async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint, panel_id bigint)")
-            await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
-        return
+        SCARED_IDS = [int(id) for id in os.getenv("SCARED_IDS").split(",")]
 
     def cog_unload(self) -> None:
         self.bot.lavalink._event_hooks.clear()
@@ -42,6 +48,8 @@ class Music(commands.Cog):
             guild = self.bot.get_guild(guild)
         if isinstance(channel, int):
             channel = guild.get_channel(channel)
+        if channel and any([member.id in SCARED_IDS for member in channel.members if member.bot]):
+            raise customerrors.OtherMBConnectedError()
         await guild.change_voice_state(channel=channel, self_mute=mute, self_deaf=deafen)
         player = get_player(self.bot, None, guild=guild)
         player.voice_channel_id = channel.id if channel is not None else None
@@ -110,26 +118,28 @@ class Music(commands.Cog):
         if query is not None:
             return await play_or_queue_tracks(ctx, player, query)
 
-        embed = discord.Embed(color=discord.Color.blue())
-        description = [
-            f"**Now Playing:** [{player.current.title}](https://www.youtube.com/watch?=v{player.current.identifier})\n\n**Queue"
-            ":**"
-        ] if player.is_playing else []
+        embed = discord.Embed(description="**Queue:**\n", color=discord.Color.blue())
+        if player.is_playing:
+            embed.description = f"**Now Playing:** [{player.current.title}]({player.current.uri})\n\n" + \
+                embed.description
         queue_length = len(player.queue)
         title_extra = f": {queue_length} Track{'s' if queue_length != 1 else ''}" if queue_length else ""
         embed.title = f"Current Queue{title_extra}"
 
-        if not player.queue:
-            description.append("Nothing queued")
-        else:
-            for index, item in enumerate(player.queue, 1):
-                description.append(
-                    f"**{index}**: [{item['title']}]https://www.youtube.com/watch?v={item['identifier']})")
-        embed.description = "\n".join(description)
-        embed.set_footer(
-            text=f"Queue Duration: {total_queue_duration(player.queue)}"
+        description = [
+            f"[{track.title}]({track.uri}) - {track.author} - {track_duration(track.duration)}" for track in player.queue] if player.queue else ["Nothing queued"]
+        embed.set_author(
+            name=f"Queue Duration: {total_queue_duration(player.queue)}",
+            icon_url=ctx.me.avatar_url
         )
-        return await ctx.channel.send(embed=embed)
+        return await EmbedPaginator(
+            ctx,
+            entries=description,
+            per_page=10,
+            show_entry_count=True,
+            embed=embed,
+            description=embed.description
+        ).paginate()
 
     @commands.command(aliases=["cq"],
                       desc="Clears the current queue",
@@ -174,8 +184,9 @@ class Music(commands.Cog):
             embed.color = discord.Color.blue()
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(desc="Makes MarwynnBot leave the voice channel it is connected to",
-                      usage="leave",
+    @commands.command(aliases=["fvl"],
+                      desc="Makes MarwynnBot leave the voice channel it is connected to",
+                      usage="forcevoiceleave",
                       uperms=["Manage Server` or `Mute Members` or `Deafen Members` or `Move Members"])
     @ensure_voice()
     @check_perms(req_perms={
@@ -184,7 +195,7 @@ class Music(commands.Cog):
         "deafen_members": True,
         "move_members": True,
     }, mode="any")
-    async def leave(self, ctx):
+    async def forcevoiceleave(self, ctx):
         player = get_player(self.bot, ctx)
         if player.is_playing:
             player.queue.appendleft(player.current)
@@ -227,6 +238,58 @@ class Music(commands.Cog):
             embed.color = discord.Color.dark_red()
         return await ctx.channel.send(embed=embed)
 
+    @commands.command(aliases=['eq', 'equalizer'],
+                      desc="Adjusts the music player's equaliser",
+                      usage="equaliser (band) (gain)",
+                      note="To adjust gain on specific bands, you must specify both `(band)` and `(gain)`. "
+                      "`(band)` may be between 1 and 15 inclusive, comma separated integers between 1 and 15 inclusive, or \"all\" to modify all bands at once. "
+                      "`(gain)` may be a decimal between -0.25 and 1.00 inclusive, comma separated decimals between -0.25 and 1.00 inclusive. "
+                      "You can set multiple bands to one gain by specifying comma separated `(band)` values and only one `(gain)` value"
+                      "Doing `m!equaliser reset` will reset the gain for all bands to default (0). "
+                      "The amount of comma separated `(band)` and `(gain)` arguments must be the same, otherwise, an error message will be returned.\n\n"
+                      "To view the equaliser bands, omit both the `(band)` and `(gain)` arguments. To view the gain for a specific band, "
+                      "you must specify `(band)`, but not `(gain)`")
+    @ensure_voice()
+    async def equaliser(self, ctx, band: str = None, gain: str = None):
+        player = get_player(self.bot, ctx)
+        op = "adjust"
+        if band is None:
+            band = gain = None
+            op = "display"
+        elif band.lower() == "reset":
+            band = gain = None
+            op = "reset"
+        elif band.lower() == "all":
+            if gain is None:
+                raise customerrors.EQGainError(ctx, f"you must provide a valid gain value. To reset the equaliser, do `{await self.gcmds.prefix(ctx)}equaliser reset`")
+            band = [num for num in range(15)]
+            try:
+                if not -0.25 <= float(gain) <= 1.00:
+                    raise customerrors.EQGainError(ctx, f"{gain} is not between -0.25 and 1.00 inclusive")
+                gain = [float(gain) for _ in range(15)]
+            except ValueError as e:
+                raise customerrors.EQGainError(ctx, f"{gain} is not a valid gain value")
+        else:
+            try:
+                if not "," in band:
+                    band = int(band) - 1
+                    if not 0 <= band <= 14:
+                        raise customerrors.EQBandError(ctx, f"{band} is not between 1 and 15 inclusive")
+                else:
+                    band = [int(b) - 1 for b in band.split(",")]
+                    if not all([0 <= b <= 14 for b in band]):
+                        raise customerrors.EQBandError(
+                            ctx, f"all supplied band numbers must be between 1 and 15 inclusive"
+                        )
+            except ValueError as e:
+                raise customerrors.EQBandError(ctx) from e
+            gain = check_gain(ctx, band, gain)
+        embed = (await player.process_eq(band=band, gain=gain, op=op)).set_footer(
+            text=f"Requested by: {ctx.author.display_name}\nChanges may not be applied immediately. Please wait around 2 - 10 seconds.",
+            icon_url=ctx.author.avatar_url
+        )
+        return await ctx.channel.send(embed=embed)
+
     @commands.command(desc="Toggle your vote to pause the player",
                       usage="pause",
                       note="The player will pause once the vote threshold has been crossed.")
@@ -262,6 +325,13 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "stop"))
 
+    @commands.command(desc="Toggle your vote to make MarwynnBot leave the current voice channel",
+                      usage="leave",
+                      note="The player will leave once the vote threshold has been crossed, regardless of whether or not it is currently playing a track")
+    @ensure_voice()
+    async def leave(self, ctx):
+        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "leave"))
+
     @commands.command(desc="Set the player's track loop status",
                       usage="loop (times)",
                       note="`(times)` can be a positive integer value, \"forever\" to loop indefinitely, or \"stop\" to stop looping")
@@ -271,15 +341,88 @@ class Music(commands.Cog):
         if amount is None:
             embed = discord.Embed(
                 title="Track Loop Status",
-                description=f"{ctx.author.mention}, the current track will {player.loop_status}",
+                description=f"{ctx.author.mention}, the current track is set to {player.loop_status}",
                 color=discord.Color.blue()
             )
         else:
-            embed = player.set_loop_times(amount)
+            embed = player.set_loop_times(amount).set_footer(
+                text=f"Requested by: {ctx.author.display_name}",
+                icon_url=ctx.author.avatar_url
+            )
         return await ctx.channel.send(embed=embed)
 
-    # @commands.command(desc="Seek to a specific timestamp in the current track",
-    #                  usage="seek ()")
+    @commands.command(desc="Seek to a specific timestamp in the current track",
+                      usage="seek (hours:minutes:seconds|minutes:seconds|seconds)",
+                      note="There is no need to zero pad values. Please separate intervals with a colon \":\" character. "
+                      "0 hours may be omitted, but 0 minutes or seconds must be specified (no need for padding)")
+    @ensure_voice()
+    async def seek(self, ctx, *, timestamp: str = None):
+        if timestamp.lower() in ["shortcuts", "sc", "help", "h"]:
+            embed = discord.Embed(
+                title="Seek Shortcuts",
+                description=f"{ctx.author.mention}, here are valid seek shortcut words that can be used as time arguments:\n\n" +
+                "\n".join([
+                    "`start`, `s` - seek to the start of the current track",
+                    "`middle`, `m` - seek to the middle of the current track",
+                    "`end`, `e` - seek to the end of the current track (analogous to `m!skip`)"
+                ]),
+                color=discord.Color.blue()
+            )
+            return await ctx.channel.send(embed=embed)
+        player = get_player(self.bot, ctx)
+        if timestamp.lower() in ["start", "s", "middle", "m", "end", "e"]:
+            if player.current:
+                timestamp = {
+                    "start": "0",
+                    "s": "0",
+                    "middle": f"{player.current.duration // 2000}",
+                    "m": f"{player.current.duration // 2000}",
+                    "end": f"{player.current.duration // 1000}",
+                    "e": f"{player.current.duration // 1000}",
+                }.get(timestamp.lower(), timestamp)
+        timestamp = timestamp.replace(" ", "")
+        sign = timestamp[0] if timestamp[0] in "+-" else None
+        if sign:
+            timestamp = timestamp[1:]
+        embed = discord.Embed(title="Seek ", description=f"{ctx.author.mention}, ")
+        failed = True
+        if player.current and player.current.is_seekable and VALID_TS.fullmatch(timestamp):
+            try:
+                milliseconds = int(timestamp) * 1000
+            except ValueError:
+                try:
+                    tokens = [int(value) for value in timestamp.split(":", 2)]
+                    if len(tokens) > 3:
+                        raise ValueError("Invalid seek timestamp format")
+                except ValueError:
+                    embed.description += f"`{timestamp}` is an invalid timestamp format"
+                    return await ctx.channel.send(embed=embed)
+
+                if len(tokens) == 2:
+                    milliseconds = (tokens[0] * 60 + tokens[1]) * 1000
+                else:
+                    milliseconds = (tokens[0] * 3600 + tokens[1] * 60 + tokens[2]) * 1000
+
+            seek_timestamp = await player.seek(milliseconds, sign=sign)
+            failed = not isinstance(seek_timestamp, int)
+            embed.description += str(
+                f"I have successfully seeked {'to' if not sign else 'back by' if sign == '-' else 'forward by'} {track_duration(milliseconds)}" if not failed
+                else seek_timestamp
+            )
+        else:
+            embed.description += str(
+                "I cannot seek when I am not currently playing any track" if not player.is_playing
+                else "this track doesn't support seeking" if not player.current.is_seekable
+                else f"`{timestamp}` is an invalid timestamp format"
+            )
+        embed.title += "Failed" if failed else "Successful"
+        embed.color = discord.Color.dark_red() if failed else discord.Color.blue()
+        if not failed:
+            embed.set_footer(
+                text=f"Requested by: {ctx.author.display_name}",
+                icon_url=ctx.author.avatar_url
+            )
+        return await ctx.channel.send(embed=embed)
 
     @commands.group(invoke_without_command=True,
                     aliases=["playlists", "pl"],
@@ -288,30 +431,56 @@ class Music(commands.Cog):
     async def playlist(self, ctx):
         return await get_playlist_help(self, ctx)
 
+    @playlist.command(name="help",
+                      aliases=["h"])
+    async def playlist_help(self, ctx):
+        return await get_playlist_help(self, ctx)
+
     @playlist.command(name="list",
                       aliases=["ls"])
-    async def playlist_list(self, ctx):
-        embed = discord.Embed(title="Your Playlists 🎶", color=discord.Color.blue())
-        playlists = await get_playlist(self, ctx)
+    async def playlist_list(self, ctx, *, identifier: str = None):
+        embed = discord.Embed(title="Your Playlists 🎶" if not identifier else "Playlist Details 🎶",
+                              color=discord.Color.blue())
+        loading_msg: discord.Message = await ctx.channel.send(embed=discord.Embed(
+            title="Loading Playlist Details...",
+            color=discord.Color.blue()
+        )) if identifier is not None else None
+        playlists = await get_playlist(self, ctx, ret=f"all{'-info' if identifier is not None else ''}")
         if not playlists:
             embed.description = f"{ctx.author.mention}, you don't have any saved playlists"
             return await ctx.channel.send(embed=embed)
 
-        template = "**{}:** *ID: {}* - {} Track{} 💽"
-        entries = [
-            (
-                playlist.name,
-                template.format(
-                    index,
-                    playlist.id,
-                    len(playlist.urls),
-                    's' if len(playlist.urls) != 1 else ''
-                ),
-                False
-            ) for index, playlist in enumerate(playlists, 1)
-        ]
-        pag = FieldPaginator(ctx, entries=entries, embed=embed)
-        return await pag.paginate()
+        if identifier:
+            playlist = playlists[0]
+            description = "\n".join([
+                f"**ID:** {playlist.id}",
+                f"**Name:** {playlist.name}",
+                f"**Author:** <@{playlist.user_id}>",
+                f"**Duration:** {total_queue_duration(playlist.tracks)}"
+            ]) + "\n\n"
+            entries = [
+                f"[{track.title}]({track.uri}) - {track.author} - [{track_duration(track.duration)}]" for track in playlist.tracks
+            ]
+            pag = EmbedPaginator(ctx,
+                                 entries=entries, per_page=10,
+                                 show_entry_count=True, embed=embed,
+                                 description=description, provided_message=loading_msg)
+        else:
+            template = "**{}:** *ID: {}* - {} Track{} 💽"
+            entries = [
+                (
+                    playlist.name,
+                    template.format(
+                        index,
+                        playlist.id,
+                        len(playlist.urls),
+                        's' if len(playlist.urls) != 1 else ''
+                    ),
+                    False
+                ) for index, playlist in enumerate(playlists, 1)
+            ]
+            pag = FieldPaginator(ctx, entries=entries, embed=embed)
+        await pag.paginate()
 
     @premium.is_premium()
     @playlist.command(name="queue",
@@ -319,7 +488,7 @@ class Music(commands.Cog):
     @ensure_voice(should_connect=True)
     async def playlist_queue(self, ctx, *, identifier: str):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
-        return await play_or_queue_playlist(self.bot, ctx, get_player(self, ctx), playlist)
+        return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist)
 
     @premium.is_premium()
     @playlist.command(name="play",
@@ -327,7 +496,7 @@ class Music(commands.Cog):
     @ensure_voice(should_connect=True)
     async def playlist_play(self, ctx, *, identifier: str):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
-        return await play_or_queue_playlist(self.bot, ctx, get_player(self, ctx), playlist, play=True)
+        return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist, play=True)
 
     @premium.is_premium()
     @playlist.command(name="save",
@@ -353,7 +522,13 @@ class Music(commands.Cog):
     @premium.is_premium()
     @playlist.command(name="rename",
                       aliases=["ren", "rn"])
-    async def playlist_rename(self, ctx, *, identifier: str):
+    async def playlist_rename(self, ctx, id: int, *, new_name: str = None):
+        return await modify_playlist(self, ctx, id, name=new_name, op_type="rename")
+
+    @premium.is_premium()
+    @playlist.command(name="delete",
+                      aliases=["del", "d"])
+    async def playlist_delete(self, ctx, *, identifier: str):
         return await delete_playlist(self, ctx, identifier)
 
 
