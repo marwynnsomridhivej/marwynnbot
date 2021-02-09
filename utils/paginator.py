@@ -23,7 +23,7 @@ class EmbedPaginator:
         self.ctx = ctx
         self.entries = entries
         self.provided_message = kwargs.get("provided_message", None)
-        self.edit_provided_message = bool(self.provided_message)
+        self.edit_provided_message = self.provided_message is not None
         self.message = self.provided_message or ctx.message
         self.channel = ctx.channel
         self.author = ctx.author
@@ -110,7 +110,9 @@ class EmbedPaginator:
         if not first:
             return await self.message.edit(content=content, embed=embed)
 
-        if not self.edit_provided_message and first:
+        if self.edit_provided_message and first:
+            await self.message.edit(content=content, embed=embed)
+        elif not self.edit_provided_message and first:
             self.message = await self.channel.send(content=content, embed=embed)
         if not self.maximum_pages <= 1:
             for reaction, _ in self.emojis:

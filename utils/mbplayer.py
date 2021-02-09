@@ -8,6 +8,8 @@ from lavalink.models import AudioTrack, DefaultPlayer
 BLUE = discord.Color.blue()
 RED = discord.Color.dark_red()
 
+_cache = {}
+
 
 class MBPlayer(DefaultPlayer):
     def __init__(self, guild_id, node):
@@ -40,11 +42,11 @@ class MBPlayer(DefaultPlayer):
             "leave": [],
         }
 
-    def close_session(self) -> None:
+    async def close_session(self) -> None:
         self.queue.clear()
         self.session_queue.clear()
         self.reset_votes()
-        self.reset_equalizer()
+        await self.reset_equalizer()
         self.loop_count = 0
         self._rewind = False
         self._index = 1
@@ -62,7 +64,14 @@ class MBPlayer(DefaultPlayer):
 
     def set_loop_times(self, times: str) -> discord.Embed:
         try:
-            self._loop = int(times)
+            times = int(times)
+            if not 0 <= times:
+                return discord.Embed(
+                    title="Invalid Loop Number",
+                    description=f"The loop number must be a positive integer, not {times}",
+                    color=discord.Color.dark_red()
+                )
+            self._loop = times
             description_fragment = f"loop {self._loop} time{'s' if self._loop != 1 else ''}" if self._loop != 0 else "not loop and play the next queued track once the current track finishes"
         except ValueError:
             self._loop = -1 if times.lower() == "forever" else 0
@@ -78,7 +87,11 @@ class MBPlayer(DefaultPlayer):
         return f"loop {self._loop} time{'s' if self._loop != 1 else ''}" if self._loop >= 1 else "loop forever" if self._loop == -1 else "not loop"
 
     async def get_tracks(self, query: str) -> Dict:
-        return await self.node.get_tracks(query)
+        if not query in _cache:
+            ret = await self.node.get_tracks(query)
+            if ret and ret.get("tracks"):
+                _cache[query] = ret
+        return _cache.get(query, None)
 
     async def seek(self, millisecond_amount: int, sign: str = None) -> Union[int, str]:
         if sign == "+":
@@ -88,13 +101,11 @@ class MBPlayer(DefaultPlayer):
         else:
             position = millisecond_amount
 
-        if sign:
-            if position < 0:
-                return "the specified timestamp is insvalid, as it occurs before the track begins"
-            elif position > self.current.duration:
-                return "the specified timestamp is invalid, as it is longer than the track's duration"
-            else:
-                pass
+        if not 0 <= position:
+            position = 0
+        if not position <= self.current.duration:
+            position = self.current.duration
+
         await super().seek(position)
         return int(position)
 
@@ -117,7 +128,7 @@ class MBPlayer(DefaultPlayer):
                     await self.node._dispatch_event(QueueEndEvent(self))
                     self.current = None
                     await self.stop()
-                    self.close_session()
+                    await self.close_session()
                     return None
             else:
                 self.loop_count += 1
@@ -137,6 +148,8 @@ class MBPlayer(DefaultPlayer):
             self._index += 1
 
         self.current = track
+        if not self.current.uri in _cache:
+            _cache[self.current.uri] = self.current
         await self.node._send(op="play", guildId=self.guild_id, track=track.track)
         await self.node._dispatch_event(TrackStartEvent(self, self.current))
         return self.current
@@ -152,6 +165,8 @@ class MBPlayer(DefaultPlayer):
         elif op == "adjust":
             if isinstance(band, int):
                 band = [band]
+            if isinstance(gain, float):
+                gain = [gain]
             await self.set_gains(*[(b, g) for b, g in zip(band, gain)])
             adjusted = f"band{'s' if len(band) != 1 else ''} " + ", ".join([
                 str(b + 1) for b in band

@@ -62,8 +62,16 @@ class Music(commands.Cog):
     async def bind(self, ctx, channel: discord.TextChannel = None):
         if not channel:
             channel = ctx.channel
+        if not isinstance(channel, discord.TextChannel):
+            converter = commands.TextChannelConverter()
+            channel = await converter.convert(ctx, channel)
         async with self.bot.db.acquire() as con:
-            await con.execute(f"INSERT INTO music(guild_id, channel_id)")
+            entry = await con.fetchval(f"SELECT guild_id FROM music WHERE guild_id={ctx.guild.id}")
+            if not entry:
+                op = f"INSERT INTO music(guild_id, channel_id) VALUES ({ctx.guild.id}, {channel.id})"
+            else:
+                op = f"UPDATE music SET channel_id={channel.id} WHERE guild_id={ctx.guild.id}"
+            await con.execute(op)
         embed = discord.Embed(title="Music Channel Bound",
                               description=f"The music channel was bound to {channel.mention}",
                               color=discord.Color.blue())
@@ -141,7 +149,7 @@ class Music(commands.Cog):
             description=embed.description
         ).paginate()
 
-    @commands.command(aliases=["cq"],
+    @commands.command(aliases=["qc", "clearqueue", "cq"],
                       desc="Clears the current queue",
                       usage="clearqueue",
                       uperms=["Manage Server"])
@@ -178,7 +186,7 @@ class Music(commands.Cog):
             embed.description = f"{ctx.author.mention}, I'm not playing anything and my queue is already empty"
         else:
             await player.stop()
-            player.close_session()
+            await player.close_session()
             embed.title = "Player Stopped"
             embed.description = f"{ctx.author.mention}, I have stopped the player and cleared the queue"
             embed.color = discord.Color.blue()
@@ -240,7 +248,26 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['eq', 'equalizer'],
                       desc="Adjusts the music player's equaliser",
-                      usage="equaliser (band) (gain)",
+                      usage="""equaliser (band) (gain)
+
+Examples:
+Set band 1 to +1 gain:
+m!equaliser 1, 1
+
+Set bands 1, 2, 4, 6, and 9 to -0.1 gain
+m!equaliser 1,2,4,6,9 -0.1
+
+Set all bands to +0.69 gain
+m!equaliser all 0.69
+
+Set bands 10, 12, and 14 to -0.25, 0, and +0.25 gain respectively
+m!equaliser 10,12,14 -0.25,0,0.25
+
+Reset equaliser (two options, functionally equivalent):
+m!equaliser reset
+or
+m!equaliser all 0
+""",
                       note="To adjust gain on specific bands, you must specify both `(band)` and `(gain)`. "
                       "`(band)` may be between 1 and 15 inclusive, comma separated integers between 1 and 15 inclusive, or \"all\" to modify all bands at once. "
                       "`(gain)` may be a decimal between -0.25 and 1.00 inclusive, comma separated decimals between -0.25 and 1.00 inclusive. "
@@ -295,42 +322,42 @@ class Music(commands.Cog):
                       note="The player will pause once the vote threshold has been crossed.")
     @ensure_voice()
     async def pause(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "pause"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "pause"))
 
     @commands.command(desc="Toggle your vote to unpause the player",
                       usage="unpause",
                       note="The player will unpause once the vote threshold has been crossed.")
     @ensure_voice()
     async def unpause(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "unpause"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "unpause"))
 
     @commands.command(desc="Toggle your vote to rewind to the previous track",
                       usage="rewind",
                       note="The player will rewind to the previous track once the vote threshold has been crossed.")
     @ensure_voice()
     async def rewind(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "rewind"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "rewind"))
 
     @commands.command(desc="Toggle your vote to skip to the next track",
                       usage="skip",
                       note="The player will skip to the next track once the vote threshold has been crossed.")
     @ensure_voice()
     async def skip(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "skip"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "skip"))
 
     @commands.command(desc="Toggle your vote to stop the player",
                       usage="stop",
                       note="The player will stop once the vote threshold has been crossed.")
     @ensure_voice()
     async def stop(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "stop"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "stop"))
 
     @commands.command(desc="Toggle your vote to make MarwynnBot leave the current voice channel",
                       usage="leave",
                       note="The player will leave once the vote threshold has been crossed, regardless of whether or not it is currently playing a track")
     @ensure_voice()
     async def leave(self, ctx):
-        return await ctx.channel.send(embed=await process_votes(self.bot, ctx, "leave"))
+        return await ctx.channel.send(embed=await process_votes(self, self.bot, ctx, "leave"))
 
     @commands.command(desc="Set the player's track loop status",
                       usage="loop (times)",
@@ -352,9 +379,11 @@ class Music(commands.Cog):
         return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Seek to a specific timestamp in the current track",
-                      usage="seek (hours:minutes:seconds|minutes:seconds|seconds)",
+                      usage="seek ( (+ | -) hours:minutes:seconds|minutes:seconds|seconds)",
                       note="There is no need to zero pad values. Please separate intervals with a colon \":\" character. "
-                      "0 hours may be omitted, but 0 minutes or seconds must be specified (no need for padding)")
+                      "0 hours may be omitted, but 0 minutes or seconds must be specified (no need for padding). "
+                      "Specifying plus (+) or minus (-) will add or subtract time from the current timestamp "
+                      "(i.e, `m!seek -60` to seek back 60 seconds)")
     @ensure_voice()
     async def seek(self, ctx, *, timestamp: str = None):
         if timestamp.lower() in ["shortcuts", "sc", "help", "h"]:
@@ -445,7 +474,7 @@ class Music(commands.Cog):
             title="Loading Playlist Details...",
             color=discord.Color.blue()
         )) if identifier is not None else None
-        playlists = await get_playlist(self, ctx, ret=f"all{'-info' if identifier is not None else ''}")
+        playlists = await get_playlist(self, ctx, identifier=identifier, ret=f"all{'-info' if identifier is not None else ''}")
         if not playlists:
             embed.description = f"{ctx.author.mention}, you don't have any saved playlists"
             return await ctx.channel.send(embed=embed)
@@ -459,12 +488,17 @@ class Music(commands.Cog):
                 f"**Duration:** {total_queue_duration(playlist.tracks)}"
             ]) + "\n\n"
             entries = [
-                f"[{track.title}]({track.uri}) - {track.author} - [{track_duration(track.duration)}]" for track in playlist.tracks
+                f"[{track.title}]({track.uri}) - {track.author} - [{track_duration(track.duration)}]" if track else "No Data Available" for track in playlist.tracks
             ]
-            pag = EmbedPaginator(ctx,
-                                 entries=entries, per_page=10,
-                                 show_entry_count=True, embed=embed,
-                                 description=description, provided_message=loading_msg)
+            pag = EmbedPaginator(
+                ctx,
+                entries=entries,
+                per_page=10,
+                show_entry_count=True,
+                embed=embed,
+                description=description,
+                provided_message=loading_msg
+            )
         else:
             template = "**{}:** *ID: {}* - {} Track{} 💽"
             entries = [
@@ -503,21 +537,21 @@ class Music(commands.Cog):
                       aliases=["s"])
     async def playlist_save(self, ctx, *, urls: str = None):
         player = get_player(self.bot, ctx)
-        return await save_playlist(self, ctx, urls.split() if urls else [track.uri for track in player.queue])
+        return await save_playlist(self, ctx, urls.split(",") if urls else [track.uri for track in player.queue])
 
     @premium.is_premium()
     @playlist.command(name="append",
                       aliases=["add", "a"])
     async def playlist_append(self, ctx, id: int, *, urls: str = None):
         player = get_player(self.bot, ctx)
-        return await modify_playlist(self, ctx, id, urls=urls.split() if urls else [track.uri for track in player.queue], op_type="append")
+        return await modify_playlist(self, ctx, id, urls=urls.split(",") if urls else [track.uri for track in player.queue], op_type="append")
 
     @premium.is_premium()
     @playlist.command(name="replace",
                       aliases=["repl", "rp"])
     async def playlist_replace(self, ctx, id: int, *, urls: str = None):
         player = get_player(self.bot, ctx)
-        return await modify_playlist(self, ctx, id, urls=urls.split() if urls else [track.uri for track in player.queue], op_type="replace")
+        return await modify_playlist(self, ctx, id, urls=urls.split(",") if urls else [track.uri for track in player.queue], op_type="replace")
 
     @premium.is_premium()
     @playlist.command(name="rename",

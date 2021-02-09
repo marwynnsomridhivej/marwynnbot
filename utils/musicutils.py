@@ -3,6 +3,7 @@ import functools
 import re
 from math import ceil
 from typing import List, NamedTuple, Tuple, Union
+from utils.paginator import EmbedPaginator
 
 import discord
 import lavalink
@@ -184,7 +185,7 @@ async def track_hook(self, event: lavalink.events.Event):
                 f"Requested by: {requester.display_name}",
                 f"Author: {track.author}",
                 f"Current Queue: {queue_rem}",
-            ]) + f"Looped {loop_count} time{'s' if loop_count != 1 else ''}" if loop_count >= 1 else '',
+            ]) + f"\nLooped {loop_count} time{'s' if loop_count != 1 else ''}" if loop_count >= 1 else '',
             icon_url=requester.avatar_url
         ).set_image(
             url=_get_track_thumbnail(track)
@@ -221,7 +222,7 @@ def _process_op_threshold(bot: AutoShardedBot, ctx: Context, op: str) -> Tuple[i
         vote_op.append(ctx.author.id)
         action = "placed"
     current = len(vote_op)
-    if current <= 2:
+    if current_member_count <= 2:
         threshold = 1
     else:
         threshold = int(ceil(current_member_count / 2))
@@ -276,7 +277,7 @@ async def process_votes(self,
                 )
         elif op_name == "stop":
             await player.stop()
-            player.close_session()
+            await player.close_session()
         elif op_name == "leave":
             if player.is_playing:
                 player.queue.appendleft(player.current)
@@ -286,6 +287,7 @@ async def process_votes(self,
                 url="https://i.pinimg.com/originals/56/3d/72/563d72539bbd9fccfbb427cfefdee05a.png"
             )
             return embed
+    else:
         req = threshold - current
         embed.description = f"{ctx.author.mention}, you've {action} your vote to {NOT_ALLOW_TEMPLATES.get(op_name)}"
         embed.set_footer(
@@ -302,7 +304,7 @@ def _get_track_duration_timestamp(milliseconds: int) -> str:
 
 
 def _get_queue_total_duration(queue: List[AudioTrack]) -> str:
-    return _get_track_duration_timestamp(sum(track.duration for track in queue))
+    return _get_track_duration_timestamp(sum(track.duration if track else 0 for track in queue))
 
 
 total_queue_duration = _get_queue_total_duration
@@ -310,8 +312,8 @@ track_duration = _get_track_duration_timestamp
 
 
 def _get_track_thumbnail(track: Union[AudioTrack, List[AudioTrack]]) -> str:
-    track = track if isinstance(track, AudioTrack) else track[0]
-    return f"http://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg"
+    track = track if isinstance(track, AudioTrack) else track[0] if track else None
+    return f"http://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg" if track else ""
 
 
 def _process_identifier(identifier: str) -> Tuple[int, str, str]:
@@ -352,21 +354,26 @@ async def play_or_queue_tracks(ctx: Context,
 
     embed = discord.Embed(color=BLUE)
     queue = player.queue
+    pag = None
     if results['loadType'] == "PLAYLIST_LOADED":
         tracks = [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
-        tracklist = []
-        for index, track in enumerate(tracks, 1):
-            tracklist.append(
-                f"**{index}:** [{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}")
+        tracklist = [
+            f"[{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}" for track in tracks
+        ]
+        for track in tracks:
             player.add(requester=ctx.author.id, track=track)
 
         embed.title = "Playlist Queued"
-        embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks:\n\n' + "\n".join(
-            tracklist
-        ) + f"\n\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}"
+        embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks\n\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}'
         embed.set_image(
             url=_get_track_thumbnail(tracks)
         ).set_footer(text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}")
+        pag = EmbedPaginator(ctx,
+                             entries=tracklist,
+                             per_page=10,
+                             show_entry_count=False,
+                             embed=embed,
+                             description=embed.description)
     else:
         track = AudioTrack(results['tracks'][0], ctx.author.id)
         player.add(requester=ctx.author.id, track=track)
@@ -381,7 +388,10 @@ async def play_or_queue_tracks(ctx: Context,
             icon_url=ctx.author.avatar_url,
         )
     if send_embeds:
-        await ctx.channel.send(embed=embed)
+        if pag:
+            await pag.paginate()
+        else:
+            await ctx.channel.send(embed=embed)
 
     if ctx.command.name == "play" and not player.is_playing:
         await player.play()
@@ -465,12 +475,21 @@ def _urls_pg(urls: List[str]) -> str:
     return "'{" + ",".join(urls) + "}'"
 
 
-def _check_urls(urls: List[str]) -> None:
+async def _check_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> List[str]:
+    ret = []
     if urls:
+        player = get_player(bot, ctx)
         for url in urls:
             if not url_rx.match(url):
                 raise InvalidURL(url=url)
-    return
+            results = await player.get_tracks(url)
+            if not results:
+                continue
+            elif results["loadType"] == "TRACK_LOADED":
+                ret.append(AudioTrack(results['tracks'][0], ctx.author.id).uri)
+            elif results["loadType"] == "PLAYLIST_LOADED":
+                ret += [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
+    return ret
 
 
 async def _check_ownership(bot: AutoShardedBot, ctx: Context, id: int) -> None:
@@ -485,7 +504,7 @@ async def _check_ownership(bot: AutoShardedBot, ctx: Context, id: int) -> None:
     return
 
 
-async def _extract_playlist_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> List[str]:
+async def _extract_playlist_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> List[AudioTrack]:
     player = get_player(bot, ctx)
     ret = []
     for url in urls:
@@ -493,9 +512,9 @@ async def _extract_playlist_urls(bot: AutoShardedBot, ctx: Context, urls: List[s
         if not results or not results["tracks"]:
             continue
         if not results["loadType"] == "PLAYLIST_LOADED":
-            ret.append(AudioTrack(results["tracks"][0], ctx.author.id).uri)
+            ret.append(AudioTrack(results["tracks"][0], ctx.author.id))
             continue
-        ret += [AudioTrack(data, ctx.author.id).uri for data in results.get("tracks")]
+        ret += [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
     return ret
 
 
@@ -509,9 +528,12 @@ async def _confirm_modify(bot: AutoShardedBot,
         urls = await _extract_playlist_urls(bot, ctx, urls)
     if not urls and type in ["append", "replace"]:
         raise InvalidURL(url="`[NO URL PROVIDED]`")
-    urls_listed = '\n'.join(f'**{index}:** {url}' for index, url in enumerate(urls, 1)) if urls else ""
-    panel_description = (f"URLs:\n{urls_listed}" if urls else f'Rename to: "{name}"' +
-                         f"\n\n{CONF_MSG.format(ctx.author.mention)}")
+    urls_listed = '\n'.join(f'**{index}:** [{track.title}]({track.uri})' for index, track in enumerate(urls, 1)) if urls else ""
+    panel_description = (
+        f"URLs:\n{urls_listed}" if urls and len(urls) < 10 else
+        f"{len(urls)} URLs" if urls else
+        f'Rename to: "{name}"' + f"\n\n{CONF_MSG.format(ctx.author.mention)}"
+    )
     panel = discord.Embed(title=f"Confirm {type.title()}",
                           description=panel_description,
                           color=BLUE)
@@ -533,6 +555,9 @@ async def _confirm_modify(bot: AutoShardedBot,
     else:
         if reaction.emoji == CONF_REACTIONS[1]:
             raise SetupCancelled(setup=f"playlist {type}")
+    finally:
+        if urls:
+            urls = [track.uri for track in urls]
 
     if not type == "rename":
         if type == "replace":
@@ -544,8 +569,7 @@ async def _confirm_modify(bot: AutoShardedBot,
 
 
 async def _save_playlist_get_name(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> str:
-    panel_description = ('\n'.join(f'**{index}:** {url}' for index, url in enumerate(urls, 1)) + "\n\n" +
-                         f"{ctx.author.mention}, these are the URLs that will be saved into your playlist. Please enter the name of your playlist.")
+    panel_description = f"{ctx.author.mention}, you will be saving {len(urls)} track{'s' if len(urls) != 1 else ''}. Please enter the name of your playlist"
     panel = discord.Embed(
         title="Save Playlist",
         description=panel_description,
@@ -583,6 +607,7 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
                                  playlist: Playlist,
                                  play: bool = False,
                                  send_embeds: bool = True):
+    pag = None
     successful = []
     failed = []
     queue = player.queue
@@ -603,14 +628,7 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
         embed.color = RED
     else:
         user: discord.User = bot.get_user(playlist.user_id)
-        embed.description = "\n".join(
-            f"**{index}:** [{track.title}]({track.uri}) - {track.author}"
-            for index, track in enumerate(successful, 1)
-        )
-        if failed:
-            embed.description += "\n\nThese songs could not be found:\n" + "\n".join(
-                f"**{index}:** {url}" for index, url in enumerate(failed, 1)
-            )
+        entries = [f" [{track.title}]({track.uri}) - {track.author}" for track in successful]
         embed.set_image(
             url=_get_track_thumbnail(successful[0])
         ).set_author(
@@ -620,8 +638,17 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
             text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}",
             icon_url=ctx.author.avatar_url
         )
+        pag = EmbedPaginator(ctx,
+                             entries=entries,
+                             per_page=10,
+                             show_entry_count=False,
+                             embed=embed,
+                             description=embed.description)
     if send_embeds:
-        await ctx.channel.send(embed=embed)
+        if pag:
+            await pag.paginate()
+        else:
+            await ctx.channel.send(embed=embed)
 
     if play and not player.is_playing:
         await player.play()
@@ -631,7 +658,11 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
 async def _get_playlist_tracks_data(player: MBPlayer, entries: List) -> List[List[AudioTrack]]:
     ret = []
     for record in entries:
-        ret.append([AudioTrack((await player.get_tracks(url)).get("tracks")[0] or None, record["user_id"]) for url in record["urls"]])
+        intermediate = []
+        for url in record["urls"]:
+            results = await player.get_tracks(url)
+            intermediate.append(AudioTrack(results["tracks"][0], record["user_id"]) if results else None)
+        ret.append(intermediate)
     return ret
 
 
@@ -643,7 +674,7 @@ async def get_playlist(self,
                        ret: str = "all") -> Union[Playlist, List[Playlist], List[str], None]:
     if identifier is not None:
         id, name, not_found = _process_identifier(identifier)
-        if not_found:
+        if not id and not name:
             return None
     player = get_player(self.bot, ctx)
     async with self.bot.db.acquire() as con:
@@ -674,10 +705,10 @@ async def save_playlist(self, ctx: Context, urls: List[str]) -> discord.Message:
     raised = True
     embed = discord.Embed(title="Playlist Saved", color=BLUE)
     try:
-        _check_urls(urls)
+        urls = await _check_urls(self.bot, ctx, urls)
         name = await _save_playlist_get_name(self.bot, ctx, urls)
         async with self.bot.db.acquire() as con:
-            values = "(" + f"{ctx.author.id}, $pln${name}$pln$, {_urls_pg(urls)}" + ")"
+            values = "(" + f"{ctx.author.id}, $pln${name}$pln$, {_urls_pg([track.uri for track in urls])}" + ")"
             await con.execute(f"INSERT INTO playlists(user_id, playlist_name, urls) VALUES {values}")
         embed.description = f"{ctx.author.mention}, your playlist, \"{name}\", was successfully saved"
     except UniqueViolationError as i:
@@ -701,7 +732,7 @@ async def modify_playlist(self, ctx: Context, id: int, urls: List[str] = None, n
     raised = True
     embed = discord.Embed(title=f"Playlist {op_type.title()}", color=BLUE)
     try:
-        _check_urls(urls)
+        urls = await _check_urls(self.bot, ctx, urls)
         await _check_ownership(self.bot, ctx, id)
         if op_type == "rename" and name is None:
             raise NoNameSpecified()
@@ -761,7 +792,7 @@ async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Messag
 
 def check_gain(ctx: Context, band: List[int], gain: str) -> Union[List[float], float]:
     if gain is None:
-        return [0.00 for _ in range(15)]
+        return [0.00 for _ in range(len(band))]
     elif not "," in gain:
         try:
             if not -0.25 <= float(gain) <= 1.00:
@@ -772,7 +803,7 @@ def check_gain(ctx: Context, band: List[int], gain: str) -> Union[List[float], f
     else:
         try:
             gain = [float(val) for val in gain.split(",")]
-            if not len(gain) == len(band):
+            if len(gain) != len(band):
                 raise EQGainMismatch(ctx, len(band), len(gain))
         except ValueError as e:
             raise EQGainError(ctx) from e
