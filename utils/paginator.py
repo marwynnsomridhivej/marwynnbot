@@ -22,7 +22,9 @@ class EmbedPaginator:
         self.bot = ctx.bot
         self.ctx = ctx
         self.entries = entries
-        self.message = ctx.message
+        self.provided_message = kwargs.get("provided_message", None)
+        self.edit_provided_message = bool(self.provided_message)
+        self.message = self.provided_message or ctx.message
         self.channel = ctx.channel
         self.author = ctx.author
         self.per_page = per_page
@@ -100,18 +102,21 @@ class EmbedPaginator:
         embed = self.get_embed(entries, page, first=first)
 
         if not self.paginating:
-            return await self.channel.send(content=content, embed=embed)
+            if self.edit_provided_message:
+                await self.provided_message.edit(content=content, embed=embed)
+            else:
+                return await self.channel.send(content=content, embed=embed)
 
         if not first:
-            await self.message.edit(content=content, embed=embed)
-            return
+            return await self.message.edit(content=content, embed=embed)
 
-        self.message = await self.channel.send(content=content, embed=embed)
-        for reaction, _ in self.emojis:
-            if self.maximum_pages == 2 and reaction in ('⏮️', '⏭️'):
-                continue
-
-            await self.message.add_reaction(reaction)
+        if not self.edit_provided_message and first:
+            self.message = await self.channel.send(content=content, embed=embed)
+        if not self.maximum_pages <= 1:
+            for reaction, _ in self.emojis:
+                if self.maximum_pages <= 2 and reaction in ('⏮️', '⏭️'):
+                    continue
+                await self.message.add_reaction(reaction)
 
     async def checked_show_page(self, page):
         if page != 0 and page <= self.maximum_pages:

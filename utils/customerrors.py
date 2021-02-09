@@ -1,11 +1,11 @@
 import discord
-from discord.ext import commands
+from discord.ext.commands import Context, CommandError
 
 
 _EC = discord.Color.dark_red()
 
 
-class CommandNotFound(commands.CommandError):
+class CommandNotFound(CommandError):
     def __init__(self, name: str):
         self.embed = discord.Embed(title="Command Not Found",
                                    description=f"`{name}` is not a valid command",
@@ -20,8 +20,8 @@ class CommandHelpDirectlyCalled(CommandNotFound):
                                   "Please use the help command for the category this command is in")
 
 
-class TimeoutError(commands.CommandError):
-    def __init__(self, ctx: commands.Context, name: str, timeout: int):
+class TimeoutError(CommandError):
+    def __init__(self, ctx: Context, name: str, timeout: int):
         super().__init__()
         self.embed = discord.Embed(title="Setup Timed Out",
                                    description=f"{ctx.author.mention}, your {name} setup timed out after "
@@ -29,33 +29,66 @@ class TimeoutError(commands.CommandError):
                                    color=_EC)
 
 
-class CancelError(commands.CommandError):
-    def __init__(self, ctx: commands.Context, name: str):
+class CancelError(CommandError):
+    def __init__(self, ctx: Context, name: str):
         super().__init__()
         self.embed = discord.Embed(title="Setup Cancelled",
                                    description=f"{ctx.author.mention}, your {name} setup was cancelled",
                                    color=_EC)
 
 
-class MassroleInvalidType(commands.CommandError):
+class EQBandError(CommandError):
+    def __init__(self, ctx: Context, reason: str = "please specify a valid band value"):
+        super().__init__()
+        self.embed = discord.Embed(title="Invalid Band",
+                                   description=f"{ctx.author.mention}, {reason}",
+                                   color=_EC)
+
+
+class EQGainError(CommandError):
+    def __init__(self, ctx: Context, reason: str = "please specify a valid gain value"):
+        super().__init__()
+        self.embed = discord.Embed(title="Invalid Gain",
+                                   description=f"{ctx.author.mention}, {reason}",
+                                   color=_EC)
+
+
+class EQGainMismatch(CommandError):
+    def __init__(self, ctx: Context, expected: int, actual: int):
+        super().__init__()
+        self.embed = discord.Embed(title="Gain Mismatch",
+                                   description=f"{ctx.author.mention}, the amount of gain values specified "
+                                   f"does not match the amount of bands specified (expected: {expected}, received: {actual})",
+                                   color=_EC)
+
+
+class MassroleInvalidType(CommandError):
     def __init__(self, user_type: str):
         self.embed = discord.Embed(title="Invalid Type",
                                    description=f"The specified type `{user_type}` is not a valid type",
                                    color=_EC)
 
 
-class MassroleInvalidOperation(commands.CommandError):
+class MassroleInvalidOperation(CommandError):
     def __init__(self, op: str):
         self.embed = discord.Embed(title="Invalid Operation",
                                    description=f"The specified operation `{op}` is not a valid operation",
                                    color=_EC)
 
 
-class LoggingError(commands.CommandError):
+class OtherMBConnectedError(CommandError):
+    def __init__(self):
+        super().__init__()
+        self.embed = discord.Embed(title="MarwynnBot Music Already Connected",
+                                   description="MarwynnBot Music is already connected to this voice channel",
+                                   color=_EC)
+
+
+class LoggingError(CommandError):
     pass
 
 
-class CannotMessageChannel(commands.CommandError):
+class CannotMessageChannel(CommandError):
     def __init__(self, channel: discord.TextChannel):
         self.embed = discord.Embed(title="Insufficient Permissions",
                                    description=f"I cannot send messages in {channel.mention}",
@@ -100,7 +133,7 @@ class LoggingCommandNameInvalid(LoggingError):
                                    color=_EC)
 
 
-class PostgreSQLError(commands.CommandError):
+class PostgreSQLError(CommandError):
     pass
 
 
@@ -273,7 +306,7 @@ class ServerLinkChannelUnavailable(ServerLinkException):
 
 
 class ServerLinkNoActiveSession(ServerLinkException):
-    def __init__(self, ctx: commands.Context):
+    def __init__(self, ctx: Context):
         super().__init__()
         self.embed.title = "No Active ServerLink Session"
         self.embed.description = (f"There is currently no active ServerLink session associtaed with "
@@ -392,11 +425,11 @@ class ToDoCheckError(ToDoError):
         self.embed.description = "The IDs that were passed could not be verified, or were invalid"
 
 
-class SilentActionError(commands.CommandError):
+class SilentActionError(CommandError):
     pass
 
 
-class TagError(commands.CommandError):
+class TagError(CommandError):
     def __init__(self, message=None, error=None, *args):
         super().__init__(message=message, *args)
         self.embed = discord.Embed(title="An Error Occurred",
@@ -492,7 +525,7 @@ class TagLimitReached(TagError):
                                    color=_EC)
 
 
-class CannotPaginate(commands.CommandError):
+class CannotPaginate(CommandError):
     """Error raised when the paginator cannot paginate
 
     Args:
@@ -503,7 +536,7 @@ class CannotPaginate(commands.CommandError):
         self.message = message
 
 
-class PremiumError(commands.CommandError):
+class PremiumError(CommandError):
     pass
 
 
@@ -628,7 +661,7 @@ class GuildAlreadyPremium(GuildPremiumException):
         self.embed.description = f"{guild.name} already has a MarwynnBot Premium subscription"
 
 
-class GameStatsError(commands.CommandError):
+class GameStatsError(CommandError):
     def __init__(self):
         self.embed = discord.Embed(title="GameStats Error",
                                    description="An error occurred while executing a gamestats query",
@@ -647,7 +680,7 @@ class NoStatsGame(GameStatsError):
         self.embed.description = f"{user.mention}, you do not have any stats for the game {game.title()}. Start playing to see your stats update!"
 
 
-class BlacklistOperationError(commands.CommandError):
+class BlacklistOperationError(CommandError):
     def __init__(self):
         self.embed = discord.Embed(title="A Blacklist Operation Error Occurred",
                                    description="An error occurred while trying to operate on the blacklist. Please check "
@@ -655,7 +688,7 @@ class BlacklistOperationError(commands.CommandError):
                                    color=_EC)
 
 
-class MathError(commands.CommandError):
+class MathError(CommandError):
     def __init__(self):
         self.embed = discord.Embed(title="Math Error",
                                    description="An error occurred while trying to parse or solve an equation or expression input",
@@ -669,7 +702,7 @@ class InvalidExpression(MathError):
         self.embed.description = f"```{eq}``` is not a valid expression or equation"
 
 
-class UnoCannotDM(commands.CommandError):
+class UnoCannotDM(CommandError):
     def __init__(self, member: discord.Member):
         self.embed = discord.Embed(title="Cannot Initiate DM",
                                    description=f"I don't have the permissions to DM {member.mention}. The "

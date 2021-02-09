@@ -29,7 +29,7 @@ class SubCommandEntry(object):
         self.pfx = pfx
         self._usage = data.usage
         self._returns = data.returns
-        self._aliases = data.aliases
+        self._aliases = " ".join(f"`{alias}`" for alias in data.aliases)
         self._note = data.note
         self.inline = inline
 
@@ -53,8 +53,8 @@ class SubCommandEntry(object):
     def aliases(self) -> str:
         return f"**Aliases:** {self._aliases}"
 
-    @usage.setter
-    def set_usage(self, aliases: str) -> None:
+    @aliases.setter
+    def set_aliases(self, aliases: List[str]) -> None:
         self._aliases = " ".join(f"`{alias}`" for alias in aliases)
 
     @property
