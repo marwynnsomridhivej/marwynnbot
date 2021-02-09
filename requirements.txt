@@ -1,3 +1,4 @@
+aiofile==3.3.3
 aiohttp~=3.6.2
 asyncpg==0.21.0
 dateparser~=0.7.6
