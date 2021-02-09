@@ -793,18 +793,16 @@ async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Messag
 def check_gain(ctx: Context, band: List[int], gain: str) -> Union[List[float], float]:
     if gain is None:
         return [0.00 for _ in range(len(band))]
-    elif not "," in gain:
-        try:
-            if not -0.25 <= float(gain) <= 1.00:
-                raise EQGainError(ctx, f"{gain} is not between -0.25 and 1.00 inclusive")
-            return float(gain) if type(band) == int else [float(g) for g in range(len(band))]
-        except ValueError as e:
-            raise EQGainError(ctx) from e
     else:
         try:
-            gain = [float(val) for val in gain.split(",")]
-            if len(gain) != len(band):
-                raise EQGainMismatch(ctx, len(band), len(gain))
+            if not "," in gain:
+                if not -0.25 <= float(gain) <= 1.00:
+                    raise EQGainError(ctx, f"{gain} is not between -0.25 and 1.00 inclusive")
+                gain = float(gain) if type(band) == int else [float(gain) for _ in range(len(band))]
+            else:
+                gain = [float(val) for val in gain.split(",")]
+                if len(gain) != len(band):
+                    raise EQGainMismatch(ctx, len(band), len(gain))
         except ValueError as e:
             raise EQGainError(ctx) from e
     return gain
