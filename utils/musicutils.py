@@ -488,7 +488,7 @@ async def _check_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> Lis
             elif results["loadType"] == "TRACK_LOADED":
                 ret.append(AudioTrack(results['tracks'][0], ctx.author.id).uri)
             elif results["loadType"] == "PLAYLIST_LOADED":
-                ret += [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
+                ret += [AudioTrack(data, ctx.author.id).uri for data in results.get("tracks")]
     return ret
 
 
@@ -708,7 +708,7 @@ async def save_playlist(self, ctx: Context, urls: List[str]) -> discord.Message:
         urls = await _check_urls(self.bot, ctx, urls)
         name = await _save_playlist_get_name(self.bot, ctx, urls)
         async with self.bot.db.acquire() as con:
-            values = "(" + f"{ctx.author.id}, $pln${name}$pln$, {_urls_pg([track.uri for track in urls])}" + ")"
+            values = "(" + f"{ctx.author.id}, $pln${name}$pln$, {_urls_pg(urls)}" + ")"
             await con.execute(f"INSERT INTO playlists(user_id, playlist_name, urls) VALUES {values}")
         embed.description = f"{ctx.author.mention}, your playlist, \"{name}\", was successfully saved"
     except UniqueViolationError as i:
