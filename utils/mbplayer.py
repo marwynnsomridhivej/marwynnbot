@@ -94,10 +94,10 @@ class MBPlayer(DefaultPlayer):
     def loop_status(self) -> str:
         return f"loop {self._loop} time{'s' if self._loop != 1 else ''}" if self._loop >= 1 else "loop forever" if self._loop == -1 else "not loop"
 
-    async def get_tracks(self, query: str) -> Dict:
+    async def get_tracks(self, query: str, force_recache: bool = False) -> Dict:
         global _cache
         current_timestamp = int(datetime.now().timestamp())
-        if not query in _cache or 0 <= _cache.get(query).get("expire_at") <= current_timestamp:
+        if force_recache or not query in _cache or 0 <= _cache.get(query).get("expire_at") <= current_timestamp:
             res = await self.node.get_tracks(query)
             res_present = res and res.get("tracks")
             if res_present and res.get("loadType") != "PLAYLIST_LOADED":
@@ -109,6 +109,11 @@ class MBPlayer(DefaultPlayer):
                 "expire_at": -1 if res_present else current_timestamp + 86400
             }
         return _cache.get(query).get("data")
+
+    @staticmethod
+    def get_cache() -> dict:
+        global _cache
+        return _cache
 
     @staticmethod
     async def export_cache(*, query: str = None, format: str = "json") -> discord.Embed:
