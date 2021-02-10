@@ -114,23 +114,24 @@ class MBPlayer(DefaultPlayer):
         global _cache
         embed = discord.Embed(title=f"Cache Export - {format.upper()}", color=BLUE)
         export_cache = _cache.get(query) if query is not None else _cache
-        base = f"./musiccache/MarwynnBot_Lavalink_Cache_{datetime.now().timestamp()}"
+        base = f"./musiccache/"
+        filename = f"MarwynnBot_Lavalink_Cache_{datetime.now().timestamp()}"
         if not export_cache:
             embed.description = f"The query `{query}` is not in cache" if query is not None else "The cache has not been built"
             embed.color = RED
             return embed
 
-        if not os.path.exists(os.path.abspath("./musiccache")):
-            os.mkdir(os.path.abspath("./musiccache"))
+        if not os.path.exists(os.path.abspath(base)):
+            os.mkdir(os.path.abspath(base))
 
         if format == "json":
-            async with async_open(os.path.abspath(f"{base}.json"), "wb") as jsonfile:
+            async with async_open(os.path.abspath(f"{base}{filename}.json"), "wb") as jsonfile:
                 await jsonfile.write(json.dumps(export_cache).encode())
-            embed.description = f"The cache for `{query}` has been exported" if query is not None else "The cache has been exported"
+            embed.description = f"The cache for `{query}` has been exported as ```{filename}.json```" if query is not None else "The cache has been exported"
         elif format == "pickle":
-            async with async_open(os.path.abspath(f"{base}.mbcache"), "wb") as picklefile:
+            async with async_open(os.path.abspath(f"{base}{filename}.mbcache"), "wb") as picklefile:
                 await picklefile.write(pickle.dumps(export_cache, protocol=pickle.HIGHEST_PROTOCOL))
-            embed.description = f"The cache for `{query}` has been exported" if query is not None else "The cache has been exported"
+            embed.description = f"The cache for `{query}` has been exported as ```{filename}.mbcache```" if query is not None else "The cache has been exported"
         else:
             embed.description = f"`{format}` is an unsupported format"
             embed.color = RED
