@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+import re
 from collections import deque
 from datetime import datetime
 from typing import Deque, Dict, List, Union
@@ -10,7 +11,7 @@ from aiofile import async_open
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
 
-from .musicutils import url_rx
+url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 BLUE = discord.Color.blue()
 RED = discord.Color.dark_red()
