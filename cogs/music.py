@@ -54,6 +54,55 @@ class Music(commands.Cog):
         player = get_player(self.bot, None, guild=guild)
         player.voice_channel_id = channel.id if channel is not None else None
 
+    @commands.command(aliases=["mc", "mci"],
+                      desc="Get MarwynnBot's lavalink cache details",
+                      usage="musiccacheinfo (query)",
+                      note="If `(query)` is unspecified, it will display general cache details")
+    async def musiccacheinfo(self, ctx, *, query: str = None):
+        return await ctx.channel.send(embed=MBPlayer.get_cache_info(query=query))
+
+    @commands.command(aliases=["mcexp"],
+                      desc="Exports MarwynnBot's lavalink cache",
+                      usage="musiccacheexport [format] (query)",
+                      uperms=["Bot Owner Only"],
+                      note="Supported formats are JSON and PICKLE")
+    @commands.is_owner()
+    async def musiccacheexport(self, ctx, format: str = None, *, query: str = None):
+        if not format or not format.lower() in ["json", "pickle"]:
+            embed = discord.Embed(title="Invalid Format",
+                                  description=f"{ctx.author.mention}, please pick a either JSON or PICKLE as the export format",
+                                  color=discord.Color.dark_red())
+        else:
+            embed = await MBPlayer.export_cache(query=query, format=format.lower())
+        return await ctx.channel.send(embed=embed)
+
+    @commands.command(aliases=["mcev"],
+                      desc="Evict a query from MarwynnBot's lavalink cache",
+                      usage="musiccacheevict [query]",
+                      uperms=["Bot Owner Only"])
+    @commands.is_owner()
+    async def musiccacheevict(self, ctx, *, query: str):
+        return await ctx.channel.send(embed=MBPlayer.evict_cache(query))
+
+    @commands.command(aliases=["mcc"],
+                      desc="Clears the music cache",
+                      usage="musiccacheclear",
+                      uperms=["Bot Owner Only"],
+                      note="A backup of the current cache will be made in JSON format")
+    @commands.is_owner()
+    async def musiccacheclear(self, ctx):
+        await MBPlayer.export_cache()
+        return await ctx.channel.send(embed=MBPlayer.evict_cache("", clear_all=True))
+
+    @commands.command(aliases=["mcr"],
+                      desc="Restore an exported lavalink cache state",
+                      usage="musiccacherestore [filename]",
+                      uperms=["Bot Owner Only"],
+                      note="Incluce the extension")
+    @commands.is_owner()
+    async def musiccacherestore(self, ctx, filename: str):
+        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename))
+
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
                       uperms=["Manage Server"],
@@ -273,6 +322,7 @@ m!equaliser reset
 or
 m!equaliser all 0
 """,
+                      uperms=["Manage Server` or `Mute Members` or `Deafen Members` or `Move Members"],
                       note="To adjust gain on specific bands, you must specify both `(band)` and `(gain)`. "
                       "`(band)` may be between 1 and 15 inclusive, comma separated integers between 1 and 15 inclusive, or \"all\" to modify all bands at once. "
                       "`(gain)` may be a decimal between -0.25 and 1.00 inclusive, comma separated decimals between -0.25 and 1.00 inclusive. "
@@ -282,6 +332,12 @@ m!equaliser all 0
                       "To view the equaliser bands, omit both the `(band)` and `(gain)` arguments. To view the gain for a specific band, "
                       "you must specify `(band)`, but not `(gain)`")
     @ensure_voice()
+    @check_perms(req_perms={
+        "manage_guild": True,
+        "mute_members": True,
+        "deafen_members": True,
+        "move_members": True,
+    }, mode="any")
     async def equaliser(self, ctx, band: str = None, gain: str = None):
         player = get_player(self.bot, ctx)
         op = "adjust"

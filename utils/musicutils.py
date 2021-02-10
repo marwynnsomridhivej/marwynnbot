@@ -3,7 +3,6 @@ import functools
 import re
 from math import ceil
 from typing import List, NamedTuple, Tuple, Union
-from utils.paginator import EmbedPaginator
 
 import discord
 import lavalink
@@ -11,6 +10,8 @@ from asyncpg.exceptions import UniqueViolationError
 from discord.errors import Forbidden, HTTPException, NotFound
 from discord.ext.commands import AutoShardedBot, Context
 from lavalink.models import AudioTrack
+
+from utils.paginator import EmbedPaginator
 
 from . import EntryData, SubcommandHelp
 from .customerrors import EQBandError, EQGainError, EQGainMismatch
@@ -333,6 +334,13 @@ async def play_or_queue_tracks(ctx: Context,
                                query: str,
                                source: str = "yt",
                                send_embeds: bool = True):
+    queue_embed = discord.Embed(
+        title="Processing Request...",
+        description="Depending on how many tracks your request returns, this may take a while. Please be patient...",
+        color=BLUE
+    ) if send_embeds else None
+    queue_message = await ctx.channel.send(embed=queue_embed) if queue_embed else None
+
     counter = 0
     results = None
     while counter < 2 and not results:
@@ -368,12 +376,15 @@ async def play_or_queue_tracks(ctx: Context,
         embed.set_image(
             url=_get_track_thumbnail(tracks)
         ).set_footer(text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}")
-        pag = EmbedPaginator(ctx,
-                             entries=tracklist,
-                             per_page=10,
-                             show_entry_count=False,
-                             embed=embed,
-                             description=embed.description)
+        pag = EmbedPaginator(
+            ctx,
+            entries=tracklist,
+            per_page=10,
+            show_entry_count=False,
+            embed=embed,
+            description=embed.description,
+            provided_message=queue_message
+        )
     else:
         track = AudioTrack(results['tracks'][0], ctx.author.id)
         player.add(requester=ctx.author.id, track=track)
@@ -391,7 +402,7 @@ async def play_or_queue_tracks(ctx: Context,
         if pag:
             await pag.paginate()
         else:
-            await ctx.channel.send(embed=embed)
+            await queue_message.edit(embed=embed)
 
     if ctx.command.name == "play" and not player.is_playing:
         await player.play()
@@ -528,7 +539,8 @@ async def _confirm_modify(bot: AutoShardedBot,
         urls = await _extract_playlist_urls(bot, ctx, urls)
     if not urls and type in ["append", "replace"]:
         raise InvalidURL(url="`[NO URL PROVIDED]`")
-    urls_listed = '\n'.join(f'**{index}:** [{track.title}]({track.uri})' for index, track in enumerate(urls, 1)) if urls else ""
+    urls_listed = '\n'.join(f'**{index}:** [{track.title}]({track.uri})' for index,
+                            track in enumerate(urls, 1)) if urls else ""
     panel_description = (
         f"URLs:\n{urls_listed}" if urls and len(urls) < 10 else
         f"{len(urls)} URLs" if urls else
@@ -606,7 +618,14 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
                                  player: MBPlayer,
                                  playlist: Playlist,
                                  play: bool = False,
-                                 send_embeds: bool = True):
+                                 send_embeds: bool = True,):
+    queue_embed = discord.Embed(
+        title="Processing Request...",
+        description="Depending on how many tracks your request returns, this may take a while. Please be patient...",
+        color=BLUE
+    ) if send_embeds else None
+    queue_message = await ctx.channel.send(embed=queue_embed) if queue_embed else None
+
     pag = None
     successful = []
     failed = []
@@ -614,7 +633,6 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
     for url in playlist.urls:
         results = await player.get_tracks(url)
         if not results:
-            print("No result found for {url}")
             failed.append(url)
         else:
             track = AudioTrack(results['tracks'][0], ctx.author.id)
@@ -643,12 +661,13 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
                              per_page=10,
                              show_entry_count=False,
                              embed=embed,
-                             description=embed.description)
+                             description=embed.description,
+                             provided_message=queue_message)
     if send_embeds:
         if pag:
             await pag.paginate()
         else:
-            await ctx.channel.send(embed=embed)
+            await queue_message.edit(embed=embed)
 
     if play and not player.is_playing:
         await player.play()

@@ -1,7 +1,12 @@
+import json
+import os
+import pickle
 from collections import deque
+from datetime import datetime
 from typing import Deque, Dict, List, Union
 
 import discord
+from aiofile import async_open
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
 
@@ -87,11 +92,126 @@ class MBPlayer(DefaultPlayer):
         return f"loop {self._loop} time{'s' if self._loop != 1 else ''}" if self._loop >= 1 else "loop forever" if self._loop == -1 else "not loop"
 
     async def get_tracks(self, query: str) -> Dict:
-        if not query in _cache:
-            ret = await self.node.get_tracks(query)
-            if ret and ret.get("tracks"):
-                _cache[query] = ret
-        return _cache.get(query, None)
+        global _cache
+        current_timestamp = int(datetime.now().timestamp())
+        if not query in _cache or 0 <= _cache.get(query).get("expire_at") <= current_timestamp:
+            res = await self.node.get_tracks(query)
+            res_present = res and res.get("tracks")
+            if res_present and res.get("loadType") != "PLAYLIST_LOADED":
+                res["tracks"] = [res["tracks"][0]]
+            _cache[query] = {
+                "data": res if res_present else None,
+                "timestamp": current_timestamp,
+                "cached_in": self.guild_id,
+                "expire_at": -1 if res_present else current_timestamp + 86400
+            }
+        return _cache.get(query).get("data")
+
+    @staticmethod
+    async def export_cache(*, query: str = None, format: str = "json") -> discord.Embed:
+        global _cache
+        embed = discord.Embed(title=f"Cache Export - {format.upper()}", color=BLUE)
+        export_cache = _cache.get(query) if query is not None else _cache
+        base = f"./musiccache/MarwynnBot_Lavalink_Cache_{datetime.now().timestamp()}"
+        if not export_cache:
+            embed.description = f"The query `{query}` is not in cache" if query is not None else "The cache has not been built"
+            embed.color = RED
+            return embed
+
+        if not os.path.exists(os.path.abspath("./musiccache")):
+            os.mkdir(os.path.abspath("./musiccache"))
+
+        if format == "json":
+            async with async_open(os.path.abspath(f"{base}.json"), "wb") as jsonfile:
+                await jsonfile.write(json.dumps(export_cache).encode())
+            embed.description = f"The cache for `{query}` has been exported" if query is not None else "The cache has been exported"
+        elif format == "pickle":
+            async with async_open(os.path.abspath(f"{base}.mbcache"), "wb") as picklefile:
+                await picklefile.write(pickle.dumps(export_cache, protocol=pickle.HIGHEST_PROTOCOL))
+            embed.description = f"The cache for `{query}` has been exported" if query is not None else "The cache has been exported"
+        else:
+            embed.description = f"`{format}` is an unsupported format"
+            embed.color = RED
+        return embed
+
+    @staticmethod
+    async def restore_cache(filename: str) -> discord.Embed:
+        global _cache
+        embed = discord.Embed(title="Cache Restore ", color=BLUE)
+        try:
+            async with async_open(os.path.abspath(f"./musiccache/{filename}"), "rb") as backup:
+                if filename.lower().endswith(".json"):
+                    _cache = json.loads(await backup.read())
+                elif filename.lower().endswith(".mbcache"):
+                    _cache = pickle.loads(await backup.read())
+            embed.description = f"The cache's state was successfully restored from the file ```{filename}```"
+        except FileNotFoundError:
+            embed.description = f"The cache's state was not restored. No cache export exists in the musiccache folder with the filename ```{filename}```"
+            embed.color = RED
+        return embed
+
+    @staticmethod
+    def evict_cache(query: str, clear_all: bool = False) -> discord.Embed:
+        global _cache
+        embed = discord.Embed(title="Query ", color=BLUE)
+        if clear_all:
+            _cache = {}
+            embed.title = "Cache Cleared"
+            embed.description = "The cache has been cleared. A backup has been made in JSON format"
+        elif _cache.get(query, None):
+            del _cache[query]
+            embed.title += "Evicted"
+            embed.description = f"The query `{query}` has been evicted from MarwynnBot's global cache"
+        else:
+            embed.title += "Not Found"
+            embed.description = f"The query `{query}` could not be found in the cache"
+            embed.color = RED
+        return embed
+
+    @staticmethod
+    def get_cache_info(query: str = None) -> discord.Embed:
+        global _cache
+        embed = discord.Embed(title="Lavalink Cache Info", color=BLUE)
+        current_timestamp = int(datetime.now().timestamp())
+        if not _cache:
+            embed.description = "The cache has not been built"
+            embed.color = RED
+        elif not query:
+            cache_size = len(_cache)
+            none_queries = [entry for key, entry in _cache.items() if entry.get("data", None) is None]
+            valid_size = cache_size - len(none_queries)
+            expired_size = len([entry for entry in none_queries if entry["expire_at"] <= current_timestamp])
+            embed.description = "\n".join([
+                f"**Size:** {cache_size} quer{'ies' if cache_size != 1 else 'y'}",
+                f"**Valid Queries:** {valid_size} quer{'ies' if valid_size != 1 else 'y'} ≈ {(100 * valid_size / cache_size):.2f}%",
+                f"**Expired:** {expired_size} quer{'ies' if expired_size != 1 else 'y'} ≈ {(100 * expired_size / cache_size):.2f}%",
+            ])
+        else:
+            entry = _cache.get(query, None)
+            if entry is None:
+                embed.title = "Invalid Query"
+                embed.description = f"The query `{query}` could not be found in the cache"
+                embed.color = RED
+            else:
+                data = entry["data"]
+                load_type = data.get("loadType") if data else "NO_MATCHES"
+                query_type = {
+                    "TRACK_LOADED": "Direct Track URL",
+                    "PLAYLIST_LOADED": "Direct Playlist URL",
+                    "SEARCH_RESULT": "Successful YouTube / SoundCloud Query",
+                    "NO_MATCHES": "Failed YouTube / SoundCloud Query",
+                    "LOAD_FAILED": "Error Occurred During Loading",
+                }.get(load_type, "No Info")
+                timestamp = datetime.fromtimestamp(entry["timestamp"]).strftime('%m/%d/%Y %H:%M:%S')
+                expire_at = "Never" if entry["expire_at"] == - \
+                    1 else datetime.fromtimestamp(entry["expire_at"]).strftime('%m/%d/%Y %H:%M:%S')
+                embed.title += f" - {query}"
+                embed.description = "\n".join([
+                    f"**Result:** {query_type}",
+                    f"**Cached On:** {timestamp}",
+                    f"**Expires:** {expire_at}",
+                ])
+        return embed
 
     async def seek(self, millisecond_amount: int, sign: str = None) -> Union[int, str]:
         if sign == "+":
@@ -110,6 +230,7 @@ class MBPlayer(DefaultPlayer):
         return int(position)
 
     async def play(self) -> AudioTrack:
+        global _cache
         self.reset_votes()
         self._last_update = 0
         self._last_position = 0
@@ -149,7 +270,7 @@ class MBPlayer(DefaultPlayer):
 
         self.current = track
         if not self.current.uri in _cache:
-            _cache[self.current.uri] = self.current
+            await self.get_tracks(self.current.uri)
         await self.node._send(op="play", guildId=self.guild_id, track=track.track)
         await self.node._dispatch_event(TrackStartEvent(self, self.current))
         return self.current
