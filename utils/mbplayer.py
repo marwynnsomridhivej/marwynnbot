@@ -152,7 +152,7 @@ class MBPlayer(DefaultPlayer):
     @staticmethod
     async def restore_cache(filename: str, type: str = "restore") -> discord.Embed:
         global _cache
-        embed = discord.Embed(title="Cache Restore ", color=BLUE)
+        embed = discord.Embed(title=f"Cache {type.title()} ", color=BLUE)
         try:
             async with async_open(os.path.abspath(f"./musiccache/{filename}"), "rb") as backup:
                 if filename.lower().endswith(".json"):
@@ -166,9 +166,14 @@ class MBPlayer(DefaultPlayer):
                     _cache = bak
                 elif type.lower() == "merge":
                     _cache = {**bak, **_cache}
-            embed.description = f"The cache's state was successfully restored from the file ```{filename}```"
+                else:
+                    raise ValueError(f"{type} is an invalid type")
+            embed.description = f"The cache's state was successfully {type}d from the file ```{filename}```"
         except FileNotFoundError:
-            embed.description = f"The cache's state was not restored. No cache export exists in the musiccache folder with the filename ```{filename}```"
+            embed.description = f"The cache's state was not {type}d. No cache export exists in the musiccache folder with the filename ```{filename}```"
+            embed.color = RED
+        except ValueError:
+            embed.description = f"{type} is an invalid type"
             embed.color = RED
         return embed
 
