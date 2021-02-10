@@ -3,10 +3,9 @@ import os
 import re
 from asyncio.tasks import Task
 from typing import List, Union
+from utils.mbclient import MBClient
 
 import discord
-from discord.colour import Color
-import lavalink
 from discord.ext import commands
 from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
                    customerrors, premium)
@@ -32,7 +31,7 @@ class Music(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint, panel_id bigint)")
             await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
         if not hasattr(bot, 'lavalink'):
-            bot.lavalink = lavalink.Client(self.bot.user.id, player=MBPlayer)
+            bot.lavalink = MBClient(self.bot.user.id)
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
             if not all(data):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")
@@ -65,7 +64,16 @@ class Music(commands.Cog):
             await asyncio.sleep(300)
             await MBPlayer.export_cache(query=None, format="pickle")
 
+    @staticmethod
+    def _handle_task_result(task: Task) -> None:
+        try:
+            task.result()
+        except Exception:
+            pass
+
     def cog_unload(self) -> None:
+        task = self.bot.loop.create_task(MBPlayer.export_cache(query=None, format="pickle"))
+        task.add_done_callback(self._handle_task_result)
         for task in self.tasks:
             task.cancel()
         self.bot.lavalink._event_hooks.clear()
@@ -156,6 +164,31 @@ class Music(commands.Cog):
     @commands.is_owner()
     async def musiccachemerge(self, ctx, filename: str):
         return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename, type="merge"))
+
+    @commands.command(aliases=["mcrl"],
+                      desc="Reloads the cache for specified entries",
+                      usage="musiccachereload (query)",
+                      uperms=["Bot Owner Only"],
+                      note="If `(query)` is unspecified, it will reload the cache for all entries with no data")
+    async def musiccachereload(self, ctx, *, query: str = None):
+        embed = discord.Embed(title="Reloading Cache...",
+                              description=f"{ctx.author.mention}, depending on how many entries are found, this may take a while. Please be patient...",
+                              color=discord.Color.blue())
+        await ctx.channel.send(embed=embed)
+        embed = discord.Embed(title="Cache Reloaded",
+                              description=f"{ctx.author.mention}, the cache has been reloaded ",
+                              color=discord.Color.blue())
+        embed.description += f"for query ```{query}```" if query else "for all entries without data"
+        player = get_player(self.bot, ctx)
+        cache = player.get_cache()
+        if query is None:
+            for entry in (key for key in cache if cache[key]["data"] is None):
+                await player.get_tracks(entry, force_recache=True)
+        elif query in cache:
+            await player.get_tracks(f"ytsearch:{query}", force_recache=True)
+        else:
+            embed.description = f"{ctx.author.mention}, I could not find an entry for ```{query}```"
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
@@ -588,12 +621,13 @@ m!equaliser all 0
                               color=discord.Color.blue())
         loading_msg: discord.Message = await ctx.channel.send(embed=discord.Embed(
             title="Loading Playlist Details...",
+            description=f"{ctx.author.mention}, depending on the size of your playlist and if it is in cache, this may take a while. Please be patient...",
             color=discord.Color.blue()
         )) if identifier is not None else None
         playlists = await get_playlist(self, ctx, identifier=identifier, ret=f"all{'-info' if identifier is not None else ''}")
         if not playlists:
-            embed.description = f"{ctx.author.mention}, you don't have any saved playlists"
-            return await ctx.channel.send(embed=embed)
+            embed.description = f"{ctx.author.mention}, you don't have any saved playlists" if not identifier else f"{ctx.author.mention}, I could not find anything for the identifier ```{identifier}```"
+            return await loading_msg.edit(embed=embed)
 
         if identifier:
             playlist = playlists[0]
@@ -652,8 +686,12 @@ m!equaliser all 0
     @playlist.command(name="save",
                       aliases=["s"])
     async def playlist_save(self, ctx, *, urls: str = None):
+        embed = discord.Embed(title="Fetching Playlist Details...",
+                              description=f"Depending on the size of {'the queue' if urls is None else 'the specified playlist'}, this may take a while. Please be patient...",
+                              color=discord.Color.blue())
+        message = await ctx.channel.send(embed=embed)
         player = get_player(self.bot, ctx)
-        return await save_playlist(self, ctx, urls.split(",") if urls else [track.uri for track in player.queue])
+        return await save_playlist(self, ctx, urls.split(",") if urls else [track.uri for track in player.queue], message)
 
     @premium.is_premium()
     @playlist.command(name="append",

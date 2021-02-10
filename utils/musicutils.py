@@ -503,13 +503,19 @@ async def _check_urls(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> Lis
         for url in urls:
             if not url_rx.match(url):
                 raise InvalidURL(url=url)
-            results = await player.get_tracks(url)
+            task = bot.loop.create_task(player.get_tracks(url))
+            task.add_done_callback(_handle_task_result)
+            results = await task
             if not results:
                 continue
             elif results["loadType"] == "TRACK_LOADED":
                 ret.append(AudioTrack(results['tracks'][0], ctx.author.id).uri)
             elif results["loadType"] == "PLAYLIST_LOADED":
-                ret += [AudioTrack(data, ctx.author.id).uri for data in results.get("tracks")]
+                res = [AudioTrack(data, ctx.author.id).uri for data in results.get("tracks")]
+                for uri in res:
+                    task = bot.loop.create_task(player.get_tracks(uri))
+                    task.add_done_callback(_handle_task_result)
+                ret += res
     return ret
 
 
@@ -590,14 +596,14 @@ async def _confirm_modify(bot: AutoShardedBot,
             return stored_urls + urls if stored_urls else [] + urls
 
 
-async def _save_playlist_get_name(bot: AutoShardedBot, ctx: Context, urls: List[str]) -> str:
+async def _save_playlist_get_name(bot: AutoShardedBot, ctx: Context, urls: List[str], message: discord.Message) -> str:
     panel_description = f"{ctx.author.mention}, you will be saving {len(urls)} track{'s' if len(urls) != 1 else ''}. Please enter the name of your playlist"
     panel = discord.Embed(
         title="Save Playlist",
         description=panel_description,
         color=BLUE
     ).set_footer(text="Enter \"cancel\" to cancel setup")
-    await ctx.channel.send(embed=panel)
+    await message.edit(embed=panel)
 
     try:
         name = await bot.wait_for(
@@ -684,12 +690,14 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
     return
 
 
-async def _get_playlist_tracks_data(player: MBPlayer, entries: List) -> List[List[AudioTrack]]:
+async def _get_playlist_tracks_data(bot: AutoShardedBot, player: MBPlayer, entries: List) -> List[List[AudioTrack]]:
     ret = []
     for record in entries:
         intermediate = []
         for url in record["urls"]:
-            results = await player.get_tracks(url)
+            task = bot.loop.create_task(player.get_tracks(url))
+            task.add_done_callback(_handle_task_result)
+            results = await task
             intermediate.append(AudioTrack(results["tracks"][0], record["user_id"]) if results else None)
         ret.append(intermediate)
     return ret
@@ -715,7 +723,7 @@ async def get_playlist(self,
     elif ret == "all":
         return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"]) for record in entries]
     elif ret == "all-info":
-        track_data = await _get_playlist_tracks_data(player, entries)
+        track_data = await _get_playlist_tracks_data(self.bot, player, entries)
         return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"], tracks=tracks) for record, tracks in zip(entries, track_data)]
     elif ret == "url":
         if len(entries) != 1:
@@ -730,12 +738,12 @@ async def get_playlist(self,
         return None
 
 
-async def save_playlist(self, ctx: Context, urls: List[str]) -> discord.Message:
+async def save_playlist(self, ctx: Context, urls: List[str], message: discord.Message) -> discord.Message:
     raised = True
     embed = discord.Embed(title="Playlist Saved", color=BLUE)
     try:
         urls = await _check_urls(self.bot, ctx, urls)
-        name = await _save_playlist_get_name(self.bot, ctx, urls)
+        name = await _save_playlist_get_name(self.bot, ctx, urls, message)
         async with self.bot.db.acquire() as con:
             values = "(" + f"{ctx.author.id}, $pln${name}$pln$, {_urls_pg(urls)}" + ")"
             await con.execute(f"INSERT INTO playlists(user_id, playlist_name, urls) VALUES {values}")
