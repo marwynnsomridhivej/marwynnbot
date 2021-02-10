@@ -11,6 +11,13 @@ from utils.musicutils import *
 
 VALID_TS = re.compile(r"([\d]*:[\d]{1,2}:[\d]{1,2})|([\d]{1,2}:[\d]{1,2})|([\d]*)")
 SCARED_IDS: List[int]
+BYPASS_BIND = [
+    "bind",
+    "musiccacheexport",
+    "musiccacheevict",
+    "musiccacheclear",
+    "musiccacherestore",
+]
 
 
 class Music(commands.Cog):
@@ -41,7 +48,7 @@ class Music(commands.Cog):
         self.bot.lavalink._event_hooks.clear()
 
     async def cog_check(self, ctx):
-        return True if ctx.command.name == "bind" else await context.music_bind(ctx)
+        return True if ctx.command.name in BYPASS_BIND else await context.music_bind(ctx)
 
     async def connect_to(self, guild: Union[discord.Guild, int], channel: Union[discord.VoiceChannel, int, None], mute: bool = False, deafen: bool = True) -> None:
         if isinstance(guild, int):
