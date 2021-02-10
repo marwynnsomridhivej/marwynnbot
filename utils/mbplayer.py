@@ -150,15 +150,22 @@ class MBPlayer(DefaultPlayer):
         return embed
 
     @staticmethod
-    async def restore_cache(filename: str) -> discord.Embed:
+    async def restore_cache(filename: str, type: str = "restore") -> discord.Embed:
         global _cache
         embed = discord.Embed(title="Cache Restore ", color=BLUE)
         try:
             async with async_open(os.path.abspath(f"./musiccache/{filename}"), "rb") as backup:
                 if filename.lower().endswith(".json"):
-                    _cache = json.loads(await backup.read())
+                    bak = json.loads(await backup.read())
                 elif filename.lower().endswith(".mbcache"):
-                    _cache = pickle.loads(await backup.read())
+                    bak = pickle.loads(await backup.read())
+                else:
+                    raise FileNotFoundError
+
+                if type.lower() == "restore":
+                    _cache = bak
+                elif type.lower() == "merge":
+                    _cache = {**bak, **_cache}
             embed.description = f"The cache's state was successfully restored from the file ```{filename}```"
         except FileNotFoundError:
             embed.description = f"The cache's state was not restored. No cache export exists in the musiccache folder with the filename ```{filename}```"
