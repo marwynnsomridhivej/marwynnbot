@@ -329,7 +329,15 @@ def _process_identifier(identifier: str) -> Tuple[int, str, str]:
     return id, name, not_found
 
 
-async def play_or_queue_tracks(ctx: Context,
+def _handle_task_result(task: asyncio.Task) -> None:
+    try:
+        task.result()
+    except Exception:
+        pass
+
+
+async def play_or_queue_tracks(bot: AutoShardedBot,
+                               ctx: Context,
                                player: MBPlayer,
                                query: str,
                                source: str = "yt",
@@ -370,6 +378,8 @@ async def play_or_queue_tracks(ctx: Context,
         ]
         for track in tracks:
             player.add(requester=ctx.author.id, track=track)
+            task = bot.loop.create_task(player.get_tracks(track.uri))
+            task.add_done_callback(_handle_task_result)
 
         embed.title = "Playlist Queued"
         embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks\n\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}'
