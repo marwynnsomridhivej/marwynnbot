@@ -186,12 +186,13 @@ class MBPlayer(DefaultPlayer):
     def evict_cache(query: str, clear_all: bool = False) -> discord.Embed:
         global _cache
         embed = discord.Embed(title="Query ", color=BLUE)
+        new_query = f"ytsearch:{query}" if not url_rx.match(query) else query
         if clear_all:
             _cache = {}
             embed.title = "Cache Cleared"
             embed.description = "The cache has been cleared. A backup has been made in JSON format"
-        elif _cache.get(query, None):
-            del _cache[query]
+        elif _cache.get(new_query, None):
+            del _cache[new_query]
             embed.title += "Evicted"
             embed.description = f"The query `{query}` has been evicted from MarwynnBot's global cache"
         else:
