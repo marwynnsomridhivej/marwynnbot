@@ -5,6 +5,7 @@ from asyncio.tasks import Task
 from typing import List, Union
 
 import discord
+from discord.colour import Color
 import lavalink
 from discord.ext import commands
 from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
@@ -16,6 +17,7 @@ SCARED_IDS: List[int]
 BYPASS_BIND = [
     "bind",
     "musiccacheinfo",
+    "musiccachelist",
     "musiccacheexport",
     "musiccacheevict",
     "musiccacheclear",
@@ -98,6 +100,20 @@ class Music(commands.Cog):
                       note="If `(query)` is unspecified, it will display general cache details")
     async def musiccacheinfo(self, ctx, *, query: str = None):
         return await ctx.channel.send(embed=MBPlayer.get_cache_info(query=query))
+
+    @commands.command(aliases=["mcl"],
+                      desc="List all cache files stored in cache directory",
+                      usage="musiccachelist",
+                      uperms=["Bot Owner Only"])
+    @commands.is_owner()
+    async def musiccachelist(self, ctx):
+        files = [name for name in reversed(sorted(os.listdir(os.path.abspath("./musiccache/"))))]
+        embed = discord.Embed(
+            title="Cache Files",
+            description = "\n".join([f"**{index}:** `{filename}` - {(os.path.getsize(os.path.abspath(f'./musiccache/{filename}')) / 1024):.2f}KB" for index, filename in enumerate(files, 1)]),
+            color=discord.Color.blue()
+        )
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=["mcexp"],
                       desc="Exports MarwynnBot's lavalink cache",

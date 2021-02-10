@@ -126,12 +126,13 @@ class MBPlayer(DefaultPlayer):
             os.mkdir(os.path.abspath(base))
 
         files = os.listdir(os.path.abspath(f"{base}"))
-        if len(files) > 20:
+        while len(files) >= 20:
             file = [name for name in sorted([name.replace(".json", "").replace(".mbcache", "") for name in files])][0]
             if os.path.exists(f"{base}{file}.json"):
                 os.remove(f"{base}{file}.json")
             else:
                 os.remove(f"{base}{file}.mbcache")
+            files = os.listdir(os.path.abspath(f"{base}"))
 
         if format == "json":
             async with async_open(os.path.abspath(f"{base}{filename}.json"), "wb") as jsonfile:
