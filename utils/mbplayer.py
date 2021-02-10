@@ -10,6 +10,8 @@ from aiofile import async_open
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
 
+from .musicutils import url_rx
+
 BLUE = discord.Color.blue()
 RED = discord.Color.dark_red()
 
@@ -187,7 +189,8 @@ class MBPlayer(DefaultPlayer):
                 f"**Expired:** {expired_size} quer{'ies' if expired_size != 1 else 'y'} ≈ {(100 * expired_size / cache_size):.2f}%",
             ])
         else:
-            entry = _cache.get(query, None)
+            new_query = "ytsearch:" + query if not url_rx.match(query) else query
+            entry = _cache.get(new_query, None)
             if entry is None:
                 embed.title = "Invalid Query"
                 embed.description = f"The query `{query}` could not be found in the cache"
