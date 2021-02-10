@@ -14,15 +14,6 @@ from utils.musicutils import *
 
 VALID_TS = re.compile(r"([\d]*:[\d]{1,2}:[\d]{1,2})|([\d]{1,2}:[\d]{1,2})|([\d]*)")
 SCARED_IDS: List[int]
-BYPASS_BIND = [
-    "bind",
-    "musiccacheinfo",
-    "musiccachelist",
-    "musiccacheexport",
-    "musiccacheevict",
-    "musiccacheclear",
-    "musiccacherestore",
-]
 
 
 class Music(commands.Cog):
@@ -72,7 +63,6 @@ class Music(commands.Cog):
     async def backup_cache(self):
         while True:
             await asyncio.sleep(300)
-            print("Backing Up Cache")
             await MBPlayer.export_cache(query=None, format="pickle")
 
     def cog_unload(self) -> None:
@@ -81,7 +71,7 @@ class Music(commands.Cog):
         self.bot.lavalink._event_hooks.clear()
 
     async def cog_check(self, ctx):
-        return True if ctx.command.name in BYPASS_BIND else await context.music_bind(ctx)
+        return True if ctx.command.name == "bind" else True if "musiccache" in ctx.command.name else await context.music_bind(ctx)
 
     async def connect_to(self, guild: Union[discord.Guild, int], channel: Union[discord.VoiceChannel, int, None], mute: bool = False, deafen: bool = True) -> None:
         if isinstance(guild, int):
@@ -110,7 +100,8 @@ class Music(commands.Cog):
         files = [name for name in reversed(sorted(os.listdir(os.path.abspath("./musiccache/"))))]
         embed = discord.Embed(
             title="Cache Files",
-            description = "\n".join([f"**{index}:** `{filename}` - {(os.path.getsize(os.path.abspath(f'./musiccache/{filename}')) / 1024):.2f}KB" for index, filename in enumerate(files, 1)]),
+            description="\n".join(
+                [f"**{index}:** `{filename}` - {(os.path.getsize(os.path.abspath(f'./musiccache/{filename}')) / 1024):.2f}KB" for index, filename in enumerate(files, 1)]),
             color=discord.Color.blue()
         )
         return await ctx.channel.send(embed=embed)
@@ -155,7 +146,16 @@ class Music(commands.Cog):
                       note="Incluce the extension")
     @commands.is_owner()
     async def musiccacherestore(self, ctx, filename: str):
-        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename))
+        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename, type="restore"))
+
+    @commands.command(aliases=["mcm"],
+                      desc="Merges current music cache with another cache file",
+                      usage="musiccachemerge [filename]",
+                      uperms=["Bot Owner Only"],
+                      note="Merging will not overwrite already present queries")
+    @commands.is_owner()
+    async def musiccachemerge(self, ctx, filename: str):
+        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename, type="merge"))
 
     @commands.command(desc="Binds the music commands to a channel",
                       usage="bind (channel)",
@@ -222,7 +222,7 @@ class Music(commands.Cog):
             else:
                 return await no_queue(ctx)
 
-        return await play_or_queue_tracks(ctx, player, query)
+        return await play_or_queue_tracks(self.bot, ctx, player, query)
 
     @commands.command(aliases=["q"],
                       desc="List the current queue or queue a song or playlist",
@@ -232,7 +232,7 @@ class Music(commands.Cog):
     async def queue(self, ctx, *, query: str = None):
         player = get_player(self.bot, ctx)
         if query is not None:
-            return await play_or_queue_tracks(ctx, player, query)
+            return await play_or_queue_tracks(self.bot, ctx, player, query)
 
         embed = discord.Embed(description="**Queue:**\n", color=discord.Color.blue())
         if player.is_playing:
