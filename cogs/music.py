@@ -183,7 +183,8 @@ class Music(commands.Cog):
         cache = player.get_cache()
         if query is None:
             for entry in (key for key in cache if cache[key]["data"] is None):
-                await player.get_tracks(entry, force_recache=True)
+                task = self.bot.loop.create_task(player.get_tracks(entry, force_recache=True))
+                task.add_done_callback(self._handle_task_result)
         elif query in cache:
             await player.get_tracks(f"ytsearch:{query}", force_recache=True)
         else:
