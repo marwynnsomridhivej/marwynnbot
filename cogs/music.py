@@ -1,5 +1,7 @@
+import asyncio
 import os
 import re
+from asyncio.tasks import Task
 from typing import List, Union
 
 import discord
@@ -24,8 +26,10 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot) -> None:
         self.bot = bot
         self.gcmds = GlobalCMDS(self.bot)
-        self.bot.loop.create_task(self.init_music(bot))
+        for func in [self.init_music, self.init_cache]:
+            self.bot.loop.create_task(func(bot))
         self.track_hook: function
+        self.tasks: List[Task] = []
 
     async def init_music(self, bot: commands.AutoShardedBot):
         global SCARED_IDS
@@ -44,7 +48,33 @@ class Music(commands.Cog):
         self.bot.lavalink.add_event_hook(self.track_hook)
         SCARED_IDS = [int(id) for id in os.getenv("SCARED_IDS").split(",")]
 
+    async def init_cache(self, bot: commands.AutoShardedBot):
+        await self.bot.wait_until_ready()
+        orig_filenames = [name for name in sorted(os.listdir(os.path.abspath("./musiccache")))]
+        without_extensions = [name.replace(".json", "").replace(".mbcache", "") for name in orig_filenames]
+        for cache_file in reversed(sorted(without_extensions)):
+            filename = cache_file + ".json"
+            if not os.path.exists(os.path.abspath(f"./musiccache/{filename}")):
+                filename = filename.replace(".json", ".mbcache")
+            embed = await MBPlayer.restore_cache(filename)
+            if "successfully" in embed.description:
+                print(f"[LAVALINK CACHE] Successfully restored cache state from file {filename}")
+                break
+        else:
+            print("[LAVALINK CACHE] Unable to automatically restore cache state")
+        self.tasks.append(
+            self.bot.loop.create_task(self.backup_cache())
+        )
+
+    async def backup_cache(self):
+        while True:
+            await asyncio.sleep(300)
+            print("Backing Up Cache")
+            await MBPlayer.export_cache(query=None, format="pickle")
+
     def cog_unload(self) -> None:
+        for task in self.tasks:
+            task.cancel()
         self.bot.lavalink._event_hooks.clear()
 
     async def cog_check(self, ctx):

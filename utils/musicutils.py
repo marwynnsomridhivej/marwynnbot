@@ -14,7 +14,7 @@ from lavalink.models import AudioTrack
 from utils.paginator import EmbedPaginator
 
 from . import EntryData, SubcommandHelp
-from .customerrors import EQBandError, EQGainError, EQGainMismatch
+from .customerrors import EQGainError, EQGainMismatch
 from .mbplayer import MBPlayer
 
 __all__ = (

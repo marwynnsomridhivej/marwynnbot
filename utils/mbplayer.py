@@ -125,6 +125,14 @@ class MBPlayer(DefaultPlayer):
         if not os.path.exists(os.path.abspath(base)):
             os.mkdir(os.path.abspath(base))
 
+        files = os.listdir(os.path.abspath(f"{base}"))
+        if len(files) > 20:
+            file = [name for name in sorted([name.replace(".json", "").replace(".mbcache", "") for name in files])][0]
+            if os.path.exists(f"{base}{file}.json"):
+                os.remove(f"{base}{file}.json")
+            else:
+                os.remove(f"{base}{file}.mbcache")
+
         if format == "json":
             async with async_open(os.path.abspath(f"{base}{filename}.json"), "wb") as jsonfile:
                 await jsonfile.write(json.dumps(export_cache).encode())
@@ -218,6 +226,18 @@ class MBPlayer(DefaultPlayer):
                     f"**Cached On:** {timestamp}",
                     f"**Expires:** {expire_at}",
                 ])
+                if data is not None and load_type in ["TRACK_LOADED", "SEARCH_RESULT"]:
+                    from .musicutils import track_duration, _get_track_thumbnail
+                    track = AudioTrack(data["tracks"][0], 0)
+                    embed.description += "\n\n" + "\n".join([
+                        f"**Video:** [{track.title}]({track.uri})",
+                        f"**Author:** {track.author}",
+                        f"**Duration:** {track_duration(track.duration)}",
+                        f"**Seek Compatible:** {'Yes' if track.is_seekable else 'No'}"
+                    ])
+                    embed.set_image(
+                        url=_get_track_thumbnail(track)
+                    )
         return embed
 
     async def seek(self, millisecond_amount: int, sign: str = None) -> Union[int, str]:
