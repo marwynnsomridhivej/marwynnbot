@@ -15,6 +15,7 @@ VALID_TS = re.compile(r"([\d]*:[\d]{1,2}:[\d]{1,2})|([\d]{1,2}:[\d]{1,2})|([\d]*
 SCARED_IDS: List[int]
 BYPASS_BIND = [
     "bind",
+    "musiccacheinfo",
     "musiccacheexport",
     "musiccacheevict",
     "musiccacheclear",
