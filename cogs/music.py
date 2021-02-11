@@ -1,14 +1,16 @@
 import asyncio
+import itertools
 import os
 import re
 from asyncio.tasks import Task
+from collections import deque
 from typing import List, Union
-from utils.mbclient import MBClient
 
 import discord
 from discord.ext import commands
 from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
                    customerrors, premium)
+from utils.mbclient import MBClient
 from utils.musicutils import *
 
 VALID_TS = re.compile(r"([\d]*:[\d]{1,2}:[\d]{1,2})|([\d]{1,2}:[\d]{1,2})|([\d]*)")
@@ -301,6 +303,67 @@ class Music(commands.Cog):
             embed=embed,
             description=description,
         ).paginate()
+
+    @commands.command(aliases=["uq"],
+                      desc="Remove specified items or ranges from queue",
+                      usage="unqueue (index | range)",
+                      note="Do `m!queue` to view the index of queued tracks.\n\nWhen specifying an index, you may specify only one number or comma "
+                      "separated values, so long as there is a corresponding item in queue for that number. For example, `1` and `1,2,4,8` are valid "
+                      "indeces, so long as the queue has at least `index` or `last value` songs queued."
+                      "\n\nWhen specifying a range, please separate the items with a dash character `-`, and make sure that the first number is less "
+                      "than the second. For example, `10 - 15` and `1-100` are valid ranges (given there are at least `second number` tracks queued), "
+                      "but `15 - 10` is not. Ranges are **INCLUSIVE ON BOTH ENDS**")
+    @ensure_voice()
+    async def unqueue(self, ctx, *, index_or_range):
+        embed = discord.Embed(title="Invalid Index or Range",
+                              description=f"{ctx.author.mention}, `{index_or_range}` is not a valid index or range",
+                              color=discord.Color.dark_red())
+        player = get_player(self.bot, ctx)
+        queue_length = len(player.queue)
+        try:
+            if "," in index_or_range:
+                index = [int(num) for num in index_or_range.replace(" ", "").split(",")]
+                if not all([1 <= num <= queue_length for num in index]):
+                    raise ValueError
+            else:
+                index = int(index_or_range)
+                if not 1 <= index <= queue_length:
+                    raise ValueError
+            spec_range = None
+        except ValueError:
+            try:
+                index = None
+                spec_range = [int(num) for num in index_or_range.replace(" ", "").split("-")]
+                if len(spec_range) != 2 or not all([1 <= val <= len(player.queue) for val in spec_range]) or spec_range[0] >= spec_range[1]:
+                    raise ValueError
+            except ValueError:
+                return await ctx.channel.send(embed=embed)
+
+        if index is not None and type(index) == int:
+            del player.queue[index - 1]
+            desc = f"queue item {index}"
+        elif index is not None and type(index) == list:
+            count = 0
+            desc = f"queue items {', '.join(str(num) for num in index)}"
+            for num in (_ - 1 for _ in index):
+                del player.queue[num - count]
+                count += 1
+        elif spec_range:
+            orig_range = spec_range
+            desc = f"queue items {orig_range[0]} through {orig_range[1]}"
+            if spec_range[1] == queue_length:
+                player.queue = deque(itertools.islice(player.queue, spec_range[0]))
+            else:
+                if spec_range[0] == 1:
+                    front_half = deque()
+                else:
+                    front_half = deque(itertools.islice(player.queue, 0, spec_range[0] - 1))
+                back_half = deque(itertools.islice(player.queue, spec_range[1] + 1, None))
+                player.queue = front_half + back_half
+        embed.title = f"Removed Queue {'Item' if index is not None else 'Range'}"
+        embed.description = f"{ctx.author.mention}, I've removed {desc}"
+        embed.color = discord.Color.blue()
+        return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=["qc", "clearqueue", "cq"],
                       desc="Clears the current queue",
