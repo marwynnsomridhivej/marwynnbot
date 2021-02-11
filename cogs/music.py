@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import os
+import pickle
 import re
 from asyncio.tasks import Task
 from collections import deque
@@ -8,8 +9,7 @@ from typing import List, Union
 
 import discord
 from discord.ext import commands
-from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
-                   customerrors, premium, MBCacheServerProtocol)
+from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context, customerrors, premium)
 from utils.mbclient import MBClient
 from utils.musicutils import *
 
@@ -21,7 +21,7 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot) -> None:
         self.bot = bot
         self.gcmds = GlobalCMDS(self.bot)
-        for func in [self.init_music, self.init_cache]:
+        for func in [self.init_music, self.init_cache, self.init_cache_sock]:
             self.bot.loop.create_task(func(bot))
         self.track_hook: function
         self.tasks: List[Task] = []
@@ -65,15 +65,28 @@ class Music(commands.Cog):
             self.bot.loop.create_task(self.backup_cache())
         )
 
+    @staticmethod
+    async def _add_to_queue(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        from utils.mbplayer import _cache
+        data = await reader.read()
+        unpickled: dict = pickle.loads(data)
+        query = unpickled["query"]
+        data = unpickled["data"]
+        if not query in _cache:
+            _cache[query] = data
+
     async def init_cache_sock(self, bot: commands.AutoShardedBot):
-        async with await self.bot.loop.create_server(
-            lambda: MBCacheServerProtocol(),
-            os.getenv("MBC_SOCK_HOST"),
-            int(os.getenv("MBC_SOCK_PORT")),
-        ) as server:
-            self.tasks.append(
-                self.bot.loop.create_task(server.serve_forever())
+        await self.bot.wait_until_ready()
+        try:
+            server = await asyncio.start_server(
+                self._add_to_queue,
+                host=os.getenv("MBC_SOCK_HOST"),
+                port=int(os.getenv("MBC_SOCK_PORT")),
             )
+            async with server:
+                await server.serve_forever()
+        except Exception:
+            pass
 
     async def backup_cache(self):
         while True:

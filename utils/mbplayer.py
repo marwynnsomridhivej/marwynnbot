@@ -11,7 +11,6 @@ import discord
 from aiofile import async_open
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
-from .protocols import MBCacheClientProtocol
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
@@ -116,16 +115,13 @@ class MBPlayer(DefaultPlayer):
                 "data": data,
             }
             loop = asyncio.get_running_loop()
-            on_con_lost = loop.create_future()
-            transport, protocol = await loop.create_connection(
-                lambda: MBCacheClientProtocol(data, on_con_lost),
-                os.getenv("MBC_CON_HOST"),
-                int(os.getenv("MBC_CON_PORT")),
+            _, writer = await asyncio.open_connection(
+                host=os.getenv("MBC_CON_HOST"),
+                port=int(os.getenv("MBC_CON_PORT")),
+                loop=loop,
             )
-            try:
-                await on_con_lost
-            finally:
-                transport.close()
+            writer.write(pickle.dumps(export))
+            writer.close()
         return _cache.get(query).get("data")
 
     @staticmethod
