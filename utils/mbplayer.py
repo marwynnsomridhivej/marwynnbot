@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import pickle
@@ -10,6 +11,7 @@ import discord
 from aiofile import async_open
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
+from .protocols import MBCacheClientProtocol
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 
@@ -102,12 +104,28 @@ class MBPlayer(DefaultPlayer):
             res_present = res and res.get("tracks")
             if res_present and res.get("loadType") != "PLAYLIST_LOADED":
                 res["tracks"] = [res["tracks"][0]]
-            _cache[query] = {
+            data = {
                 "data": res if res_present else None,
                 "timestamp": current_timestamp,
                 "cached_in": self.guild_id,
                 "expire_at": -1 if res_present else current_timestamp + 86400
             }
+            _cache[query] = data
+            export = {
+                "query": query,
+                "data": data,
+            }
+            loop = asyncio.get_running_loop()
+            on_con_lost = loop.create_future()
+            transport, protocol = await loop.create_connection(
+                lambda: MBCacheClientProtocol(data, on_con_lost),
+                os.getenv("MBC_CON_HOST"),
+                int(os.getenv("MBC_CON_PORT")),
+            )
+            try:
+                await on_con_lost
+            finally:
+                transport.close()
         return _cache.get(query).get("data")
 
     @staticmethod

@@ -30,7 +30,7 @@ class Music(commands.Cog):
         global SCARED_IDS
         await self.bot.wait_until_ready()
         async with self.bot.db.acquire() as con:
-            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint, panel_id bigint)")
+            await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint)")
             await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
         if not hasattr(bot, 'lavalink'):
             bot.lavalink = MBClient(self.bot.user.id)
@@ -39,7 +39,8 @@ class Music(commands.Cog):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")
             ports = [int(port) for port in os.getenv("LAVALINK_PORT").split(",")]
             for port in ports:
-                bot.lavalink.add_node(data[0], port, data[2], 'na', 'default-node', name=f"lavalink-{port}", reconnect_attempts=-1)
+                bot.lavalink.add_node(data[0], port, data[2], 'na', 'default-node',
+                                      name=f"lavalink-{port}", reconnect_attempts=-1)
             self.bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
         self.bot.lavalink = bot.lavalink
         self.bot.lavalink.add_event_hook(self.track_hook)
@@ -63,6 +64,16 @@ class Music(commands.Cog):
         self.tasks.append(
             self.bot.loop.create_task(self.backup_cache())
         )
+
+    async def init_cache_sock(self, bot: commands.AutoShardedBot):
+        async with await self.bot.loop.create_server(
+            lambda: MBCacheServerProtocol(),
+            os.getenv("MBC_SOCK_HOST"),
+            int(os.getenv("MBC_SOCKPORT")),
+        ) as server:
+            self.tasks.append(
+                self.bot.loop.create_task(server.serve_forever())
+            )
 
     async def backup_cache(self):
         while True:

@@ -11,4 +11,5 @@ from .musicutils import *
 from .objects import *
 from .paginator import *
 from .premium import *
+from .protocols import MBCacheClientProtocol, MBCacheServerProtocol
 from .setuppanel import *
