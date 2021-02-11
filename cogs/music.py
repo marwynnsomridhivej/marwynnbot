@@ -37,7 +37,9 @@ class Music(commands.Cog):
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
             if not all(data):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")
-            bot.lavalink.add_node(*data, 'na', 'default-node', name="lavalink", reconnect_attempts=-1)
+            ports = [int(port) for port in os.getenv("LAVALINK_PORT").split(",")]
+            for port in ports:
+                bot.lavalink.add_node(data[0], port, data[2], 'na', 'default-node', name=f"lavalink-{port}", reconnect_attempts=-1)
             self.bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
         self.bot.lavalink = bot.lavalink
         self.bot.lavalink.add_event_hook(self.track_hook)
