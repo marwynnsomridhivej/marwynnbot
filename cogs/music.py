@@ -9,7 +9,7 @@ from typing import List, Union
 import discord
 from discord.ext import commands
 from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
-                   customerrors, premium)
+                   customerrors, premium, MBCacheServerProtocol)
 from utils.mbclient import MBClient
 from utils.musicutils import *
 
