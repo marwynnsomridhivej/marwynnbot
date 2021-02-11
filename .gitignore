@@ -5,6 +5,7 @@ logs
 __pycache__
 pokepy_cache
 musiccache
+lavalink
 /db
 .env
 *.pyc
