@@ -120,7 +120,7 @@ class MBPlayer(DefaultPlayer):
         global _cache
         embed = discord.Embed(title=f"Cache Export - {format.upper()}", color=BLUE)
         export_cache = _cache.get(query) if query is not None else _cache
-        base = f"./musiccache/"
+        base = os.getenv("MBC_LOCATION")
         filename = f"MBC_{f'query:{query}_' if query else ''}{int(datetime.now().timestamp())}"
         if not export_cache:
             embed.description = f"The query `{query}` is not in cache" if query is not None else "The cache has not been built"
@@ -158,8 +158,9 @@ class MBPlayer(DefaultPlayer):
     async def restore_cache(filename: str, type: str = "restore") -> discord.Embed:
         global _cache
         embed = discord.Embed(title=f"Cache {type.title()} ", color=BLUE)
+        cache_path = os.getenv("MBC_LOCATION")
         try:
-            async with async_open(os.path.abspath(f"./musiccache/{filename}"), "rb") as backup:
+            async with async_open(os.path.abspath(f"{cache_path}/{filename}"), "rb") as backup:
                 if filename.lower().endswith(".json"):
                     bak = json.loads(await backup.read())
                 elif filename.lower().endswith(".mbcache"):

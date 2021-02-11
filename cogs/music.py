@@ -47,11 +47,12 @@ class Music(commands.Cog):
 
     async def init_cache(self, bot: commands.AutoShardedBot):
         await self.bot.wait_until_ready()
-        orig_filenames = [name for name in sorted(os.listdir(os.path.abspath("./musiccache")))]
+        cache_path = os.getenv("MBC_LOCATION")
+        orig_filenames = [name for name in sorted(os.listdir(os.path.abspath(cache_path)))]
         without_extensions = [name.replace(".json", "").replace(".mbcache", "") for name in orig_filenames]
         for cache_file in reversed(sorted(without_extensions)):
             filename = cache_file + ".json"
-            if not os.path.exists(os.path.abspath(f"./musiccache/{filename}")):
+            if not os.path.exists(os.path.abspath(f"{cache_path}/{filename}")):
                 filename = filename.replace(".json", ".mbcache")
             embed = await MBPlayer.restore_cache(filename)
             if "successfully" in embed.description:
@@ -109,11 +110,12 @@ class Music(commands.Cog):
                       uperms=["Bot Owner Only"])
     @commands.is_owner()
     async def musiccachelist(self, ctx):
-        files = [name for name in reversed(sorted(os.listdir(os.path.abspath("./musiccache/"))))]
+        cache_path = os.getenv("MBC_LOCATION")
+        files = [name for name in reversed(sorted(os.listdir(os.path.abspath(cache_path))))]
         embed = discord.Embed(
             title="Cache Files",
             description="\n".join(
-                [f"**{index}:** `{filename}` - {(os.path.getsize(os.path.abspath(f'./musiccache/{filename}')) / 1024):.2f}KB" for index, filename in enumerate(files, 1)]),
+                [f"**{index}:** `{filename}` - {(os.path.getsize(os.path.abspath(f'{cache_path}/{filename}')) / 1024):.2f}KB" for index, filename in enumerate(files, 1)]),
             color=discord.Color.blue()
         )
         return await ctx.channel.send(embed=embed)
