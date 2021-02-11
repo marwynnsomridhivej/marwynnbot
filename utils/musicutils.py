@@ -11,21 +11,25 @@ from discord.errors import Forbidden, HTTPException, NotFound
 from discord.ext.commands import AutoShardedBot, Context
 from lavalink.models import AudioTrack
 
-from utils.paginator import EmbedPaginator
-
 from . import EntryData, SubcommandHelp
 from .customerrors import EQGainError, EQGainMismatch
 from .mbplayer import MBPlayer
+from .paginator import EmbedPaginator
+
+_YES = "✅"
+_NO = "❌"
 
 __all__ = (
     "MBPlayer",
     "ensure_voice",
     "check_perms",
+    "get_now_playing_embed",
     "track_hook",
     "get_player",
     "no_queue",
     "total_queue_duration",
     "track_duration",
+    "get_track_thumbnail",
     "process_votes",
     "prep_play_queue_playlist",
     "play_or_queue_tracks",
@@ -158,6 +162,50 @@ def check_perms(req_perms: dict, mode: str = "all"):
     return wrapper
 
 
+def get_now_playing_embed(bot: AutoShardedBot, player: MBPlayer, track: AudioTrack = None) -> discord.Embed:
+    if track is None:
+        track = player.current
+    if player.current is None:
+        desc = "Not currently playing anything, "
+        desc += "queue up tracks and do `m!play` to start playing!" if not player.queue else "do `m!play` to begin playing from the current queue"
+        return discord.Embed(
+            description=desc,
+            color=BLUE
+        ).set_author(
+            name="Now Playing"
+        )
+
+    requester: discord.User = bot.get_user(track.requester)
+    queue_length = len(player.queue)
+    queue_rem = f"{queue_length} Track{'s' if queue_length != 1 else ''} - about {_get_queue_total_duration(player.queue)}" if queue_length > 0 else "nothing"
+    loop_count = player.loop_count
+    loop_msg = f"\nLooped {loop_count} time{'s' if loop_count != 1 else ''}" if loop_count >= 1 else ''
+    return discord.Embed(
+        description=f"**[{track.title}]({track.uri})**",
+        color=BLUE
+    ).set_image(
+        url=_get_track_thumbnail(track)
+    ).add_field(
+        name="Channel",
+        value=track.author,
+    ).add_field(
+        name="Song Duration",
+        value=_get_track_duration_timestamp(track.duration),
+    ).add_field(
+        name="Controls Compatiability",
+        value="\n".join([
+             f"Seekable: {_YES if track.is_seekable else _NO}",
+            f"Livestream: {_YES if track.stream else _NO}"
+        ])
+    ).set_author(
+        name="Now Playing",
+        icon_url=requester.avatar_url,
+    ).set_footer(
+        text="\n".join([f"Requested by: {requester.display_name}", f"Current Queue: {queue_rem}", ]) + loop_msg,
+        icon_url=requester.avatar_url,
+    )
+
+
 async def track_hook(self, event: lavalink.events.Event):
     if isinstance(event, lavalink.events.QueueEndEvent):
         await self.connect_to(int(event.player.guild_id), None)
@@ -171,27 +219,11 @@ async def track_hook(self, event: lavalink.events.Event):
     elif isinstance(event, lavalink.events.NodeDisconnectedEvent):
         print(f'Disconnected from Node "{event.node.name}" with code {event.code}, reason: {event.reason}')
     elif isinstance(event, lavalink.events.TrackStartEvent):
-        text_channel: discord.TextChannel = event.player.text_channel
-        track: AudioTrack = event.track
-        requester: discord.User = self.bot.get_user(track.requester)
-        queue_length = len(event.player.queue)
-        queue_rem = f"{queue_length} Track{'s' if queue_length != 1 else ''} - about {_get_queue_total_duration(event.player.queue)}" if queue_length > 0 else "nothing"
-        loop_count = event.player.loop_count
-        embed = discord.Embed(
-            title=f"Now Playing:",
-            description=f"[{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}",
-            color=BLUE
-        ).set_footer(
-            text="\n".join([
-                f"Requested by: {requester.display_name}",
-                f"Author: {track.author}",
-                f"Current Queue: {queue_rem}",
-            ]) + f"\nLooped {loop_count} time{'s' if loop_count != 1 else ''}" if loop_count >= 1 else '',
-            icon_url=requester.avatar_url
-        ).set_image(
-            url=_get_track_thumbnail(track)
-        )
-        await text_channel.send(embed=embed)
+        await event.player.text_channel.send(embed=get_now_playing_embed(
+            self.bot,
+            event.player,
+            track=event.track
+        ))
     else:
         pass
 
@@ -317,15 +349,18 @@ def _get_track_thumbnail(track: Union[AudioTrack, List[AudioTrack]]) -> str:
     return f"http://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg" if track else ""
 
 
+get_track_thumbnail = _get_track_thumbnail
+
+
 def _process_identifier(identifier: str) -> Tuple[int, str, str]:
     try:
         id = int(identifier)
         name = None
-        not_found = "an id of {id}"
+        not_found = f"an id of {id}"
     except ValueError:
         id = None
         name = identifier
-        not_found = "a name of {name}"
+        not_found = f"a name of {name}"
     return id, name, not_found
 
 
@@ -334,6 +369,25 @@ def _handle_task_result(task: asyncio.Task) -> None:
         task.result()
     except Exception:
         pass
+
+
+def _get_estimated_time_till_play(player: MBPlayer, track: AudioTrack) -> str:
+    if len(player.queue) <= 1:
+        if player.current:
+            return _get_track_duration_timestamp(int(player.position))
+        return "Once player starts playing"
+    else:
+        if player.queue[-1].identifier == track.identifier:
+            before = player.queue.copy()
+            before.pop()
+        else:
+            before = []
+            for trk in player.queue:
+                if trk.identifier == track.identifier:
+                    break
+                before.append(trk)
+        timestamp = player.position + sum(trk.duration for trk in before)
+        return _get_track_duration_timestamp(int(timestamp))
 
 
 async def play_or_queue_tracks(bot: AutoShardedBot,
@@ -373,23 +427,30 @@ async def play_or_queue_tracks(bot: AutoShardedBot,
     pag = None
     if results['loadType'] == "PLAYLIST_LOADED":
         tracks = [AudioTrack(data, ctx.author.id) for data in results.get("tracks")]
-        tracklist = [
-            f"[{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}" for track in tracks
-        ]
+        tracklist = []
         for track in tracks:
+            tracklist.append(
+                "\n".join([
+                    f"**[{track.title}]({track.uri})**",
+                    f"**Channel:** {track.author}",
+                    f"**Song Duration:** {_get_track_duration_timestamp(track.duration)}\n"
+                ])
+            )
             player.add(requester=ctx.author.id, track=track)
             task = bot.loop.create_task(player.get_tracks(track.uri))
             task.add_done_callback(_handle_task_result)
 
-        embed.title = "Playlist Queued"
-        embed.description = f'**[{results["playlistInfo"]["name"]}]({query})** - {len(tracks)} tracks\n\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}'
+        embed.description = f'**[{results["playlistInfo"]["name"]}]({query})\nSongs: {len(tracks)}\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in tracks))}**\n\n'
         embed.set_image(
             url=_get_track_thumbnail(tracks)
+        ).set_author(
+            name="Playlist Queued",
+            icon_url=ctx.author.avatar_url,
         ).set_footer(text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}")
         pag = EmbedPaginator(
             ctx,
             entries=tracklist,
-            per_page=10,
+            per_page=5,
             show_entry_count=False,
             embed=embed,
             description=embed.description,
@@ -398,12 +459,24 @@ async def play_or_queue_tracks(bot: AutoShardedBot,
     else:
         track = AudioTrack(results['tracks'][0], ctx.author.id)
         player.add(requester=ctx.author.id, track=track)
-        embed.title = "Track Queued"
-        embed.description = f"**1:** [{track.title}]({track.uri}) - {track.author} - {_get_track_duration_timestamp(track.duration)}"
+        embed.description = f"**[{track.title}]({track.uri})**"
         embed.set_image(
             url=_get_track_thumbnail(track)
+        ).add_field(
+            name="Channel",
+            value=track.author,
+        ).add_field(
+            name="Song Duration",
+            value=_get_track_duration_timestamp(track.duration),
+        ).add_field(
+            name="Estimated Time Until Playing",
+            value=_get_estimated_time_till_play(player, track),
+        ).add_field(
+            name="Position in Queue",
+            value=len(player.queue),
         ).set_author(
-            name=f"Author: {track.author}"
+            name="Track Queued",
+            icon_url=ctx.author.avatar_url
         ).set_footer(
             text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}",
             icon_url=ctx.author.avatar_url,
@@ -655,18 +728,25 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
             queue.append(track)
             successful.append(track)
 
-    embed = discord.Embed(title=f"{playlist.name} Queued", color=BLUE)
+    embed = discord.Embed(color=BLUE)
     if len(failed) == len(playlist.urls):
         embed.title = f"Unable to Queue {playlist.name}"
         embed.description = f"{ctx.author.mention}, none of the tracks in the playlist were able to be found"
         embed.color = RED
     else:
         user: discord.User = bot.get_user(playlist.user_id)
-        entries = [f" [{track.title}]({track.uri}) - {track.author}" for track in successful]
+        entries = [
+            "\n".join([
+                f"**[{track.title}]({track.uri})**",
+                f"**Channel:** {track.author}",
+                f"**Song Duration:** {_get_track_duration_timestamp(track.duration)}\n"
+            ]) for track in successful
+        ]
+        embed.description = f'**ID: {playlist.id}\nPlaylist by: {user.mention}\nSongs: {len(successful)}\nDuration: {_get_track_duration_timestamp(sum(track.duration for track in successful))}**\n\n'
         embed.set_image(
             url=_get_track_thumbnail(successful[0])
         ).set_author(
-            name=f"Playlist by: {user.display_name}",
+            name=f"Playlist \"{playlist.name}\" Queued",
             icon_url=user.avatar_url
         ).set_footer(
             text=f"Requested by: {ctx.author.display_name}\nQueue Duration: {_get_queue_total_duration(queue)}",
@@ -674,7 +754,7 @@ async def play_or_queue_playlist(bot: AutoShardedBot,
         )
         pag = EmbedPaginator(ctx,
                              entries=entries,
-                             per_page=10,
+                             per_page=5,
                              show_entry_count=False,
                              embed=embed,
                              description=embed.description,
@@ -721,8 +801,6 @@ async def get_playlist(self,
     if not entries:
         return None
     elif ret == "all":
-        return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"]) for record in entries]
-    elif ret == "all-info":
         track_data = await _get_playlist_tracks_data(self.bot, player, entries)
         return [Playlist(record["playlist_name"], record["urls"], record["user_id"], record["id"], tracks=tracks) for record, tracks in zip(entries, track_data)]
     elif ret == "url":
@@ -733,7 +811,7 @@ async def get_playlist(self,
         if len(entries) != 1:
             raise ValueError(f"Playlist Query has returned {len(entries)} entries, supposed to return just 1")
         playlist = entries[0]
-        return Playlist(playlist["playlist_name"], playlist["urls"], playlist["user_id"], playlist["user_id"])
+        return Playlist(playlist["playlist_name"], playlist["urls"], playlist["user_id"], playlist["id"])
     else:
         return None
 

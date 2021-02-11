@@ -121,7 +121,7 @@ class MBPlayer(DefaultPlayer):
         embed = discord.Embed(title=f"Cache Export - {format.upper()}", color=BLUE)
         export_cache = _cache.get(query) if query is not None else _cache
         base = f"./musiccache/"
-        filename = f"MarwynnBot_Lavalink_Cache_{datetime.now().timestamp()}"
+        filename = f"MBC_{f'query:{query}_' if query else ''}{int(datetime.now().timestamp())}"
         if not export_cache:
             embed.description = f"The query `{query}` is not in cache" if query is not None else "The cache has not been built"
             embed.color = RED

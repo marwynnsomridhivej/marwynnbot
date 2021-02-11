@@ -258,6 +258,13 @@ class Music(commands.Cog):
 
         return await play_or_queue_tracks(self.bot, ctx, player, query)
 
+    @commands.command(aliases=["np"],
+                      desc="Shows the currently playing song, if any",
+                      usage="nowplaying")
+    @ensure_voice()
+    async def nowplaying(self, ctx):
+        return await ctx.channel.send(embed=get_now_playing_embed(self.bot, get_player(self.bot, ctx)))
+
     @commands.command(aliases=["q"],
                       desc="List the current queue or queue a song or playlist",
                       usage="queue (query)",
@@ -268,27 +275,31 @@ class Music(commands.Cog):
         if query is not None:
             return await play_or_queue_tracks(self.bot, ctx, player, query)
 
-        embed = discord.Embed(description="**Queue:**\n", color=discord.Color.blue())
-        if player.is_playing:
-            embed.description = f"**Now Playing:** [{player.current.title}]({player.current.uri})\n\n" + \
-                embed.description
-        queue_length = len(player.queue)
-        title_extra = f": {queue_length} Track{'s' if queue_length != 1 else ''}" if queue_length else ""
-        embed.title = f"Current Queue{title_extra}"
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.title = f"Current Queue"
+        total_duration_millis = sum(trk.duration for trk in player.queue) + \
+            int(player.current.duration if player.current else 0) - player.position
 
-        description = [
-            f"[{track.title}]({track.uri}) - {track.author} - {track_duration(track.duration)}" for track in player.queue] if player.queue else ["Nothing queued"]
-        embed.set_author(
-            name=f"Queue Duration: {total_queue_duration(player.queue)}",
-            icon_url=ctx.me.avatar_url
-        )
+        description = "\n".join([
+            f"**Songs:** {len(player.queue)}",
+            f"**Estimated Playtime Remaining:** {track_duration(total_duration_millis)}\n\n",
+        ])
+        entries = [
+            "\n".join([
+                f"**[{track.title}]({track.uri})**",
+                f"**Channel:** {track.author}",
+                f"**Song Duration:** {track_duration(track.duration)}",
+                f"**Requester:** {self.bot.get_user(track.requester).mention if self.bot.get_user(track.requester) else 'Unknown'}\n",
+            ]) for track in player.queue
+        ] if player.queue else ["Nothing Queued"]
+        embed.set_image(url=get_track_thumbnail(player.queue))
         return await EmbedPaginator(
             ctx,
-            entries=description,
-            per_page=10,
+            entries=entries,
+            per_page=5,
             show_entry_count=True,
             embed=embed,
-            description=embed.description
+            description=description,
         ).paginate()
 
     @commands.command(aliases=["qc", "clearqueue", "cq"],
@@ -362,7 +373,8 @@ class Music(commands.Cog):
         )
         return await ctx.channel.send(embed=embed)
 
-    @commands.command(desc="Adjusts the music player volume",
+    @commands.command(aliases=["vol"],
+                      desc="Adjusts the music player volume",
                       usage="volume (0 - 100)",
                       uperms=["Manage Server` or `Mute Members` or `Deafen Members` or `Move Members"],
                       note="Any volume adjustment will affect the relative volume for everyone currently connected in the voice channel")
@@ -378,10 +390,14 @@ class Music(commands.Cog):
         embed = discord.Embed(title="Current Player Volume",
                               color=discord.Color.blue())
         if amount is None:
-            embed.description = f"Player volume is currently {player.volume}%"
+            embed.description = f"Player volume is currently {player.volume}%{'. Nice' if player.volume == 69 else ''}```{str('|' * (player.volume // 4)) or ' '}```"
         elif 0 <= amount <= 100:
             await player.set_volume(amount)
-            embed.description = f"Player volume has been set to {player.volume}%"
+            embed.description = f"Player volume has been set to {player.volume}%{'. Nice' if player.volume == 69 else ''}```{str('|' * (player.volume // 4)) or ' '}```"
+            embed.set_footer(
+                text=f"Requested by: {ctx.author.display_name}",
+                icon_url=ctx.author.avatar_url
+            )
         else:
             embed.title = "Invalid Volume Setting"
             embed.description = f"{ctx.author.mention}, the volume must be between 0 and 100"
@@ -618,53 +634,69 @@ m!equaliser all 0
     @playlist.command(name="list",
                       aliases=["ls"])
     async def playlist_list(self, ctx, *, identifier: str = None):
-        embed = discord.Embed(title="Your Playlists 🎶" if not identifier else "Playlist Details 🎶",
+        embed = discord.Embed(title="Your Playlists" if not identifier else "Playlist Details",
                               color=discord.Color.blue())
         loading_msg: discord.Message = await ctx.channel.send(embed=discord.Embed(
             title="Loading Playlist Details...",
             description=f"{ctx.author.mention}, depending on the size of your playlist and if it is in cache, this may take a while. Please be patient...",
             color=discord.Color.blue()
         )) if identifier is not None else None
-        playlists = await get_playlist(self, ctx, identifier=identifier, ret=f"all{'-info' if identifier is not None else ''}")
+        playlists = await get_playlist(self, ctx, identifier=identifier, ret="all")
         if not playlists:
             embed.description = f"{ctx.author.mention}, you don't have any saved playlists" if not identifier else f"{ctx.author.mention}, I could not find anything for the identifier ```{identifier}```"
             return await loading_msg.edit(embed=embed)
 
         if identifier:
             playlist = playlists[0]
+            valid_tracks = [track for track in playlist.tracks if track]
             description = "\n".join([
                 f"**ID:** {playlist.id}",
                 f"**Name:** {playlist.name}",
-                f"**Author:** <@{playlist.user_id}>",
-                f"**Duration:** {total_queue_duration(playlist.tracks)}"
+                f"**Playlist by:** <@{playlist.user_id}>",
+                f"**Songs:** {len(valid_tracks)}",
+                f"**Duration:** {total_queue_duration(valid_tracks)}"
             ]) + "\n\n"
             entries = [
-                f"[{track.title}]({track.uri}) - {track.author} - [{track_duration(track.duration)}]" if track else "No Data Available" for track in playlist.tracks
+                "\n".join([
+                    f"**[{track.title}]({track.uri})**",
+                    f"**Channel:** {track.author}",
+                    f"**Song Duration:** {track_duration(track.duration)}\n",
+                ]) for track in valid_tracks
             ]
+            embed.set_image(url=get_track_thumbnail(valid_tracks))
             pag = EmbedPaginator(
                 ctx,
                 entries=entries,
-                per_page=10,
+                per_page=5,
                 show_entry_count=True,
                 embed=embed,
                 description=description,
                 provided_message=loading_msg
             )
         else:
-            template = "**{}:** *ID: {}* - {} Track{} 💽"
+            embed.description = "\n".join([
+                f"Amount: `{len(playlists)}`",
+                f"Combined Duration: `{total_queue_duration([track for playlist in playlists for track in playlist.tracks])}`"
+            ])
             entries = [
                 (
                     playlist.name,
-                    template.format(
-                        index,
-                        playlist.id,
-                        len(playlist.urls),
-                        's' if len(playlist.urls) != 1 else ''
-                    ),
-                    False
-                ) for index, playlist in enumerate(playlists, 1)
+                    "\n".join([
+                        f"ID: `{playlist.id}`",
+                        f"Songs: `{len([track for track in playlist.tracks if track])}`",
+                        f"Duration: `{total_queue_duration(playlist.tracks)}`",
+                    ]),
+                    True,
+                ) for playlist in playlists
             ]
-            pag = FieldPaginator(ctx, entries=entries, embed=embed)
+            embed.set_thumbnail(url=ctx.author.avatar_url)
+            pag = FieldPaginator(
+                ctx,
+                entries=entries,
+                per_page=6,
+                show_entry_count=True,
+                embed=embed
+            )
         await pag.paginate()
 
     @premium.is_premium()
@@ -673,7 +705,8 @@ m!equaliser all 0
     @ensure_voice(should_connect=True)
     async def playlist_queue(self, ctx, *, identifier: str):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
-        return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist)
+        if playlist:
+            return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist)
 
     @premium.is_premium()
     @playlist.command(name="play",
@@ -681,7 +714,8 @@ m!equaliser all 0
     @ensure_voice(should_connect=True)
     async def playlist_play(self, ctx, *, identifier: str):
         playlist = await prep_play_queue_playlist(self, ctx, identifier)
-        return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist, play=True)
+        if playlist:
+            return await play_or_queue_playlist(self.bot, ctx, get_player(self.bot, ctx), playlist, play=True)
 
     @premium.is_premium()
     @playlist.command(name="save",
@@ -692,6 +726,11 @@ m!equaliser all 0
                               color=discord.Color.blue())
         message = await ctx.channel.send(embed=embed)
         player = get_player(self.bot, ctx)
+        if urls is None and not player.queue:
+            embed.title = "Playlist Save Failed"
+            embed.description = f"{ctx.author.mention}, there are no tracks in queue to save"
+            embed.color = discord.Color.dark_red()
+            return await message.edit(embed=embed)
         return await save_playlist(self, ctx, urls.split(",") if urls else [track.uri for track in player.queue], message)
 
     @premium.is_premium()
