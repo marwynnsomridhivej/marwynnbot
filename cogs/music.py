@@ -69,7 +69,7 @@ class Music(commands.Cog):
         async with await self.bot.loop.create_server(
             lambda: MBCacheServerProtocol(),
             os.getenv("MBC_SOCK_HOST"),
-            int(os.getenv("MBC_SOCKPORT")),
+            int(os.getenv("MBC_SOCK_PORT")),
         ) as server:
             self.tasks.append(
                 self.bot.loop.create_task(server.serve_forever())
