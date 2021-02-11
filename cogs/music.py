@@ -69,7 +69,11 @@ class Music(commands.Cog):
     async def _add_to_queue(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         from utils.mbplayer import _cache
         data = await reader.read()
-        unpickled: dict = pickle.loads(data)
+        try:
+            unpickled: dict = pickle.loads(data)
+        except Exception:
+            print("Received invalid data")
+            return
         query = unpickled["query"]
         data = unpickled["data"]
         if not query in _cache:
