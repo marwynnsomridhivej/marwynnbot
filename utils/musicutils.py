@@ -907,7 +907,7 @@ async def delete_playlist(self, ctx: Context, identifier: str) -> discord.Messag
 
 def check_gain(ctx: Context, band: List[int], gain: str) -> Union[List[float], float]:
     if gain is None:
-        return [0.00 for _ in range(len(band))]
+        return [0.00 for _ in range(band if type(band) == int else len(band))]
     else:
         try:
             if not "," in gain:
