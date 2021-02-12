@@ -208,7 +208,7 @@ class MBPlayer(DefaultPlayer):
         if clear_all:
             _cache = {}
             embed.title = "Cache Cleared"
-            embed.description = "The cache has been cleared. A backup has been made in JSON format"
+            embed.description = "The cache has been cleared. A backup has been made in PICKLE format"
         elif _cache.get(new_query, None):
             del _cache[new_query]
             embed.title += "Evicted"

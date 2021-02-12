@@ -29,7 +29,7 @@ class MBClient(Client):
             timeout=aiohttp.ClientTimeout(total=None)
         )
 
-    async def __get_tracks(self, query: str, guild_id: int, cache: dict) -> Dict:
+    async def __get_tracks(self, query: str, guild_id: int, cache: dict, loop) -> Dict:
         current_timestamp = int(datetime.now().timestamp())
         res = await self.get_tracks(query, node=None)
         res_present = res and res.get("tracks")
@@ -47,13 +47,13 @@ class MBClient(Client):
             "data": data,
         }
         try:
-            loop = asyncio.get_running_loop()
             _, writer = await asyncio.open_connection(
                 host=os.getenv("MBC_CON_HOST"),
                 port=int(os.getenv("MBC_CON_PORT")),
                 loop=loop,
             )
             writer.write(pickle.dumps(export))
+            await writer.drain()
             writer.close()
         except Exception:
             pass
@@ -68,8 +68,8 @@ class MBClient(Client):
 
     async def efficient_cache_rebuild(self, guild_id: int, future: asyncio.Future):
         loop = asyncio.get_running_loop()
-        cache = MBPlayer.get_cache()
+        from .mbplayer import _cache as cache
         for query in cache:
-            task = loop.create_task(self.__get_tracks(query, guild_id, cache))
+            task = loop.create_task(self.__get_tracks(query, guild_id, cache, loop))
             task.add_done_callback(self._handle_task_result)
         future.set_result(True)

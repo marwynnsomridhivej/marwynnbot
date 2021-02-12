@@ -65,9 +65,9 @@ class Music(commands.Cog):
                 break
         else:
             print("[LAVALINK CACHE] Unable to automatically restore cache state")
-        self.tasks.append(
-            self.bot.loop.create_task(self.backup_cache())
-        )
+        task = self.bot.loop.create_task(self.backup_cache())
+        task.add_done_callback(self._handle_task_result)
+        self.tasks.append(task)
 
     @staticmethod
     async def _add_to_queue(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -91,10 +91,13 @@ class Music(commands.Cog):
                 host=os.getenv("MBC_SOCK_HOST"),
                 port=int(os.getenv("MBC_SOCK_PORT")),
             )
+            print(f"[CACHE SOCKET] Serving on {server.sockets[0].getsockname()}")
             async with server:
-                await server.serve_forever()
-        except Exception:
-            pass
+                self.tasks.append(
+                    self.bot.loop.create_task(server.serve_forever())
+                )
+        except Exception as e:
+            print(f"[CACHE SOCKET] An exception occurred: {e!r}")
 
     async def backup_cache(self):
         while True:
@@ -182,7 +185,7 @@ class Music(commands.Cog):
                       note="A backup of the current cache will be made in JSON format")
     @commands.is_owner()
     async def musiccacheclear(self, ctx):
-        await MBPlayer.export_cache()
+        await MBPlayer.export_cache(format="pickle")
         return await ctx.channel.send(embed=MBPlayer.evict_cache("", clear_all=True))
 
     @commands.command(aliases=["mcr"],
