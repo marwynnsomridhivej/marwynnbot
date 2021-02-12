@@ -93,9 +93,7 @@ class Music(commands.Cog):
             )
             print(f"[CACHE SOCKET] Serving on {server.sockets[0].getsockname()}")
             async with server:
-                self.tasks.append(
-                    self.bot.loop.create_task(server.serve_forever())
-                )
+                await server.serve_forever()
         except Exception as e:
             print(f"[CACHE SOCKET] An exception occurred: {e!r}")
 
