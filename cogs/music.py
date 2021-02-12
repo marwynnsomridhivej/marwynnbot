@@ -5,11 +5,13 @@ import pickle
 import re
 from asyncio.tasks import Task
 from collections import deque
+from datetime import datetime
 from typing import List, Union
 
 import discord
 from discord.ext import commands
-from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context, customerrors, premium)
+from utils import (EmbedPaginator, FieldPaginator, GlobalCMDS, context,
+                   customerrors, premium)
 from utils.mbclient import MBClient
 from utils.musicutils import *
 
@@ -25,6 +27,7 @@ class Music(commands.Cog):
             self.bot.loop.create_task(func(bot))
         self.track_hook: function
         self.tasks: List[Task] = []
+        self.lavalink: MBClient = None
 
     async def init_music(self, bot: commands.AutoShardedBot):
         global SCARED_IDS
@@ -44,6 +47,7 @@ class Music(commands.Cog):
             self.bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
         self.bot.lavalink = bot.lavalink
         self.bot.lavalink.add_event_hook(self.track_hook)
+        self.lavalink = self.bot.lavalink
         SCARED_IDS = [int(id) for id in os.getenv("SCARED_IDS").split(",")]
 
     async def init_cache(self, bot: commands.AutoShardedBot):
@@ -204,6 +208,7 @@ class Music(commands.Cog):
                       usage="musiccachereload (query)",
                       uperms=["Bot Owner Only"],
                       note="If `(query)` is unspecified, it will reload the cache for all entries with no data")
+    @commands.is_owner()
     async def musiccachereload(self, ctx, *, query: str = None):
         embed = discord.Embed(title="Reloading Cache...",
                               description=f"{ctx.author.mention}, depending on how many entries are found, this may take a while. Please be patient...",
@@ -223,6 +228,30 @@ class Music(commands.Cog):
             await player.get_tracks(f"ytsearch:{query}", force_recache=True)
         else:
             embed.description = f"{ctx.author.mention}, I could not find an entry for ```{query}```"
+        return await ctx.channel.send(embed=embed)
+
+    @commands.command(aliases=["mcrb"],
+                      desc="Rebuilds the cache",
+                      usage="musiccacherebuild",
+                      uperms=["Bot Owner Only"])
+    @commands.is_owner()
+    async def musiccacherebuild(self, ctx):
+        embed = discord.Embed(
+            title="Queuing Recache...",
+            description=f"{ctx.author.mention}, I am submitting all queries in cache for recache. Depending on the size of the cache, this may take a while. Please be patient...",
+            color=discord.Color.blue()
+        )
+        start_time = int(datetime.now().timestamp())
+        loading = await ctx.channel.send(embed=embed)
+        fut = self.bot.loop.create_future()
+        embed.title = "Rebuilding Cache..."
+        embed.description = f"{ctx.author.mention}, I've queued all queries in cache for recache. Depending on the size of the cache, this may take a long while. Please be extremely patient..."
+        now = int(datetime.now().timestamp())
+        await loading.edit(embed=embed) if now - start_time <= 30 else await ctx.channel.send(embed=embed)
+        await self.lavalink.efficient_cache_rebuild(ctx.guild.id, fut)
+        await fut
+        embed.title = "Cache Rebuild Completed"
+        embed.description = f"{ctx.author.mention}, the cache has been successfully rebuilt"
         return await ctx.channel.send(embed=embed)
 
     @commands.command(desc="Binds the music commands to a channel",

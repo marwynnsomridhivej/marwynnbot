@@ -115,13 +115,16 @@ class MBPlayer(DefaultPlayer):
                 "data": data,
             }
             loop = asyncio.get_running_loop()
-            _, writer = await asyncio.open_connection(
-                host=os.getenv("MBC_CON_HOST"),
-                port=int(os.getenv("MBC_CON_PORT")),
-                loop=loop,
-            )
-            writer.write(pickle.dumps(export))
-            writer.close()
+            try:
+                _, writer = await asyncio.open_connection(
+                    host=os.getenv("MBC_CON_HOST"),
+                    port=int(os.getenv("MBC_CON_PORT")),
+                    loop=loop,
+                )
+                writer.write(pickle.dumps(export))
+                writer.close()
+            except Exception:
+                pass
         return _cache.get(query).get("data")
 
     @staticmethod
