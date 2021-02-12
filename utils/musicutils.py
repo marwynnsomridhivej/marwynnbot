@@ -287,6 +287,7 @@ async def process_votes(self,
     embed = discord.Embed(title=f"Vote {op_name.title()}", color=BLUE)
     if allow_op:
         player = get_player(bot, ctx)
+        player.votes[op_name] = []
         embed.description = ALLOW_TEMPLATES.get(op_name)
         if op_name == "pause":
             await player.set_pause(True)
