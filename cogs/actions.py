@@ -1414,22 +1414,6 @@ class Actions(commands.Cog):
 
         return await self.embed_template(ctx, title=title, footer=footer)
 
-    @commands.command(aliases=['triggered'])
-    async def trigger(self, ctx, user=None):
-        give, receive, user, info = await self.get_count_user(ctx, user)
-
-        if info:
-            action_by = ctx.author.display_name
-            action_to = user.display_name
-            title = f"{action_by} triggered {action_to}"
-        else:
-            action_to = ctx.author.display_name
-            title = f"{action_to} is triggered"
-
-        footer = f"{action_to} was triggered {receive} times and triggered others {give} times"
-
-        return await self.embed_template(ctx, title=title, footer=footer)
-
     @commands.command(aliases=['UPSET'])
     async def upset(self, ctx, user=None):
         give, receive, user, info = await self.get_count_user(ctx, user)
