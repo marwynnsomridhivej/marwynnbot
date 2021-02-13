@@ -34,7 +34,7 @@ class Music(commands.Cog):
             await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
             await con.execute("CREATE TABLE IF NOT EXISTS music_cache(query text PRIMARY KEY, data JSONB)")
         if not hasattr(bot, 'lavalink'):
-            bot.lavalink = MBClient(self.bot.user.id)
+            bot.lavalink = MBClient(self.bot, self.bot.user.id)
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
             if not all(data):
                 raise ValueError("Make sure your server IP, port, and password are in the .env file")

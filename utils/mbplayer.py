@@ -118,7 +118,7 @@ class MBPlayer(DefaultPlayer):
                     "expire_at": -1 if res_present else current_timestamp + 86400
                 })
                 await con.execute(f"INSERT INTO music_cache(query, data) VALUES ($query${query}$query$, $dt${data}$dt$)")
-        return json.loads(data)
+        return json.loads(data)["data"]
 
     @staticmethod
     async def export_cache(bot: AutoShardedBot, query: str = None, format: str = "json") -> discord.Embed:
@@ -224,7 +224,7 @@ class MBPlayer(DefaultPlayer):
         embed = discord.Embed(title="Lavalink Cache Info", color=BLUE)
         current_timestamp = int(datetime.now().timestamp())
         async with bot.db.acquire() as con:
-            if query is not None:
+            if query is None:
                 entries = await con.fetch("SELECT * FROM music_cache")
                 if len(entries) == 0:
                     embed.description = "The cache has not been built"
@@ -315,6 +315,7 @@ class MBPlayer(DefaultPlayer):
                     track = self.queue.popleft()
                     self.session_queue.appendleft(track)
                 except IndexError:
+                    print("Index Error")
                     # If no track available to skip
                     await self.node._dispatch_event(QueueEndEvent(self))
                     self.current = None
@@ -340,10 +341,6 @@ class MBPlayer(DefaultPlayer):
 
         self.current = track
 
-        async with self.bot.db.acquire() as con:
-            exists = await con.fetchval(f"SELECT query FROM music_cache WHERE query=$query${self.current.uri}$query$")
-            if not exists:
-                await self.get_tracks(self.current.uri)
         await self.node._send(op="play", guildId=self.guild_id, track=track.track)
         await self.node._dispatch_event(TrackStartEvent(self, self.current))
         return self.current

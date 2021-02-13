@@ -12,7 +12,7 @@ from .mbplayer import MBPlayer
 
 
 class MBClient(Client):
-    def __init__(self, user_id: int, player: MBPlayer = MBPlayer, regions: dict = None, connect_back: bool = False):
+    def __init__(self, bot: AutoShardedBot, user_id: int, player: MBPlayer = MBPlayer, regions: dict = None, connect_back: bool = False):
         if not isinstance(user_id, int):
             raise TypeError('user_id must be an int (got {}). If the type is None, '
                             'ensure your bot has fired "on_ready" before instantiating '
@@ -20,6 +20,7 @@ class MBClient(Client):
                             .format(user_id))
 
         self._user_id = str(user_id)
+        self.bot = bot
         self.node_manager = NodeManager(self, regions)
         self.player_manager = PlayerManager(self, player)
         self._connect_back = connect_back
@@ -29,7 +30,7 @@ class MBClient(Client):
             timeout=aiohttp.ClientTimeout(total=None)
         )
 
-    async def __get_tracks(self, bot: AutoShardedBot, query: str, guild_id: int, future: asyncio.Future = None) -> Dict:
+    async def __get_tracks(self, query: str, guild_id: int) -> Dict:
         current_timestamp = int(datetime.now().timestamp())
         res = await self.get_tracks(query, node=None)
         res_present = res and res.get("tracks")
@@ -41,12 +42,10 @@ class MBClient(Client):
             "cached_in": guild_id,
             "expire_at": -1 if res_present else current_timestamp + 86400
         })
-        async with bot.db.acquire() as con:
+        async with self.bot.db.acquire() as con:
             await con.execute(
                 f"INSERT INTO music_cache(query, data) VALUES($query${query}$query$, $dt${data}$dt$)"
             )
-        if future is not None:
-            future.set_result(True)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task):
@@ -55,12 +54,11 @@ class MBClient(Client):
         except Exception:
             pass
 
-    async def efficient_cache_rebuild(self, bot: AutoShardedBot, guild_id: int, future: asyncio.Future):
-        loop = asyncio.get_running_loop()
-        async with bot.db.acquire() as con:
+    async def efficient_cache_rebuild(self, guild_id: int, future: asyncio.Future):
+        loop = self.bot.loop
+        async with self.bot.db.acquire() as con:
             entries = await con.fetch("SELECT * FROM music_cache")
-        last_entry = entries[-1]
         for entry in entries:
-            task = loop.create_task(self.__get_tracks(
-                bot, entry["query"], guild_id, future=future if entry == last_entry else None))
+            task = loop.create_task(self.__get_tracks(entry["query"], guild_id))
             task.add_done_callback(self._handle_task_result)
+        future.set_result(True)
