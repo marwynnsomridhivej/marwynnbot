@@ -1,11 +1,11 @@
 import asyncio
+import json
 import logging
-import os
-import pickle
 from datetime import datetime
 from typing import Dict
 
 import aiohttp
+from discord.ext.commands.bot import AutoShardedBot
 from lavalink import Client, NodeManager, PlayerManager
 
 from .mbplayer import MBPlayer
@@ -29,35 +29,24 @@ class MBClient(Client):
             timeout=aiohttp.ClientTimeout(total=None)
         )
 
-    async def __get_tracks(self, query: str, guild_id: int, cache: dict, loop) -> Dict:
+    async def __get_tracks(self, bot: AutoShardedBot, query: str, guild_id: int, future: asyncio.Future = None) -> Dict:
         current_timestamp = int(datetime.now().timestamp())
         res = await self.get_tracks(query, node=None)
         res_present = res and res.get("tracks")
         if res_present and res.get("loadType") != "PLAYLIST_LOADED":
             res["tracks"] = [res["tracks"][0]]
-        data = {
+        data = json.dumps({
             "data": res if res_present else None,
             "timestamp": current_timestamp,
             "cached_in": guild_id,
             "expire_at": -1 if res_present else current_timestamp + 86400
-        }
-        cache[query] = data
-        export = {
-            "query": query,
-            "data": data,
-        }
-        try:
-            _, writer = await asyncio.open_connection(
-                host=os.getenv("MBC_CON_HOST"),
-                port=int(os.getenv("MBC_CON_PORT")),
-                loop=loop,
+        })
+        async with bot.db.acquire() as con:
+            await con.execute(
+                f"INSERT INTO music_cache(query, data) VALUES($query${query}$query$, $dt${data}$dt$)"
             )
-            writer.write(pickle.dumps(export))
-            await writer.drain()
-            writer.close()
-        except Exception:
-            pass
-        return data
+        if future is not None:
+            future.set_result(True)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task):
@@ -66,10 +55,12 @@ class MBClient(Client):
         except Exception:
             pass
 
-    async def efficient_cache_rebuild(self, guild_id: int, future: asyncio.Future):
+    async def efficient_cache_rebuild(self, bot: AutoShardedBot, guild_id: int, future: asyncio.Future):
         loop = asyncio.get_running_loop()
-        from .mbplayer import _cache as cache
-        for query in cache:
-            task = loop.create_task(self.__get_tracks(query, guild_id, cache, loop))
+        async with bot.db.acquire() as con:
+            entries = await con.fetch("SELECT * FROM music_cache")
+        last_entry = entries[-1]
+        for entry in entries:
+            task = loop.create_task(self.__get_tracks(
+                bot, entry["query"], guild_id, future=future if entry == last_entry else None))
             task.add_done_callback(self._handle_task_result)
-        future.set_result(True)

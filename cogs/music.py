@@ -1,7 +1,5 @@
-import asyncio
 import itertools
 import os
-import pickle
 import re
 from asyncio.tasks import Task
 from collections import deque
@@ -23,8 +21,7 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot) -> None:
         self.bot = bot
         self.gcmds = GlobalCMDS(self.bot)
-        for func in [self.init_music, self.init_cache, self.init_cache_sock]:
-            self.bot.loop.create_task(func(bot))
+        self.bot.loop.create_task(self.init_music(bot))
         self.track_hook: function
         self.tasks: List[Task] = []
         self.lavalink: MBClient = None
@@ -35,6 +32,7 @@ class Music(commands.Cog):
         async with self.bot.db.acquire() as con:
             await con.execute("CREATE TABLE IF NOT EXISTS music(guild_id bigint PRIMARY KEY, channel_id bigint)")
             await con.execute("CREATE TABLE IF NOT EXISTS playlists(id SERIAL, user_id bigint, playlist_name text PRIMARY KEY, urls text[])")
+            await con.execute("CREATE TABLE IF NOT EXISTS music_cache(query text PRIMARY KEY, data JSONB)")
         if not hasattr(bot, 'lavalink'):
             bot.lavalink = MBClient(self.bot.user.id)
             data = [self.gcmds.env_check(key) for key in [f"LAVALINK_{info}" for info in "IP PORT PASSWORD".split()]]
@@ -50,68 +48,7 @@ class Music(commands.Cog):
         self.lavalink = self.bot.lavalink
         SCARED_IDS = [int(id) for id in os.getenv("SCARED_IDS").split(",")]
 
-    async def init_cache(self, bot: commands.AutoShardedBot):
-        await self.bot.wait_until_ready()
-        cache_path = os.getenv("MBC_LOCATION")
-        orig_filenames = [name for name in sorted(os.listdir(os.path.abspath(cache_path)))]
-        without_extensions = [name.replace(".json", "").replace(".mbcache", "") for name in orig_filenames]
-        for cache_file in reversed(sorted(without_extensions)):
-            filename = cache_file + ".json"
-            if not os.path.exists(os.path.abspath(f"{cache_path}/{filename}")):
-                filename = filename.replace(".json", ".mbcache")
-            embed = await MBPlayer.restore_cache(filename)
-            if "successfully" in embed.description:
-                print(f"[LAVALINK CACHE] Successfully restored cache state from file {filename}")
-                break
-        else:
-            print("[LAVALINK CACHE] Unable to automatically restore cache state")
-        task = self.bot.loop.create_task(self.backup_cache())
-        task.add_done_callback(self._handle_task_result)
-        self.tasks.append(task)
-
-    @staticmethod
-    async def _add_to_queue(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        from utils.mbplayer import _cache
-        data = await reader.read()
-        try:
-            unpickled: dict = pickle.loads(data)
-        except Exception:
-            print("Received invalid data")
-            return
-        query = unpickled["query"]
-        data = unpickled["data"]
-        if not query in _cache:
-            _cache[query] = data
-
-    async def init_cache_sock(self, bot: commands.AutoShardedBot):
-        await self.bot.wait_until_ready()
-        try:
-            server = await asyncio.start_server(
-                self._add_to_queue,
-                host=os.getenv("MBC_SOCK_HOST"),
-                port=int(os.getenv("MBC_SOCK_PORT")),
-            )
-            print(f"[CACHE SOCKET] Serving on {server.sockets[0].getsockname()}")
-            async with server:
-                await server.serve_forever()
-        except Exception as e:
-            print(f"[CACHE SOCKET] An exception occurred: {e!r}")
-
-    async def backup_cache(self):
-        while True:
-            await asyncio.sleep(300)
-            await MBPlayer.export_cache(query=None, format="pickle")
-
-    @staticmethod
-    def _handle_task_result(task: Task) -> None:
-        try:
-            task.result()
-        except Exception:
-            pass
-
     def cog_unload(self) -> None:
-        task = self.bot.loop.create_task(MBPlayer.export_cache(query=None, format="pickle"))
-        task.add_done_callback(self._handle_task_result)
         for task in self.tasks:
             task.cancel()
         self.bot.lavalink._event_hooks.clear()
@@ -135,7 +72,7 @@ class Music(commands.Cog):
                       usage="musiccacheinfo (query)",
                       note="If `(query)` is unspecified, it will display general cache details")
     async def musiccacheinfo(self, ctx, *, query: str = None):
-        return await ctx.channel.send(embed=MBPlayer.get_cache_info(query=query))
+        return await ctx.channel.send(embed=await MBPlayer.get_cache_info(self.bot, query=query))
 
     @commands.command(aliases=["mcl"],
                       desc="List all cache files stored in cache directory",
@@ -165,7 +102,7 @@ class Music(commands.Cog):
                                   description=f"{ctx.author.mention}, please pick a either JSON or PICKLE as the export format",
                                   color=discord.Color.dark_red())
         else:
-            embed = await MBPlayer.export_cache(query=query, format=format.lower())
+            embed = await MBPlayer.export_cache(self.bot, query=query, format=format.lower())
         return await ctx.channel.send(embed=embed)
 
     @commands.command(aliases=["mcev"],
@@ -174,7 +111,7 @@ class Music(commands.Cog):
                       uperms=["Bot Owner Only"])
     @commands.is_owner()
     async def musiccacheevict(self, ctx, *, query: str):
-        return await ctx.channel.send(embed=MBPlayer.evict_cache(query))
+        return await ctx.channel.send(embed=await MBPlayer.evict_cache(self.bot, query))
 
     @commands.command(aliases=["mcc"],
                       desc="Clears the music cache",
@@ -183,8 +120,8 @@ class Music(commands.Cog):
                       note="A backup of the current cache will be made in JSON format")
     @commands.is_owner()
     async def musiccacheclear(self, ctx):
-        await MBPlayer.export_cache(format="pickle")
-        return await ctx.channel.send(embed=MBPlayer.evict_cache("", clear_all=True))
+        await MBPlayer.export_cache(self.bot, format="pickle")
+        return await ctx.channel.send(embed=await MBPlayer.evict_cache(self.bot, "", clear_all=True))
 
     @commands.command(aliases=["mcr"],
                       desc="Restore an exported lavalink cache state",
@@ -193,7 +130,7 @@ class Music(commands.Cog):
                       note="Incluce the extension")
     @commands.is_owner()
     async def musiccacherestore(self, ctx, filename: str):
-        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename, type="restore"))
+        return await ctx.channel.send(embed=await MBPlayer.restore_cache(self.bot, filename, type="restore"))
 
     @commands.command(aliases=["mcm"],
                       desc="Merges current music cache with another cache file",
@@ -202,7 +139,7 @@ class Music(commands.Cog):
                       note="Merging will not overwrite already present queries")
     @commands.is_owner()
     async def musiccachemerge(self, ctx, filename: str):
-        return await ctx.channel.send(embed=await MBPlayer.restore_cache(filename, type="merge"))
+        return await ctx.channel.send(embed=await MBPlayer.restore_cache(self.bot, filename, type="merge"))
 
     @commands.command(aliases=["mcrl"],
                       desc="Reloads the cache for specified entries",

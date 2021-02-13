@@ -9,6 +9,7 @@ from typing import Deque, Dict, List, Union
 
 import discord
 from aiofile import async_open
+from discord.ext.commands.bot import AutoShardedBot
 from lavalink.events import QueueEndEvent, TrackStartEvent
 from lavalink.models import AudioTrack, DefaultPlayer
 
@@ -17,12 +18,12 @@ url_rx = re.compile(r'https?://(?:www\.)?.+')
 BLUE = discord.Color.blue()
 RED = discord.Color.dark_red()
 
-_cache = {}
-
 
 class MBPlayer(DefaultPlayer):
     def __init__(self, guild_id, node):
         super(MBPlayer, self).__init__(guild_id, node)
+        self.bot = None
+        self._bot_future = asyncio.get_running_loop().create_future()
         self.queue: Deque[AudioTrack] = deque()
         self.session_queue: Deque[AudioTrack] = deque()
         self.current: AudioTrack = None
@@ -40,6 +41,11 @@ class MBPlayer(DefaultPlayer):
         self._rewind = False
         self._index = 1
         self._loop = 0
+
+    def set_bot(self, bot: AutoShardedBot) -> None:
+        if self.bot is None:
+            self.bot = bot
+            self._bot_future.set_result(True)
 
     def reset_votes(self) -> None:
         self.votes: dict = {
@@ -96,53 +102,42 @@ class MBPlayer(DefaultPlayer):
         return f"loop {self._loop} time{'s' if self._loop != 1 else ''}" if self._loop >= 1 else "loop forever" if self._loop == -1 else "not loop"
 
     async def get_tracks(self, query: str, force_recache: bool = False) -> Dict:
-        global _cache
+        await self._bot_future
         current_timestamp = int(datetime.now().timestamp())
-        if force_recache or not query in _cache or 0 <= _cache.get(query).get("expire_at") <= current_timestamp:
-            res = await self.node.get_tracks(query)
-            res_present = res and res.get("tracks")
-            if res_present and res.get("loadType") != "PLAYLIST_LOADED":
-                res["tracks"] = [res["tracks"][0]]
-            data = {
-                "data": res if res_present else None,
-                "timestamp": current_timestamp,
-                "cached_in": self.guild_id,
-                "expire_at": -1 if res_present else current_timestamp + 86400
-            }
-            _cache[query] = data
-            export = {
-                "query": query,
-                "data": data,
-            }
-            loop = asyncio.get_running_loop()
-            try:
-                _, writer = await asyncio.open_connection(
-                    host=os.getenv("MBC_CON_HOST"),
-                    port=int(os.getenv("MBC_CON_PORT")),
-                    loop=loop,
-                )
-                writer.write(pickle.dumps(export))
-                writer.close()
-            except Exception:
-                pass
-        return _cache.get(query).get("data")
+        async with self.bot.db.acquire() as con:
+            data = await con.fetchval(f"SELECT data FROM music_cache WHERE query=$query${query}$query$")
+            if force_recache or data is None:
+                res = await self.node.get_tracks(query)
+                res_present = res and res.get("tracks")
+                if res_present and res.get("loadType") != "PLAYLIST_LOADED":
+                    res["tracks"] = [res["tracks"][0]]
+                data = json.dumps({
+                    "data": res if res_present else None,
+                    "timestamp": current_timestamp,
+                    "cached_in": self.guild_id,
+                    "expire_at": -1 if res_present else current_timestamp + 86400
+                })
+                await con.execute(f"INSERT INTO music_cache(query, data) VALUES ($query${query}$query$, $dt${data}$dt$)")
+        return json.loads(data)
 
     @staticmethod
-    def get_cache() -> dict:
-        global _cache
-        return _cache
-
-    @staticmethod
-    async def export_cache(*, query: str = None, format: str = "json") -> discord.Embed:
-        global _cache
+    async def export_cache(bot: AutoShardedBot, query: str = None, format: str = "json") -> discord.Embed:
         embed = discord.Embed(title=f"Cache Export - {format.upper()}", color=BLUE)
-        export_cache = _cache.get(query) if query is not None else _cache
+        async with bot.db.acquire() as con:
+            if query is None:
+                entries = await con.fetch("SELECT * FROM music_cache")
+            else:
+                entries = await con.fetchrow(f"SELECT * FROM music_cache WHERE query=$query${query if url_rx.match(query) else f'ytsearch:{query}'}$query$")
         base = os.getenv("MBC_LOCATION")
         filename = f"MBC_{f'query:{query}_' if query else ''}{int(datetime.now().timestamp())}"
-        if not export_cache:
+        if not entries:
             embed.description = f"The query `{query}` is not in cache" if query is not None else "The cache has not been built"
             embed.color = RED
             return embed
+        elif not isinstance(entries, List):
+            entries = [entries]
+
+        export_cache = {_query: data for _query, data in [(entry["query"], entry["data"]) for entry in entries]}
 
         if not os.path.exists(os.path.abspath(base)):
             os.mkdir(os.path.abspath(base))
@@ -172,25 +167,28 @@ class MBPlayer(DefaultPlayer):
         return embed
 
     @staticmethod
-    async def restore_cache(filename: str, type: str = "restore") -> discord.Embed:
-        global _cache
+    async def restore_cache(bot: AutoShardedBot, filename: str, type: str = "restore") -> discord.Embed:
         embed = discord.Embed(title=f"Cache {type.title()} ", color=BLUE)
         cache_path = os.getenv("MBC_LOCATION")
         try:
             async with async_open(os.path.abspath(f"{cache_path}/{filename}"), "rb") as backup:
                 if filename.lower().endswith(".json"):
-                    bak = json.loads(await backup.read())
+                    bak: dict = json.loads(await backup.read())
                 elif filename.lower().endswith(".mbcache"):
-                    bak = pickle.loads(await backup.read())
+                    bak: dict = pickle.loads(await backup.read())
                 else:
                     raise FileNotFoundError
 
-                if type.lower() == "restore":
-                    _cache = bak
-                elif type.lower() == "merge":
-                    _cache = {**bak, **_cache}
-                else:
-                    raise ValueError(f"{type} is an invalid type")
+                async with bot.db.acquire() as con:
+                    if type.lower() == "restore":
+                        await con.execute("TRUNCATE music_cache")
+                    elif type.lower() == "merge":
+                        pass
+                    else:
+                        raise ValueError(f"{type} is an invalid type")
+
+                    values = ", ".join([f"($query${query}$query$, $dt${data}$dt$)" for query, data in bak.items()])
+                    await con.execute(f"INSERT INTO music_cache(query, data) VALUES {values} ON CONFLICT (query) DO NOTHING")
             embed.description = f"The cache's state was successfully {type}d from the file ```{filename}```"
         except FileNotFoundError:
             embed.description = f"The cache's state was not {type}d. No cache export exists in the musiccache folder with the filename ```{filename}```"
@@ -201,80 +199,88 @@ class MBPlayer(DefaultPlayer):
         return embed
 
     @staticmethod
-    def evict_cache(query: str, clear_all: bool = False) -> discord.Embed:
-        global _cache
+    async def evict_cache(bot: AutoShardedBot, query: str, clear_all: bool = False) -> discord.Embed:
         embed = discord.Embed(title="Query ", color=BLUE)
         new_query = f"ytsearch:{query}" if not url_rx.match(query) else query
-        if clear_all:
-            _cache = {}
-            embed.title = "Cache Cleared"
-            embed.description = "The cache has been cleared. A backup has been made in PICKLE format"
-        elif _cache.get(new_query, None):
-            del _cache[new_query]
-            embed.title += "Evicted"
-            embed.description = f"The query `{query}` has been evicted from MarwynnBot's global cache"
-        else:
-            embed.title += "Not Found"
-            embed.description = f"The query `{query}` could not be found in the cache"
-            embed.color = RED
+        async with bot.db.acquire() as con:
+            if clear_all:
+                await con.execute("TRUNCATE music_cache")
+                embed.title = "Cache Cleared"
+                embed.description = "The cache has been cleared. A backup has been made in PICKLE format"
+            else:
+                entry = await con.fetchval(f"SELECT query FROM music_cache WHERE query=$query${new_query}$query$")
+                if entry:
+                    embed.title += "Evicted"
+                    embed.description = f"The query `{query}` has been evicted from MarwynnBot's global cache"
+                    await con.execute(f"DELETE FROM music_cache WHERE query=$query${new_query}$query$")
+                else:
+                    embed.title += "Not Found"
+                    embed.description = f"The query `{query}` could not be found in the cache"
+                    embed.color = RED
         return embed
 
     @staticmethod
-    def get_cache_info(query: str = None) -> discord.Embed:
-        global _cache
+    async def get_cache_info(bot: AutoShardedBot, query: str = None) -> discord.Embed:
         embed = discord.Embed(title="Lavalink Cache Info", color=BLUE)
         current_timestamp = int(datetime.now().timestamp())
-        if not _cache:
-            embed.description = "The cache has not been built"
-            embed.color = RED
-        elif not query:
-            cache_size = len(_cache)
-            none_queries = [entry for key, entry in _cache.items() if entry.get("data", None) is None]
-            valid_size = cache_size - len(none_queries)
-            expired_size = len([entry for entry in none_queries if entry["expire_at"] <= current_timestamp])
-            embed.description = "\n".join([
-                f"**Size:** {cache_size} quer{'ies' if cache_size != 1 else 'y'}",
-                f"**Valid Queries:** {valid_size} quer{'ies' if valid_size != 1 else 'y'} ≈ {(100 * valid_size / cache_size):.2f}%",
-                f"**Expired:** {expired_size} quer{'ies' if expired_size != 1 else 'y'} ≈ {(100 * expired_size / cache_size):.2f}%",
-            ])
-        else:
-            new_query = "ytsearch:" + query if not url_rx.match(query) else query
-            entry = _cache.get(new_query, None)
-            if entry is None:
-                embed.title = "Invalid Query"
-                embed.description = f"The query `{query}` could not be found in the cache"
-                embed.color = RED
-            else:
-                data = entry["data"]
-                load_type = data.get("loadType") if data else "NO_MATCHES"
-                query_type = {
-                    "TRACK_LOADED": "Direct Track URL",
-                    "PLAYLIST_LOADED": "Direct Playlist URL",
-                    "SEARCH_RESULT": "Successful YouTube / SoundCloud Query",
-                    "NO_MATCHES": "Failed YouTube / SoundCloud Query",
-                    "LOAD_FAILED": "Error Occurred During Loading",
-                }.get(load_type, "No Info")
-                timestamp = datetime.fromtimestamp(entry["timestamp"]).strftime('%m/%d/%Y %H:%M:%S')
-                expire_at = "Never" if entry["expire_at"] == - \
-                    1 else datetime.fromtimestamp(entry["expire_at"]).strftime('%m/%d/%Y %H:%M:%S')
-                embed.title += f" - {query}"
-                embed.description = "\n".join([
-                    f"**Result:** {query_type}",
-                    f"**Cached On:** {timestamp}",
-                    f"**Expires:** {expire_at}",
-                ])
-                if data is not None and load_type in ["TRACK_LOADED", "SEARCH_RESULT"]:
-                    from .musicutils import track_duration, _get_track_thumbnail
-                    track = AudioTrack(data["tracks"][0], 0)
-                    embed.description += "\n\n" + "\n".join([
-                        f"**Video:** [{track.title}]({track.uri})",
-                        f"**Author:** {track.author}",
-                        f"**Duration:** {track_duration(track.duration)}",
-                        f"**Seek Compatible:** {'Yes' if track.is_seekable else 'No'}"
+        async with bot.db.acquire() as con:
+            if query is not None:
+                entries = await con.fetch("SELECT * FROM music_cache")
+                if len(entries) == 0:
+                    embed.description = "The cache has not been built"
+                    embed.color = RED
+                else:
+                    cache_size = len(entries)
+                    data = {
+                        key: json.loads(value) for key, value in [(entry["query"], entry["data"]) for entry in entries]
+                    }
+                    none_queries = [entry for _, entry in data.items() if entry.get("data", None) is None]
+                    valid_size = cache_size - len(none_queries)
+                    expired_size = len([entry for entry in none_queries if entry["expire_at"] <= current_timestamp])
+                    embed.description = "\n".join([
+                        f"**Size:** {cache_size} quer{'ies' if cache_size != 1 else 'y'}",
+                        f"**Valid Queries:** {valid_size} quer{'ies' if valid_size != 1 else 'y'} ≈ {(100 * valid_size / cache_size):.2f}%",
+                        f"**Expired:** {expired_size} quer{'ies' if expired_size != 1 else 'y'} ≈ {(100 * expired_size / cache_size):.2f}%",
                     ])
-                    embed.set_image(
-                        url=_get_track_thumbnail(track)
-                    )
+            else:
+                new_query = "ytsearch:" + query if not url_rx.match(query) else query
+                entry = await con.fetchrow(f"SELECT * FROM music_cache WHERE query=$query${new_query}$query$")
+                if entry is None:
+                    embed.title = "Invalid Query"
+                    embed.description = f"The query `{query}` could not be found in the cache"
+                    embed.color = RED
+                else:
+                    data = json.loads(entry["data"])
+                    load_type = data.get("loadType") if data else "NO_MATCHES"
+                    query_type = {
+                        "TRACK_LOADED": "Direct Track URL",
+                        "PLAYLIST_LOADED": "Direct Playlist URL",
+                        "SEARCH_RESULT": "Successful YouTube / SoundCloud Query",
+                        "NO_MATCHES": "Failed YouTube / SoundCloud Query",
+                        "LOAD_FAILED": "Error Occurred During Loading",
+                    }.get(load_type, "No Info")
+                    timestamp = datetime.fromtimestamp(entry["timestamp"]).strftime('%m/%d/%Y %H:%M:%S')
+                    expire_at = "Never" if entry["expire_at"] == - \
+                        1 else datetime.fromtimestamp(entry["expire_at"]).strftime('%m/%d/%Y %H:%M:%S')
+                    embed.title += f" - {query}"
+                    embed.description = "\n".join([
+                        f"**Result:** {query_type}",
+                        f"**Cached On:** {timestamp}",
+                        f"**Expires:** {expire_at}",
+                    ])
+                    if data is not None and load_type in ["TRACK_LOADED", "SEARCH_RESULT"]:
+                        from .musicutils import (_get_track_thumbnail,
+                                                 track_duration)
+                        track = AudioTrack(data["tracks"][0], 0)
+                        embed.description += "\n\n" + "\n".join([
+                            f"**Video:** [{track.title}]({track.uri})",
+                            f"**Author:** {track.author}",
+                            f"**Duration:** {track_duration(track.duration)}",
+                            f"**Seek Compatible:** {'Yes' if track.is_seekable else 'No'}"
+                        ])
+                        embed.set_image(
+                            url=_get_track_thumbnail(track)
+                        )
         return embed
 
     async def seek(self, millisecond_amount: int, sign: str = None) -> Union[int, str]:
@@ -294,7 +300,7 @@ class MBPlayer(DefaultPlayer):
         return int(position)
 
     async def play(self) -> AudioTrack:
-        global _cache
+        await self._bot_future
         self.reset_votes()
         self._last_update = 0
         self._last_position = 0
@@ -333,8 +339,11 @@ class MBPlayer(DefaultPlayer):
             self._index += 1
 
         self.current = track
-        if not self.current.uri in _cache:
-            await self.get_tracks(self.current.uri)
+
+        async with self.bot.db.acquire() as con:
+            exists = await con.fetchval(f"SELECT query FROM music_cache WHERE query=$query${self.current.uri}$query$")
+            if not exists:
+                await self.get_tracks(self.current.uri)
         await self.node._send(op="play", guildId=self.guild_id, track=track.track)
         await self.node._dispatch_event(TrackStartEvent(self, self.current))
         return self.current

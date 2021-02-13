@@ -229,10 +229,12 @@ async def track_hook(self, event: lavalink.events.Event):
 
 
 def get_player(bot: AutoShardedBot, ctx: Context, guild: discord.Guild = None) -> MBPlayer:
-    return bot.lavalink.player_manager.create(
+    player: MBPlayer = bot.lavalink.player_manager.create(
         ctx.guild.id if ctx else guild.id,
         endpoint=str(ctx.guild.region if ctx else guild.region)
     )
+    player.set_bot(bot)
+    return player
 
 
 async def no_queue(ctx: Context) -> discord.Message:
