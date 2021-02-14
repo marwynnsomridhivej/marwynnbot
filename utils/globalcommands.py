@@ -121,12 +121,12 @@ class GlobalCMDS:
                               color=discord.Color.dark_red())
         return await ctx.channel.send(embed=embed)
 
-    async def prefix(self, ctx):
-        if not ctx.guild:
+    async def prefix(self, ctx: commands.Context, guild_id: int = None):
+        if ctx and not ctx.guild:
             return "m!"
 
         async with self.db.acquire() as con:
-            prefix = await con.fetchval(f"SELECT custom_prefix FROM guild WHERE guild_id = {ctx.guild.id}")
+            prefix = await con.fetchval(f"SELECT custom_prefix FROM guild WHERE guild_id = {ctx.guild.id if ctx else guild_id}")
             return prefix
 
     async def blacklist_db(self, execute):
