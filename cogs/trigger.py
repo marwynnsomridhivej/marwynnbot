@@ -43,7 +43,7 @@ class Trigger(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> discord.Message:
         await self.bot.wait_until_ready()
-        if not message.author.bot and message.guild:
+        if not message.author.bot and message.guild and message.content is not None:
             channel = message.channel
             perms = channel.permissions_for(message.guild.me)
             pfx = await self.gcmds.prefix(None, guild_id=message.guild.id)
