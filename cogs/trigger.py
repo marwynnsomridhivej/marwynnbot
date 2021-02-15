@@ -189,6 +189,7 @@ class Trigger(commands.Cog):
     async def purge_triggers(self, guild_id: int) -> discord.Embed:
         async with self.bot.db.acquire() as con:
             deleted_amount = await con.fetchval(f"WITH deleted as (DELETE FROM triggers WHERE guild_id={guild_id} RETURNING *) SELECT COUNT(*) FROM deleted")
+        self.key_cache[guild_id] = []
         return discord.Embed(
             title="Purged All Triggers",
             description=f"**{deleted_amount}** trigger{'s were' if deleted_amount != 1 else 'was'} purged",
