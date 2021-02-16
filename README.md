@@ -1,3 +1,5 @@
+# Project Moved to Gitlab
+
 # MarwynnBot <img src="https://i.kym-cdn.com/photos/images/original/000/762/243/edd.jpg" height="100" width="100" align="right">
 I am a general purpose discord bot written in python using discord.py, a Discord API Wrapper. I am currently under
 development, so please expect new features to come and any issues to be addressed as soon as I can.
